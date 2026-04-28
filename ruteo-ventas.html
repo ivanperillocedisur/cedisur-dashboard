@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ruteo de Visitas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F3EF;
+    --surface: #FFFFFF;
+    --border: #D8D4CC;
+    --text: #1A1814;
+    --text2: #6B6760;
+    --text3: #9E9B97;
+    --accent: #1d3a8f;
+    --accent-light: #E8EDFB;
+    --accent-text: #1d3a8f;
+    --done-text: #1d3a8f;
+    --card-presencial-bg: #FFF5ED;
+    --card-presencial-border: #F5C99A;
+    --card-ecom-bg: #EAF5FB;
+    --card-ecom-border: #90CDE8;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 2rem;
+  }
+
+  .header {
+    background: var(--accent);
+    padding: 1.25rem 1.25rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .app-name {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+  }
+  .today-badge {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.12);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  select {
+    width: 100%;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.6)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    cursor: pointer;
+  }
+  select option { background: #1d3a8f; color: #fff; }
+  select:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+
+  .days-strip {
+    display: flex;
+    gap: 6px;
+    padding: 0.875rem 1.25rem 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--accent);
+  }
+  .days-strip::-webkit-scrollbar { display: none; }
+
+  .day-tab {
+    flex-shrink: 0;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.6);
+    background: transparent;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .day-tab.active {
+    background: #fff;
+    color: var(--accent);
+    border-color: transparent;
+    font-weight: 600;
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 8px;
+    padding: 1rem 1.25rem 0.5rem;
+  }
+  .stat {
+    flex: 1;
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .stat-num.blue { color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .list {
+    padding: 0.5rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .client-card {
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: opacity 0.2s;
+  }
+  .client-card.presencial {
+    background: var(--card-presencial-bg);
+    border: 1px solid var(--card-presencial-border);
+  }
+  .client-card.ecom {
+    background: var(--card-ecom-bg);
+    border: 1px solid var(--card-ecom-border);
+  }
+  .client-card.done { opacity: 0.6; }
+  .client-card.done .client-name { text-decoration: line-through; color: var(--text3); }
+
+  .card-main {
+    padding: 0.875rem 0.875rem 0.875rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .order-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text3);
+    min-width: 22px;
+    flex-shrink: 0;
+  }
+
+  .client-info { flex: 1; min-width: 0; }
+  .client-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .client-card.expanded .client-name {
+    white-space: normal;
+    overflow: visible;
+  }
+  .client-addr-short {
+    font-size: 12px;
+    color: var(--text2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .btn-check {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-check:active { transform: scale(0.88); }
+  .client-card.done .btn-check {
+    background: var(--done-text);
+    border-color: var(--done-text);
+  }
+  .btn-check svg { width: 15px; height: 15px; pointer-events: none; }
+  .check-icon { display: none; }
+  .client-card.done .check-icon { display: block; }
+  .uncheck-icon { display: block; }
+  .client-card.done .uncheck-icon { display: none; }
+
+  .card-detail {
+    display: none;
+    padding: 0 1rem 1rem 1rem;
+  }
+  .client-card.expanded .card-detail { display: block; }
+
+  .detail-divider {
+    height: 1px;
+    background: rgba(0,0,0,0.08);
+    margin-bottom: 0.75rem;
+  }
+  .detail-row { margin-bottom: 0.5rem; }
+  .detail-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 2px;
+  }
+  .detail-value {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .btn-maps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 0.75rem;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-text);
+    background: var(--accent-light);
+    border: none;
+    padding: 9px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-maps svg { width: 13px; height: 13px; }
+
+  .empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text3);
+  }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .empty-text { font-size: 15px; }
+
+  .loader {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text3);
+    font-size: 14px;
+  }
+
+  .reset-bar {
+    padding: 0.5rem 1.25rem;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .btn-reset {
+    font-size: 11px;
+    color: var(--text3);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    text-decoration: underline;
+    padding: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span class="app-name">Ruteo de visitas</span>
+    <span class="today-badge" id="today-label">—</span>
+  </div>
+  <select id="vendedor-select">
+    <option value="">— Seleccioná tu nombre —</option>
+  </select>
+  <div class="days-strip" id="days-strip"></div>
+</div>
+
+<div id="app-content">
+  <div class="loader">Cargando planilla...</div>
+</div>
+
+<script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1071989663&single=true&output=csv';
+
+const DEMO_DATA = `CODIGO CLIENTE,NOMBRE COMERCIAL,LOCALIDAD,DIRECCION,VENDEDOR,ZONA,ORDEN,DIA CARGA DE PEDIDO,Latitud,Longitud,Canal actual (Presencial / Autogestión)
+C2717,ROTISERIA DELEITTE,NEUQUEN,VILLEGAS 692,Alberto Castillo,NEUQUEN,1,LUNES,,,Presencial
+C3142,KIOSCO GAMA,NEUQUEN,SAN MARTIN 129,Alberto Castillo,NEUQUEN,2,LUNES,,,Presencial
+C3431,KIOSCO EL PELADO,NEUQUEN,SAN MARTIN 10,Alberto Castillo,NEUQUEN,3,LUNES,,,Presencial
+C2671,CONFITERIA ML CALENTITAS,NEUQUEN,IRIGOYEN Y JUAN B JUSTO,Alberto Castillo,NEUQUEN,4,LUNES,,,Presencial
+C3139,DULCINEA CAFE CHOCOLATERIA,NEUQUEN,CARLOS H. RODRIGUEZ 98,Alberto Castillo,NEUQUEN,5,LUNES,,,Presencial
+C3429,KIOSCO REVISTERIA ALVEAR,NEUQUEN,ALVEAR Y ROCA,Alberto Castillo,NEUQUEN,6,LUNES,,,Presencial
+C0659,PANCHERIA PANCHO CLUB NEUQUEN,NEUQUEN,HIPOLITO YRIGOYEN 319,Alberto Castillo,NEUQUEN,7,LUNES,,,Presencial
+C5403,KIOSCO TOPOS,NEUQUEN,BELGRANO 18,Alberto Castillo,NEUQUEN,8,LUNES,,,Presencial
+C2995,GOURMET LAB SAS,NEUQUEN,BELGRANO 145,Alberto Castillo,NEUQUEN,9,LUNES,,,Presencial
+C2068,RESTO BAR OGHAM,NEUQUEN,DIAGONAL 9 DE JULIO 53,Alberto Castillo,NEUQUEN,10,LUNES,,,Presencial
+C2650,CHACHINGO,NEUQUEN,ELORDI 160,Alberto Castillo,NEUQUEN,11,LUNES,,,Presencial
+C5524,GIARDINO NEUQUEN,NEUQUEN,CARLOS H RODRÍGUEZ 288,Alberto Castillo,NEUQUEN,12,LUNES,,,Presencial
+C2579,HOTEL HILTON GARDEN INN NEUQUEN,NEUQUEN,AVENIDA ARGENTINA 1200,Alberto Castillo,NEUQUEN,13,LUNES,,,Presencial
+C2685,AXION SECORVEP NQN,NEUQUEN,DOCTOR RAMON 202,Alberto Castillo,NEUQUEN,14,LUNES,,,Presencial
+C2372,DRUGSTORE HIPER COTO,NEUQUEN,DR. RAMON Y RUTA 7,Alberto Castillo,NEUQUEN,15,LUNES,,,Presencial
+C3082,CINEMARK,NEUQUEN,DR. LUIS RAMON 355 ( ALTO COMAHUE SHOPINGG),Alberto Castillo,NEUQUEN,16,LUNES,,,Presencial
+C3755,Regalaría Merey Detalles,NEUQUEN,BUENOS AIRES 123,Alberto Castillo,NEUQUEN,17,LUNES,,,Presencial
+C2941,GOURMET LAB SAS SAN LUIS,NEUQUEN,LISANDRO DE LA TORRE 676,Alberto Castillo,NEUQUEN,18,LUNES,,,Presencial
+C3165,CASINO MAGIC,NEUQUEN,CALLE 12 DE SEPTIEMBRE 4005,Alberto Castillo,NEUQUEN,19,LUNES,,,Presencial
+C5378,FLORES PEHUEN,NEUQUEN,CARLOS H RODRÍGUEZ 446,Alberto Castillo,NEUQUEN,20,LUNES,,,Presencial
+C4887,MARKET FRESH 2,NEUQUEN,ALASKA 6423 ESQ BERMUDAS,Alberto Castillo,NEUQUEN,21,LUNES,,,Presencial
+C2642,CATERING BACS NQN,NEUQUEN,CARLOS PELEGRINI 2131,Alberto Castillo,NEUQUEN,22,LUNES,,,Presencial
+C5759,SHELL BELGRANO NEUQUÉN,NEUQUEN,BELGRANO Y LAS HERAS,Alberto Castillo,NEUQUEN,23,LUNES,,,Presencial
+C4658,KIOSCO TOMY,NEUQUEN,BELGRANO 1134,Alberto Castillo,NEUQUEN,24,LUNES,,,Presencial
+C5115,DULCE PIMY,NEUQUEN,COMBATE DE SAN LORENZO 128,Alberto Castillo,NEUQUEN,25,LUNES,,,Presencial
+C1762,DRUGSTORE EL BARTO,NEUQUEN,VICENTE CHRESTIA 90 ESQUINA JUAN B. JUSTO,Alberto Castillo,NEUQUEN,26,LUNES,,,Presencial
+C4836,KIOSCO CECY,NEUQUEN,BRENTANA Y JUAN B JUSTO,Alberto Castillo,NEUQUEN,27,LUNES,,,Presencial
+C3157,KIOSCO LA GUARDIA,NEUQUEN,LA RIOJA 80,Alberto Castillo,NEUQUEN,28,LUNES,,,Presencial
+C3633,KIOSCO Y CAFETERIA FEDEIS,NEUQUEN,CANDELARIA 60 (CANDELARIA y 12 DE SEPTIEMBRE),Alberto Castillo,NEUQUEN,29,LUNES,,,Presencial
+C3646,KIOSCO Y CAFE MARTINEZ,NEUQUEN,SAN MARTIN 1299,Alberto Castillo,NEUQUEN,30,LUNES,,,Presencial
+C2625,CAFE BONAFIDE NQN,NEUQUEN,HIPOLITO YRIGOYEN 123,Alberto Castillo,NEUQUEN,1,MARTES,,,Presencial
+C1699,HOTEL TOWER,NEUQUEN,BELGRANO 174,Alberto Castillo,NEUQUEN,2,MARTES,,,Presencial
+C4147,DIETETICA INTEGRAL,NEUQUEN,ROCA 229,Alberto Castillo,NEUQUEN,3,MARTES,,,Presencial
+C3614,CAFECITO AL PASO,NEUQUEN,JUAN BAUTISTA JUSTO 292,Alberto Castillo,NEUQUEN,4,MARTES,,,Presencial
+C3148,MERCADO DE NUESTRA TIERRA,NEUQUEN,SANTIAGO DEL ESTERO 312,Alberto Castillo,NEUQUEN,5,MARTES,,,Presencial
+C2060,DRUGSTORE PLAZA,NEUQUEN,ROCA Y SANTIAGO DEL ESTERO,Alberto Castillo,NEUQUEN,6,MARTES,,,Presencial
+C4717,COFFE TIME BAR,NEUQUEN,SANTIAGO DEL ESTERO 278,Alberto Castillo,NEUQUEN,7,MARTES,,,Presencial
+C4027,BETOS DELIVERY,NEUQUEN,FOTHERINGAN 166,Alberto Castillo,NEUQUEN,8,MARTES,,,Presencial
+C4754,MINIMARKET LS,NEUQUEN,FOTHERIMGHAM 424,Alberto Castillo,NEUQUEN,9,MARTES,,,Presencial
+C1846,MERCADO & POLLERIA TODO AVE,NEUQUEN,JUAN B JUSTO 835,Alberto Castillo,NEUQUEN,10,MARTES,,,Presencial
+C3067,MINIMERCADO EL MAS GAUCHITO,NEUQUEN,SAN MARTIN 888,Alberto Castillo,NEUQUEN,11,MARTES,,,Presencial
+C4467,FRESH,NEUQUEN,JUAN B JUSTO 1218,Alberto Castillo,NEUQUEN,12,MARTES,,,Presencial
+C5161,EL REY DEL POLLO,NEUQUEN,BELGRANO 1808 ESQUINA CATRIEL,Alberto Castillo,NEUQUEN,13,MARTES,,,Presencial
+C4735,SUPERMERCADO EXPRESS,NEUQUEN,BELGRANO 1664,Alberto Castillo,NEUQUEN,14,MARTES,,,Presencial
+C4864,SUPERMERCADO COTE,NEUQUEN,SAN MARTIN 2291 NEUQUEN,Alberto Castillo,NEUQUEN,15,MARTES,,,Presencial
+C5100,BETOS LOMOS,NEUQUEN,SAN MARTÍN 3418,Alberto Castillo,NEUQUEN,16,MARTES,,,Presencial
+C4479,SUPERMERCADO PUNTO AZUL,NEUQUEN,COLLON CURA 296,Alberto Castillo,NEUQUEN,17,MARTES,,,Presencial
+C4374,LOS AROMOS VINOTECA,NEUQUEN,COLLON CURA 475 ESQUINA SALTO GRANDE,Alberto Castillo,NEUQUEN,18,MARTES,,,Presencial
+C4545,FRIED CHICKEN HOUSE,NEUQUEN,DON BOSCO 567,Alberto Castillo,NEUQUEN,19,MARTES,,,Presencial
+C2190,CATERING TRANS BOX,NEUQUEN,AGUADO 2100,Alberto Castillo,NEUQUEN,20,MARTES,,,Presencial
+C3165,CASINO MAGIC,NEUQUEN,CALLE 12 DE SEPTIEMBRE 4005,Alberto Castillo,NEUQUEN,21,MARTES,,,Presencial
+C4662,KIOSCO MARANATHA,NEUQUEN,DAVID ABRAHAN 1896,Alberto Castillo,NEUQUEN,22,MARTES,,,Presencial
+C3421,KIOSCO JULIAN,PLOTTIER,BELGRANO Y PULMARI,Alberto Castillo,NEUQUEN,23,MARTES,,,Presencial
+C3184,SUPERMERCADO ROCA,GENERAL ROCA,ROCHDALE 350,Alberto Castillo,NEUQUEN,24,MARTES,,,Presencial
+C2103,MERCADO PAOLA,PLOTTIER,DOCTOR LELOIR 1343,Alberto Castillo,NEUQUEN,25,MARTES,,,Presencial
+C5127,HELADERÍA DESIRE PLAZA,PLOTTIER,BELGRANO 90,Alberto Castillo,NEUQUEN,26,MARTES,,,Presencial
+C4047,HELADERIA DESIREE,PLOTTIER,BELGRANO 300,Alberto Castillo,NEUQUEN,27,MARTES,,,Presencial
+C3124,YPF FULL PLOTTIER,PLOTTIER,SANTA FE 370,Alberto Castillo,NEUQUEN,28,MARTES,,,Presencial
+C4442,E- CONVIDAME,PLOTTIER,AV. SAN MARTIN Y PERITO MORENO,Alberto Castillo,NEUQUEN,29,MARTES,,,Ecommerce
+C4417,AXION SPOT PLOTTIER,PLOTTIER,ROCA Y CANDOLLE,Alberto Castillo,NEUQUEN,30,MARTES,,,Presencial
+C4387,E- TRAF 2,PLOTTIER,BURATOVICH 246 Dpto:1 - ESQUINA : DR. GARRAHAM,Alberto Castillo,NEUQUEN,31,MARTES,,,Ecommerce
+C4617,E- DRUGSTORE TRAF 3,PLOTTIER,CHILE 668 ESQUINA ROCA,Alberto Castillo,NEUQUEN,32,MARTES,,,Ecommerce
+C5279,KIOSCO TERRAZAS PLOTTIER,PLOTTIER,PRIMEROS POBLADORES 1905,Alberto Castillo,NEUQUEN,1,MIERCOLES,,,Presencial
+C2899,YPF FULL LG RINCON SRL PLOTTIER,PLOTTIER,AVENIDA DEL TRABAJO 2295 ESQ CONSTITUYENTE,Alberto Castillo,NEUQUEN,2,MIERCOLES,,,Presencial
+C4926,MAXI KIOSCO EL 39,PLOTTIER,LIBERTAD 396,Alberto Castillo,NEUQUEN,3,MIERCOLES,,,Presencial
+C4469,MARIDAJE,PLOTTIER,ROCA 427 (LOCAL 4),Alberto Castillo,NEUQUEN,4,MIERCOLES,,,Presencial
+C3571,DELIVERY RUCULA 2,PLOTTIER,Roca 429 plottier,Alberto Castillo,NEUQUEN,5,MIERCOLES,,,Presencial
+C3419,MERCADO SANTIAGO,PLOTTIER,AVDA.DEL TRABAJADOR 10,Alberto Castillo,NEUQUEN,6,MIERCOLES,,,Presencial
+C4593,HIPER MAS,PLOTTIER,AVENIDA ROCA 30,Alberto Castillo,NEUQUEN,7,MIERCOLES,,,Presencial
+C6375,E- DRUGSTORE TRAFF,PLOTTIER,SAN MARTIN Y ELORDI,Alberto Castillo,NEUQUEN,8,MIERCOLES,,,Ecommerce
+C2445,AUTOSERVICIO CENTRO,PLOTTIER,ALBERDI 5,Alberto Castillo,NEUQUEN,9,MIERCOLES,,,Presencial
+C2421,AUTOSERVICIO GODOY,PLOTTIER,GODOY 535,Alberto Castillo,NEUQUEN,10,MIERCOLES,,,Presencial
+C4629,POLLERIA LA GRANJA,PLOTTIER,MARTELLOTTA 70,Alberto Castillo,NEUQUEN,11,MIERCOLES,,,Presencial
+C5046,HIPER MAS 2,PLOTTIER,MAYOR BURATOVICH 198,Alberto Castillo,NEUQUEN,12,MIERCOLES,,,Presencial
+C3289,DISTRIBUIDORA KIOSCO COCODRILO,PLOTTIER,AVENIDA SAN MARTIN 720,Alberto Castillo,NEUQUEN,13,MIERCOLES,,,Presencial
+C6589,AUTOSERVICIO EL TREBOL,PLOTTIER,AVENIDA DEL TRABAJO 55,Alberto Castillo,NEUQUEN,14,MIERCOLES,,,Presencial
+C1674,E- PROVEEDORA DEL SUR,NEUQUEN,NESTOR RODRIGUEZ PARQUE INDUSTRIAL 1100,Alberto Castillo,NEUQUEN,15,MIERCOLES,,,Ecommerce
+C4095,SOTO SERVICIOS,NEUQUEN,EMILIO BELENGUER 2985,Alberto Castillo,NEUQUEN,16,MIERCOLES,,,Presencial
+C4566,CASINO MAGIC CENTENARIO,CENTENARIO,LOS EUCALIPTOS 954,Alberto Castillo,NEUQUEN,17,MIERCOLES,,,Presencial
+C4384,DORHMANN COFFEE & BIKE,NEUQUEN,AV DR RAMON 748,Alberto Castillo,NEUQUEN,18,MIERCOLES,,,Presencial
+C4393,BIUTIFUL BISTRO,NEUQUEN,AV. DR. RAMON 439-499 - ALTO COMAHUE SHOPPPING,Alberto Castillo,NEUQUEN,19,MIERCOLES,,,Presencial
+C4312,NS FOOD HALL,NEUQUEN,DOCTOR RAMON 3100 (HIPER COTO),Alberto Castillo,NEUQUEN,20,MIERCOLES,,,Presencial
+C4455,MILA UNO COTO,NEUQUEN,DR RAMÓN Y RUTA 7 PATIO COMIDA ALTO COMAHUE,Alberto Castillo,NEUQUEN,21,MIERCOLES,,,Presencial
+C4520,BUFET CMIC,NEUQUEN,JULIO ARGENTINO ROCA 440 PRIMER PISO,Alberto Castillo,NEUQUEN,22,MIERCOLES,,,Presencial
+C4815,LEPETITART NEUQUEN,NEUQUEN,ABRAZO DE MAIPU 952,Alberto Castillo,NEUQUEN,23,MIERCOLES,,,Presencial
+C4721,MINIMERCADO PUNTO DE ENCUENTRO,NEUQUEN,BELGRANO Y LA RIOJA,Alberto Castillo,NEUQUEN,24,MIERCOLES,,,Presencial
+C4518,BAR 1920,NEUQUEN,JUAN B JUSTO 113,Alberto Castillo,NEUQUEN,25,MIERCOLES,,,Presencial
+C4494,PERSICCO,NEUQUEN,JUAN JULIAN LASTRA 2400- LOCAL 10/12,Alberto Castillo,NEUQUEN,26,MIERCOLES,,,Presencial
+C2190,CATERING TRANS BOX,NEUQUEN,AGUADO 2100,Alberto Castillo,NEUQUEN,1,JUEVES,,,Presencial
+C2717,ROTISERIA DELEITTE,NEUQUEN,VILLEGAS 692,Alberto Castillo,NEUQUEN,2,JUEVES,,,Presencial
+C2941,GOURMET LAB SAS SAN LUIS,NEUQUEN,LISANDRO DE LA TORRE 676,Alberto Castillo,NEUQUEN,3,JUEVES,,,Presencial
+C0054,POLICLINICO NEUQUEN SA,NEUQUEN,ALBERDI 269,Alberto Castillo,NEUQUEN,4,JUEVES,,,Presencial
+C2068,RESTO BAR OGHAM,NEUQUEN,DIAGONAL 9 DE JULIO 53,Alberto Castillo,NEUQUEN,5,JUEVES,,,Presencial
+C2650,CHACHINGO,NEUQUEN,ELORDI 160,Alberto Castillo,NEUQUEN,6,JUEVES,,,Presencial
+C3561,MACEDONIA MARKET,NEUQUEN,ALMIRANTE BROWN 356,Alberto Castillo,NEUQUEN,7,JUEVES,,,Presencial
+C2521,RESTAURANT BOUQUET REVES,NEUQUEN,CARLOS H RODRIGUEZ 276,Alberto Castillo,NEUQUEN,8,JUEVES,,,Presencial
+C2986,EL CARRITO DE JOBBYS S.A.,NEUQUEN,LA RIOJA S/N,Alberto Castillo,NEUQUEN,9,JUEVES,,,Presencial
+C0684,ANTARES NQN,NEUQUEN,SAN MARTIN 267 ESQUINA MARCELO T.ALVEAR,Alberto Castillo,NEUQUEN,10,JUEVES,,,Presencial
+C2655,PANCHERIA PANCHO CLUB CIPOLLETTI,CIPOLLETTI,HIPOLITO YRIGOYEN 472,Alberto Castillo,NEUQUEN,11,JUEVES,,,Presencial
+C2579,HOTEL HILTON GARDEN INN NEUQUEN,NEUQUEN,AVENIDA ARGENTINA 1200,Alberto Castillo,NEUQUEN,12,JUEVES,,,Presencial
+C2329,KIOSCO PEHUEN 2,NEUQUEN,JUAN B JUSTO Y SALTA,Alberto Castillo,NEUQUEN,13,JUEVES,,,Presencial
+C3165,CASINO MAGIC,NEUQUEN,CALLE 12 DE SEPTIEMBRE 4005,Alberto Castillo,NEUQUEN,14,JUEVES,,,Presencial
+C2642,CATERING BACS NQN,NEUQUEN,CARLOS PELEGRINI 2131,Alberto Castillo,NEUQUEN,15,JUEVES,,,Presencial
+C4106,SOTO SERVICIOS CENTENARIO,CENTENARIO,"RUTA 7 KM 20,5 - VISTA ALEGRE",Alberto Castillo,NEUQUEN,16,JUEVES,,,Presencial
+C1636,CASINO MAGIC SMA,SAN MARTIN DE LOS ANDES,GENERAL VILLEGAS S/N,Alberto Castillo,NEUQUEN,17,JUEVES,,,Presencial
+C2806,CABINAS FONO SAURIO,VILLA EL CHOCON,CENTRO COMERCIAL VILLA CHOCON LOCAL12,Alberto Castillo,NEUQUEN,1,VIERNES,,,Presencial
+C1688,MERCADO EL CENTRO,VILLA EL CHOCON,CENTRO COMERCIAL LOCAL 13,Alberto Castillo,NEUQUEN,2,VIERNES,,,Presencial
+C4814,COSTA FARO RESTAURANTE,VILLA EL CHOCON,CHOCON,Alberto Castillo,NEUQUEN,3,VIERNES,,,Presencial
+C2502,MERCADO LA GIGANTE,VILLA EL CHOCON,PIEDRA COLORADA MANZANA 9,Alberto Castillo,NEUQUEN,4,VIERNES,,,Presencial
+C4351,DINO HUELLAS,VILLA EL CHOCON,RUTA 237 KILOMETRO 1297,Alberto Castillo,NEUQUEN,5,VIERNES,,,Presencial
+C2025,PARADOR AR PAR,VILLA EL CHOCON,RUTA 237 KM 1297,Alberto Castillo,NEUQUEN,6,VIERNES,,,Presencial
+C5393,HOTEL DEL CHOCÓN,VILLA EL CHOCON,RUTA 237 KILÓMETRO 1298,Alberto Castillo,NEUQUEN,7,VIERNES,,,Presencial
+C3593,AUTOSERVICIO CEFERINO,VILLA EL CHOCON,LOTE 15 MZA B RUTA 237,Alberto Castillo,NEUQUEN,8,VIERNES,,,Presencial
+C1690,AUTOSERVICIO VAL CAR,VILLA EL CHOCON,CALLE CHOMBALAL,Alberto Castillo,NEUQUEN,9,VIERNES,,,Presencial
+C2296,MERCADO JAVITO,VILLA EL CHOCON,CASA 2 - BARRIO LLEQUEN - V.CHOCON,Alberto Castillo,NEUQUEN,10,VIERNES,,,Presencial
+C1938,DESPENSA V Y R,VILLA EL CHOCON,B LLENQUEN CASA 8,Alberto Castillo,NEUQUEN,11,VIERNES,,,Presencial
+C1692,ALMACEN PARADOR EL CHOCON,VILLA EL CHOCON,CASA N°10,Alberto Castillo,NEUQUEN,12,VIERNES,,,Presencial
+C1773,CABAÑA CHOCON MEDIO SUITES,ARROYITO,RUTA NACIONAL 237 KM 1315,Alberto Castillo,NEUQUEN,13,VIERNES,,,Presencial
+C0663,PARADOR CHOCON MEDIO,VILLA EL CHOCON,RUTA 237 KM 1315,Alberto Castillo,NEUQUEN,14,VIERNES,,,Presencial
+C4320,CARRO FLAMA,NEUQUEN,BELGRANO 28,Alberto Castillo,NEUQUEN,15,VIERNES,,,Presencial
+C4545,FRIED CHICKEN HOUSE,NEUQUEN,DON BOSCO 567,Alberto Castillo,NEUQUEN,17,VIERNES,,,Presencial`;
+
+let allData = [];
+let selectedVendedor = '';
+let selectedDay = '';
+const DAYS_ORDER = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO'];
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+  return lines.slice(1).map(line => {
+    const vals = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = vals[i] || '');
+    return obj;
+  }).filter(r => r['NOMBRE COMERCIAL']);
+}
+
+function storageKey(v, d, date) { return `ruteo_${v}_${d}_${date}`; }
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function getDoneSet(v, d) {
+  try { return new Set(JSON.parse(localStorage.getItem(storageKey(v,d,todayStr())) || '[]')); }
+  catch { return new Set(); }
+}
+function saveDoneSet(v, d, set) {
+  localStorage.setItem(storageKey(v,d,todayStr()), JSON.stringify([...set]));
+}
+function mapsUrl(address, city) {
+  return `https://maps.google.com/?q=${encodeURIComponent(address + ', ' + city + ', Argentina')}`;
+}
+function todayDayName() {
+  return ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'][new Date().getDay()];
+}
+
+function toggleExpand(codigo) {
+  const card = document.getElementById('card-' + codigo);
+  if (card) card.classList.toggle('expanded');
+}
+
+function toggleDone(codigo) {
+  const done = getDoneSet(selectedVendedor, selectedDay);
+  if (done.has(codigo)) done.delete(codigo); else done.add(codigo);
+  saveDoneSet(selectedVendedor, selectedDay, done);
+  render();
+}
+
+function resetDay() {
+  if (!confirm('¿Borrar todos los check-ins de hoy?')) return;
+  localStorage.removeItem(storageKey(selectedVendedor, selectedDay, todayStr()));
+  render();
+}
+
+function renderDayTabs(days) {
+  const strip = document.getElementById('days-strip');
+  strip.innerHTML = '';
+  days.forEach(day => {
+    const btn = document.createElement('button');
+    btn.className = 'day-tab' + (day === selectedDay ? ' active' : '');
+    btn.textContent = day.charAt(0) + day.slice(1).toLowerCase();
+    btn.onclick = () => { selectedDay = day; render(); };
+    strip.appendChild(btn);
+  });
+}
+
+function renderList(clients) {
+  const done = getDoneSet(selectedVendedor, selectedDay);
+  const total = clients.length;
+  const doneCount = clients.filter(c => done.has(c['CODIGO CLIENTE'])).length;
+
+  const content = document.getElementById('app-content');
+  content.innerHTML = '';
+
+  const stats = document.createElement('div');
+  stats.className = 'stats-bar';
+  stats.innerHTML = `
+    <div class="stat"><div class="stat-num">${total}</div><div class="stat-label">Total del día</div></div>
+    <div class="stat"><div class="stat-num blue">${doneCount}</div><div class="stat-label">Visitados</div></div>
+    <div class="stat"><div class="stat-num">${total - doneCount}</div><div class="stat-label">Pendientes</div></div>
+  `;
+  content.appendChild(stats);
+
+  if (doneCount > 0) {
+    const resetBar = document.createElement('div');
+    resetBar.className = 'reset-bar';
+    resetBar.innerHTML = `<button class="btn-reset" onclick="resetDay()">Limpiar check-ins de hoy</button>`;
+    content.appendChild(resetBar);
+  }
+
+  const list = document.createElement('div');
+  list.className = 'list';
+
+  clients.sort((a,b) => parseInt(a['ORDEN']||0) - parseInt(b['ORDEN']||0));
+
+  clients.forEach(c => {
+    const codigo = c['CODIGO CLIENTE'];
+    const isDone = done.has(codigo);
+    const canal = c['Canal actual (Presencial / Autogestión)'] || '';
+    const isEcom = canal.toLowerCase().includes('ecom') || canal.toLowerCase().includes('auto');
+    const canalClass = isEcom ? 'ecom' : 'presencial';
+
+    const card = document.createElement('div');
+    card.className = `client-card ${canalClass}${isDone ? ' done' : ''}`;
+    card.id = 'card-' + codigo;
+
+    card.innerHTML = `
+      <div class="card-main" onclick="toggleExpand('${codigo}')">
+        <div class="order-num">${c['ORDEN']}</div>
+        <div class="client-info">
+          <div class="client-name">${c['NOMBRE COMERCIAL']}</div>
+          <div class="client-addr-short">${c['DIRECCION']}</div>
+        </div>
+        <button class="btn-check" onclick="event.stopPropagation(); toggleDone('${codigo}')">
+          <svg class="check-icon" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+            <path d="M2.5 7l3 3 6-6"/>
+          </svg>
+          <svg class="uncheck-icon" viewBox="0 0 14 14" fill="none" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round">
+            <path d="M2.5 7l3 3 6-6"/>
+          </svg>
+        </button>
+      </div>
+      <div class="card-detail">
+        <div class="detail-divider"></div>
+        <div class="detail-row">
+          <div class="detail-label">Dirección</div>
+          <div class="detail-value">${c['DIRECCION']}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Localidad</div>
+          <div class="detail-value">${c['LOCALIDAD']}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Código cliente</div>
+          <div class="detail-value">${codigo}</div>
+        </div>
+        <a class="btn-maps" href="${mapsUrl(c['DIRECCION'], c['LOCALIDAD'])}" target="_blank">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/>
+            <circle cx="8" cy="5" r="1.5"/>
+          </svg>
+          Abrir en Maps
+        </a>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  content.appendChild(list);
+}
+
+function render() {
+  if (!selectedVendedor) {
+    document.getElementById('app-content').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">👋</div>
+        <div class="empty-text">Seleccioná tu nombre para ver tu ruteo</div>
+      </div>`;
+    document.getElementById('days-strip').innerHTML = '';
+    return;
+  }
+
+  const vendRows = allData.filter(r => r['VENDEDOR'] === selectedVendedor);
+  const days = [...new Set(vendRows.map(r => r['DIA CARGA DE PEDIDO'].toUpperCase()))]
+    .sort((a,b) => DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b));
+
+  if (!selectedDay || !days.includes(selectedDay)) {
+    const today = todayDayName();
+    selectedDay = days.includes(today) ? today : days[0];
+  }
+
+  renderDayTabs(days);
+
+  const clients = vendRows.filter(r => r['DIA CARGA DE PEDIDO'].toUpperCase() === selectedDay);
+  if (!clients.length) {
+    document.getElementById('app-content').innerHTML = `
+      <div class="empty"><div class="empty-text">Sin visitas planificadas para este día.</div></div>`;
+    return;
+  }
+  renderList(clients);
+}
+
+function init(csvText) {
+  allData = parseCSV(csvText);
+  const vendedores = [...new Set(allData.map(r => r['VENDEDOR']))].sort();
+
+  const sel = document.getElementById('vendedor-select');
+  vendedores.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+
+  sel.onchange = () => { selectedVendedor = sel.value; selectedDay = ''; render(); };
+
+  const d = new Date();
+  document.getElementById('today-label').textContent =
+    d.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
+
+  render();
+}
+
+async function loadData() {
+  try {
+    const res = await fetch(CSV_URL);
+    if (!res.ok) throw new Error('error');
+    init(await res.text());
+  } catch {
+    init(DEMO_DATA);
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>

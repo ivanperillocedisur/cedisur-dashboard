@@ -136,6 +136,43 @@
   .stat-num.blue { color: var(--accent); }
   .stat-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    padding: 0.25rem 1.25rem 0.5rem;
+    justify-content: center;
+  }
+  .filter-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .filter-chip.presencial {
+    background: var(--card-presencial-bg);
+    border-color: var(--card-presencial-border);
+  }
+  .filter-chip.ecom {
+    background: var(--card-ecom-bg);
+    border-color: var(--card-ecom-border);
+  }
+  .filter-chip input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
   .list {
     padding: 0.5rem 1.25rem;
     display: flex;
@@ -487,6 +524,18 @@ function todayDayName() {
   return ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'][new Date().getDay()];
 }
 
+function applyFilter() {
+  const showPresencial = document.getElementById('filter-presencial')?.checked ?? true;
+  const showEcom = document.getElementById('filter-ecom')?.checked ?? true;
+  document.querySelectorAll('.client-card').forEach(card => {
+    if (card.classList.contains('presencial')) {
+      card.style.display = showPresencial ? '' : 'none';
+    } else if (card.classList.contains('ecom')) {
+      card.style.display = showEcom ? '' : 'none';
+    }
+  });
+}
+
 function toggleExpand(codigo) {
   const card = document.getElementById('card-' + codigo);
   if (card) card.classList.toggle('expanded');
@@ -533,6 +582,18 @@ function renderList(clients) {
     <div class="stat"><div class="stat-num">${total - doneCount}</div><div class="stat-label">Pendientes</div></div>
   `;
   content.appendChild(stats);
+
+  const filterBar = document.createElement('div');
+  filterBar.className = 'filter-bar';
+  filterBar.innerHTML = `
+    <label class="filter-chip presencial">
+      <input type="checkbox" id="filter-presencial" checked onchange="applyFilter()"> Presencial
+    </label>
+    <label class="filter-chip ecom">
+      <input type="checkbox" id="filter-ecom" checked onchange="applyFilter()"> Ecommerce
+    </label>
+  `;
+  content.appendChild(filterBar);
 
   if (doneCount > 0) {
     const resetBar = document.createElement('div');

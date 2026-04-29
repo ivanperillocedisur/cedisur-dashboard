@@ -762,8 +762,8 @@ async function loadData() {
 
   try {
     const [csvResumen, csvDetalle] = await Promise.all([
-      fetchCSV(https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1471861732&single=true&output=csv),
-      fetchCSV(https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1657795795&single=true&output=csv)
+      fetchCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1471861732&single=true&output=csv"),
+      fetchCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1657795795&single=true&output=csv")
     ]);
     RESUMEN_DATA = parseCSV(csvResumen);
     DETALLE_DATA = parseCSV(csvDetalle);

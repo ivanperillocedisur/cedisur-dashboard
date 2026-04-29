@@ -714,7 +714,7 @@ let CONFIG = { aiKey: localStorage.getItem("cedisur_ai_key") || "" };
 // La arquitectura pasó a API-first: el Apps Script actúa como
 // servidor. El HTML solo pide JSON agregado, nunca el CSV crudo.
 // ============================================================
-const API_URL = "https://script.google.com/macros/s/AKfycbxrV5g2zl5nTqvpnLE2iWj60EKE7hgA9btRreCRWvIfoa7Czk3KkPovHcswvRgmkrp5Zg/exec"; // ← reemplazá con tu URL de Web App
+const API_URL = "PEGAR_URL_WEB_APP_AQUI"; // ← reemplazá con tu URL de Web App
 
 let CACHE        = {};          // cache por acción+params
 let activeSection = "resumen";
@@ -745,87 +745,96 @@ function renderSection(name) {
 // ============================================================
 // API HELPERS — llama al Apps Script Web App
 // ============================================================
-async function apiCall(action, extraParams = {}) {
-  const params = { ...activeFilters, action, ...extraParams };
-  const cacheKey = JSON.stringify(params);
-  if (CACHE[cacheKey]) return CACHE[cacheKey];
-
-  // Construir URL de la API
-  const qs  = new URLSearchParams(params).toString();
-  const apiUrl = API_URL + "?" + qs;
-
-  // Usar allorigins como proxy para evitar CORS con Apps Script
-  const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(apiUrl);
-
-  const resp = await fetch(proxyUrl);
-  if (!resp.ok) throw new Error("HTTP " + resp.status);
-  const wrapper = await resp.json();
-  const data = JSON.parse(wrapper.contents);
-  if (data.error) throw new Error(data.error);
-  CACHE[cacheKey] = data;
-  return data;
-}
-
-function getFiltersParams() {
-  const gv = id => document.getElementById(id)?.value || "";
-  return {
-    anio:      gv("f-anio"),
-    mes:       gv("f-mes"),
-    semana:    gv("f-semana"),
-    zona:      gv("f-zona"),
-    vendedor:  gv("f-vendedor"),
-    proveedor: gv("f-proveedor"),
-    marca:     gv("f-marca"),
-    grupo:     gv("f-grupo"),
-    deposito:  gv("f-deposito"),
-    ecommerce: gv("f-ecommerce"),
-  };
-}
+// ============================================================
+// DATOS EN MEMORIA — cargados desde CSV al inicio
+// ============================================================
+let RESUMEN_DATA = [];
+let DETALLE_DATA = [];
 
 // ============================================================
-// CARGA INICIAL — filtros y primera pantalla
+// CARGA INICIAL
 // ============================================================
 async function loadData() {
   setSyncState("loading", "Cargando…");
   document.getElementById("loading").classList.remove("hidden");
-  document.getElementById("loading-text").textContent = "Conectando con la API…";
+  document.getElementById("loading-text").textContent = "Descargando datos…";
   CACHE = {};
 
   try {
-    const filtros = await apiCall("filtros");
-    poblarFiltros(filtros);
-    activeFilters = getFiltersParams();
+    const [csvResumen, csvDetalle] = await Promise.all([
+      fetchCSV(https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1471861732&single=true&output=csv),
+      fetchCSV(https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1657795795&single=true&output=csv)
+    ]);
+    RESUMEN_DATA = parseCSV(csvResumen);
+    DETALLE_DATA = parseCSV(csvDetalle);
+    poblarFiltros();
     document.getElementById("loading").classList.add("hidden");
-    setSyncState("ok", "Conectado · " + new Date().toLocaleTimeString("es-AR"));
+    setSyncState("ok", "Actualizado · " + new Date().toLocaleTimeString("es-AR"));
     document.getElementById("last-update-note").textContent = "⏱ Actualizado: " + new Date().toLocaleString("es-AR");
     renderSection(activeSection);
   } catch(e) {
-    setSyncState("error", "Error de conexión");
+    setSyncState("error", "Error al cargar");
     document.getElementById("loading").classList.add("hidden");
-    document.getElementById("loading-text").textContent = "Error: " + e.message;
-    console.error("API Error:", e);
+    alert("Error al cargar datos: " + e.message + "\n\nVerificá que las URLs CSV están publicadas correctamente.");
+    console.error("Error carga:", e);
   }
 }
 
-function poblarFiltros(f) {
+async function fetchCSV(url) {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error("HTTP " + resp.status);
+  return resp.text();
+}
+
+function parseCSV(text) {
+  const lines = text.split("\n").filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (cols.length < 2) continue;
+    const obj = {};
+    headers.forEach((h, j) => obj[h.trim()] = (cols[j]||"").trim());
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function parseCSVLine(line) {
+  const result = []; let cur = ""; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === "," && !inQ) { result.push(cur); cur = ""; }
+    else { cur += ch; }
+  }
+  result.push(cur);
+  return result;
+}
+
+function poblarFiltros() {
   const MESES_N = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-  fillSelect("f-anio",   f.anios || []);
-  fillSelect("f-mes",    (f.meses||[]).map(m => {
+  const fRows = RESUMEN_DATA.filter(r => r["Tipo"] === "FILTROS");
+  const getVals = (clave) => {
+    const row = fRows.find(r => r["Clave"] === clave);
+    return row ? row["Zona"].split("|").filter(Boolean) : [];
+  };
+  fillSelect("f-anio",     getVals("anios"));
+  fillSelect("f-mes",      getVals("meses").map(m => {
     const [anio, mes] = m.split("-");
     return { val: m, label: (MESES_N[parseInt(mes,10)-1]||mes) + " " + anio };
   }));
-  fillSelect("f-semana",    (f.semanas||[]).map(s => ({ val: s, label: "Semana " + s })));
-  fillSelect("f-zona",      f.zonas || []);
-  fillSelect("f-vendedor",  f.vendedores || []);
-  fillSelect("f-proveedor", f.proveedores || []);
-  fillSelect("f-marca",     f.marcas || []);
-  fillSelect("f-grupo",     f.grupos || []);
-  fillSelect("f-deposito",  f.depositos || []);
-
-  // Zona filter en tabla detalle
+  fillSelect("f-semana",   getVals("semanas").map(s => ({ val: s, label: s })));
+  fillSelect("f-zona",     getVals("zonas"));
+  fillSelect("f-vendedor", getVals("vendedores"));
+  fillSelect("f-proveedor",getVals("proveedores"));
+  fillSelect("f-marca",    getVals("marcas"));
+  fillSelect("f-grupo",    getVals("grupos"));
+  fillSelect("f-deposito", getVals("depositos"));
   const zSel = document.getElementById("cli-zona-filter2");
   zSel.innerHTML = '<option value="">Todas las zonas</option>';
-  (f.zonas||[]).forEach(z => {
+  getVals("zonas").forEach(z => {
     const o = document.createElement("option"); o.value = z; o.textContent = z;
     zSel.appendChild(o);
   });
@@ -834,9 +843,9 @@ function poblarFiltros(f) {
 function fillSelect(id, options) {
   const sel = document.getElementById(id);
   if (!sel) return;
-  const current  = sel.value;
+  const current = sel.value;
   const firstOpt = sel.options[0].outerHTML;
-  sel.innerHTML  = firstOpt;
+  sel.innerHTML = firstOpt;
   options.forEach(opt => {
     const o = document.createElement("option");
     if (typeof opt === "object") { o.value = opt.val; o.textContent = opt.label; }
@@ -846,10 +855,70 @@ function fillSelect(id, options) {
   if (current) sel.value = current;
 }
 
+function getFilterVal(id) { return document.getElementById(id)?.value || ""; }
+
+function filtrarResumen(tipo) {
+  const anio = getFilterVal("f-anio");
+  const mes  = getFilterVal("f-mes");
+  const sem  = getFilterVal("f-semana");
+  const zona = getFilterVal("f-zona");
+  const vend = getFilterVal("f-vendedor");
+  const prov = getFilterVal("f-proveedor");
+  const marca= getFilterVal("f-marca");
+  const grupo= getFilterVal("f-grupo");
+  const dep  = getFilterVal("f-deposito");
+
+  return RESUMEN_DATA.filter(r => {
+    if (r["Tipo"] === "FILTROS") return false;
+    if (tipo && r["Tipo"] !== tipo) return false;
+    if (anio && (r["Tipo"]==="MES"||r["Tipo"]==="SEMANA") && !r["Clave"].startsWith(anio)) return false;
+    if (mes  && r["Tipo"]==="MES"    && r["Clave"] !== mes)   return false;
+    if (sem  && r["Tipo"]==="SEMANA" && r["Clave"] !== sem)   return false;
+    if (zona && r["Tipo"]==="ZONA"   && r["Clave"] !== zona)  return false;
+    if (vend && r["Tipo"]==="VENDEDOR" && r["Clave"] !== vend) return false;
+    if (vend && r["Tipo"]==="ZONA"   && r["Vendedor"] && r["Vendedor"] !== vend) return false;
+    if (zona && r["Tipo"]==="VENDEDOR" && r["Zona"] !== zona) return false;
+    if (prov && r["Tipo"]==="PROVEEDOR" && r["Clave"] !== prov) return false;
+    if (marca&& r["Tipo"]==="MARCA"  && r["Clave"] !== marca) return false;
+    if (grupo&& r["Tipo"]==="GRUPO"  && r["Clave"] !== grupo) return false;
+    if (dep  && r["Tipo"]==="DEPOSITO" && r["Clave"] !== dep) return false;
+    return true;
+  });
+}
+
+function filtrarDetalle() {
+  const anio = getFilterVal("f-anio");
+  const mes  = getFilterVal("f-mes");
+  const zona = getFilterVal("f-zona");
+  const vend = getFilterVal("f-vendedor");
+  const prov = getFilterVal("f-proveedor");
+  const marca= getFilterVal("f-marca");
+  const grupo= getFilterVal("f-grupo");
+  const dep  = getFilterVal("f-deposito");
+  const ecom = getFilterVal("f-ecommerce");
+
+  return DETALLE_DATA.filter(r => {
+    const p = (r["Fecha"]||"").split("/");
+    const rAnio = p[2]||""; const rMes = (p[2]||"")+"-"+(p[1]||"");
+    if (anio  && rAnio !== anio)           return false;
+    if (mes   && rMes  !== mes)            return false;
+    if (zona  && r["Zona"]        !== zona) return false;
+    if (vend  && r["Vendedor"]    !== vend) return false;
+    if (prov  && r["Proveedor"]   !== prov) return false;
+    if (marca && r["Marca"]       !== marca)return false;
+    if (grupo && r["Grupo Artículo"]!==grupo)return false;
+    if (dep   && r["Depósito"]    !== dep)  return false;
+    if (ecom  && r["Ecommerce"]   !== ecom) return false;
+    return true;
+  });
+}
+
+function sumar(rows, col) { return rows.reduce((s,r) => s+(parseFloat(r[col])||0), 0); }
+
 function applyFilters() {
-  activeFilters = getFiltersParams();
-  CACHE = {};   // limpiar cache al cambiar filtros
-  chartsBuilt = {};
+  CACHE = {}; chartsBuilt = {};
+  const total = filtrarDetalle().length;
+  document.getElementById("rows-count").textContent = total.toLocaleString("es-AR") + " líneas c/dto";
   renderSection(activeSection);
 }
 
@@ -859,8 +928,6 @@ function clearFilters() {
   applyFilters();
 }
 
-// ============================================================
-// HELPERS DE FORMATO
 // ============================================================
 const fM = v => {
   if (v == null || isNaN(v)) return "—";
@@ -916,33 +983,43 @@ function hideLoading(sectionId) {
 // ============================================================
 // ① RESUMEN
 // ============================================================
-async function renderResumen() {
+function renderResumen() {
   showLoading("resumen");
   try {
-    const d = await apiCall("resumen");
-    const k = d.kpis || {};
+    // Calcular KPIs desde DATA_RESUMEN filtrado
+    const zonas  = filtrarResumen("ZONA");
+    const vendsR = filtrarResumen("VENDEDOR");
+    const provR  = filtrarResumen("PROVEEDOR");
+    const mesR   = filtrarResumen("MES");
+    const compR  = filtrarResumen("COMPROBANTE");
 
-    // Actualizar contador de filas (estimado desde clientesConDto)
-    document.getElementById("rows-count").textContent = fN(k.totalClientes || 0) + " clientes";
-
-    // KPIs
-    const clientesConDto = k.clientesConDto || 0;
-    const totalClientes  = k.totalClientes  || 0;
+    const dtoTotal   = sumar(zonas, "Dto $");
+    const ventaTotal = sumar(zonas, "Total $");
+    const contrib    = sumar(zonas, "Contribución $");
+    const base       = ventaTotal + dtoTotal;
+    const dtoPct     = base > 0 ? dtoTotal / base * 100 : 0;
+    const clientesConDto = zonas.reduce((s,r)=>s+(parseInt(r["Clientes"])||0),0);
+    // totalClientes aproximado desde detalle
+    const totalClientesSet = new Set(filtrarDetalle().map(r=>r["Cod Cliente"]));
+    const totalClientes = totalClientesSet.size || clientesConDto;
     const pctCli = totalClientes > 0 ? (clientesConDto/totalClientes*100).toFixed(1) : 0;
+
+    document.getElementById("rows-count").textContent = totalClientes.toLocaleString("es-AR") + " clientes c/dto";
+
     document.getElementById("kpi-resumen").innerHTML = `
       <div class="kpi-card">
         <div class="kpi-label">Dto $ Total</div>
-        <div class="kpi-value">${fM(k.dtoTotal)}</div>
-        <div class="kpi-sub"><span class="kpi-badge badge-warn">${fP(k.dtoPct)} promedio</span></div>
+        <div class="kpi-value">${fM(dtoTotal)}</div>
+        <div class="kpi-sub"><span class="kpi-badge badge-warn">${fP(dtoPct)} promedio</span></div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">% Dto Promedio</div>
-        <div class="kpi-value">${fP(k.dtoPct)}</div>
+        <div class="kpi-value">${fP(dtoPct)}</div>
         <div class="kpi-sub"><span class="kpi-badge badge-info">Ponderado</span></div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Venta Neta $</div>
-        <div class="kpi-value">${fM(k.ventaTotal)}</div>
+        <div class="kpi-value">${fM(ventaTotal)}</div>
         <div class="kpi-sub"><span class="kpi-badge badge-ok">Sin IVA</span></div>
       </div>
       <div class="kpi-card">
@@ -952,20 +1029,24 @@ async function renderResumen() {
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Contribución $</div>
-        <div class="kpi-value ${(k.contribucion||0)<0?"dto-high":""}">${fM(k.contribucion)}</div>
+        <div class="kpi-value ${contrib<0?"dto-high":""}">${fM(contrib)}</div>
         <div class="kpi-sub"><span class="kpi-badge badge-info">Margen neto</span></div>
       </div>`;
 
     // Gráfico mensual
-    const meses = (d.evolucionMensual||[]);
-    const labMes = meses.map(m => {
-      const p = m.mes.split("-"); return (MESES[parseInt(p[1],10)-1]||p[1])?.substring(0,3)+" "+p[0];
+    const labMes = mesR.map(m => {
+      const p = m["Clave"].split("-"); return (MESES[parseInt(p[1],10)-1]||p[1])?.substring(0,3)+" "+p[0];
+    });
+    const dtosMes = mesR.map(m => parseFloat(m["Dto $"])||0);
+    const ventasMes = mesR.map(m => parseFloat(m["Total $"])||0);
+    const pctsMes = mesR.map((m,i) => {
+      const d=dtosMes[i], v=ventasMes[i]; return (d+v)>0 ? parseFloat((d/(d+v)*100).toFixed(1)) : 0;
     });
     mkChart("c-dto-mensual",{
       type:"bar",
       data:{labels:labMes, datasets:[
-        {label:"Dto $",data:meses.map(m=>m.dto),backgroundColor:"rgba(255,107,53,0.7)",borderRadius:3,yAxisID:"y"},
-        {label:"% Dto",data:meses.map(m=>parseFloat(m.pct.toFixed(1))),type:"line",
+        {label:"Dto $",data:dtosMes,backgroundColor:"rgba(255,107,53,0.7)",borderRadius:3,yAxisID:"y"},
+        {label:"% Dto",data:pctsMes,type:"line",
           borderColor:"#00c8ff",backgroundColor:"rgba(0,200,255,0.1)",
           pointBackgroundColor:"#00c8ff",tension:0.4,yAxisID:"y2",fill:true}
       ]},
@@ -979,14 +1060,15 @@ async function renderResumen() {
     });
 
     // Barras por zona
-    const porZona = d.porZona || [];
-    document.getElementById("zona-dto-bars").innerHTML = porZona.map(z => {
-      const maxDto = Math.max(...porZona.map(x=>x.dto), 1);
-      const w = (z.dto/maxDto*100).toFixed(1);
-      const cls = z.pct>4?"dto-high":z.pct>3?"dto-medium":"dto-ok";
+    const maxDto = Math.max(...zonas.map(z=>parseFloat(z["Dto $"])||0), 1);
+    document.getElementById("zona-dto-bars").innerHTML = zonas.sort((a,b)=>(parseFloat(b["Dto $"])||0)-(parseFloat(a["Dto $"])||0)).map(z => {
+      const dto=parseFloat(z["Dto $"])||0, vta=parseFloat(z["Total $"])||0;
+      const pct = (dto+vta)>0?dto/(dto+vta)*100:0;
+      const w = (dto/maxDto*100).toFixed(1);
+      const cls = pct>4?"dto-high":pct>3?"dto-medium":"dto-ok";
       return `<div style="margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
-          <span>${z.zona}</span><span class="${cls}">${fP(z.pct)} · ${fM(z.dto)}</span>
+          <span>${z["Clave"]}</span><span class="${cls}">${fP(pct)} · ${fM(dto)}</span>
         </div>
         <div style="background:var(--surface2);border-radius:3px;height:6px">
           <div style="background:var(--accent2);width:${w}%;height:100%;border-radius:3px"></div>
@@ -994,8 +1076,11 @@ async function renderResumen() {
       </div>`;
     }).join("");
 
-    // Top vendedores
-    const topV = d.topVendedores || [];
+    // Top 10 vendedores por % dto
+    const topV = [...vendsR].map(v => {
+      const d=parseFloat(v["Dto $"])||0, t=parseFloat(v["Total $"])||0;
+      return { vendedor:v["Clave"], dto_pct:(d+t)>0?d/(d+t)*100:0, dto_total:d };
+    }).sort((a,b)=>b.dto_pct-a.dto_pct).slice(0,10);
     mkChart("c-dto-vend",{
       type:"bar",
       data:{labels:topV.map(v=>v.vendedor.split(" ")[0]),
@@ -1008,25 +1093,32 @@ async function renderResumen() {
       }
     });
 
-    // Top proveedores
-    const topP = d.topProveedores || [];
+    // Top 8 proveedores por Dto$
+    const topP = [...provR].sort((a,b)=>(parseFloat(b["Dto $"])||0)-(parseFloat(a["Dto $"])||0)).slice(0,8);
     mkChart("c-dto-prov",{
       type:"bar",
-      data:{labels:topP.map(p=>p.proveedor.substring(0,15)),
-        datasets:[{label:"Dto $",data:topP.map(p=>p.dto_total),backgroundColor:COLORES,borderRadius:4}]},
+      data:{labels:topP.map(p=>p["Clave"].substring(0,18)),
+        datasets:[{label:"Dto $",data:topP.map(p=>parseFloat(p["Dto $"])||0),backgroundColor:COLORES,borderRadius:4}]},
       options:{...chartDefaults(),indexAxis:"y",
         plugins:{...chartDefaults().plugins,legend:{display:false}},
         scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}}}
       }
     });
 
-    // Distribución rangos
-    const rg = d.rangos || {};
+    // Distribución rangos desde detalle filtrado
+    const det = filtrarDetalle();
+    const rg = {
+      bonif:  det.filter(r=>parseFloat(r["% Dto"]||0)>90).length,
+      alto:   det.filter(r=>{const p=parseFloat(r["% Dto"]||0);return p>30&&p<=90;}).length,
+      medio:  det.filter(r=>{const p=parseFloat(r["% Dto"]||0);return p>10&&p<=30;}).length,
+      normal: det.filter(r=>parseFloat(r["% Dto"]||0)<=10&&parseFloat(r["% Dto"]||0)>0).length,
+      sin:    det.filter(r=>parseFloat(r["% Dto"]||0)===0).length,
+    };
     mkChart("c-dto-dist",{
       type:"doughnut",
       data:{
         labels:["Bonificado >90%","Alto 30-90%","Medio 10-30%","Normal <10%","Sin dto"],
-        datasets:[{data:[rg.bonif||0,rg.alto||0,rg.medio||0,rg.normal||0,rg.sin||0],
+        datasets:[{data:[rg.bonif,rg.alto,rg.medio,rg.normal,rg.sin],
           backgroundColor:["#a855f7","#ff4757","#ffd166","#2ed573","#5a6380"],borderWidth:0}]
       },
       options:{...chartDefaults(),plugins:{...chartDefaults().plugins,legend:{position:"bottom",labels:{color:"#8b94b0",font:{size:10}}}}}
@@ -1039,21 +1131,25 @@ async function renderResumen() {
 // ============================================================
 // ② EVOLUCIÓN
 // ============================================================
-async function renderEvolucion() {
+function renderEvolucion() {
   showLoading("evolucion");
   try {
-    const d = await apiCall("evolucion");
-    const mens = d.mensual || [];
-    const labM = mens.map(m => {
-      const p = m.mes.split("-"); return (MESES[parseInt(p[1],10)-1]||p[1])?.substring(0,3)+" "+p[0];
+    const mesR  = filtrarResumen("MES");
+    const semR  = filtrarResumen("SEMANA");
+    const compR = filtrarResumen("COMPROBANTE");
+
+    const labM = mesR.map(m => {
+      const p = m["Clave"].split("-"); return (MESES[parseInt(p[1],10)-1]||p[1])?.substring(0,3)+" "+p[0];
     });
+    const dM = mesR.map(m=>parseFloat(m["Dto $"])||0);
+    const vM = mesR.map(m=>parseFloat(m["Total $"])||0);
+    const pM = dM.map((d,i)=>(d+vM[i])>0?parseFloat((d/(d+vM[i])*100).toFixed(1)):0);
 
     mkChart("c-evol-mensual",{
       type:"bar",
       data:{labels:labM, datasets:[
-        {label:"Dto $",data:mens.map(m=>m.dto),backgroundColor:"rgba(255,107,53,0.7)",borderRadius:3,yAxisID:"y"},
-        {label:"% Dto",data:mens.map(m=>parseFloat(m.pct.toFixed(1))),type:"line",
-          borderColor:"#00c8ff",backgroundColor:"rgba(0,200,255,0.08)",
+        {label:"Dto $",data:dM,backgroundColor:"rgba(255,107,53,0.7)",borderRadius:3,yAxisID:"y"},
+        {label:"% Dto",data:pM,type:"line",borderColor:"#00c8ff",backgroundColor:"rgba(0,200,255,0.08)",
           pointBackgroundColor:"#00c8ff",tension:0.4,yAxisID:"y2",fill:true}
       ]},
       options:{...chartDefaults(),
@@ -1065,21 +1161,21 @@ async function renderEvolucion() {
       }
     });
 
-    const sems = d.semanal || [];
+    const semOrd = semR.sort((a,b)=>a["Clave"].localeCompare(b["Clave"])).slice(-12);
     mkChart("c-evol-semanal",{
       type:"bar",
-      data:{labels:sems.map(s=>s.semana),
-        datasets:[{label:"Dto $",data:sems.map(s=>s.dto),backgroundColor:"rgba(0,200,255,0.6)",borderRadius:3}]},
+      data:{labels:semOrd.map(s=>s["Clave"]),
+        datasets:[{label:"Dto $",data:semOrd.map(s=>parseFloat(s["Dto $"])||0),backgroundColor:"rgba(0,200,255,0.6)",borderRadius:3}]},
       options:{...chartDefaults(),
         plugins:{...chartDefaults().plugins,legend:{display:false}},
         scales:{...chartDefaults().scales,y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}}}
       }
     });
 
-    const comp = d.porComprobante || [];
     mkChart("c-evol-comp",{
       type:"doughnut",
-      data:{labels:comp.map(c=>c.tipo), datasets:[{data:comp.map(c=>c.dto),backgroundColor:COLORES,borderWidth:0}]},
+      data:{labels:compR.map(r=>r["Clave"]),
+        datasets:[{data:compR.map(r=>parseFloat(r["Dto $"])||0),backgroundColor:COLORES,borderWidth:0}]},
       options:{...chartDefaults(),plugins:{...chartDefaults().plugins,legend:{position:"bottom",labels:{color:"#8b94b0",font:{size:10}}}}}
     });
 
@@ -1096,15 +1192,22 @@ function sortZonaRank(key) {
   renderZona();
 }
 
-async function renderZona() {
+function renderZona() {
   showLoading("zona");
   try {
-    const d  = await apiCall("zona");
-    let rows = d.zonas || [];
+    let rows = filtrarResumen("ZONA").map(r => ({
+      zona:       r["Clave"],
+      dto_total:  parseFloat(r["Dto $"])||0,
+      venta_total:parseFloat(r["Total $"])||0,
+      contrib:    parseFloat(r["Contribución $"])||0,
+      clientes:   parseInt(r["Clientes"])||0,
+      dto_pct:    (()=>{const d=parseFloat(r["Dto $"])||0,v=parseFloat(r["Total $"])||0;return (d+v)>0?d/(d+v)*100:0;})()
+    }));
 
-    rows.sort((a,b) => typeof a[zonaRankSort.key]==="string" ?
-      a[zonaRankSort.key].localeCompare(b[zonaRankSort.key])*zonaRankSort.dir :
-      (a[zonaRankSort.key]-b[zonaRankSort.key])*zonaRankSort.dir
+    const sortKey = zonaRankSort.key;
+    rows.sort((a,b) => typeof a[sortKey]==="string" ?
+      a[sortKey].localeCompare(b[sortKey])*zonaRankSort.dir :
+      (a[sortKey]-b[sortKey])*zonaRankSort.dir
     );
 
     mkChart("c-zona-dto",{
@@ -1128,7 +1231,7 @@ async function renderZona() {
     const tbody = document.getElementById("zona-rank-body");
     tbody.innerHTML = "";
     rows.forEach((r,i) => {
-      const dtoVta = r.venta_total>0 ? r.dto_total/(r.venta_total+r.dto_total)*100 : 0;
+      const dtoVta = (r.dto_total+r.venta_total)>0 ? r.dto_total/(r.dto_total+r.venta_total)*100 : 0;
       tbody.innerHTML += `<tr>
         <td style="font-family:'Bebas Neue';font-size:15px;color:var(--muted);text-align:center">${i+1}</td>
         <td><strong>${r.zona}</strong></td>
@@ -1152,15 +1255,22 @@ function sortVendRank(key) {
   renderVendedor();
 }
 
-async function renderVendedor() {
+function renderVendedor() {
   showLoading("vendedor");
   try {
-    const d  = await apiCall("vendedor");
-    let rows = d.vendedores || [];
+    let rows = filtrarResumen("VENDEDOR").map(r => ({
+      vendedor:   r["Clave"],
+      zona:       r["Zona"]||"",
+      dto_total:  parseFloat(r["Dto $"])||0,
+      venta_total:parseFloat(r["Total $"])||0,
+      lineas:     parseInt(r["Líneas c/Dto"])||0,
+      dto_pct:    (()=>{const d=parseFloat(r["Dto $"])||0,v=parseFloat(r["Total $"])||0;return (d+v)>0?d/(d+v)*100:0;})()
+    }));
 
-    rows.sort((a,b) => typeof a[vendRankSort.key]==="string" ?
-      a[vendRankSort.key].localeCompare(b[vendRankSort.key])*vendRankSort.dir :
-      (a[vendRankSort.key]-b[vendRankSort.key])*vendRankSort.dir
+    const sortKey = vendRankSort.key;
+    rows.sort((a,b) => typeof a[sortKey]==="string" ?
+      a[sortKey].localeCompare(b[sortKey])*vendRankSort.dir :
+      (a[sortKey]-b[sortKey])*vendRankSort.dir
     );
 
     const top10dto = [...rows].sort((a,b)=>b.dto_total-a.dto_total).slice(0,10);
@@ -1189,7 +1299,7 @@ async function renderVendedor() {
     const tbody = document.getElementById("vend-rank-body");
     tbody.innerHTML = "";
     rows.forEach((r,i) => {
-      const dtoVta = r.venta_total>0 ? r.dto_total/(r.venta_total+r.dto_total)*100 : 0;
+      const dtoVta = (r.dto_total+r.venta_total)>0 ? r.dto_total/(r.dto_total+r.venta_total)*100 : 0;
       tbody.innerHTML += `<tr>
         <td style="font-family:'Bebas Neue';font-size:15px;color:var(--muted);text-align:center">${i+1}</td>
         <td><strong>${r.vendedor}</strong></td>
@@ -1214,50 +1324,67 @@ function sortDetalle(key) {
   renderDetalleTable();
 }
 
-async function renderDetalleTable() {
+function renderDetalleTable() {
   showLoading("detalle");
   try {
     const alarm  = document.getElementById("cli-alarm-filter")?.value || "";
-    const search = document.getElementById("cli-search")?.value || "";
-    const zona   = document.getElementById("cli-zona-filter2")?.value || "";
+    const search = (document.getElementById("cli-search")?.value||"").toLowerCase();
+    const zonaF  = document.getElementById("cli-zona-filter2")?.value || "";
 
-    const d = await apiCall("detalle", { alarm, search, zona });
-    const rows = d.rows || [];
+    let data = filtrarDetalle();
 
-    document.getElementById("cli-count").textContent = `${(d.total||0).toLocaleString()} líneas`;
+    if (zonaF)  data = data.filter(r => r["Zona"] === zonaF);
+    if (search) data = data.filter(r =>
+      (r["Cliente"]||"").toLowerCase().includes(search) ||
+      (r["Descripción"]||"").toLowerCase().includes(search) ||
+      (r["Cod Cliente"]||"").toLowerCase().includes(search)
+    );
+
+    const toNum = (r, col) => parseFloat(r[col]||0);
+
+    if (alarm === "bonif")  data = data.filter(r => toNum(r,"% Dto")>90);
+    else if (alarm==="alto") data = data.filter(r=>{const p=toNum(r,"% Dto");return p>30&&p<=90;});
+    else if (alarm==="medio")data = data.filter(r=>{const p=toNum(r,"% Dto");return p>10&&p<=30;});
+    else if (alarm==="normal")data= data.filter(r=>toNum(r,"% Dto")<=10);
+
+    data.sort((a,b)=>toNum(b,"% Dto")-toNum(a,"% Dto"));
+
+    document.getElementById("cli-count").textContent = data.length.toLocaleString()+" líneas";
 
     const tbody = document.getElementById("detalle-body");
     tbody.innerHTML = "";
-
-    rows.forEach(r => {
-      const alarmClass = r.dto_pct>90?"alarm-bonif":r.dto_pct>30?"alarm-high":r.dto_pct>10?"alarm-medium":"";
-      const dotClass   = r.dto_pct>90?"dot-purple":r.dto_pct>30?"dot-red":r.dto_pct>10?"dot-yellow":"dot-green";
-      const dtoClass   = r.dto_pct>90?"dto-bonif":r.dto_pct>30?"dto-high":r.dto_pct>10?"dto-medium":"dto-ok";
+    const limit = Math.min(data.length, 500);
+    for (let i=0; i<limit; i++) {
+      const r = data[i];
+      const p = toNum(r,"% Dto");
+      const alarmClass = p>90?"alarm-bonif":p>30?"alarm-high":p>10?"alarm-medium":"";
+      const dotClass   = p>90?"dot-purple":p>30?"dot-red":p>10?"dot-yellow":"dot-green";
+      const dtoClass   = p>90?"dto-bonif":p>30?"dto-high":p>10?"dto-medium":"dto-ok";
+      const contrib    = toNum(r,"Contribución $");
       tbody.innerHTML += `<tr class="${alarmClass}">
         <td><span class="dot ${dotClass}" style="width:8px;height:8px"></span></td>
-        <td>${r.fecha}</td>
-        <td style="font-size:10px;color:var(--muted)">${r.codCliente}</td>
-        <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${r.cliente}</strong></td>
-        <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px">${r.descripcion}</td>
-        <td style="font-size:11px;color:var(--text-dim)">${r.marca}</td>
-        <td class="num ${dtoClass}">${fP(r.dto_pct)}</td>
-        <td class="num">${fM(r.dto_plata)}</td>
-        <td class="num">${r.pesoKg ? fN(r.pesoKg) : "—"}</td>
-        <td class="num ${r.contribucion<0?"dto-high":""}">${fM(r.contribucion)}</td>
-        <td style="font-size:11px">${r.vendedor.split(" ")[0]}</td>
+        <td>${r["Fecha"]||""}</td>
+        <td style="font-size:10px;color:var(--muted)">${r["Cod Cliente"]||""}</td>
+        <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${r["Cliente"]||""}</strong></td>
+        <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px">${r["Descripción"]||""}</td>
+        <td style="font-size:11px;color:var(--text-dim)">${r["Marca"]||""}</td>
+        <td class="num ${dtoClass}">${fP(p)}</td>
+        <td class="num">${fM(toNum(r,"Dto $"))}</td>
+        <td class="num">${toNum(r,"Peso KG")?fN(toNum(r,"Peso KG")):"—"}</td>
+        <td class="num ${contrib<0?"dto-high":""}">${fM(contrib)}</td>
+        <td style="font-size:11px">${(r["Vendedor"]||"").split(" ")[0]}</td>
       </tr>`;
-    });
-
-    if ((d.pages||1) > 1) {
+    }
+    if (data.length > 500) {
       tbody.innerHTML += `<tr><td colspan="11" style="text-align:center;padding:12px;color:var(--muted);font-size:11px">
-        Mostrando página 1 de ${d.pages} (${d.total.toLocaleString()} líneas). Usá los filtros para acotar.
+        Mostrando 500 de ${data.length.toLocaleString()} líneas. Usá los filtros para acotar.
       </td></tr>`;
     }
   } catch(e) { console.error("renderDetalleTable:", e); }
   hideLoading("detalle");
 }
 
-function reloadData() { CACHE={}; loadData(); }
+function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; CACHE={}; loadData(); }
 
 // ============================================================
 // SYNC STATE
@@ -1277,35 +1404,41 @@ function saveAIKey() {
 }
 
 function buildAIContext() {
-  // Usa el último resumen cacheado para construir el contexto de la IA
-  const cacheKey = JSON.stringify({...activeFilters, action:"resumen"});
-  const d = CACHE[cacheKey];
-  if (!d) return "No hay datos cargados aún. Esperá que el dashboard termine de cargar.";
+  if (!RESUMEN_DATA.length) return "No hay datos cargados aún.";
+  const zonas = filtrarResumen("ZONA");
+  const vends = filtrarResumen("VENDEDOR");
+  const dtoTotal   = zonas.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
+  const ventaTotal = zonas.reduce((s,r)=>s+(parseFloat(r["Total $"])||0),0);
+  const contrib    = zonas.reduce((s,r)=>s+(parseFloat(r["Contribución $"])||0),0);
+  const dtoPct     = (dtoTotal+ventaTotal)>0?dtoTotal/(dtoTotal+ventaTotal)*100:0;
+  const clientes   = zonas.reduce((s,r)=>s+(parseInt(r["Clientes"])||0),0);
 
-  const k = d.kpis || {};
-  const vendSummary = (d.topVendedores||[])
-    .map(v=>`${v.vendedor}: Dto%=${v.dto_pct.toFixed(1)}%, Dto$=${fM(v.dto_total)}`)
-    .join("\n");
-  const zonaSummary = (d.porZona||[])
-    .map(z=>`${z.zona}: Dto%=${fP(z.pct)}, Dto$=${fM(z.dto)}`)
+  const zonaSummary = zonas.map(z=>{
+    const d=parseFloat(z["Dto $"])||0,v=parseFloat(z["Total $"])||0;
+    return `${z["Clave"]}: Dto%=${fP((d+v)>0?d/(d+v)*100:0)}, Dto$=${fM(d)}`;
+  }).join("\n");
+
+  const vendSummary = [...vends].sort((a,b)=>(parseFloat(b["Dto $"])||0)-(parseFloat(a["Dto $"])||0)).slice(0,10)
+    .map(v=>{const d=parseFloat(v["Dto $"])||0,t=parseFloat(v["Total $"])||0;
+      return `${v["Clave"]}: Dto%=${fP((d+t)>0?d/(d+t)*100:0)}, Dto$=${fM(d)}`;})
     .join("\n");
 
-  return `Sos un analista comercial de Cedisur, distribuidora de alimentos. Analizás descuentos otorgados a clientes.
+  return `Sos un analista comercial de Cedisur, distribuidora de alimentos.
 
 RESUMEN GENERAL:
-- Descuento total: ${fM(k.dtoTotal)}
-- % Descuento promedio ponderado: ${fP(k.dtoPct)}
-- Venta neta total: ${fM(k.ventaTotal)}
-- Contribución total: ${fM(k.contribucion)}
-- Clientes con descuento: ${fN(k.clientesConDto)} de ${fN(k.totalClientes)}
-
-VENDEDORES (Top 10 por % dto):
-${vendSummary || "Sin datos"}
+- Descuento total: ${fM(dtoTotal)}
+- % Descuento promedio: ${fP(dtoPct)}
+- Venta neta total: ${fM(ventaTotal)}
+- Contribución total: ${fM(contrib)}
+- Clientes con descuento: ${fN(clientes)}
 
 ZONAS:
-${zonaSummary || "Sin datos"}
+${zonaSummary||"Sin datos"}
 
-Respondé en español, de manera concisa y directa. Si preguntás por clientes o productos específicos, avisá que el contexto incluye datos agregados.`;
+VENDEDORES (Top 10):
+${vendSummary||"Sin datos"}
+
+Respondé en español, conciso y directo.`;
 }
 
 const aiHistory = [];

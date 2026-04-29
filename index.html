@@ -227,6 +227,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .progress-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
 
 /* ALERTA DESCUENTO */
+.alarm-bonif  { background: rgba(168,85,247,0.10) !important; }
 .alarm-high   { background: rgba(255,71,87,0.08) !important; }
 .alarm-medium { background: rgba(255,209,102,0.06) !important; }
 .dto-high   { color: var(--red) !important;    font-weight: 700; }
@@ -379,11 +380,13 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 <div class="modal-overlay" id="config-modal">
   <div class="modal">
     <h3>⚙️ Configuración</h3>
-    <p>El dashboard está conectado a la hoja DATA. Si cambia la URL de publicación CSV, actualizala acá (Archivo → Publicar en la web → Hoja DATA → CSV).</p>
-    <label>URL CSV publicada</label>
-    <input type="text" id="input-csv-url" placeholder="https://docs.google.com/spreadsheets/d/e/...pub?gid=...&output=csv">
+    <p>Ingresá el ID de tu Google Sheet para sincronizar los datos. El ID es la parte larga de la URL entre /d/ y /edit.</p>
+    <label>ID de Google Sheet</label>
+    <input type="text" id="input-sheet-id" placeholder="Ej: 1kZFHrvUvNivzx8yffzwm5y2a4P98cj5spIQZ-DrAIy8">
+    <label>GID de hoja DATA (opcional, dejar en 0 si no sabés)</label>
+    <input type="text" id="input-gid" placeholder="0" value="0">
     <div style="font-size:10px;color:var(--muted);margin-top:-10px;margin-bottom:16px">
-      ⚠️ Debe ser la URL de publicación pública de la hoja DATA en formato CSV
+      ⚠️ La Sheet debe estar compartida como "Cualquier persona con el enlace puede ver"
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeConfig()">Cancelar</button>
@@ -437,7 +440,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label">Sin datos</span>
     </div>
-    <button class="btn-sync" onclick="openConfig()">⚙ Fuente de datos</button>
     <button class="btn-sync" onclick="reloadData()">↺ Actualizar</button>
     <button class="btn-ai" onclick="toggleAI()">✦ Asistente IA</button>
   </div>
@@ -504,9 +506,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 <div class="nav-tabs">
   <div class="nav-tab active" onclick="showSection('resumen', this)">① Resumen Ejecutivo</div>
   <div class="nav-tab" onclick="showSection('evolucion', this)">② Evolución</div>
-  <div class="nav-tab" onclick="showSection('zona', this)">③ Zona / Vendedor</div>
-  <div class="nav-tab" onclick="showSection('detalle', this)">④ Detalle Clientes</div>
-  <div class="nav-tab" onclick="showSection('objetivos', this)">⑤ Objetivos</div>
+  <div class="nav-tab" onclick="showSection('zona', this)">③ Por Zona</div>
+  <div class="nav-tab" onclick="showSection('vendedor', this)">④ Por Vendedor</div>
+  <div class="nav-tab" onclick="showSection('detalle', this)">⑤ Detalle Clientes</div>
 </div>
 
 <div class="content">
@@ -564,11 +566,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
 </div>
 
-<!-- ③ ZONA / VENDEDOR -->
+<!-- ③ POR ZONA -->
 <div id="sec-zona" class="section">
   <div class="section-header">
-    <div class="section-title">Zona & Vendedor</div>
-    <div class="section-desc">Comparativo de descuentos por equipo comercial</div>
+    <div class="section-title">Por Zona</div>
+    <div class="section-desc">Comparativo de descuentos por zona comercial · Vista para Jefe de Ventas y Supervisores</div>
   </div>
   <div class="chart-row cols2">
     <div class="chart-card">
@@ -578,6 +580,41 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     <div class="chart-card">
       <div class="chart-card-title">% Descuento promedio por Zona</div>
       <div class="chart-wrap"><canvas id="c-zona-pct" height="200"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-card" style="margin-bottom:14px">
+    <div class="chart-card-title">Ranking de Zonas — Descuento $ y % promedio</div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr>
+          <th style="width:28px">#</th>
+          <th onclick="sortZonaRank('zona')">Zona ↕</th>
+          <th class="num" onclick="sortZonaRank('dto_total')">Dto $ Total ↕</th>
+          <th class="num" onclick="sortZonaRank('dto_pct')">% Dto Prom ↕</th>
+          <th class="num" onclick="sortZonaRank('clientes')">Clientes c/Dto ↕</th>
+          <th class="num" onclick="sortZonaRank('total_venta')">Venta $ Total ↕</th>
+          <th class="num">Dto / Venta %</th>
+        </tr></thead>
+        <tbody id="zona-rank-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ④ POR VENDEDOR -->
+<div id="sec-vendedor" class="section">
+  <div class="section-header">
+    <div class="section-title">Por Vendedor</div>
+    <div class="section-desc">Análisis de descuentos por vendedor · Vista para Supervisores de Zona</div>
+  </div>
+  <div class="chart-row cols2">
+    <div class="chart-card">
+      <div class="chart-card-title">Descuento $ total por Vendedor (Top 10)</div>
+      <div class="chart-wrap"><canvas id="c-vend-dto" height="220"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">% Descuento promedio por Vendedor (Top 10)</div>
+      <div class="chart-wrap"><canvas id="c-vend-pct" height="220"></canvas></div>
     </div>
   </div>
   <div class="chart-card" style="margin-bottom:14px">
@@ -604,15 +641,16 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 <div id="sec-detalle" class="section">
   <div class="section-header">
     <div class="section-title">Detalle Clientes</div>
-    <div class="section-desc">Alarma por umbral de descuento · <span style="color:var(--red)">●</span> Alto &gt;20% · <span style="color:var(--yellow)">●</span> Medio 10–20% · <span style="color:var(--green)">●</span> Normal &lt;10%</div>
+    <div class="section-desc">Alarma por umbral de descuento · <span style="color:#a855f7">●</span> Bonificado &gt;90% · <span style="color:var(--red)">●</span> Alarma alta 30–90% · <span style="color:var(--yellow)">●</span> Media 10–30% · <span style="color:var(--green)">●</span> Normal &lt;10%</div>
   </div>
   <div class="chart-card">
     <div class="search-bar">
       <input class="search-input" type="text" id="cli-search" placeholder="Buscar cliente o producto…" oninput="renderDetalleTable()">
       <select class="filter-select" id="cli-alarm-filter" onchange="renderDetalleTable()">
         <option value="">Todas las alarmas</option>
-        <option value="alto">🔴 Descuento alto (&gt;20%)</option>
-        <option value="medio">🟡 Descuento medio (10–20%)</option>
+        <option value="bonif">🟣 Bonificado (&gt;90%)</option>
+        <option value="alto">🔴 Alarma alta (30–90%)</option>
+        <option value="medio">🟡 Media (10–30%)</option>
         <option value="normal">🟢 Normal (&lt;10%)</option>
       </select>
       <select class="filter-select" id="cli-zona-filter2" onchange="renderDetalleTable()">
@@ -631,9 +669,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <th onclick="sortDetalle('marca')">Marca ↕</th>
           <th class="num" onclick="sortDetalle('dto_pct')">% Dto ↕</th>
           <th class="num" onclick="sortDetalle('dto_plata')">$ Dto ↕</th>
+          <th class="num" onclick="sortDetalle('pesoKg')">KG ↕</th>
+          <th class="num" onclick="sortDetalle('contribucion')">Contribución $ ↕</th>
           <th onclick="sortDetalle('vendedor')">Vendedor ↕</th>
-          <th onclick="sortDetalle('zona')">Zona ↕</th>
-          <th onclick="sortDetalle('comprobante')">Tipo ↕</th>
         </tr></thead>
         <tbody id="detalle-body"></tbody>
       </table>
@@ -675,7 +713,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 
 <div class="footnote">
   <span>📦 Fuente: Google Sheets sincronizado desde SAP · Cedisur</span>
-  <span>🔴 Alarma alta: % Dto &gt; 20% · 🟡 Media: 10–20% · 🟢 Normal: &lt; 10%</span>
+  <span>📊 Vendedor: 🔴 &gt;4% · 🟡 3–4% · 🟢 &lt;3% &nbsp;|&nbsp; 🟣 Producto bonificado &gt;90% · 🔴 Alarma alta 30–90% · 🟡 Media 10–30% · 🟢 Normal &lt;10%</span>
   <span>💡 Descuento calculado sobre precio bruto (Dto$ ÷ (Total$ + Dto$))</span>
   <span id="last-update-note">⏱ Sin actualizar aún</span>
 </div>
@@ -686,12 +724,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 // ============================================================
 // CONFIG
 // ============================================================
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1435423607&single=true&output=csv";
-const SHEET_ID_DEFAULT = "2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR";
+const SHEET_ID_DEFAULT = "1kZFHrvUvNivzx8yffzwm5y2a4P98cj5spIQZ-DrAIy8";
 
 let CONFIG = {
-  sheetId: SHEET_ID_DEFAULT,
-  gid:     "1435423607",
+  sheetId: localStorage.getItem("cedisur_sheet_id") || SHEET_ID_DEFAULT,
+  gid:     localStorage.getItem("cedisur_gid") || "0",
   aiKey:   localStorage.getItem("cedisur_ai_key") || ""
 };
 
@@ -776,7 +813,7 @@ async function loadData() {
   document.getElementById("loading").classList.remove("hidden");
   document.getElementById("loading-text").textContent = "Conectando con Google Sheets…";
 
-  const url = SHEET_CSV_URL;
+  const url = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/export?format=csv&gid=${CONFIG.gid}`;
 
   try {
     const resp = await fetch(url);
@@ -1022,6 +1059,7 @@ function renderSection(name) {
   if (name === "resumen")   renderResumen();
   else if (name === "evolucion") renderEvolucion();
   else if (name === "zona")      renderZona();
+  else if (name === "vendedor")  renderVendedor();
   else if (name === "detalle")   renderDetalleTable();
 }
 
@@ -1059,7 +1097,7 @@ function renderResumen() {
   // KPIs
   const totalDtoPlata = sumField(FILT_DATA, "dto_plata");
   const dtoProm       = avgDtoPct(FILT_DATA);
-  const lineasConDto  = FILT_DATA.filter(r => r.dto_plata > 0).length;
+  const clientesConDto = new Set(FILT_DATA.filter(r => r.dto_plata > 0).map(r => r.codCliente)).size;
   const totalVenta    = sumField(FILT_DATA, "totalLinea");
   const contribTotal  = sumField(FILT_DATA, "contribucion");
 
@@ -1081,9 +1119,9 @@ function renderResumen() {
       <div class="kpi-sub"><span class="kpi-badge badge-pos">${FILT_DATA.length.toLocaleString()} líneas</span></div>
     </div>
     <div class="kpi-card yellow">
-      <div class="kpi-label">Líneas con Dto</div>
-      <div class="kpi-value">${lineasConDto.toLocaleString()}</div>
-      <div class="kpi-sub"><span class="kpi-badge badge-warn">${FILT_DATA.length>0?(lineasConDto/FILT_DATA.length*100).toFixed(1):0}% del total</span></div>
+      <div class="kpi-label">Clientes con Dto</div>
+      <div class="kpi-value">${clientesConDto.toLocaleString()}</div>
+      <div class="kpi-sub"><span class="kpi-badge badge-warn">${(()=>{const tot=new Set(FILT_DATA.map(r=>r.codCliente)).size;return tot>0?(clientesConDto/tot*100).toFixed(1):0})()}% del total</span></div>
     </div>
     <div class="kpi-card green">
       <div class="kpi-label">Contribución Total $</div>
@@ -1136,7 +1174,7 @@ function renderResumen() {
     type:"bar",
     data:{labels:vendOrd.map(x=>x.v.split(" ")[0]),
       datasets:[{label:"% Dto Prom",data:vendOrd.map(x=>parseFloat(x.pct.toFixed(1))),
-        backgroundColor:vendOrd.map(x=>x.pct>20?"rgba(255,71,87,0.8)":x.pct>10?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),
+        backgroundColor:vendOrd.map(x=>x.pct>4?"rgba(255,71,87,0.8)":x.pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),
         borderRadius:3}]},
     options:{...chartDefaults(),indexAxis:"y",
       plugins:{...chartDefaults().plugins,legend:{display:false}},
@@ -1222,7 +1260,7 @@ function renderEvolucion() {
 }
 
 // ============================================================
-// ③ ZONA / VENDEDOR
+// ③ POR ZONA
 // ============================================================
 function renderZona() {
   const byZona = groupBy(FILT_DATA,"zona");
@@ -1252,7 +1290,77 @@ function renderZona() {
     }
   });
 
-  // Ranking vendedores
+  renderZonaRank();
+}
+
+let zonaRankSort = {key:"dto_total", dir:-1};
+function sortZonaRank(key) {
+  if(zonaRankSort.key===key) zonaRankSort.dir*=-1; else {zonaRankSort.key=key;zonaRankSort.dir=-1;}
+  renderZonaRank();
+}
+function renderZonaRank() {
+  const byZ = groupBy(FILT_DATA,"zona");
+  let rows = Object.entries(byZ).map(([z,data])=>({
+    zona:z,
+    dto_total: sumField(data,"dto_plata"),
+    dto_pct: avgDtoPct(data),
+    clientes: new Set(data.filter(r=>r.dto_plata>0).map(r=>r.codCliente)).size,
+    total_venta: sumField(data,"totalLinea")
+  }));
+  rows.sort((a,b)=>(typeof a[zonaRankSort.key]==="string"?
+    a[zonaRankSort.key].localeCompare(b[zonaRankSort.key])*zonaRankSort.dir:
+    (a[zonaRankSort.key]-b[zonaRankSort.key])*zonaRankSort.dir));
+
+  const tbody = document.getElementById("zona-rank-body");
+  tbody.innerHTML = "";
+  rows.forEach((r,i)=>{
+    const dtoVta = r.total_venta>0?r.dto_total/(r.total_venta+r.dto_total)*100:0;
+    tbody.innerHTML+=`<tr>
+      <td style="font-family:'Bebas Neue';font-size:15px;color:var(--muted);text-align:center">${i+1}</td>
+      <td><strong>${r.zona}</strong></td>
+      <td class="num">${fM(r.dto_total)}</td>
+      <td class="num ${r.dto_pct>4?"dto-high":r.dto_pct>3?"dto-medium":"dto-ok"}">${fP(r.dto_pct)}</td>
+      <td class="num">${fN(r.clientes)}</td>
+      <td class="num">${fM(r.total_venta)}</td>
+      <td class="num ${dtoVta>4?"dto-high":dtoVta>3?"dto-medium":"dto-ok"}">${fP(dtoVta)}</td>
+    </tr>`;
+  });
+}
+
+// ============================================================
+// ④ POR VENDEDOR
+// ============================================================
+function renderVendedor() {
+  const byV = groupBy(FILT_DATA,"vendedor");
+  const vends = Object.keys(byV).sort((a,b)=>sumField(byV[b],"dto_plata")-sumField(byV[a],"dto_plata")).slice(0,10);
+
+  mkChart("c-vend-dto",{
+    type:"bar",
+    data:{labels:vends,datasets:[{
+      label:"Dto $",data:vends.map(v=>sumField(byV[v],"dto_plata")),
+      backgroundColor:COLORES,borderRadius:4
+    }]},
+    options:{...chartDefaults(),indexAxis:"y",
+      plugins:{...chartDefaults().plugins,legend:{display:false}},
+      scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}}}
+    }
+  });
+
+  const vendsPct = Object.keys(byV).sort((a,b)=>avgDtoPct(byV[b])-avgDtoPct(byV[a])).slice(0,10);
+  mkChart("c-vend-pct",{
+    type:"bar",
+    data:{labels:vendsPct,datasets:[{
+      label:"% Dto Prom",
+      data:vendsPct.map(v=>parseFloat(avgDtoPct(byV[v]).toFixed(1))),
+      backgroundColor:vendsPct.map(v=>{const p=avgDtoPct(byV[v]);return p>4?"rgba(255,71,87,0.8)":p>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)";}),
+      borderRadius:4
+    }]},
+    options:{...chartDefaults(),indexAxis:"y",
+      plugins:{...chartDefaults().plugins,legend:{display:false}},
+      scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>v+"%"}}}
+    }
+  });
+
   renderVendRank();
 }
 
@@ -1284,10 +1392,10 @@ function renderVendRank() {
       <td><strong>${r.vendedor}</strong></td>
       <td><span style="font-size:10px;background:var(--surface2);padding:2px 7px;border-radius:3px;color:var(--text-dim)">${r.zona}</span></td>
       <td class="num">${fM(r.dto_total)}</td>
-      <td class="num ${r.dto_pct>20?"dto-high":r.dto_pct>10?"dto-medium":"dto-ok"}">${fP(r.dto_pct)}</td>
+      <td class="num ${r.dto_pct>4?"dto-high":r.dto_pct>3?"dto-medium":"dto-ok"}">${fP(r.dto_pct)}</td>
       <td class="num">${fN(r.lineas)}</td>
       <td class="num">${fM(r.total_venta)}</td>
-      <td class="num ${dtoVta>20?"dto-high":dtoVta>10?"dto-medium":"dto-ok"}">${fP(dtoVta)}</td>
+      <td class="num ${dtoVta>4?"dto-high":dtoVta>3?"dto-medium":"dto-ok"}">${fP(dtoVta)}</td>
     </tr>`;
   });
 }
@@ -1311,8 +1419,9 @@ function renderDetalleTable() {
   if (q) data = data.filter(r =>
     r.cliente.toLowerCase().includes(q) || r.descripcion.toLowerCase().includes(q) || r.codCliente.toLowerCase().includes(q)
   );
-  if (alarm === "alto")   data = data.filter(r => r.dto_pct > 20);
-  if (alarm === "medio")  data = data.filter(r => r.dto_pct > 10 && r.dto_pct <= 20);
+  if (alarm === "bonif")  data = data.filter(r => r.dto_pct > 90);
+  if (alarm === "alto")   data = data.filter(r => r.dto_pct > 30 && r.dto_pct <= 90);
+  if (alarm === "medio")  data = data.filter(r => r.dto_pct > 10 && r.dto_pct <= 30);
   if (alarm === "normal") data = data.filter(r => r.dto_pct <= 10);
   if (zona) data = data.filter(r => r.zona === zona);
 
@@ -1328,9 +1437,9 @@ function renderDetalleTable() {
   const limit = Math.min(data.length, 500);
   for (let i=0;i<limit;i++) {
     const r = data[i];
-    const alarmClass = r.dto_pct>20?"alarm-high":r.dto_pct>10?"alarm-medium":"";
-    const dotClass   = r.dto_pct>20?"dot-red":r.dto_pct>10?"dot-yellow":"dot-green";
-    const dtoClass   = r.dto_pct>20?"dto-high":r.dto_pct>10?"dto-medium":"dto-ok";
+    const alarmClass = r.dto_pct>90?"alarm-bonif":r.dto_pct>30?"alarm-high":r.dto_pct>10?"alarm-medium":"";
+    const dotClass   = r.dto_pct>90?"dot-purple":r.dto_pct>30?"dot-red":r.dto_pct>10?"dot-yellow":"dot-green";
+    const dtoClass   = r.dto_pct>90?"dto-bonif":r.dto_pct>30?"dto-high":r.dto_pct>10?"dto-medium":"dto-ok";
     tbody.innerHTML+=`<tr class="${alarmClass}">
       <td><span class="dot ${dotClass}" style="width:8px;height:8px"></span></td>
       <td>${r.fecha}</td>
@@ -1340,13 +1449,13 @@ function renderDetalleTable() {
       <td style="font-size:11px;color:var(--text-dim)">${r.marca}</td>
       <td class="num ${dtoClass}">${fP(r.dto_pct)}</td>
       <td class="num">${fM(r.dto_plata)}</td>
+      <td class="num">${r.pesoKg?fN(r.pesoKg):"-"}</td>
+      <td class="num ${r.contribucion<0?"dto-high":""}">${fM(r.contribucion)}</td>
       <td style="font-size:11px">${r.vendedor.split(" ")[0]}</td>
-      <td><span style="font-size:10px;background:var(--surface2);padding:1px 6px;border-radius:3px;color:var(--text-dim)">${r.zona}</span></td>
-      <td><span class="pill ${r.comprobante==="CREDITO"?"pill-red":"pill-blue"}">${r.comprobante}</span></td>
     </tr>`;
   }
   if (data.length > 500) {
-    tbody.innerHTML += `<tr><td colspan="11" style="text-align:center;padding:12px;color:var(--muted);font-size:11px">
+    tbody.innerHTML += `<tr><td colspan="10" style="text-align:center;padding:12px;color:var(--muted);font-size:11px">
       Mostrando 500 de ${data.length} líneas. Aplicá filtros para ver más detalle.
     </td></tr>`;
   }
@@ -1366,17 +1475,21 @@ function setSyncState(state, label) {
 // CONFIG MODAL
 // ============================================================
 function openConfig() {
-  document.getElementById("input-csv-url").value = SHEET_CSV_URL;
+  document.getElementById("input-sheet-id").value = CONFIG.sheetId;
+  document.getElementById("input-gid").value = CONFIG.gid;
   document.getElementById("config-modal").classList.remove("hidden");
 }
 function closeConfig() {
   document.getElementById("config-modal").classList.add("hidden");
 }
 function saveConfig() {
-  const url = document.getElementById("input-csv-url").value.trim();
-  if (!url) { alert("Ingresá la URL CSV publicada"); return; }
-  localStorage.setItem("cedisur_csv_url", url);
-  window.SHEET_CSV_URL = url;
+  const id  = document.getElementById("input-sheet-id").value.trim();
+  const gid = document.getElementById("input-gid").value.trim() || "0";
+  if (!id) { alert("Ingresá el ID de la Sheet"); return; }
+  CONFIG.sheetId = id;
+  CONFIG.gid = gid;
+  localStorage.setItem("cedisur_sheet_id", id);
+  localStorage.setItem("cedisur_gid", gid);
   closeConfig();
   loadData();
 }
@@ -1496,10 +1609,13 @@ window.addEventListener("load", () => {
   // Pre-cargar API key si existe
   if (CONFIG.aiKey) document.getElementById("ai-api-key").value = CONFIG.aiKey;
 
-  // Cargar datos desde URL hardcodeada (o la guardada en localStorage)
-  const savedUrl = localStorage.getItem("cedisur_csv_url");
-  if (savedUrl) window.SHEET_CSV_URL = savedUrl;
-  loadData();
+  // Verificar si hay sheet configurada
+  if (CONFIG.sheetId) {
+    loadData();
+  } else {
+    openConfig();
+    document.getElementById("loading").classList.add("hidden");
+  }
 });
 </script>
 </body>

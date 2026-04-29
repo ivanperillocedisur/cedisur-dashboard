@@ -714,7 +714,7 @@ let CONFIG = { aiKey: localStorage.getItem("cedisur_ai_key") || "" };
 // La arquitectura pasó a API-first: el Apps Script actúa como
 // servidor. El HTML solo pide JSON agregado, nunca el CSV crudo.
 // ============================================================
-const API_URL = "https://script.google.com/macros/s/AKfycbyq1HQjYt_KCq7UcBsy0LAbpNttgn715WMxQOHxFmG0477Rya3gc_bLRUrpzKxuWiDqlA/exec"; // ← reemplazá con tu URL de Web App
+const API_URL = "https://script.google.com/macros/s/AKfycbxrV5g2zl5nTqvpnLE2iWj60EKE7hgA9btRreCRWvIfoa7Czk3KkPovHcswvRgmkrp5Zg/exec"; // ← reemplazá con tu URL de Web App
 
 let CACHE        = {};          // cache por acción+params
 let activeSection = "resumen";
@@ -745,20 +745,40 @@ function renderSection(name) {
 // ============================================================
 // API HELPERS — llama al Apps Script Web App
 // ============================================================
-async function apiCall(action, extraParams = {}) {
+function apiCall(action, extraParams = {}) {
   const params = { ...activeFilters, action, ...extraParams };
   const cacheKey = JSON.stringify(params);
-  if (CACHE[cacheKey]) return CACHE[cacheKey];
+  if (CACHE[cacheKey]) return Promise.resolve(CACHE[cacheKey]);
 
-  const qs = new URLSearchParams(params).toString();
-  const url = API_URL + (API_URL.includes("?") ? "&" : "?") + qs;
+  return new Promise((resolve, reject) => {
+    // JSONP: evita bloqueo CORS de Apps Script desde GitHub Pages
+    const cbName = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+    const qs = new URLSearchParams({...params, callback: cbName}).toString();
+    const url = API_URL + "?" + qs;
 
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error("HTTP " + resp.status);
-  const data = await resp.json();
-  if (data.error) throw new Error(data.error);
-  CACHE[cacheKey] = data;
-  return data;
+    const script = document.createElement("script");
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Timeout — la API no respondió en 30s"));
+    }, 30000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = (data) => {
+      cleanup();
+      if (data.error) { reject(new Error(data.error)); return; }
+      CACHE[cacheKey] = data;
+      resolve(data);
+    };
+
+    script.src = url;
+    script.onerror = () => { cleanup(); reject(new Error("Error al cargar el script JSONP")); };
+    document.head.appendChild(script);
+  });
 }
 
 function getFiltersParams() {

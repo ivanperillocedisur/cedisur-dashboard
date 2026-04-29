@@ -376,24 +376,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   <div class="loading-text" id="loading-text">Conectando con Google Sheets…</div>
 </div>
 
-<!-- CONFIG MODAL -->
-<div class="modal-overlay" id="config-modal">
-  <div class="modal">
-    <h3>⚙️ Configuración</h3>
-    <p>Ingresá el ID de tu Google Sheet para sincronizar los datos. El ID es la parte larga de la URL entre /d/ y /edit.</p>
-    <label>ID de Google Sheet</label>
-    <input type="text" id="input-sheet-id" placeholder="Ej: 1kZFHrvUvNivzx8yffzwm5y2a4P98cj5spIQZ-DrAIy8">
-    <label>GID de hoja DATA (opcional, dejar en 0 si no sabés)</label>
-    <input type="text" id="input-gid" placeholder="0" value="0">
-    <div style="font-size:10px;color:var(--muted);margin-top:-10px;margin-bottom:16px">
-      ⚠️ La Sheet debe estar compartida como "Cualquier persona con el enlace puede ver"
-    </div>
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeConfig()">Cancelar</button>
-      <button class="btn-primary" onclick="saveConfig()">Guardar y cargar datos</button>
-    </div>
-  </div>
-</div>
 
 <!-- AI PANEL -->
 <div class="ai-panel" id="ai-panel">
@@ -724,13 +706,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 // ============================================================
 // CONFIG
 // ============================================================
-const SHEET_ID_DEFAULT = "1kZFHrvUvNivzx8yffzwm5y2a4P98cj5spIQZ-DrAIy8";
-
-let CONFIG = {
-  sheetId: localStorage.getItem("cedisur_sheet_id") || SHEET_ID_DEFAULT,
-  gid:     localStorage.getItem("cedisur_gid") || "0",
-  aiKey:   localStorage.getItem("cedisur_ai_key") || ""
-};
+let CONFIG = { aiKey: localStorage.getItem("cedisur_ai_key") || "" };
 
 // ============================================================
 // DATA STATE
@@ -813,7 +789,7 @@ async function loadData() {
   document.getElementById("loading").classList.remove("hidden");
   document.getElementById("loading-text").textContent = "Conectando con Google Sheets…";
 
-  const url = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetId}/export?format=csv&gid=${CONFIG.gid}`;
+  const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1435423607&single=true&output=csv";
 
   try {
     const resp = await fetch(url);
@@ -1471,28 +1447,6 @@ function setSyncState(state, label) {
   lbl.textContent = label;
 }
 
-// ============================================================
-// CONFIG MODAL
-// ============================================================
-function openConfig() {
-  document.getElementById("input-sheet-id").value = CONFIG.sheetId;
-  document.getElementById("input-gid").value = CONFIG.gid;
-  document.getElementById("config-modal").classList.remove("hidden");
-}
-function closeConfig() {
-  document.getElementById("config-modal").classList.add("hidden");
-}
-function saveConfig() {
-  const id  = document.getElementById("input-sheet-id").value.trim();
-  const gid = document.getElementById("input-gid").value.trim() || "0";
-  if (!id) { alert("Ingresá el ID de la Sheet"); return; }
-  CONFIG.sheetId = id;
-  CONFIG.gid = gid;
-  localStorage.setItem("cedisur_sheet_id", id);
-  localStorage.setItem("cedisur_gid", gid);
-  closeConfig();
-  loadData();
-}
 function reloadData() { loadData(); }
 
 // ============================================================
@@ -1609,13 +1563,7 @@ window.addEventListener("load", () => {
   // Pre-cargar API key si existe
   if (CONFIG.aiKey) document.getElementById("ai-api-key").value = CONFIG.aiKey;
 
-  // Verificar si hay sheet configurada
-  if (CONFIG.sheetId) {
-    loadData();
-  } else {
-    openConfig();
-    document.getElementById("loading").classList.add("hidden");
-  }
+  loadData();
 });
 </script>
 </body>

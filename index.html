@@ -711,313 +711,16 @@ let CONFIG = { aiKey: localStorage.getItem("cedisur_ai_key") || "" };
 // ============================================================
 // DATA STATE
 // ============================================================
-let RAW_DATA  = [];   // Todas las filas parseadas
-let FILT_DATA = [];   // Filas luego de aplicar filtros
+// La arquitectura pasó a API-first: el Apps Script actúa como
+// servidor. El HTML solo pide JSON agregado, nunca el CSV crudo.
+// ============================================================
+const API_URL = "https://script.google.com/macros/s/AKfycbx_VnThLuC1MEGkcgakHbJUPQbeYvDBt9XNiz6jgpMyZYcy0KX8lpXsc4mbMwyNk-NoUw/exec"; // ← reemplazá con tu URL de Web App
+
+let CACHE        = {};          // cache por acción+params
 let activeSection = "resumen";
-let chartsBuilt = {};
+let chartsBuilt  = {};
 let chartInstances = {};
-
-const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const COLORES = ["#00c8ff","#ff6b35","#7eff6a","#ffd166","#a855f7","#ff4757","#2ed573","#f8b739","#3d9eff","#ff75a0"];
-
-// ============================================================
-// HELPERS
-// ============================================================
-const fM  = v => {
-  if (v == null || isNaN(v)) return "—";
-  const a = Math.abs(v);
-  const s = v < 0 ? "-" : "";
-  if (a >= 1e9) return s+"$"+(a/1e9).toFixed(2)+"B";
-  if (a >= 1e6) return s+"$"+(a/1e6).toFixed(1)+"M";
-  if (a >= 1e3) return s+"$"+(a/1e3).toFixed(0)+"K";
-  return s+"$"+a.toFixed(0);
-};
-const fP  = v => v == null || isNaN(v) ? "—" : v.toFixed(1)+"%";
-const fN  = v => v == null ? "—" : Number(v).toLocaleString("es-AR");
-const parseNum = s => {
-  if (typeof s === "number") return s;
-  if (!s || s === "") return 0;
-  let str = s.toString().replace(/\s/g,"");
-  if (str.match(/^-?[\d.]+,\d{1,2}$/)) str = str.replace(/\./g,"").replace(",",".");
-  else if (str.match(/^-?[\d,]+\.\d{1,2}$/)) str = str.replace(/,/g,"");
-  else str = str.replace(/\./g,"").replace(",",".");
-  const n = parseFloat(str);
-  return isNaN(n) ? 0 : n;
-};
-
-const getMesNombre = fecha => {
-  const p = fecha.split("/");
-  if (p.length < 2) return fecha;
-  return MESES[parseInt(p[1],10)-1] + " " + p[2];
-};
-const getAnio = fecha => { const p = fecha.split("/"); return p[2] || ""; };
-const getMes  = fecha => { const p = fecha.split("/"); return p[1] || ""; };
-const getDia  = fecha => { const p = fecha.split("/"); return p[0] || ""; };
-const getSemanaFiscal = fecha => {
-  try {
-    const p = fecha.split("/");
-    const d = new Date(+p[2], +p[1]-1, +p[0]);
-    const start = new Date(d.getFullYear(), 0, 1);
-    return "S"+Math.ceil(((d - start) / 86400000 + start.getDay() + 1) / 7);
-  } catch(e) { return "S?"; }
-};
-
-function chartDefaults() {
-  return {
-    color: "#8b94b0",
-    plugins: { legend: { labels: { color:"#8b94b0", font:{ family:"DM Sans", size:11 } } } },
-    scales: {
-      x: { ticks:{ color:"#8b94b0", font:{ family:"DM Sans", size:11 } }, grid:{ color:"rgba(37,42,58,0.6)" } },
-      y: { ticks:{ color:"#8b94b0", font:{ family:"DM Sans", size:11 } }, grid:{ color:"rgba(37,42,58,0.6)" } }
-    }
-  };
-}
-
-function mkChart(id, config) {
-  if (chartInstances[id]) { chartInstances[id].destroy(); }
-  const ctx = document.getElementById(id);
-  if (!ctx) return;
-  chartInstances[id] = new Chart(ctx, config);
-  return chartInstances[id];
-}
-
-// ============================================================
-// GOOGLE SHEETS CSV LOADER
-// ============================================================
-async function loadData() {
-  setSyncState("loading", "Cargando…");
-  document.getElementById("loading").classList.remove("hidden");
-  document.getElementById("loading-text").textContent = "Conectando con Google Sheets…";
-
-  const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1435423607&single=true&output=csv";
-
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error("HTTP "+resp.status);
-    const text = await resp.text();
-    parseCSV(text);
-    setSyncState("ok", "Datos cargados · " + new Date().toLocaleTimeString("es-AR"));
-    document.getElementById("last-update-note").textContent =
-      "⏱ Actualizado: " + new Date().toLocaleString("es-AR");
-  } catch(e) {
-    setSyncState("error", "Error al cargar");
-    document.getElementById("loading").classList.add("hidden");
-    // Mostrar datos demo si no hay sheet configurada
-    if (RAW_DATA.length === 0) loadDemoData();
-    else document.getElementById("loading").classList.add("hidden");
-    console.warn("Error cargando sheet:", e);
-    return;
-  }
-  document.getElementById("loading").classList.add("hidden");
-}
-
-function parseCSV(text) {
-  const lines = text.split("\n").filter(l => l.trim());
-  if (lines.length < 2) return;
-
-  const headers = parseCSVLine(lines[0]);
-
-  // Mapeo de headers a índices
-  const idx = {};
-  headers.forEach((h, i) => { idx[h.trim()] = i; });
-
-  RAW_DATA = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = parseCSVLine(lines[i]);
-    if (cols.length < 5) continue;
-
-    const g = k => (cols[idx[k]] || "").toString().trim();
-    const gN = k => parseNum(g(k));
-
-    const dtoPct = gN("% Dto");
-    const dtoPlata = gN("Dto $");
-    const totalLinea = gN("Total Línea $");
-
-    // Recalcular % si viene 0 y hay descuento en plata
-    let dtoPctFinal = dtoPct;
-    if (dtoPctFinal === 0 && dtoPlata > 0) {
-      const base = Math.abs(totalLinea) + Math.abs(dtoPlata);
-      if (base > 0) dtoPctFinal = (Math.abs(dtoPlata) / base) * 100;
-    }
-
-    const fecha = g("Fecha");
-
-    RAW_DATA.push({
-      fecha,
-      anio:       getAnio(fecha),
-      mes:        getMes(fecha),
-      semana:     getSemanaFiscal(fecha),
-      comprobante: g("Tipo Comprobante"),
-      nroFac:     g("Nro Factura"),
-      codCliente: g("Cod Cliente"),
-      cliente:    g("Cliente"),
-      vendedor:   g("Vendedor"),
-      zona:       g("Zona"),
-      codArt:     g("Cod Artículo"),
-      descripcion: g("Descripción"),
-      marca:      g("Marca"),
-      grupoArt:   g("Grupo Artículo"),
-      cantidad:   gN("Cantidad"),
-      totalLinea,
-      costoGastos: gN("Costo c/Gastos $"),
-      contribucion: gN("Contribución $"),
-      pesoKg:     gN("Peso KG"),
-      deposito:   g("Depósito"),
-      um:         g("UM"),
-      dto_pct:    dtoPctFinal,
-      dto_plata:  dtoPlata,
-      segmento:   g("Segmento"),
-      subsegmento: g("Subsegmento"),
-      proveedor:  g("Proveedor"),
-      motivoNC:   g("Motivo NC"),
-      ecommerce:  g("Ecommerce")
-    });
-  }
-
-  buildFilters();
-  applyFilters();
-}
-
-function parseCSVLine(line) {
-  const result = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') { inQuotes = !inQuotes; }
-    else if (c === "," && !inQuotes) { result.push(current); current = ""; }
-    else { current += c; }
-  }
-  result.push(current);
-  return result;
-}
-
-// ============================================================
-// DEMO DATA (cuando no hay sheet conectada)
-// ============================================================
-function loadDemoData() {
-  // Genera datos sintéticos de ejemplo para mostrar el dashboard funcional
-  const vendedores = ["BARALDO DIEGO","VELAZQUEZ LUIS","MADRID GUILLERMO","LEZANA HUGO","FUENTES KARINA","ULLOA HORACIO","MARTINEZ JOSE"];
-  const zonas = ["ATLANTICA","RÍO NEGRO","NEUQUÉN","CORDILLERA NORTE","CORDILLERA SUR"];
-  const proveedores = ["FERRERO ARGENTINA","MC CAIN ARGENTINA","PALADINI S.A.","CAGNOLI S.A.","KRUSTAFISH S.A."];
-  const marcas = ["FERRERO","McCAIN","FELA","CAGNOLI","SUPERBE","VICTORIA"];
-  const clientes = ["HOLY BURGER","DISTRIBUIDORA PRANA","SHELL SELECT","KIOSCO SNACK CAFE","SUPERMERCADO GABY"];
-  const depositos = ["DEP001","DEP007"];
-
-  RAW_DATA = [];
-  const hoy = new Date();
-  for (let i = 0; i < 300; i++) {
-    const d = new Date(hoy); d.setDate(d.getDate() - Math.floor(Math.random()*120));
-    const fecha = `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
-    const dtoPct = Math.random() * 30;
-    const totalLinea = Math.random() * 200000 + 10000;
-    const dtoPlata = totalLinea * dtoPct / 100;
-    const vend = vendedores[Math.floor(Math.random()*vendedores.length)];
-    const zona = zonas[Math.floor(Math.random()*zonas.length)];
-    RAW_DATA.push({
-      fecha, anio: String(d.getFullYear()),
-      mes: String(d.getMonth()+1).padStart(2,"0"),
-      semana: getSemanaFiscal(fecha),
-      comprobante: Math.random()>0.15?"FACTURA":"CREDITO",
-      nroFac: String(200000+i), codCliente: "C"+String(1000+i),
-      cliente: clientes[Math.floor(Math.random()*clientes.length)],
-      vendedor: vend, zona,
-      codArt: "A"+String(100+i),
-      descripcion: "Producto demo "+i,
-      marca: marcas[Math.floor(Math.random()*marcas.length)],
-      grupoArt: "Grupo "+Math.floor(Math.random()*5+1),
-      cantidad: Math.floor(Math.random()*20+1),
-      totalLinea, costoGastos: totalLinea*0.6, contribucion: totalLinea*0.3,
-      pesoKg: Math.random()*10, deposito: depositos[Math.floor(Math.random()*2)],
-      um: "CAJA", dto_pct: dtoPct, dto_plata: dtoPlata,
-      segmento: "Distribuidores", subsegmento: "Autoservicios",
-      proveedor: proveedores[Math.floor(Math.random()*proveedores.length)],
-      motivoNC: "", ecommerce: Math.random()>0.85?"Sí":"No"
-    });
-  }
-
-  document.getElementById("last-update-note").textContent = "⚠️ Datos de demostración — Conectá tu Google Sheet";
-  setSyncState("error","Demo — sin Sheet conectada");
-  buildFilters();
-  applyFilters();
-  document.getElementById("loading").classList.add("hidden");
-}
-
-// ============================================================
-// FILTROS
-// ============================================================
-function buildFilters() {
-  const unique = key => [...new Set(RAW_DATA.map(r => r[key]).filter(Boolean))].sort();
-
-  fillSelect("f-anio",      unique("anio"));
-  fillSelect("f-mes",       [...new Set(RAW_DATA.map(r=>r.mes))].sort().map(m=>({val:m, label: MESES[parseInt(m,10)-1]||m})));
-  fillSelect("f-semana",    unique("semana"));
-  fillSelect("f-zona",      unique("zona"));
-  fillSelect("f-vendedor",  unique("vendedor"));
-  fillSelect("f-proveedor", unique("proveedor"));
-  fillSelect("f-marca",     unique("marca"));
-  fillSelect("f-grupo",     unique("grupoArt"));
-  fillSelect("f-deposito",  unique("deposito"));
-
-  // Zona filter en tabla detalle
-  const zSelect = document.getElementById("cli-zona-filter2");
-  zSelect.innerHTML = '<option value="">Todas las zonas</option>';
-  unique("zona").forEach(z => { const o=document.createElement("option"); o.value=z; o.textContent=z; zSelect.appendChild(o); });
-}
-
-function fillSelect(id, options) {
-  const sel = document.getElementById(id);
-  const current = sel.value;
-  const firstOpt = sel.options[0].outerHTML; // preservar "Todos"
-  sel.innerHTML = firstOpt;
-  options.forEach(opt => {
-    const o = document.createElement("option");
-    if (typeof opt === "object") { o.value = opt.val; o.textContent = opt.label; }
-    else { o.value = opt; o.textContent = opt; }
-    sel.appendChild(o);
-  });
-  if (current) sel.value = current;
-}
-
-function getFilterVal(id) { return document.getElementById(id).value; }
-
-function applyFilters() {
-  const anio     = getFilterVal("f-anio");
-  const mes      = getFilterVal("f-mes");
-  const semana   = getFilterVal("f-semana");
-  const zona     = getFilterVal("f-zona");
-  const vendedor = getFilterVal("f-vendedor");
-  const prov     = getFilterVal("f-proveedor");
-  const marca    = getFilterVal("f-marca");
-  const grupo    = getFilterVal("f-grupo");
-  const dep      = getFilterVal("f-deposito");
-  const ecom     = getFilterVal("f-ecommerce");
-
-  FILT_DATA = RAW_DATA.filter(r =>
-    (!anio     || r.anio === anio) &&
-    (!mes      || r.mes === mes) &&
-    (!semana   || r.semana === semana) &&
-    (!zona     || r.zona === zona) &&
-    (!vendedor || r.vendedor === vendedor) &&
-    (!prov     || r.proveedor === prov) &&
-    (!marca    || r.marca === marca) &&
-    (!grupo    || r.grupoArt === grupo) &&
-    (!dep      || r.deposito === dep) &&
-    (!ecom     || r.ecommerce === ecom)
-  );
-
-  document.getElementById("rows-count").textContent = FILT_DATA.length.toLocaleString("es-AR");
-
-  // Reset charts para sección actual
-  chartsBuilt = {};
-  renderSection(activeSection);
-}
-
-function clearFilters() {
-  ["f-anio","f-mes","f-semana","f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce"]
-    .forEach(id => document.getElementById(id).value = "");
-  applyFilters();
-}
+let activeFilters  = {};        // filtros actuales seleccionados
 
 // ============================================================
 // SECTION NAV
@@ -1040,344 +743,465 @@ function renderSection(name) {
 }
 
 // ============================================================
-// AGGREGATION HELPERS
+// API HELPERS — llama al Apps Script Web App
 // ============================================================
-function groupBy(data, key) {
-  return data.reduce((acc, r) => {
-    const k = r[key] || "Sin datos";
-    if (!acc[k]) acc[k] = [];
-    acc[k].push(r);
-    return acc;
-  }, {});
+async function apiCall(action, extraParams = {}) {
+  const params = { ...activeFilters, action, ...extraParams };
+  const cacheKey = JSON.stringify(params);
+  if (CACHE[cacheKey]) return CACHE[cacheKey];
+
+  const qs = new URLSearchParams(params).toString();
+  const url = API_URL + (API_URL.includes("?") ? "&" : "?") + qs;
+
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error("HTTP " + resp.status);
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error);
+  CACHE[cacheKey] = data;
+  return data;
 }
 
-function sumField(arr, field) { return arr.reduce((s,r) => s + (r[field]||0), 0); }
-
-function avgDtoPct(arr) {
-  const filtered = arr.filter(r => r.dto_plata > 0);
-  if (!filtered.length) return 0;
-  // Promedio ponderado: Dto$ total / (Total$ + Dto$) total
-  const totalDto   = sumField(filtered, "dto_plata");
-  const totalBase  = filtered.reduce((s,r) => s + Math.abs(r.totalLinea) + Math.abs(r.dto_plata), 0);
-  return totalBase > 0 ? (totalDto / totalBase * 100) : 0;
+function getFiltersParams() {
+  const gv = id => document.getElementById(id)?.value || "";
+  return {
+    anio:      gv("f-anio"),
+    mes:       gv("f-mes"),
+    semana:    gv("f-semana"),
+    zona:      gv("f-zona"),
+    vendedor:  gv("f-vendedor"),
+    proveedor: gv("f-proveedor"),
+    marca:     gv("f-marca"),
+    grupo:     gv("f-grupo"),
+    deposito:  gv("f-deposito"),
+    ecommerce: gv("f-ecommerce"),
+  };
 }
 
-function getMesLabel(mesNum) {
-  return (MESES[parseInt(mesNum,10)-1] || mesNum)?.substring(0,3);
+// ============================================================
+// CARGA INICIAL — filtros y primera pantalla
+// ============================================================
+async function loadData() {
+  setSyncState("loading", "Cargando…");
+  document.getElementById("loading").classList.remove("hidden");
+  document.getElementById("loading-text").textContent = "Conectando con la API…";
+  CACHE = {};
+
+  try {
+    const filtros = await apiCall("filtros");
+    poblarFiltros(filtros);
+    activeFilters = getFiltersParams();
+    document.getElementById("loading").classList.add("hidden");
+    setSyncState("ok", "Conectado · " + new Date().toLocaleTimeString("es-AR"));
+    document.getElementById("last-update-note").textContent = "⏱ Actualizado: " + new Date().toLocaleString("es-AR");
+    renderSection(activeSection);
+  } catch(e) {
+    setSyncState("error", "Error de conexión");
+    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("loading-text").textContent = "Error: " + e.message;
+    console.error("API Error:", e);
+  }
+}
+
+function poblarFiltros(f) {
+  const MESES_N = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  fillSelect("f-anio",   f.anios || []);
+  fillSelect("f-mes",    (f.meses||[]).map(m => {
+    const [anio, mes] = m.split("-");
+    return { val: m, label: (MESES_N[parseInt(mes,10)-1]||mes) + " " + anio };
+  }));
+  fillSelect("f-semana",    (f.semanas||[]).map(s => ({ val: s, label: "Semana " + s })));
+  fillSelect("f-zona",      f.zonas || []);
+  fillSelect("f-vendedor",  f.vendedores || []);
+  fillSelect("f-proveedor", f.proveedores || []);
+  fillSelect("f-marca",     f.marcas || []);
+  fillSelect("f-grupo",     f.grupos || []);
+  fillSelect("f-deposito",  f.depositos || []);
+
+  // Zona filter en tabla detalle
+  const zSel = document.getElementById("cli-zona-filter2");
+  zSel.innerHTML = '<option value="">Todas las zonas</option>';
+  (f.zonas||[]).forEach(z => {
+    const o = document.createElement("option"); o.value = z; o.textContent = z;
+    zSel.appendChild(o);
+  });
+}
+
+function fillSelect(id, options) {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  const current  = sel.value;
+  const firstOpt = sel.options[0].outerHTML;
+  sel.innerHTML  = firstOpt;
+  options.forEach(opt => {
+    const o = document.createElement("option");
+    if (typeof opt === "object") { o.value = opt.val; o.textContent = opt.label; }
+    else { o.value = opt; o.textContent = opt; }
+    sel.appendChild(o);
+  });
+  if (current) sel.value = current;
+}
+
+function applyFilters() {
+  activeFilters = getFiltersParams();
+  CACHE = {};   // limpiar cache al cambiar filtros
+  chartsBuilt = {};
+  renderSection(activeSection);
+}
+
+function clearFilters() {
+  ["f-anio","f-mes","f-semana","f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce"]
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+  applyFilters();
+}
+
+// ============================================================
+// HELPERS DE FORMATO
+// ============================================================
+const fM = v => {
+  if (v == null || isNaN(v)) return "—";
+  const a = Math.abs(v), s = v < 0 ? "-" : "";
+  if (a >= 1e9) return s+"$"+(a/1e9).toFixed(2)+"B";
+  if (a >= 1e6) return s+"$"+(a/1e6).toFixed(1)+"M";
+  if (a >= 1e3) return s+"$"+(a/1e3).toFixed(0)+"K";
+  return s+"$"+a.toFixed(0);
+};
+const fP = v => v == null || isNaN(v) ? "—" : v.toFixed(1)+"%";
+const fN = v => v == null ? "—" : Number(v).toLocaleString("es-AR");
+
+function chartDefaults() {
+  return {
+    color: "#8b94b0",
+    plugins: { legend: { labels: { color:"#8b94b0", font:{ family:"DM Sans", size:11 } } } },
+    scales: {
+      x: { ticks:{ color:"#8b94b0", font:{ family:"DM Sans", size:11 } }, grid:{ color:"rgba(37,42,58,0.6)" } },
+      y: { ticks:{ color:"#8b94b0", font:{ family:"DM Sans", size:11 } }, grid:{ color:"rgba(37,42,58,0.6)" } }
+    }
+  };
+}
+
+function mkChart(id, config) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); }
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  chartInstances[id] = new Chart(ctx, config);
+  return chartInstances[id];
+}
+
+const COLORES = ["#00c8ff","#ff6b35","#7eff6a","#ffd166","#a855f7","#ff4757","#2ed573","#f8b739","#3d9eff","#ff75a0"];
+const MESES   = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+function showLoading(sectionId) {
+  const sec = document.getElementById("sec-"+sectionId);
+  if (sec) {
+    let ldr = sec.querySelector(".section-loading");
+    if (!ldr) {
+      ldr = document.createElement("div");
+      ldr.className = "section-loading";
+      ldr.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">⏳ Cargando datos…</div>';
+      sec.prepend(ldr);
+    }
+    ldr.style.display = "block";
+  }
+}
+function hideLoading(sectionId) {
+  const ldr = document.getElementById("sec-"+sectionId)?.querySelector(".section-loading");
+  if (ldr) ldr.style.display = "none";
 }
 
 // ============================================================
 // ① RESUMEN
 // ============================================================
-function renderResumen() {
-  // KPIs
-  const totalDtoPlata = sumField(FILT_DATA, "dto_plata");
-  const dtoProm       = avgDtoPct(FILT_DATA);
-  const clientesConDto = new Set(FILT_DATA.filter(r => r.dto_plata > 0).map(r => r.codCliente)).size;
-  const totalVenta    = sumField(FILT_DATA, "totalLinea");
-  const contribTotal  = sumField(FILT_DATA, "contribucion");
+async function renderResumen() {
+  showLoading("resumen");
+  try {
+    const d = await apiCall("resumen");
+    const k = d.kpis || {};
 
-  const kpiEl = document.getElementById("kpi-resumen");
-  kpiEl.innerHTML = `
-    <div class="kpi-card orange">
-      <div class="kpi-label">Descuento Total $</div>
-      <div class="kpi-value">${fM(totalDtoPlata)}</div>
-      <div class="kpi-sub"><span class="kpi-badge badge-warn">Sobre ${fM(totalVenta+totalDtoPlata)} bruto</span></div>
-    </div>
-    <div class="kpi-card red">
-      <div class="kpi-label">% Dto Promedio</div>
-      <div class="kpi-value">${fP(dtoProm)}</div>
-      <div class="kpi-sub"><span class="kpi-badge ${dtoProm>15?"badge-neg":dtoProm>10?"badge-warn":"badge-pos"}">${dtoProm>15?"⚠ Alto":dtoProm>10?"Moderado":"Normal"}</span></div>
-    </div>
-    <div class="kpi-card blue">
-      <div class="kpi-label">Venta Neta $</div>
-      <div class="kpi-value">${fM(totalVenta)}</div>
-      <div class="kpi-sub"><span class="kpi-badge badge-pos">${FILT_DATA.length.toLocaleString()} líneas</span></div>
-    </div>
-    <div class="kpi-card yellow">
-      <div class="kpi-label">Clientes con Dto</div>
-      <div class="kpi-value">${clientesConDto.toLocaleString()}</div>
-      <div class="kpi-sub"><span class="kpi-badge badge-warn">${(()=>{const tot=new Set(FILT_DATA.map(r=>r.codCliente)).size;return tot>0?(clientesConDto/tot*100).toFixed(1):0})()}% del total</span></div>
-    </div>
-    <div class="kpi-card green">
-      <div class="kpi-label">Contribución Total $</div>
-      <div class="kpi-value">${fM(contribTotal)}</div>
-      <div class="kpi-sub"><span class="kpi-badge ${contribTotal<0?"badge-neg":"badge-pos"}">${totalVenta>0?fP(contribTotal/totalVenta*100):"—"} margen</span></div>
-    </div>
-  `;
+    // Actualizar contador de filas (estimado desde clientesConDto)
+    document.getElementById("rows-count").textContent = fN(k.totalClientes || 0) + " clientes";
 
-  // Gráfico DTO mensual
-  const byMes = groupBy(FILT_DATA, "mes");
-  const mesesOrdenados = Object.keys(byMes).sort();
-  const dtoMensual = mesesOrdenados.map(m => sumField(byMes[m], "dto_plata"));
-  const pctMensual = mesesOrdenados.map(m => avgDtoPct(byMes[m]));
+    // KPIs
+    const clientesConDto = k.clientesConDto || 0;
+    const totalClientes  = k.totalClientes  || 0;
+    const pctCli = totalClientes > 0 ? (clientesConDto/totalClientes*100).toFixed(1) : 0;
+    document.getElementById("kpi-resumen").innerHTML = `
+      <div class="kpi-card">
+        <div class="kpi-label">Dto $ Total</div>
+        <div class="kpi-value">${fM(k.dtoTotal)}</div>
+        <div class="kpi-sub"><span class="kpi-badge badge-warn">${fP(k.dtoPct)} promedio</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">% Dto Promedio</div>
+        <div class="kpi-value">${fP(k.dtoPct)}</div>
+        <div class="kpi-sub"><span class="kpi-badge badge-info">Ponderado</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Venta Neta $</div>
+        <div class="kpi-value">${fM(k.ventaTotal)}</div>
+        <div class="kpi-sub"><span class="kpi-badge badge-ok">Sin IVA</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Clientes con Dto</div>
+        <div class="kpi-value">${fN(clientesConDto)}</div>
+        <div class="kpi-sub"><span class="kpi-badge badge-warn">${pctCli}% del total</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Contribución $</div>
+        <div class="kpi-value ${(k.contribucion||0)<0?"dto-high":""}">${fM(k.contribucion)}</div>
+        <div class="kpi-sub"><span class="kpi-badge badge-info">Margen neto</span></div>
+      </div>`;
 
-  mkChart("c-dto-mensual", {
-    type:"bar",
-    data:{ labels: mesesOrdenados.map(getMesLabel),
-      datasets:[
-        {label:"Dto $", data:dtoMensual, backgroundColor:"rgba(255,107,53,0.7)", borderColor:"#ff6b35", borderWidth:1, borderRadius:3, yAxisID:"y"},
-        {label:"% Dto", data:pctMensual, type:"line", borderColor:"#ffd166", borderWidth:2, pointRadius:4, fill:false, yAxisID:"y2"}
+    // Gráfico mensual
+    const meses = (d.evolucionMensual||[]);
+    const labMes = meses.map(m => {
+      const p = m.mes.split("-"); return (MESES[parseInt(p[1],10)-1]||p[1])?.substring(0,3)+" "+p[0];
+    });
+    mkChart("c-dto-mensual",{
+      type:"bar",
+      data:{labels:labMes, datasets:[
+        {label:"Dto $",data:meses.map(m=>m.dto),backgroundColor:"rgba(255,107,53,0.7)",borderRadius:3,yAxisID:"y"},
+        {label:"% Dto",data:meses.map(m=>parseFloat(m.pct.toFixed(1))),type:"line",
+          borderColor:"#00c8ff",backgroundColor:"rgba(0,200,255,0.1)",
+          pointBackgroundColor:"#00c8ff",tension:0.4,yAxisID:"y2",fill:true}
       ]},
-    options:{...chartDefaults(), scales:{
-      x: chartDefaults().scales.x,
-      y:{...chartDefaults().scales.y, position:"left", ticks:{...chartDefaults().scales.y.ticks, callback:v=>fM(v)}},
-      y2:{...chartDefaults().scales.y, position:"right", grid:{drawOnChartArea:false}, ticks:{...chartDefaults().scales.y.ticks, callback:v=>v.toFixed(1)+"%"}}
-    }}
-  });
+      options:{...chartDefaults(),
+        scales:{
+          x:{...chartDefaults().scales.x},
+          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}},
+          y2:{position:"right",ticks:{color:"#00c8ff",callback:v=>v+"%"},grid:{display:false}}
+        }
+      }
+    });
 
-  // Zona bars
-  const byZona = groupBy(FILT_DATA, "zona");
-  const zonasOrd = Object.entries(byZona).map(([z,rows])=>({zona:z, dto:sumField(rows,"dto_plata")})).sort((a,b)=>b.dto-a.dto);
-  const maxDto = zonasOrd[0]?.dto || 1;
-  const zBars = document.getElementById("zona-dto-bars");
-  zBars.innerHTML = "";
-  zonasOrd.forEach((z,i) => {
-    const pct = (z.dto/maxDto*100).toFixed(1);
-    zBars.innerHTML += `<div class="progress-row">
-      <div class="progress-label"><span class="name">${z.zona}</span><span class="vals">${fM(z.dto)}</span></div>
-      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${COLORES[i%COLORES.length]}"></div></div>
-    </div>`;
-  });
+    // Barras por zona
+    const porZona = d.porZona || [];
+    document.getElementById("zona-dto-bars").innerHTML = porZona.map(z => {
+      const maxDto = Math.max(...porZona.map(x=>x.dto), 1);
+      const w = (z.dto/maxDto*100).toFixed(1);
+      const cls = z.pct>4?"dto-high":z.pct>3?"dto-medium":"dto-ok";
+      return `<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+          <span>${z.zona}</span><span class="${cls}">${fP(z.pct)} · ${fM(z.dto)}</span>
+        </div>
+        <div style="background:var(--surface2);border-radius:3px;height:6px">
+          <div style="background:var(--accent2);width:${w}%;height:100%;border-radius:3px"></div>
+        </div>
+      </div>`;
+    }).join("");
 
-  // Top vendedores por % dto
-  const byVend = groupBy(FILT_DATA, "vendedor");
-  const vendOrd = Object.entries(byVend)
-    .map(([v,rows])=>({v, pct:avgDtoPct(rows)}))
-    .filter(x=>x.pct>0).sort((a,b)=>b.pct-a.pct).slice(0,10);
+    // Top vendedores
+    const topV = d.topVendedores || [];
+    mkChart("c-dto-vend",{
+      type:"bar",
+      data:{labels:topV.map(v=>v.vendedor.split(" ")[0]),
+        datasets:[{label:"% Dto",data:topV.map(v=>parseFloat(v.dto_pct.toFixed(1))),
+          backgroundColor:topV.map(v=>v.dto_pct>4?"rgba(255,71,87,0.8)":v.dto_pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),
+          borderRadius:4}]},
+      options:{...chartDefaults(),indexAxis:"y",
+        plugins:{...chartDefaults().plugins,legend:{display:false}},
+        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>v+"%"}}}
+      }
+    });
 
-  mkChart("c-dto-vend",{
-    type:"bar",
-    data:{labels:vendOrd.map(x=>x.v.split(" ")[0]),
-      datasets:[{label:"% Dto Prom",data:vendOrd.map(x=>parseFloat(x.pct.toFixed(1))),
-        backgroundColor:vendOrd.map(x=>x.pct>4?"rgba(255,71,87,0.8)":x.pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),
-        borderRadius:3}]},
-    options:{...chartDefaults(),indexAxis:"y",
-      plugins:{...chartDefaults().plugins,legend:{display:false}},
-      scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>v+"%"}}}
-    }
-  });
+    // Top proveedores
+    const topP = d.topProveedores || [];
+    mkChart("c-dto-prov",{
+      type:"bar",
+      data:{labels:topP.map(p=>p.proveedor.substring(0,15)),
+        datasets:[{label:"Dto $",data:topP.map(p=>p.dto_total),backgroundColor:COLORES,borderRadius:4}]},
+      options:{...chartDefaults(),indexAxis:"y",
+        plugins:{...chartDefaults().plugins,legend:{display:false}},
+        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}}}
+      }
+    });
 
-  // Top proveedores por dto $
-  const byProv = groupBy(FILT_DATA, "proveedor");
-  const provOrd = Object.entries(byProv)
-    .map(([p,rows])=>({p, dto:sumField(rows,"dto_plata")}))
-    .sort((a,b)=>b.dto-a.dto).slice(0,8);
+    // Distribución rangos
+    const rg = d.rangos || {};
+    mkChart("c-dto-dist",{
+      type:"doughnut",
+      data:{
+        labels:["Bonificado >90%","Alto 30-90%","Medio 10-30%","Normal <10%","Sin dto"],
+        datasets:[{data:[rg.bonif||0,rg.alto||0,rg.medio||0,rg.normal||0,rg.sin||0],
+          backgroundColor:["#a855f7","#ff4757","#ffd166","#2ed573","#5a6380"],borderWidth:0}]
+      },
+      options:{...chartDefaults(),plugins:{...chartDefaults().plugins,legend:{position:"bottom",labels:{color:"#8b94b0",font:{size:10}}}}}
+    });
 
-  mkChart("c-dto-prov",{
-    type:"doughnut",
-    data:{labels:provOrd.map(x=>x.p.split(" ")[0]),
-      datasets:[{data:provOrd.map(x=>x.dto.toFixed(0)),backgroundColor:COLORES,borderWidth:2,borderColor:"#151820"}]},
-    options:{plugins:{legend:{labels:{color:"#8b94b0",font:{family:"DM Sans",size:10}},position:"right"}},cutout:"55%"}
-  });
-
-  // Distribución por rangos
-  const rangos = [">30%","20-30%","10-20%","5-10%","<5%"];
-  const counts = [
-    FILT_DATA.filter(r=>r.dto_pct>30).length,
-    FILT_DATA.filter(r=>r.dto_pct>20&&r.dto_pct<=30).length,
-    FILT_DATA.filter(r=>r.dto_pct>10&&r.dto_pct<=20).length,
-    FILT_DATA.filter(r=>r.dto_pct>5&&r.dto_pct<=10).length,
-    FILT_DATA.filter(r=>r.dto_pct>0&&r.dto_pct<=5).length,
-  ];
-  mkChart("c-dto-dist",{
-    type:"bar",
-    data:{labels:rangos,
-      datasets:[{label:"Líneas",data:counts,backgroundColor:["#ff4757","#ff6b35","#ffd166","#7eff6a","#2ed573"],borderRadius:4}]},
-    options:{...chartDefaults(),plugins:{...chartDefaults().plugins,legend:{display:false}}}
-  });
+  } catch(e) { console.error("renderResumen:", e); }
+  hideLoading("resumen");
 }
 
 // ============================================================
 // ② EVOLUCIÓN
 // ============================================================
-function renderEvolucion() {
-  const byMes = groupBy(FILT_DATA, "mes");
-  const meses = Object.keys(byMes).sort();
+async function renderEvolucion() {
+  showLoading("evolucion");
+  try {
+    const d = await apiCall("evolucion");
+    const mens = d.mensual || [];
+    const labM = mens.map(m => {
+      const p = m.mes.split("-"); return (MESES[parseInt(p[1],10)-1]||p[1])?.substring(0,3)+" "+p[0];
+    });
 
-  mkChart("c-evol-mensual",{
-    type:"bar",
-    data:{labels:meses.map(getMesLabel),datasets:[
-      {label:"Dto $",data:meses.map(m=>sumField(byMes[m],"dto_plata")),backgroundColor:"rgba(255,107,53,0.7)",borderRadius:3,yAxisID:"y"},
-      {label:"% Dto",data:meses.map(m=>parseFloat(avgDtoPct(byMes[m]).toFixed(2))),type:"line",borderColor:"#ffd166",borderWidth:2,pointRadius:4,fill:false,yAxisID:"y2"}
-    ]},
-    options:{...chartDefaults(),scales:{
-      x:chartDefaults().scales.x,
-      y:{...chartDefaults().scales.y,position:"left",ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}},
-      y2:{...chartDefaults().scales.y,position:"right",grid:{drawOnChartArea:false},ticks:{...chartDefaults().scales.y.ticks,callback:v=>v.toFixed(1)+"%"}}
-    }}
-  });
+    mkChart("c-evol-mensual",{
+      type:"bar",
+      data:{labels:labM, datasets:[
+        {label:"Dto $",data:mens.map(m=>m.dto),backgroundColor:"rgba(255,107,53,0.7)",borderRadius:3,yAxisID:"y"},
+        {label:"% Dto",data:mens.map(m=>parseFloat(m.pct.toFixed(1))),type:"line",
+          borderColor:"#00c8ff",backgroundColor:"rgba(0,200,255,0.08)",
+          pointBackgroundColor:"#00c8ff",tension:0.4,yAxisID:"y2",fill:true}
+      ]},
+      options:{...chartDefaults(),
+        scales:{
+          x:{...chartDefaults().scales.x},
+          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}},
+          y2:{position:"right",ticks:{color:"#00c8ff",callback:v=>v+"%"},grid:{display:false}}
+        }
+      }
+    });
 
-  // Semanal
-  const bySem = groupBy(FILT_DATA,"semana");
-  const sems = Object.keys(bySem).sort().slice(-12);
-  mkChart("c-evol-semanal",{
-    type:"line",
-    data:{labels:sems,datasets:[{
-      label:"Dto $ semanal",data:sems.map(s=>sumField(bySem[s]||[],"dto_plata")),
-      borderColor:"#ff6b35",backgroundColor:"rgba(255,107,53,0.1)",fill:true,tension:0.3,pointRadius:4
-    }]},
-    options:{...chartDefaults(),scales:{...chartDefaults().scales,y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}}}}
-  });
+    const sems = d.semanal || [];
+    mkChart("c-evol-semanal",{
+      type:"bar",
+      data:{labels:sems.map(s=>s.semana),
+        datasets:[{label:"Dto $",data:sems.map(s=>s.dto),backgroundColor:"rgba(0,200,255,0.6)",borderRadius:3}]},
+      options:{...chartDefaults(),
+        plugins:{...chartDefaults().plugins,legend:{display:false}},
+        scales:{...chartDefaults().scales,y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}}}
+      }
+    });
 
-  // Por tipo comprobante
-  const byComp = groupBy(FILT_DATA,"comprobante");
-  const comps = Object.keys(byComp);
-  mkChart("c-evol-comp",{
-    type:"bar",
-    data:{labels:comps,datasets:[
-      {label:"Dto $",data:comps.map(c=>sumField(byComp[c],"dto_plata")),backgroundColor:COLORES,borderRadius:4},
-    ]},
-    options:{...chartDefaults(),
-      plugins:{...chartDefaults().plugins,legend:{display:false}},
-      scales:{...chartDefaults().scales,y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}}}
-    }
-  });
+    const comp = d.porComprobante || [];
+    mkChart("c-evol-comp",{
+      type:"doughnut",
+      data:{labels:comp.map(c=>c.tipo), datasets:[{data:comp.map(c=>c.dto),backgroundColor:COLORES,borderWidth:0}]},
+      options:{...chartDefaults(),plugins:{...chartDefaults().plugins,legend:{position:"bottom",labels:{color:"#8b94b0",font:{size:10}}}}}
+    });
+
+  } catch(e) { console.error("renderEvolucion:", e); }
+  hideLoading("evolucion");
 }
 
 // ============================================================
 // ③ POR ZONA
 // ============================================================
-function renderZona() {
-  const byZona = groupBy(FILT_DATA,"zona");
-  const zonas = Object.keys(byZona).sort();
-
-  mkChart("c-zona-dto",{
-    type:"bar",
-    data:{labels:zonas,datasets:[{
-      label:"Dto $",data:zonas.map(z=>sumField(byZona[z],"dto_plata")),
-      backgroundColor:COLORES,borderRadius:4
-    }]},
-    options:{...chartDefaults(),indexAxis:"y",
-      plugins:{...chartDefaults().plugins,legend:{display:false}},
-      scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}}}
-    }
-  });
-
-  mkChart("c-zona-pct",{
-    type:"bar",
-    data:{labels:zonas,datasets:[{
-      label:"% Dto Prom",data:zonas.map(z=>parseFloat(avgDtoPct(byZona[z]).toFixed(1))),
-      backgroundColor:zonas.map((z,i)=>COLORES[i%COLORES.length]),borderRadius:4
-    }]},
-    options:{...chartDefaults(),indexAxis:"y",
-      plugins:{...chartDefaults().plugins,legend:{display:false}},
-      scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>v+"%"}}}
-    }
-  });
-
-  renderZonaRank();
-}
-
 let zonaRankSort = {key:"dto_total", dir:-1};
 function sortZonaRank(key) {
   if(zonaRankSort.key===key) zonaRankSort.dir*=-1; else {zonaRankSort.key=key;zonaRankSort.dir=-1;}
-  renderZonaRank();
+  renderZona();
 }
-function renderZonaRank() {
-  const byZ = groupBy(FILT_DATA,"zona");
-  let rows = Object.entries(byZ).map(([z,data])=>({
-    zona:z,
-    dto_total: sumField(data,"dto_plata"),
-    dto_pct: avgDtoPct(data),
-    clientes: new Set(data.filter(r=>r.dto_plata>0).map(r=>r.codCliente)).size,
-    total_venta: sumField(data,"totalLinea")
-  }));
-  rows.sort((a,b)=>(typeof a[zonaRankSort.key]==="string"?
-    a[zonaRankSort.key].localeCompare(b[zonaRankSort.key])*zonaRankSort.dir:
-    (a[zonaRankSort.key]-b[zonaRankSort.key])*zonaRankSort.dir));
 
-  const tbody = document.getElementById("zona-rank-body");
-  tbody.innerHTML = "";
-  rows.forEach((r,i)=>{
-    const dtoVta = r.total_venta>0?r.dto_total/(r.total_venta+r.dto_total)*100:0;
-    tbody.innerHTML+=`<tr>
-      <td style="font-family:'Bebas Neue';font-size:15px;color:var(--muted);text-align:center">${i+1}</td>
-      <td><strong>${r.zona}</strong></td>
-      <td class="num">${fM(r.dto_total)}</td>
-      <td class="num ${r.dto_pct>4?"dto-high":r.dto_pct>3?"dto-medium":"dto-ok"}">${fP(r.dto_pct)}</td>
-      <td class="num">${fN(r.clientes)}</td>
-      <td class="num">${fM(r.total_venta)}</td>
-      <td class="num ${dtoVta>4?"dto-high":dtoVta>3?"dto-medium":"dto-ok"}">${fP(dtoVta)}</td>
-    </tr>`;
-  });
+async function renderZona() {
+  showLoading("zona");
+  try {
+    const d  = await apiCall("zona");
+    let rows = d.zonas || [];
+
+    rows.sort((a,b) => typeof a[zonaRankSort.key]==="string" ?
+      a[zonaRankSort.key].localeCompare(b[zonaRankSort.key])*zonaRankSort.dir :
+      (a[zonaRankSort.key]-b[zonaRankSort.key])*zonaRankSort.dir
+    );
+
+    mkChart("c-zona-dto",{
+      type:"bar",
+      data:{labels:rows.map(z=>z.zona),datasets:[{label:"Dto $",data:rows.map(z=>z.dto_total),backgroundColor:COLORES,borderRadius:4}]},
+      options:{...chartDefaults(),indexAxis:"y",
+        plugins:{...chartDefaults().plugins,legend:{display:false}},
+        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}}}
+      }
+    });
+    mkChart("c-zona-pct",{
+      type:"bar",
+      data:{labels:rows.map(z=>z.zona),datasets:[{label:"% Dto",data:rows.map(z=>parseFloat(z.dto_pct.toFixed(1))),
+        backgroundColor:rows.map(z=>z.dto_pct>4?"rgba(255,71,87,0.8)":z.dto_pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),borderRadius:4}]},
+      options:{...chartDefaults(),indexAxis:"y",
+        plugins:{...chartDefaults().plugins,legend:{display:false}},
+        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>v+"%"}}}
+      }
+    });
+
+    const tbody = document.getElementById("zona-rank-body");
+    tbody.innerHTML = "";
+    rows.forEach((r,i) => {
+      const dtoVta = r.venta_total>0 ? r.dto_total/(r.venta_total+r.dto_total)*100 : 0;
+      tbody.innerHTML += `<tr>
+        <td style="font-family:'Bebas Neue';font-size:15px;color:var(--muted);text-align:center">${i+1}</td>
+        <td><strong>${r.zona}</strong></td>
+        <td class="num">${fM(r.dto_total)}</td>
+        <td class="num ${r.dto_pct>4?"dto-high":r.dto_pct>3?"dto-medium":"dto-ok"}">${fP(r.dto_pct)}</td>
+        <td class="num">${fN(r.clientes)}</td>
+        <td class="num">${fM(r.venta_total)}</td>
+        <td class="num ${dtoVta>4?"dto-high":dtoVta>3?"dto-medium":"dto-ok"}">${fP(dtoVta)}</td>
+      </tr>`;
+    });
+  } catch(e) { console.error("renderZona:", e); }
+  hideLoading("zona");
 }
 
 // ============================================================
 // ④ POR VENDEDOR
 // ============================================================
-function renderVendedor() {
-  const byV = groupBy(FILT_DATA,"vendedor");
-  const vends = Object.keys(byV).sort((a,b)=>sumField(byV[b],"dto_plata")-sumField(byV[a],"dto_plata")).slice(0,10);
-
-  mkChart("c-vend-dto",{
-    type:"bar",
-    data:{labels:vends,datasets:[{
-      label:"Dto $",data:vends.map(v=>sumField(byV[v],"dto_plata")),
-      backgroundColor:COLORES,borderRadius:4
-    }]},
-    options:{...chartDefaults(),indexAxis:"y",
-      plugins:{...chartDefaults().plugins,legend:{display:false}},
-      scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}}}
-    }
-  });
-
-  const vendsPct = Object.keys(byV).sort((a,b)=>avgDtoPct(byV[b])-avgDtoPct(byV[a])).slice(0,10);
-  mkChart("c-vend-pct",{
-    type:"bar",
-    data:{labels:vendsPct,datasets:[{
-      label:"% Dto Prom",
-      data:vendsPct.map(v=>parseFloat(avgDtoPct(byV[v]).toFixed(1))),
-      backgroundColor:vendsPct.map(v=>{const p=avgDtoPct(byV[v]);return p>4?"rgba(255,71,87,0.8)":p>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)";}),
-      borderRadius:4
-    }]},
-    options:{...chartDefaults(),indexAxis:"y",
-      plugins:{...chartDefaults().plugins,legend:{display:false}},
-      scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>v+"%"}}}
-    }
-  });
-
-  renderVendRank();
-}
-
 let vendRankSort = {key:"dto_total", dir:-1};
 function sortVendRank(key) {
   if(vendRankSort.key===key) vendRankSort.dir*=-1; else {vendRankSort.key=key;vendRankSort.dir=-1;}
-  renderVendRank();
+  renderVendedor();
 }
-function renderVendRank() {
-  const byV = groupBy(FILT_DATA,"vendedor");
-  let rows = Object.entries(byV).map(([v,data])=>({
-    vendedor:v,
-    zona: data[0]?.zona||"",
-    dto_total: sumField(data,"dto_plata"),
-    dto_pct: avgDtoPct(data),
-    lineas: data.filter(r=>r.dto_plata>0).length,
-    total_venta: sumField(data,"totalLinea")
-  }));
-  rows.sort((a,b)=>(typeof a[vendRankSort.key]==="string"?
-    a[vendRankSort.key].localeCompare(b[vendRankSort.key])*vendRankSort.dir:
-    (a[vendRankSort.key]-b[vendRankSort.key])*vendRankSort.dir));
 
-  const tbody = document.getElementById("vend-rank-body");
-  tbody.innerHTML = "";
-  rows.forEach((r,i)=>{
-    const dtoVta = r.total_venta>0?r.dto_total/(r.total_venta+r.dto_total)*100:0;
-    tbody.innerHTML+=`<tr>
-      <td style="font-family:'Bebas Neue';font-size:15px;color:var(--muted);text-align:center">${i+1}</td>
-      <td><strong>${r.vendedor}</strong></td>
-      <td><span style="font-size:10px;background:var(--surface2);padding:2px 7px;border-radius:3px;color:var(--text-dim)">${r.zona}</span></td>
-      <td class="num">${fM(r.dto_total)}</td>
-      <td class="num ${r.dto_pct>4?"dto-high":r.dto_pct>3?"dto-medium":"dto-ok"}">${fP(r.dto_pct)}</td>
-      <td class="num">${fN(r.lineas)}</td>
-      <td class="num">${fM(r.total_venta)}</td>
-      <td class="num ${dtoVta>4?"dto-high":dtoVta>3?"dto-medium":"dto-ok"}">${fP(dtoVta)}</td>
-    </tr>`;
-  });
+async function renderVendedor() {
+  showLoading("vendedor");
+  try {
+    const d  = await apiCall("vendedor");
+    let rows = d.vendedores || [];
+
+    rows.sort((a,b) => typeof a[vendRankSort.key]==="string" ?
+      a[vendRankSort.key].localeCompare(b[vendRankSort.key])*vendRankSort.dir :
+      (a[vendRankSort.key]-b[vendRankSort.key])*vendRankSort.dir
+    );
+
+    const top10dto = [...rows].sort((a,b)=>b.dto_total-a.dto_total).slice(0,10);
+    const top10pct = [...rows].sort((a,b)=>b.dto_pct-a.dto_pct).slice(0,10);
+
+    mkChart("c-vend-dto",{
+      type:"bar",
+      data:{labels:top10dto.map(v=>v.vendedor.split(" ")[0]),
+        datasets:[{label:"Dto $",data:top10dto.map(v=>v.dto_total),backgroundColor:COLORES,borderRadius:4}]},
+      options:{...chartDefaults(),indexAxis:"y",
+        plugins:{...chartDefaults().plugins,legend:{display:false}},
+        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}}}
+      }
+    });
+    mkChart("c-vend-pct",{
+      type:"bar",
+      data:{labels:top10pct.map(v=>v.vendedor.split(" ")[0]),
+        datasets:[{label:"% Dto",data:top10pct.map(v=>parseFloat(v.dto_pct.toFixed(1))),
+          backgroundColor:top10pct.map(v=>v.dto_pct>4?"rgba(255,71,87,0.8)":v.dto_pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),borderRadius:4}]},
+      options:{...chartDefaults(),indexAxis:"y",
+        plugins:{...chartDefaults().plugins,legend:{display:false}},
+        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>v+"%"}}}
+      }
+    });
+
+    const tbody = document.getElementById("vend-rank-body");
+    tbody.innerHTML = "";
+    rows.forEach((r,i) => {
+      const dtoVta = r.venta_total>0 ? r.dto_total/(r.venta_total+r.dto_total)*100 : 0;
+      tbody.innerHTML += `<tr>
+        <td style="font-family:'Bebas Neue';font-size:15px;color:var(--muted);text-align:center">${i+1}</td>
+        <td><strong>${r.vendedor}</strong></td>
+        <td><span style="font-size:10px;background:var(--surface2);padding:2px 7px;border-radius:3px;color:var(--text-dim)">${r.zona}</span></td>
+        <td class="num">${fM(r.dto_total)}</td>
+        <td class="num ${r.dto_pct>4?"dto-high":r.dto_pct>3?"dto-medium":"dto-ok"}">${fP(r.dto_pct)}</td>
+        <td class="num">${fN(r.lineas)}</td>
+        <td class="num">${fM(r.venta_total)}</td>
+        <td class="num ${dtoVta>4?"dto-high":dtoVta>3?"dto-medium":"dto-ok"}">${fP(dtoVta)}</td>
+      </tr>`;
+    });
+  } catch(e) { console.error("renderVendedor:", e); }
+  hideLoading("vendedor");
 }
 
 // ============================================================
-// ④ DETALLE CLIENTES
+// ⑤ DETALLE CLIENTES
 // ============================================================
 let detalleSort = {key:"dto_pct", dir:-1};
 function sortDetalle(key) {
@@ -1385,70 +1209,54 @@ function sortDetalle(key) {
   renderDetalleTable();
 }
 
-function renderDetalleTable() {
-  const q     = (document.getElementById("cli-search")?.value||"").toLowerCase();
-  const alarm = document.getElementById("cli-alarm-filter")?.value||"";
-  const zona  = document.getElementById("cli-zona-filter2")?.value||"";
+async function renderDetalleTable() {
+  showLoading("detalle");
+  try {
+    const alarm  = document.getElementById("cli-alarm-filter")?.value || "";
+    const search = document.getElementById("cli-search")?.value || "";
+    const zona   = document.getElementById("cli-zona-filter2")?.value || "";
 
-  let data = FILT_DATA.filter(r => r.dto_plata > 0);
+    const d = await apiCall("detalle", { alarm, search, zona });
+    const rows = d.rows || [];
 
-  if (q) data = data.filter(r =>
-    r.cliente.toLowerCase().includes(q) || r.descripcion.toLowerCase().includes(q) || r.codCliente.toLowerCase().includes(q)
-  );
-  if (alarm === "bonif")  data = data.filter(r => r.dto_pct > 90);
-  if (alarm === "alto")   data = data.filter(r => r.dto_pct > 30 && r.dto_pct <= 90);
-  if (alarm === "medio")  data = data.filter(r => r.dto_pct > 10 && r.dto_pct <= 30);
-  if (alarm === "normal") data = data.filter(r => r.dto_pct <= 10);
-  if (zona) data = data.filter(r => r.zona === zona);
+    document.getElementById("cli-count").textContent = `${(d.total||0).toLocaleString()} líneas`;
 
-  data.sort((a,b) => typeof a[detalleSort.key]==="string"?
-    a[detalleSort.key].localeCompare(b[detalleSort.key])*detalleSort.dir:
-    (a[detalleSort.key]-b[detalleSort.key])*detalleSort.dir
-  );
+    const tbody = document.getElementById("detalle-body");
+    tbody.innerHTML = "";
 
-  document.getElementById("cli-count").textContent = `${data.length.toLocaleString()} líneas`;
+    rows.forEach(r => {
+      const alarmClass = r.dto_pct>90?"alarm-bonif":r.dto_pct>30?"alarm-high":r.dto_pct>10?"alarm-medium":"";
+      const dotClass   = r.dto_pct>90?"dot-purple":r.dto_pct>30?"dot-red":r.dto_pct>10?"dot-yellow":"dot-green";
+      const dtoClass   = r.dto_pct>90?"dto-bonif":r.dto_pct>30?"dto-high":r.dto_pct>10?"dto-medium":"dto-ok";
+      tbody.innerHTML += `<tr class="${alarmClass}">
+        <td><span class="dot ${dotClass}" style="width:8px;height:8px"></span></td>
+        <td>${r.fecha}</td>
+        <td style="font-size:10px;color:var(--muted)">${r.codCliente}</td>
+        <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${r.cliente}</strong></td>
+        <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px">${r.descripcion}</td>
+        <td style="font-size:11px;color:var(--text-dim)">${r.marca}</td>
+        <td class="num ${dtoClass}">${fP(r.dto_pct)}</td>
+        <td class="num">${fM(r.dto_plata)}</td>
+        <td class="num">${r.pesoKg ? fN(r.pesoKg) : "—"}</td>
+        <td class="num ${r.contribucion<0?"dto-high":""}">${fM(r.contribucion)}</td>
+        <td style="font-size:11px">${r.vendedor.split(" ")[0]}</td>
+      </tr>`;
+    });
 
-  const tbody = document.getElementById("detalle-body");
-  tbody.innerHTML = "";
-  const limit = Math.min(data.length, 500);
-  for (let i=0;i<limit;i++) {
-    const r = data[i];
-    const alarmClass = r.dto_pct>90?"alarm-bonif":r.dto_pct>30?"alarm-high":r.dto_pct>10?"alarm-medium":"";
-    const dotClass   = r.dto_pct>90?"dot-purple":r.dto_pct>30?"dot-red":r.dto_pct>10?"dot-yellow":"dot-green";
-    const dtoClass   = r.dto_pct>90?"dto-bonif":r.dto_pct>30?"dto-high":r.dto_pct>10?"dto-medium":"dto-ok";
-    tbody.innerHTML+=`<tr class="${alarmClass}">
-      <td><span class="dot ${dotClass}" style="width:8px;height:8px"></span></td>
-      <td>${r.fecha}</td>
-      <td style="font-size:10px;color:var(--muted)">${r.codCliente}</td>
-      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${r.cliente}</strong></td>
-      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px">${r.descripcion}</td>
-      <td style="font-size:11px;color:var(--text-dim)">${r.marca}</td>
-      <td class="num ${dtoClass}">${fP(r.dto_pct)}</td>
-      <td class="num">${fM(r.dto_plata)}</td>
-      <td class="num">${r.pesoKg?fN(r.pesoKg):"-"}</td>
-      <td class="num ${r.contribucion<0?"dto-high":""}">${fM(r.contribucion)}</td>
-      <td style="font-size:11px">${r.vendedor.split(" ")[0]}</td>
-    </tr>`;
-  }
-  if (data.length > 500) {
-    tbody.innerHTML += `<tr><td colspan="10" style="text-align:center;padding:12px;color:var(--muted);font-size:11px">
-      Mostrando 500 de ${data.length} líneas. Aplicá filtros para ver más detalle.
-    </td></tr>`;
-  }
+    if ((d.pages||1) > 1) {
+      tbody.innerHTML += `<tr><td colspan="11" style="text-align:center;padding:12px;color:var(--muted);font-size:11px">
+        Mostrando página 1 de ${d.pages} (${d.total.toLocaleString()} líneas). Usá los filtros para acotar.
+      </td></tr>`;
+    }
+  } catch(e) { console.error("renderDetalleTable:", e); }
+  hideLoading("detalle");
 }
+
+function reloadData() { CACHE={}; loadData(); }
 
 // ============================================================
 // SYNC STATE
 // ============================================================
-function setSyncState(state, label) {
-  const dot = document.getElementById("sync-dot");
-  const lbl = document.getElementById("sync-label");
-  dot.className = "sync-dot " + state;
-  lbl.textContent = label;
-}
-
-function reloadData() { loadData(); }
-
 // ============================================================
 // AI PANEL
 // ============================================================
@@ -1464,38 +1272,33 @@ function saveAIKey() {
 }
 
 function buildAIContext() {
-  const totalDto = sumField(FILT_DATA,"dto_plata");
-  const dtoProm  = avgDtoPct(FILT_DATA);
-  const byVend   = groupBy(FILT_DATA,"vendedor");
-  const byZona   = groupBy(FILT_DATA,"zona");
+  // Usa el último resumen cacheado para construir el contexto de la IA
+  const cacheKey = JSON.stringify({...activeFilters, action:"resumen"});
+  const d = CACHE[cacheKey];
+  if (!d) return "No hay datos cargados aún. Esperá que el dashboard termine de cargar.";
 
-  const vendSummary = Object.entries(byVend)
-    .map(([v,rows])=>`${v}: Dto$=${fM(sumField(rows,"dto_plata"))}, Dto%=${avgDtoPct(rows).toFixed(1)}%, Líneas=${rows.filter(r=>r.dto_pct>0).length}`)
+  const k = d.kpis || {};
+  const vendSummary = (d.topVendedores||[])
+    .map(v=>`${v.vendedor}: Dto%=${v.dto_pct.toFixed(1)}%, Dto$=${fM(v.dto_total)}`)
     .join("\n");
-  const zonaSummary = Object.entries(byZona)
-    .map(([z,rows])=>`${z}: Dto$=${fM(sumField(rows,"dto_plata"))}, Dto%=${avgDtoPct(rows).toFixed(1)}%`)
-    .join("\n");
-
-  const topAlarm = FILT_DATA.filter(r=>r.dto_pct>20).sort((a,b)=>b.dto_pct-a.dto_pct).slice(0,10)
-    .map(r=>`${r.cliente} | ${r.descripcion} | ${r.dto_pct.toFixed(1)}% | ${r.vendedor}`)
+  const zonaSummary = (d.porZona||[])
+    .map(z=>`${z.zona}: Dto%=${fP(z.pct)}, Dto$=${fM(z.dto)}`)
     .join("\n");
 
   return `Sos un analista comercial de Cedisur, distribuidora de alimentos. Analizás descuentos otorgados a clientes.
 
-RESUMEN GENERAL (${FILT_DATA.length} líneas filtradas):
-- Descuento total: ${fM(totalDto)}
-- % Descuento promedio ponderado: ${dtoProm.toFixed(2)}%
-- Venta neta total: ${fM(sumField(FILT_DATA,"totalLinea"))}
-- Contribución total: ${fM(sumField(FILT_DATA,"contribucion"))}
+RESUMEN GENERAL:
+- Descuento total: ${fM(k.dtoTotal)}
+- % Descuento promedio ponderado: ${fP(k.dtoPct)}
+- Venta neta total: ${fM(k.ventaTotal)}
+- Contribución total: ${fM(k.contribucion)}
+- Clientes con descuento: ${fN(k.clientesConDto)} de ${fN(k.totalClientes)}
 
-VENDEDORES:
-${vendSummary}
+VENDEDORES (Top 10 por % dto):
+${vendSummary || "Sin datos"}
 
 ZONAS:
-${zonaSummary}
-
-TOP 10 LÍNEAS CON DESCUENTO ALTO (>20%):
-${topAlarm || "Ninguna"}
+${zonaSummary || "Sin datos"}
 
 Respondé en español, de manera concisa y directa. Si preguntás por clientes o productos específicos, avisá que el contexto incluye datos agregados.`;
 }

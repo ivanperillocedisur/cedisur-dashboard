@@ -467,6 +467,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
       <option value="No">Solo Tradicional</option>
     </select>
   </div>
+  <div class="filter-separator"></div>
+  <div class="filter-group">
+    <span class="filter-label">Grupo Cliente</span>
+    <select class="filter-select" id="f-segmento" onchange="applyFilters()"><option value="">Todos</option></select>
+  </div>
   <button class="btn-clear-filters" onclick="clearFilters()">✕ Limpiar filtros</button>
   <div class="rows-badge">Filas: <span id="rows-count">—</span></div>
 </div>
@@ -489,9 +494,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
       <div class="chart-card-title">% Descuento por zona — Últimas 4 semanas</div>
       <div class="chart-wrap"><canvas id="c-semanas-zona" height="180"></canvas></div>
     </div>
-    <div class="chart-card" style="overflow-y:auto;max-height:320px">
+    <div class="chart-card" style="display:flex;flex-direction:column">
       <div class="chart-card-title">% Dto promedio por Vendedor — Todos</div>
-      <div id="vend-dto-bars"></div>
+      <div id="vend-dto-bars" style="overflow-y:auto;flex:1;max-height:260px;padding-right:4px"></div>
     </div>
   </div>
   <div class="chart-row cols3">
@@ -824,6 +829,7 @@ function poblarFiltros() {
   fillSelect("f-marca",    getVals("marcas"));
   fillSelect("f-grupo",    getVals("grupos"));
   fillSelect("f-deposito", getVals("depositos"));
+  fillSelect("f-segmento", getVals("segmentos"));
   const zSel = document.getElementById("cli-zona-filter2");
   zSel.innerHTML = '<option value="">Todas las zonas</option>';
   getVals("zonas").forEach(z => {
@@ -864,6 +870,7 @@ function filtrarResumen(tipo) {
   const marca= getFilterVal("f-marca");
   const grupo= getFilterVal("f-grupo");
   const dep  = getFilterVal("f-deposito");
+  const seg  = getFilterVal("f-segmento");
 
   return RESUMEN_DATA.filter(r => {
     if (r["Tipo"] === "FILTROS") return false;
@@ -888,6 +895,7 @@ function filtrarDetalle() {
   const grupo= getFilterVal("f-grupo");
   const dep  = getFilterVal("f-deposito");
   const ecom = getFilterVal("f-ecommerce");
+  const seg  = getFilterVal("f-segmento");
 
   return DETALLE_DATA.filter(r => {
     if (zona  && r["Zona"]           !== zona)  return false;
@@ -897,6 +905,7 @@ function filtrarDetalle() {
     if (grupo && r["Grupo Artículo"] !== grupo) return false;
     if (dep   && r["Depósito"]       !== dep)   return false;
     if (ecom  && r["Ecommerce"]      !== ecom)  return false;
+    if (seg   && r["Segmento"]       !== seg)   return false;
     return true;
   });
 }
@@ -911,7 +920,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  ["f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce"]
+  ["f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce","f-segmento"]
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
   applyFilters();
 }

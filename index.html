@@ -995,19 +995,48 @@ function renderResumen() {
         <div class="kpi-sub"><span class="kpi-badge ${contrib<0?"badge-neg":"badge-pos"}">Margen neto</span></div>
       </div>`;
 
-    // Gráfico: % Dto por zona — últimas 4 semanas (líneas con puntos gruesos)
+    // Gráfico: % Dto por zona — histórico + semana vigente
     const numSemR = s => parseInt((s||"").replace("Sem ",""))||0;
+
+    // Semanas del histórico
     const semsHistR = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))]
       .sort((a,b)=>numSemR(a)-numSemR(b));
+
+    // Semana vigente desde DATA_DETALLE (la más reciente)
+    const semsDetalle = [...new Set(DETALLE_DATA.map(r=>r["Semana Fiscal"]).filter(Boolean))];
+    const semVigenteNum = Math.max(...semsDetalle.map(s=>parseInt(s)||0));
+    const semVigente = semVigenteNum > 0 ? "Sem " + semVigenteNum : null;
+
+    // Combinar: histórico + vigente (sin duplicados)
+    const todasSems = [...semsHistR];
+    if (semVigente && !todasSems.includes(semVigente)) todasSems.push(semVigente);
+    todasSems.sort((a,b)=>numSemR(a)-numSemR(b));
+
+    // Zonas disponibles
     const zonasHistR = [...new Set(HISTORICO_DATA.map(r=>r["Zona"]).filter(Boolean))].sort();
-    const zonaFiltR = getFilterVal("f-zona");
-    const zonasVisR = zonaFiltR ? [zonaFiltR] : zonasHistR;
+    const zonasDetR  = [...new Set(DETALLE_DATA.map(r=>r["Zona"]).filter(Boolean))].sort();
+    const todasZonas = [...new Set([...zonasHistR, ...zonasDetR])].sort();
+    const zonaFiltR  = getFilterVal("f-zona");
+    const zonasVisR  = zonaFiltR ? [zonaFiltR] : todasZonas;
+
     const dsZona = zonasVisR.map((z,i) => {
-      const pcts = semsHistR.map(sem => {
-        const f = HISTORICO_DATA.find(r=>r["Semana"]===sem&&r["Zona"]===z);
-        if (!f) return null;
-        const d=parseFloat(f["Dto $"])||0, v=parseFloat(f["Total $"])||0;
-        return (d+v)>0 ? parseFloat((d/(d+v)*100).toFixed(2)) : 0;
+      const pcts = todasSems.map(sem => {
+        if (sem === semVigente) {
+          // Calcular desde DETALLE_DATA
+          const filas = DETALLE_DATA.filter(r => {
+            const rSem = "Sem " + (parseInt(r["Semana Fiscal"])||0);
+            return rSem === semVigente && r["Zona"] === z;
+          });
+          const dto = filas.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
+          const vta = filas.reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
+          return (dto+vta)>0 ? parseFloat((dto/(dto+vta)*100).toFixed(2)) : 0;
+        } else {
+          // Leer del histórico
+          const f = HISTORICO_DATA.find(r=>r["Semana"]===sem&&r["Zona"]===z);
+          if (!f) return null;
+          const d=parseFloat(f["Dto $"])||0, v=parseFloat(f["Total $"])||0;
+          return (d+v)>0 ? parseFloat((d/(d+v)*100).toFixed(2)) : 0;
+        }
       });
       return { label:z, data:pcts, borderColor:COLORES[i%COLORES.length],
         backgroundColor:COLORES[i%COLORES.length]+"33",
@@ -1015,9 +1044,10 @@ function renderResumen() {
         borderWidth:3, fill:false,
         pointBackgroundColor:COLORES[i%COLORES.length] };
     });
+
     mkChart("c-semanas-zona",{
       type:"line",
-      data:{ labels:semsHistR, datasets:dsZona },
+      data:{ labels:todasSems, datasets:dsZona },
       options:{...chartDefaults(),
         plugins:{...chartDefaults().plugins,
           legend:{display:true,labels:{color:"#8b94b0",font:{family:"DM Sans",size:11}}}

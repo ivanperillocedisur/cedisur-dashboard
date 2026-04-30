@@ -101,6 +101,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   transition: all 0.2s; margin-left: auto;
 }
 .btn-clear-filters:hover { border-color: var(--red); color: var(--red); }
+#toggle-acuerdos:hover { opacity: 0.85; }
 .filter-separator { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
 .rows-badge { font-size: 10px; color: var(--muted); white-space: nowrap; }
 .rows-badge span { color: var(--accent2); font-weight: 600; }
@@ -374,6 +375,14 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   <div class="filter-group">
     <span class="filter-label">Grupo Cliente</span>
     <select class="filter-select" id="f-segmento" onchange="applyFilters()"><option value="">Todos</option></select>
+  </div>
+  <div class="filter-separator"></div>
+  <div class="filter-group">
+    <span class="filter-label">Acuerdos</span>
+    <button id="toggle-acuerdos" onclick="toggleAcuerdos()"
+      style="background:#ff4757;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;transition:all 0.2s">
+      EXCLUIDOS
+    </button>
   </div>
   <button class="btn-clear-filters" onclick="clearFilters()">✕ Limpiar filtros</button>
   <div class="rows-badge">Filas: <span id="rows-count">—</span></div>
@@ -653,6 +662,7 @@ function renderSection(name) {
 let RESUMEN_DATA  = [];
 let DETALLE_DATA  = [];
 let HISTORICO_DATA = [];
+let EXCLUIR_ACUERDOS = true; // true = excluidos por defecto
 
 // ============================================================
 // CARGA INICIAL
@@ -863,6 +873,7 @@ function filtrarDetalle() {
   const seg  = getFilterVal("f-segmento");
 
   return DETALLE_DATA.filter(r => {
+    if (EXCLUIR_ACUERDOS && (r["Acuerdo"]||"") === "Sí") return false;
     if (zona  && r["Zona"]           !== zona)  return false;
     if (vend  && r["Vendedor"]       !== vend)  return false;
     if (prov  && r["Proveedor"]      !== prov)  return false;
@@ -1534,6 +1545,22 @@ function renderDetalleTable() {
 }
 
 function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; HISTORICO_DATA=[]; CACHE={}; loadData(); }
+
+function toggleAcuerdos() {
+  EXCLUIR_ACUERDOS = !EXCLUIR_ACUERDOS;
+  const btn = document.getElementById("toggle-acuerdos");
+  if (EXCLUIR_ACUERDOS) {
+    btn.textContent = "EXCLUIDOS";
+    btn.style.background = "#ff4757";
+    btn.style.color = "#fff";
+  } else {
+    btn.textContent = "INCLUIDOS";
+    btn.style.background = "#2ed573";
+    btn.style.color = "#0d0f14";
+  }
+  CACHE = {}; chartsBuilt = {};
+  renderSection(activeSection);
+}
 
 // ============================================================
 // SYNC STATE

@@ -429,20 +429,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 
 <!-- FILTERS BAR -->
 <div class="filters-bar">
-  <!-- Tiempo -->
-  <div class="filter-group">
-    <span class="filter-label">Año</span>
-    <select class="filter-select" id="f-anio" onchange="applyFilters()"><option value="">Todos</option></select>
-  </div>
-  <div class="filter-group">
-    <span class="filter-label">Mes</span>
-    <select class="filter-select" id="f-mes" onchange="applyFilters()"><option value="">Todos</option></select>
-  </div>
-  <div class="filter-group">
-    <span class="filter-label">Semana Fisc.</span>
-    <select class="filter-select" id="f-semana" onchange="applyFilters()"><option value="">Todas</option></select>
-  </div>
-  <div class="filter-separator"></div>
+
   <!-- Zona / Vendedor -->
   <div class="filter-group">
     <span class="filter-label">Zona</span>
@@ -500,8 +487,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   <div class="kpi-grid cols5" id="kpi-resumen"></div>
   <div class="chart-row cols2x1">
     <div class="chart-card">
-      <div class="chart-card-title">Descuento $ por mes — Evolución</div>
-      <div class="chart-wrap"><canvas id="c-dto-mensual" height="180"></canvas></div>
+      <div class="chart-card-title">Descuento $ y % por zona — Últimas 4 semanas</div>
+      <div class="chart-wrap"><canvas id="c-semanas-zona" height="180"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-card-title">Mix descuento por Zona</div>
@@ -527,23 +514,29 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 <!-- ② EVOLUCIÓN -->
 <div id="sec-evolucion" class="section">
   <div class="section-header">
-    <div class="section-title">Evolución</div>
-    <div class="section-desc">Semanal · Mensual · Por comprobante</div>
+    <div class="section-title">Comparativo Semanal</div>
+    <div class="section-desc">Evolución semana a semana · Dto$ · % Dto · Contribución$</div>
   </div>
   <div class="chart-row cols1">
     <div class="chart-card">
-      <div class="chart-card-title">Descuento $ mensual y % promedio (eje derecho)</div>
-      <div class="chart-wrap"><canvas id="c-evol-mensual" height="150"></canvas></div>
+      <div class="chart-card-title">Descuento $ por semana — Total</div>
+      <div class="chart-wrap"><canvas id="c-evol-dto-sem" height="150"></canvas></div>
     </div>
   </div>
   <div class="chart-row cols2">
     <div class="chart-card">
-      <div class="chart-card-title">Descuento $ semanal (últimas 12 semanas)</div>
-      <div class="chart-wrap"><canvas id="c-evol-semanal" height="190"></canvas></div>
+      <div class="chart-card-title">% Descuento promedio por semana</div>
+      <div class="chart-wrap"><canvas id="c-evol-pct-sem" height="190"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-card-title">Descuento $ por tipo de comprobante</div>
-      <div class="chart-wrap"><canvas id="c-evol-comp" height="190"></canvas></div>
+      <div class="chart-card-title">Contribución $ por semana</div>
+      <div class="chart-wrap"><canvas id="c-evol-contrib-sem" height="190"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-row cols1">
+    <div class="chart-card">
+      <div class="chart-card-title">% Descuento por zona — Comparativo semanal</div>
+      <div class="chart-wrap"><canvas id="c-evol-zona-sem" height="200"></canvas></div>
     </div>
   </div>
 </div>
@@ -714,7 +707,8 @@ let CONFIG = { aiKey: localStorage.getItem("cedisur_ai_key") || "" };
 // La arquitectura pasó a API-first: el Apps Script actúa como
 // servidor. El HTML solo pide JSON agregado, nunca el CSV crudo.
 // ============================================================
-const API_URL = "PEGAR_URL_WEB_APP_AQUI"; // ← reemplazá con tu URL de Web App
+// URLs CSV publicadas desde Google Sheets
+const URL_HISTORICO = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=494146848&single=true&output=csv";
 
 let CACHE        = {};          // cache por acción+params
 let activeSection = "resumen";
@@ -748,8 +742,9 @@ function renderSection(name) {
 // ============================================================
 // DATOS EN MEMORIA — cargados desde CSV al inicio
 // ============================================================
-let RESUMEN_DATA = [];
-let DETALLE_DATA = [];
+let RESUMEN_DATA  = [];
+let DETALLE_DATA  = [];
+let HISTORICO_DATA = [];
 
 // ============================================================
 // CARGA INICIAL
@@ -761,12 +756,14 @@ async function loadData() {
   CACHE = {};
 
   try {
-    const [csvResumen, csvDetalle] = await Promise.all([
+    const [csvResumen, csvDetalle, csvHistorico] = await Promise.all([
       fetchCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1471861732&single=true&output=csv"),
-      fetchCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1657795795&single=true&output=csv")
+      fetchCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1657795795&single=true&output=csv"),
+      fetchCSV(URL_HISTORICO)
     ]);
-    RESUMEN_DATA = parseCSV(csvResumen);
-    DETALLE_DATA = parseCSV(csvDetalle);
+    RESUMEN_DATA  = parseCSV(csvResumen);
+    DETALLE_DATA  = parseCSV(csvDetalle);
+    HISTORICO_DATA = parseCSV(csvHistorico);
     poblarFiltros();
     document.getElementById("loading").classList.add("hidden");
     setSyncState("ok", "Actualizado · " + new Date().toLocaleTimeString("es-AR"));
@@ -820,12 +817,7 @@ function poblarFiltros() {
     const row = fRows.find(r => r["Clave"] === clave);
     return row ? row["Zona"].split("|").filter(Boolean) : [];
   };
-  fillSelect("f-anio",     getVals("anios"));
-  fillSelect("f-mes",      getVals("meses").map(m => {
-    const [anio, mes] = m.split("-");
-    return { val: m, label: (MESES_N[parseInt(mes,10)-1]||mes) + " " + anio };
-  }));
-  fillSelect("f-semana",   getVals("semanas").map(s => ({ val: s, label: s })));
+  // Filtros de tiempo eliminados — dashboard muestra semana completa cargada
   fillSelect("f-zona",     getVals("zonas"));
   fillSelect("f-vendedor", getVals("vendedores"));
   fillSelect("f-proveedor",getVals("proveedores"));
@@ -858,9 +850,6 @@ function fillSelect(id, options) {
 function getFilterVal(id) { return document.getElementById(id)?.value || ""; }
 
 function filtrarResumen(tipo) {
-  const anio = getFilterVal("f-anio");
-  const mes  = getFilterVal("f-mes");
-  const sem  = getFilterVal("f-semana");
   const zona = getFilterVal("f-zona");
   const vend = getFilterVal("f-vendedor");
   const prov = getFilterVal("f-proveedor");
@@ -871,24 +860,19 @@ function filtrarResumen(tipo) {
   return RESUMEN_DATA.filter(r => {
     if (r["Tipo"] === "FILTROS") return false;
     if (tipo && r["Tipo"] !== tipo) return false;
-    if (anio && (r["Tipo"]==="MES"||r["Tipo"]==="SEMANA") && !r["Clave"].startsWith(anio)) return false;
-    if (mes  && r["Tipo"]==="MES"    && r["Clave"] !== mes)   return false;
-    if (sem  && r["Tipo"]==="SEMANA" && r["Clave"] !== sem)   return false;
-    if (zona && r["Tipo"]==="ZONA"   && r["Clave"] !== zona)  return false;
-    if (vend && r["Tipo"]==="VENDEDOR" && r["Clave"] !== vend) return false;
-    if (vend && r["Tipo"]==="ZONA"   && r["Vendedor"] && r["Vendedor"] !== vend) return false;
-    if (zona && r["Tipo"]==="VENDEDOR" && r["Zona"] !== zona) return false;
-    if (prov && r["Tipo"]==="PROVEEDOR" && r["Clave"] !== prov) return false;
-    if (marca&& r["Tipo"]==="MARCA"  && r["Clave"] !== marca) return false;
-    if (grupo&& r["Tipo"]==="GRUPO"  && r["Clave"] !== grupo) return false;
-    if (dep  && r["Tipo"]==="DEPOSITO" && r["Clave"] !== dep) return false;
+    if (zona && r["Tipo"]==="ZONA"     && r["Clave"] !== zona)  return false;
+    if (vend && r["Tipo"]==="VENDEDOR" && r["Clave"] !== vend)  return false;
+    if (zona && r["Tipo"]==="VENDEDOR" && r["Zona"]  !== zona)  return false;
+    if (vend && r["Tipo"]==="ZONA"     && r["Vendedor"] && r["Vendedor"] !== vend) return false;
+    if (prov && r["Tipo"]==="PROVEEDOR"&& r["Clave"] !== prov)  return false;
+    if (marca&& r["Tipo"]==="MARCA"    && r["Clave"] !== marca) return false;
+    if (grupo&& r["Tipo"]==="GRUPO"    && r["Clave"] !== grupo) return false;
+    if (dep  && r["Tipo"]==="DEPOSITO" && r["Clave"] !== dep)   return false;
     return true;
   });
 }
 
 function filtrarDetalle() {
-  const anio = getFilterVal("f-anio");
-  const mes  = getFilterVal("f-mes");
   const zona = getFilterVal("f-zona");
   const vend = getFilterVal("f-vendedor");
   const prov = getFilterVal("f-proveedor");
@@ -898,17 +882,13 @@ function filtrarDetalle() {
   const ecom = getFilterVal("f-ecommerce");
 
   return DETALLE_DATA.filter(r => {
-    const p = (r["Fecha"]||"").split("/");
-    const rAnio = p[2]||""; const rMes = (p[2]||"")+"-"+(p[1]||"");
-    if (anio  && rAnio !== anio)           return false;
-    if (mes   && rMes  !== mes)            return false;
-    if (zona  && r["Zona"]        !== zona) return false;
-    if (vend  && r["Vendedor"]    !== vend) return false;
-    if (prov  && r["Proveedor"]   !== prov) return false;
-    if (marca && r["Marca"]       !== marca)return false;
-    if (grupo && r["Grupo Artículo"]!==grupo)return false;
-    if (dep   && r["Depósito"]    !== dep)  return false;
-    if (ecom  && r["Ecommerce"]   !== ecom) return false;
+    if (zona  && r["Zona"]           !== zona)  return false;
+    if (vend  && r["Vendedor"]       !== vend)  return false;
+    if (prov  && r["Proveedor"]      !== prov)  return false;
+    if (marca && r["Marca"]          !== marca) return false;
+    if (grupo && r["Grupo Artículo"] !== grupo) return false;
+    if (dep   && r["Depósito"]       !== dep)   return false;
+    if (ecom  && r["Ecommerce"]      !== ecom)  return false;
     return true;
   });
 }
@@ -923,7 +903,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  ["f-anio","f-mes","f-semana","f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce"]
+  ["f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce"]
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
   applyFilters();
 }
@@ -1033,31 +1013,9 @@ function renderResumen() {
         <div class="kpi-sub"><span class="kpi-badge badge-info">Margen neto</span></div>
       </div>`;
 
-    // Gráfico mensual
-    const labMes = mesR.map(m => {
-      const p = m["Clave"].split("-"); return (MESES[parseInt(p[1],10)-1]||p[1])?.substring(0,3)+" "+p[0];
-    });
-    const dtosMes = mesR.map(m => parseFloat(m["Dto $"])||0);
-    const ventasMes = mesR.map(m => parseFloat(m["Total $"])||0);
-    const pctsMes = mesR.map((m,i) => {
-      const d=dtosMes[i], v=ventasMes[i]; return (d+v)>0 ? parseFloat((d/(d+v)*100).toFixed(1)) : 0;
-    });
-    mkChart("c-dto-mensual",{
-      type:"bar",
-      data:{labels:labMes, datasets:[
-        {label:"Dto $",data:dtosMes,backgroundColor:"rgba(255,107,53,0.7)",borderRadius:3,yAxisID:"y"},
-        {label:"% Dto",data:pctsMes,type:"line",
-          borderColor:"#00c8ff",backgroundColor:"rgba(0,200,255,0.1)",
-          pointBackgroundColor:"#00c8ff",tension:0.4,yAxisID:"y2",fill:true}
-      ]},
-      options:{...chartDefaults(),
-        scales:{
-          x:{...chartDefaults().scales.x},
-          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}},
-          y2:{position:"right",ticks:{color:"#00c8ff",callback:v=>v+"%"},grid:{display:false}}
-        }
-      }
-    });
+    // Gráfico: Dto$ y % por zona — últimas 4 semanas
+    const semZonaData = getUltimas4SemanasPorZona();
+    mkChart("c-semanas-zona", semZonaData);
 
     // Barras por zona
     const maxDto = Math.max(...zonas.map(z=>parseFloat(z["Dto $"])||0), 1);
@@ -1131,25 +1089,113 @@ function renderResumen() {
 // ============================================================
 // ② EVOLUCIÓN
 // ============================================================
+// ── Helper: obtener semanas disponibles del RESUMEN_DATA ──
+function getSemanas() {
+  return [...new Set(
+    RESUMEN_DATA.filter(r=>r["Tipo"]==="SEMANA").map(r=>r["Clave"])
+  )].sort();
+}
+
+// ── Helper: últimas N semanas filtradas por zona/vendedor ──
+function getSemanasConFiltro(n) {
+  const zona = getFilterVal("f-zona");
+  const vend = getFilterVal("f-vendedor");
+  const sems = getSemanas().slice(-n);
+  // Para cada semana, sumar desde DETALLE filtrando zona/vend
+  return sems.map(sem => {
+    const filas = DETALLE_DATA.filter(r => {
+      const p = (r["Fecha"]||"").split("/");
+      const rSem = (p[2]||"")+"-S"+((r["Semana Fiscal"]||"").padStart(2,"0"));
+      if (rSem !== sem) return false;
+      if (zona && r["Zona"]     !== zona) return false;
+      if (vend && r["Vendedor"] !== vend) return false;
+      return true;
+    });
+    const dto   = filas.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
+    const vta   = filas.reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
+    const contrib= filas.reduce((s,r)=>s+(parseFloat(r["Contribución $"])||0),0);
+    const pct   = (dto+vta)>0?dto/(dto+vta)*100:0;
+    return { sem, dto, vta, contrib, pct };
+  });
+}
+
+// ── Helper: últimas 4 semanas por zona desde HISTORICO_DATA ──
+function getUltimas4SemanasPorZona() {
+  const zonaFilt = getFilterVal("f-zona");
+  const vendFilt = getFilterVal("f-vendedor");
+
+  // Filtrar por zona/vendedor si aplica
+  let rows = HISTORICO_DATA.filter(r => {
+    if (zonaFilt && r["Zona"] !== zonaFilt) return false;
+    if (vendFilt && r["Vendedor"] && r["Vendedor"] !== vendFilt) return false;
+    return true;
+  });
+
+  // Obtener semanas únicas ordenadas
+  const numSem = s => parseInt((s||"").replace("Sem ",""))||0;
+  const sems = [...new Set(rows.map(r=>r["Semana"]))].sort((a,b)=>numSem(a)-numSem(b));
+
+  // Obtener zonas únicas
+  const zonas = zonaFilt ? [zonaFilt] :
+    [...new Set(HISTORICO_DATA.map(r=>r["Zona"]).filter(Boolean))].sort();
+
+  const datasets = zonas.map((z,i) => {
+    const dtos = sems.map(sem => {
+      const fila = rows.find(r => r["Semana"]===sem && r["Zona"]===z);
+      return fila ? parseFloat(fila["Dto $"])||0 : 0;
+    });
+    const pcts = sems.map(sem => {
+      const fila = rows.find(r => r["Semana"]===sem && r["Zona"]===z);
+      if (!fila) return 0;
+      const d = parseFloat(fila["Dto $"])||0;
+      const v = parseFloat(fila["Total $"])||0;
+      return (d+v)>0 ? parseFloat((d/(d+v)*100).toFixed(1)) : 0;
+    });
+    return {
+      label: z,
+      data: dtos,
+      pcts,
+      backgroundColor: COLORES[i % COLORES.length],
+      borderRadius: 3
+    };
+  });
+
+  return {
+    type:"bar",
+    data:{ labels: sems, datasets },
+    options:{...chartDefaults(),
+      plugins:{...chartDefaults().plugins,
+        legend:{display:true,labels:{color:"#8b94b0",font:{family:"DM Sans",size:10}}},
+        tooltip:{callbacks:{
+          afterBody: (items) => {
+            const ds = datasets[items[0]?.datasetIndex];
+            const idx = items[0]?.dataIndex;
+            return ds && idx !== undefined ? `% Dto: ${ds.pcts[idx].toFixed(1)}%` : "";
+          }
+        }}
+      },
+      scales:{
+        x:{...chartDefaults().scales.x},
+        y:{...chartDefaults().scales.y,
+          ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}}
+      }
+    }
+  };
+}
+
 function renderEvolucion() {
   showLoading("evolucion");
   try {
-    const mesR  = filtrarResumen("MES");
-    const semR  = filtrarResumen("SEMANA");
-    const compR = filtrarResumen("COMPROBANTE");
+    const sems = getSemanasConFiltro(12);
+    const labs = sems.map(s=>s.sem);
 
-    const labM = mesR.map(m => {
-      const p = m["Clave"].split("-"); return (MESES[parseInt(p[1],10)-1]||p[1])?.substring(0,3)+" "+p[0];
-    });
-    const dM = mesR.map(m=>parseFloat(m["Dto $"])||0);
-    const vM = mesR.map(m=>parseFloat(m["Total $"])||0);
-    const pM = dM.map((d,i)=>(d+vM[i])>0?parseFloat((d/(d+vM[i])*100).toFixed(1)):0);
-
-    mkChart("c-evol-mensual",{
+    // Dto$ por semana
+    mkChart("c-evol-dto-sem",{
       type:"bar",
-      data:{labels:labM, datasets:[
-        {label:"Dto $",data:dM,backgroundColor:"rgba(255,107,53,0.7)",borderRadius:3,yAxisID:"y"},
-        {label:"% Dto",data:pM,type:"line",borderColor:"#00c8ff",backgroundColor:"rgba(0,200,255,0.08)",
+      data:{labels:labs, datasets:[
+        {label:"Dto $",data:sems.map(s=>s.dto),backgroundColor:"rgba(255,107,53,0.7)",borderRadius:3,yAxisID:"y"},
+        {label:"% Dto",data:sems.map(s=>parseFloat(s.pct.toFixed(1))),type:"line",
+          borderColor:"#00c8ff",backgroundColor:"rgba(0,200,255,0.08)",
           pointBackgroundColor:"#00c8ff",tension:0.4,yAxisID:"y2",fill:true}
       ]},
       options:{...chartDefaults(),
@@ -1161,22 +1207,66 @@ function renderEvolucion() {
       }
     });
 
-    const semOrd = semR.sort((a,b)=>a["Clave"].localeCompare(b["Clave"])).slice(-12);
-    mkChart("c-evol-semanal",{
+    // % Dto por semana
+    mkChart("c-evol-pct-sem",{
       type:"bar",
-      data:{labels:semOrd.map(s=>s["Clave"]),
-        datasets:[{label:"Dto $",data:semOrd.map(s=>parseFloat(s["Dto $"])||0),backgroundColor:"rgba(0,200,255,0.6)",borderRadius:3}]},
+      data:{labels:labs, datasets:[{
+        label:"% Dto",data:sems.map(s=>parseFloat(s.pct.toFixed(1))),
+        backgroundColor:sems.map(s=>s.pct>4?"rgba(255,71,87,0.8)":s.pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),
+        borderRadius:4
+      }]},
       options:{...chartDefaults(),
         plugins:{...chartDefaults().plugins,legend:{display:false}},
-        scales:{...chartDefaults().scales,y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}}}
+        scales:{...chartDefaults().scales,
+          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>v+"%"}}}
       }
     });
 
-    mkChart("c-evol-comp",{
-      type:"doughnut",
-      data:{labels:compR.map(r=>r["Clave"]),
-        datasets:[{data:compR.map(r=>parseFloat(r["Dto $"])||0),backgroundColor:COLORES,borderWidth:0}]},
-      options:{...chartDefaults(),plugins:{...chartDefaults().plugins,legend:{position:"bottom",labels:{color:"#8b94b0",font:{size:10}}}}}
+    // Contribución$ por semana
+    mkChart("c-evol-contrib-sem",{
+      type:"bar",
+      data:{labels:labs, datasets:[{
+        label:"Contribución $",data:sems.map(s=>s.contrib),
+        backgroundColor:sems.map(s=>s.contrib<0?"rgba(255,71,87,0.7)":"rgba(46,213,115,0.6)"),
+        borderRadius:4
+      }]},
+      options:{...chartDefaults(),
+        plugins:{...chartDefaults().plugins,legend:{display:false}},
+        scales:{...chartDefaults().scales,
+          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}}}
+      }
+    });
+
+    // % Dto por zona — comparativo semanal desde HISTORICO_DATA
+    const numSem = s => parseInt((s||"").replace("Sem ",""))||0;
+    const semsHist = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))]
+      .sort((a,b)=>numSem(a)-numSem(b));
+    const zonaFilt = getFilterVal("f-zona");
+    const zonasHist = zonaFilt ? [zonaFilt] :
+      [...new Set(HISTORICO_DATA.map(r=>r["Zona"]).filter(Boolean))].sort();
+
+    const datasetsZona = zonasHist.map((z,i) => {
+      const pcts = semsHist.map(sem => {
+        const fila = HISTORICO_DATA.find(r=>r["Semana"]===sem && r["Zona"]===z);
+        if (!fila) return 0;
+        const d=parseFloat(fila["Dto $"])||0, v=parseFloat(fila["Total $"])||0;
+        return (d+v)>0 ? parseFloat((d/(d+v)*100).toFixed(1)) : 0;
+      });
+      return { label:z, data:pcts, borderColor:COLORES[i%COLORES.length],
+        backgroundColor:"transparent", tension:0.4, pointRadius:4,
+        pointBackgroundColor:COLORES[i%COLORES.length] };
+    });
+
+    mkChart("c-evol-zona-sem",{
+      type:"line",
+      data:{ labels:semsHist, datasets:datasetsZona },
+      options:{...chartDefaults(),
+        plugins:{...chartDefaults().plugins,
+          legend:{display:true,labels:{color:"#8b94b0",font:{family:"DM Sans",size:10}}}
+        },
+        scales:{...chartDefaults().scales,
+          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>v+"%"}}}
+      }
     });
 
   } catch(e) { console.error("renderEvolucion:", e); }
@@ -1384,7 +1474,7 @@ function renderDetalleTable() {
   hideLoading("detalle");
 }
 
-function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; CACHE={}; loadData(); }
+function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; HISTORICO_DATA=[]; CACHE={}; loadData(); }
 
 // ============================================================
 // SYNC STATE

@@ -840,7 +840,7 @@ function filtrarResumen(tipo) {
 
   // Si hay filtros de producto/segmento/depósito/ecommerce activos,
   // calcular agregados desde DETALLE_DATA (tiene todos los campos)
-  const usarDetalle = prov || marca || grupo || dep || seg || ecom;
+  const usarDetalle = prov || marca || grupo || dep || seg || ecom || EXCLUIR_ACUERDOS;
 
   if (usarDetalle) {
     return agregarDesdeDetalle(tipo).filter(r => {

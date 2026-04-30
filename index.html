@@ -25,7 +25,7 @@
   --purple: #a855f7;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 13px; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
 
 /* HEADER */
 .header {
@@ -37,7 +37,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 }
 .header-left { display: flex; align-items: center; gap: 16px; }
 .logo-block {
-  background: var(--accent2);
+  background: #244798;
   color: #fff;
   font-family: 'Bebas Neue', sans-serif;
   font-size: 20px; letter-spacing: 2px;
@@ -80,7 +80,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   padding: 0 32px; display: flex; overflow-x: auto; position: sticky; top: 65px; z-index: 190;
 }
 .nav-tab {
-  padding: 13px 18px; font-size: 11px; font-weight: 500; color: var(--text-dim);
+  padding: 13px 18px; font-size: 12px; font-weight: 500; color: var(--text-dim);
   cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap;
   transition: all 0.2s; letter-spacing: 0.5px; text-transform: uppercase;
 }
@@ -93,11 +93,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   padding: 12px 32px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
 }
 .filter-group { display: flex; align-items: center; gap: 6px; }
-.filter-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+.filter-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
 .filter-select, .filter-input {
   background: var(--surface); border: 1px solid var(--border);
   color: var(--text); padding: 6px 10px; border-radius: 5px;
-  font-family: 'DM Sans', sans-serif; font-size: 11px; outline: none;
+  font-family: 'DM Sans', sans-serif; font-size: 12px; outline: none;
   cursor: pointer; min-width: 120px; transition: border-color 0.2s;
 }
 .filter-select:focus, .filter-input:focus { border-color: var(--accent2); }
@@ -134,8 +134,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .kpi-card.yellow::before { background: var(--accent4); }
 .kpi-card.red::before    { background: var(--red); }
 .kpi-card.purple::before { background: var(--purple); }
-.kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 6px; }
-.kpi-value { font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 1px; line-height: 1; }
+.kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 6px; }
+.kpi-value { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 1px; line-height: 1; }
 .kpi-card.orange .kpi-value { color: var(--accent2); }
 .kpi-card.blue   .kpi-value { color: var(--accent); }
 .kpi-card.green  .kpi-value { color: var(--accent3); }
@@ -163,7 +163,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   border-radius: 10px; padding: 18px 20px;
 }
 .chart-card-title {
-  font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
   color: var(--text-dim); margin-bottom: 14px; font-weight: 500;
 }
 .chart-wrap { position: relative; }
@@ -171,7 +171,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 /* SEMAFORO TABLE */
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table th {
-  font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
   color: var(--muted); font-weight: 500;
   padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border);
   cursor: pointer; user-select: none; white-space: nowrap;
@@ -179,12 +179,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .data-table th:hover { color: var(--text); }
 .data-table td {
   padding: 9px 10px; border-bottom: 1px solid rgba(37,42,58,0.4);
-  font-size: 11px; color: var(--text-dim);
+  font-size: 12px; color: var(--text-dim);
 }
 .data-table td:first-child { color: var(--text); }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: var(--surface2); }
-.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.data-table .num { text-align: center; font-variant-numeric: tabular-nums; }
 .table-scroll { overflow-x: auto; max-height: 440px; overflow-y: auto; }
 .table-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
 .table-scroll::-webkit-scrollbar-track { background: var(--surface); }
@@ -254,7 +254,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   text-align: center; padding: 48px 20px; color: var(--muted);
 }
 .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
-.empty-state .msg { font-size: 13px; }
+.empty-state .msg { font-size: 14px; }
 
 /* CONFIG MODAL */
 .modal-overlay {
@@ -411,7 +411,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 <!-- HEADER -->
 <div class="header">
   <div class="header-left">
-    <div class="logo-block">CEDI<br>SUR</div>
+    <div class="logo-block">CEDISUR</div>
     <div>
       <div class="header-title">Tablero de Descuentos</div>
       <div class="header-sub">Control Comercial · Vendedores y Clientes</div>
@@ -474,31 +474,30 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 <!-- NAV -->
 <div class="nav-tabs">
   <div class="nav-tab active" onclick="showSection('resumen', this)">① Resumen Ejecutivo</div>
-  <div class="nav-tab" onclick="showSection('evolucion', this)">② Evolución</div>
-  <div class="nav-tab" onclick="showSection('zona', this)">③ Por Zona</div>
-  <div class="nav-tab" onclick="showSection('vendedor', this)">④ Por Vendedor</div>
-  <div class="nav-tab" onclick="showSection('detalle', this)">⑤ Detalle Clientes</div>
+  <div class="nav-tab" onclick="showSection('zona', this)">② Por Zona</div>
+  <div class="nav-tab" onclick="showSection('vendedor', this)">③ Por Vendedor</div>
+  <div class="nav-tab" onclick="showSection('detalle', this)">④ Detalle Clientes</div>
 </div>
 
 <div class="content">
 
 <!-- ① RESUMEN -->
 <div id="sec-resumen" class="section active">
-  <div class="kpi-grid cols5" id="kpi-resumen"></div>
+  <div class="kpi-grid cols5" id="kpi-resumen" style="--kpi-colors:1"></div>
   <div class="chart-row cols2x1">
     <div class="chart-card">
-      <div class="chart-card-title">Descuento $ y % por zona — Últimas 4 semanas</div>
+      <div class="chart-card-title">% Descuento por zona — Últimas 4 semanas</div>
       <div class="chart-wrap"><canvas id="c-semanas-zona" height="180"></canvas></div>
     </div>
-    <div class="chart-card">
-      <div class="chart-card-title">Mix descuento por Zona</div>
-      <div id="zona-dto-bars"></div>
+    <div class="chart-card" style="overflow-y:auto;max-height:320px">
+      <div class="chart-card-title">% Dto promedio por Vendedor — Todos</div>
+      <div id="vend-dto-bars"></div>
     </div>
   </div>
   <div class="chart-row cols3">
     <div class="chart-card">
-      <div class="chart-card-title">% Dto promedio por Vendedor (Top 10)</div>
-      <div class="chart-wrap"><canvas id="c-dto-vend" height="220"></canvas></div>
+      <div class="chart-card-title">Top 10 Clientes — Mayor % Descuento</div>
+      <div id="top-clientes-bars"></div>
     </div>
     <div class="chart-card">
       <div class="chart-card-title">Descuento $ por Proveedor (Top 8)</div>
@@ -568,7 +567,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <th class="num" onclick="sortZonaRank('dto_pct')">% Dto Prom ↕</th>
           <th class="num" onclick="sortZonaRank('clientes')">Clientes c/Dto ↕</th>
           <th class="num" onclick="sortZonaRank('total_venta')">Venta $ Total ↕</th>
-          <th class="num">Dto / Venta %</th>
         </tr></thead>
         <tbody id="zona-rank-body"></tbody>
       </table>
@@ -584,11 +582,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
   <div class="chart-row cols2">
     <div class="chart-card">
-      <div class="chart-card-title">Descuento $ total por Vendedor (Top 10)</div>
+      <div class="chart-card-title">Descuento $ total por Vendedor</div>
       <div class="chart-wrap"><canvas id="c-vend-dto" height="220"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-card-title">% Descuento promedio por Vendedor (Top 10)</div>
+      <div class="chart-card-title">% Descuento promedio por Vendedor</div>
       <div class="chart-wrap"><canvas id="c-vend-pct" height="220"></canvas></div>
     </div>
   </div>
@@ -604,7 +602,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <th class="num" onclick="sortVendRank('dto_pct')">% Dto Prom ↕</th>
           <th class="num" onclick="sortVendRank('lineas')">Líneas c/Dto ↕</th>
           <th class="num" onclick="sortVendRank('total_venta')">Venta $ Total ↕</th>
-          <th class="num">Dto / Venta %</th>
         </tr></thead>
         <tbody id="vend-rank-body"></tbody>
       </table>
@@ -630,6 +627,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
       </select>
       <select class="filter-select" id="cli-zona-filter2" onchange="renderDetalleTable()">
         <option value="">Todas las zonas</option>
+      </select>
+      <select class="filter-select" id="cli-vend-filter" onchange="renderDetalleTable()">
+        <option value="">Todos los vendedores</option>
       </select>
       <span class="result-count" id="cli-count">—</span>
     </div>
@@ -830,6 +830,14 @@ function poblarFiltros() {
     const o = document.createElement("option"); o.value = z; o.textContent = z;
     zSel.appendChild(o);
   });
+  const vSel = document.getElementById("cli-vend-filter");
+  if (vSel) {
+    vSel.innerHTML = '<option value="">Todos los vendedores</option>';
+    getVals("vendedores").forEach(v => {
+      const o = document.createElement("option"); o.value = v; o.textContent = v;
+      vSel.appendChild(o);
+    });
+  }
 }
 
 function fillSelect(id, options) {
@@ -987,69 +995,116 @@ function renderResumen() {
     document.getElementById("rows-count").textContent = totalClientes.toLocaleString("es-AR") + " clientes c/dto";
 
     document.getElementById("kpi-resumen").innerHTML = `
-      <div class="kpi-card">
+      <div class="kpi-card orange">
         <div class="kpi-label">Dto $ Total</div>
         <div class="kpi-value">${fM(dtoTotal)}</div>
         <div class="kpi-sub"><span class="kpi-badge badge-warn">${fP(dtoPct)} promedio</span></div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card red">
         <div class="kpi-label">% Dto Promedio</div>
         <div class="kpi-value">${fP(dtoPct)}</div>
-        <div class="kpi-sub"><span class="kpi-badge badge-info">Ponderado</span></div>
+        <div class="kpi-sub"><span class="kpi-badge badge-warn">Ponderado</span></div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card blue">
         <div class="kpi-label">Venta Neta $</div>
         <div class="kpi-value">${fM(ventaTotal)}</div>
-        <div class="kpi-sub"><span class="kpi-badge badge-ok">Sin IVA</span></div>
+        <div class="kpi-sub"><span class="kpi-badge badge-pos">Sin IVA</span></div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card yellow">
         <div class="kpi-label">Clientes con Dto</div>
         <div class="kpi-value">${fN(clientesConDto)}</div>
         <div class="kpi-sub"><span class="kpi-badge badge-warn">${pctCli}% del total</span></div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card ${contrib<0?"red":"green"}">
         <div class="kpi-label">Contribución $</div>
-        <div class="kpi-value ${contrib<0?"dto-high":""}">${fM(contrib)}</div>
-        <div class="kpi-sub"><span class="kpi-badge badge-info">Margen neto</span></div>
+        <div class="kpi-value">${fM(contrib)}</div>
+        <div class="kpi-sub"><span class="kpi-badge ${contrib<0?"badge-neg":"badge-pos"}">Margen neto</span></div>
       </div>`;
 
-    // Gráfico: Dto$ y % por zona — últimas 4 semanas
-    const semZonaData = getUltimas4SemanasPorZona();
-    mkChart("c-semanas-zona", semZonaData);
+    // Gráfico: % Dto por zona — últimas 4 semanas (líneas con puntos gruesos)
+    const numSemR = s => parseInt((s||"").replace("Sem ",""))||0;
+    const semsHistR = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))]
+      .sort((a,b)=>numSemR(a)-numSemR(b));
+    const zonasHistR = [...new Set(HISTORICO_DATA.map(r=>r["Zona"]).filter(Boolean))].sort();
+    const zonaFiltR = getFilterVal("f-zona");
+    const zonasVisR = zonaFiltR ? [zonaFiltR] : zonasHistR;
+    const dsZona = zonasVisR.map((z,i) => {
+      const pcts = semsHistR.map(sem => {
+        const f = HISTORICO_DATA.find(r=>r["Semana"]===sem&&r["Zona"]===z);
+        if (!f) return null;
+        const d=parseFloat(f["Dto $"])||0, v=parseFloat(f["Total $"])||0;
+        return (d+v)>0 ? parseFloat((d/(d+v)*100).toFixed(2)) : 0;
+      });
+      return { label:z, data:pcts, borderColor:COLORES[i%COLORES.length],
+        backgroundColor:COLORES[i%COLORES.length]+"33",
+        tension:0.4, pointRadius:6, pointHoverRadius:8,
+        borderWidth:3, fill:false,
+        pointBackgroundColor:COLORES[i%COLORES.length] };
+    });
+    mkChart("c-semanas-zona",{
+      type:"line",
+      data:{ labels:semsHistR, datasets:dsZona },
+      options:{...chartDefaults(),
+        plugins:{...chartDefaults().plugins,
+          legend:{display:true,labels:{color:"#8b94b0",font:{family:"DM Sans",size:11}}}
+        },
+        scales:{...chartDefaults().scales,
+          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>v+"%"}}}
+      }
+    });
 
-    // Barras por zona
-    const maxDto = Math.max(...zonas.map(z=>parseFloat(z["Dto $"])||0), 1);
-    document.getElementById("zona-dto-bars").innerHTML = zonas.sort((a,b)=>(parseFloat(b["Dto $"])||0)-(parseFloat(a["Dto $"])||0)).map(z => {
-      const dto=parseFloat(z["Dto $"])||0, vta=parseFloat(z["Total $"])||0;
-      const pct = (dto+vta)>0?dto/(dto+vta)*100:0;
-      const w = (dto/maxDto*100).toFixed(1);
-      const cls = pct>4?"dto-high":pct>3?"dto-medium":"dto-ok";
-      return `<div style="margin-bottom:8px">
+    // Ranking todos los vendedores (barras horizontales)
+    const todosVends = filtrarResumen("VENDEDOR").map(v => {
+      const d=parseFloat(v["Dto $"])||0, t=parseFloat(v["Total $"])||0;
+      return { nombre:v["Clave"], pct:(d+t)>0?d/(d+t)*100:0, dto:d };
+    }).sort((a,b)=>b.pct-a.pct);
+    const maxPctV = Math.max(...todosVends.map(v=>v.pct), 1);
+    document.getElementById("vend-dto-bars").innerHTML = todosVends.map(v => {
+      const w = (v.pct/maxPctV*100).toFixed(1);
+      const cls = v.pct>4?"dto-high":v.pct>3?"dto-medium":"dto-ok";
+      return `<div style="margin-bottom:7px">
         <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
-          <span>${z["Clave"]}</span><span class="${cls}">${fP(pct)} · ${fM(dto)}</span>
+          <span style="color:var(--text)">${v.nombre.split(" ")[0]} ${v.nombre.split(" ")[1]||""}</span>
+          <span class="${cls}">${fP(v.pct)} · ${fM(v.dto)}</span>
         </div>
-        <div style="background:var(--surface2);border-radius:3px;height:6px">
-          <div style="background:var(--accent2);width:${w}%;height:100%;border-radius:3px"></div>
+        <div style="background:var(--surface2);border-radius:3px;height:5px">
+          <div style="background:${v.pct>4?"var(--red)":v.pct>3?"var(--yellow)":"var(--green)"};width:${w}%;height:100%;border-radius:3px"></div>
         </div>
       </div>`;
     }).join("");
 
-    // Top 10 vendedores por % dto
-    const topV = [...vendsR].map(v => {
-      const d=parseFloat(v["Dto $"])||0, t=parseFloat(v["Total $"])||0;
-      return { vendedor:v["Clave"], dto_pct:(d+t)>0?d/(d+t)*100:0, dto_total:d };
-    }).sort((a,b)=>b.dto_pct-a.dto_pct).slice(0,10);
-    mkChart("c-dto-vend",{
-      type:"bar",
-      data:{labels:topV.map(v=>v.vendedor.split(" ")[0]),
-        datasets:[{label:"% Dto",data:topV.map(v=>parseFloat(v.dto_pct.toFixed(1))),
-          backgroundColor:topV.map(v=>v.dto_pct>4?"rgba(255,71,87,0.8)":v.dto_pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),
-          borderRadius:4}]},
-      options:{...chartDefaults(),indexAxis:"y",
-        plugins:{...chartDefaults().plugins,legend:{display:false}},
-        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>v+"%"}}}
-      }
+    // Top 10 clientes con mayor % dto desde DETALLE_DATA filtrado
+    const detTop = filtrarDetalle();
+    const clienteMap = {};
+    detTop.forEach(r => {
+      const cod = r["Cod Cliente"]||"";
+      const nom = r["Cliente"]||"";
+      const d   = parseFloat(r["Dto $"])||0;
+      const t   = parseFloat(r["Total Línea $"])||0;
+      if (!clienteMap[cod]) clienteMap[cod] = { nombre:nom, dto:0, total:0 };
+      clienteMap[cod].dto   += d;
+      clienteMap[cod].total += t;
     });
+    const topCli = Object.values(clienteMap).map(c => ({
+      nombre: c.nombre,
+      pct: (c.dto+c.total)>0?c.dto/(c.dto+c.total)*100:0,
+      dto: c.dto
+    })).sort((a,b)=>b.pct-a.pct).slice(0,10);
+    const maxPctC = Math.max(...topCli.map(c=>c.pct),1);
+    document.getElementById("top-clientes-bars").innerHTML = topCli.map(c => {
+      const w = (c.pct/maxPctC*100).toFixed(1);
+      const cls = c.pct>30?"dto-high":c.pct>10?"dto-medium":"dto-ok";
+      const color = c.pct>90?"var(--purple)":c.pct>30?"var(--red)":c.pct>10?"var(--yellow)":"var(--green)";
+      return `<div style="margin-bottom:9px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+          <span style="color:var(--text);max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.nombre}</span>
+          <span class="${cls}">${fP(c.pct)} · ${fM(c.dto)}</span>
+        </div>
+        <div style="background:var(--surface2);border-radius:3px;height:5px">
+          <div style="background:${color};width:${w}%;height:100%;border-radius:3px"></div>
+        </div>
+      </div>`;
+    }).join("");
 
     // Top 8 proveedores por Dto$
     const topP = [...provR].sort((a,b)=>(parseFloat(b["Dto $"])||0)-(parseFloat(a["Dto $"])||0)).slice(0,8);
@@ -1321,7 +1376,6 @@ function renderZona() {
     const tbody = document.getElementById("zona-rank-body");
     tbody.innerHTML = "";
     rows.forEach((r,i) => {
-      const dtoVta = (r.dto_total+r.venta_total)>0 ? r.dto_total/(r.dto_total+r.venta_total)*100 : 0;
       tbody.innerHTML += `<tr>
         <td style="font-family:'Bebas Neue';font-size:15px;color:var(--muted);text-align:center">${i+1}</td>
         <td><strong>${r.zona}</strong></td>
@@ -1329,7 +1383,6 @@ function renderZona() {
         <td class="num ${r.dto_pct>4?"dto-high":r.dto_pct>3?"dto-medium":"dto-ok"}">${fP(r.dto_pct)}</td>
         <td class="num">${fN(r.clientes)}</td>
         <td class="num">${fM(r.venta_total)}</td>
-        <td class="num ${dtoVta>4?"dto-high":dtoVta>3?"dto-medium":"dto-ok"}">${fP(dtoVta)}</td>
       </tr>`;
     });
   } catch(e) { console.error("renderZona:", e); }
@@ -1363,13 +1416,14 @@ function renderVendedor() {
       (a[sortKey]-b[sortKey])*vendRankSort.dir
     );
 
-    const top10dto = [...rows].sort((a,b)=>b.dto_total-a.dto_total).slice(0,10);
-    const top10pct = [...rows].sort((a,b)=>b.dto_pct-a.dto_pct).slice(0,10);
+    const top10dto = [...rows].sort((a,b)=>b.dto_total-a.dto_total);
+    const top10pct = [...rows].sort((a,b)=>b.dto_pct-a.dto_pct);
 
     mkChart("c-vend-dto",{
       type:"bar",
       data:{labels:top10dto.map(v=>v.vendedor.split(" ")[0]),
-        datasets:[{label:"Dto $",data:top10dto.map(v=>v.dto_total),backgroundColor:COLORES,borderRadius:4}]},
+        datasets:[{label:"Dto $",data:top10dto.map(v=>v.dto_total),
+          backgroundColor:top10dto.map((_,i)=>COLORES[i%COLORES.length]),borderRadius:4}]},
       options:{...chartDefaults(),indexAxis:"y",
         plugins:{...chartDefaults().plugins,legend:{display:false}},
         scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}}}
@@ -1379,7 +1433,8 @@ function renderVendedor() {
       type:"bar",
       data:{labels:top10pct.map(v=>v.vendedor.split(" ")[0]),
         datasets:[{label:"% Dto",data:top10pct.map(v=>parseFloat(v.dto_pct.toFixed(1))),
-          backgroundColor:top10pct.map(v=>v.dto_pct>4?"rgba(255,71,87,0.8)":v.dto_pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),borderRadius:4}]},
+          backgroundColor:top10pct.map(v=>v.dto_pct>4?"rgba(255,71,87,0.8)":v.dto_pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),
+          borderRadius:4}]},
       options:{...chartDefaults(),indexAxis:"y",
         plugins:{...chartDefaults().plugins,legend:{display:false}},
         scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>v+"%"}}}
@@ -1389,7 +1444,6 @@ function renderVendedor() {
     const tbody = document.getElementById("vend-rank-body");
     tbody.innerHTML = "";
     rows.forEach((r,i) => {
-      const dtoVta = (r.dto_total+r.venta_total)>0 ? r.dto_total/(r.dto_total+r.venta_total)*100 : 0;
       tbody.innerHTML += `<tr>
         <td style="font-family:'Bebas Neue';font-size:15px;color:var(--muted);text-align:center">${i+1}</td>
         <td><strong>${r.vendedor}</strong></td>
@@ -1398,7 +1452,6 @@ function renderVendedor() {
         <td class="num ${r.dto_pct>4?"dto-high":r.dto_pct>3?"dto-medium":"dto-ok"}">${fP(r.dto_pct)}</td>
         <td class="num">${fN(r.lineas)}</td>
         <td class="num">${fM(r.venta_total)}</td>
-        <td class="num ${dtoVta>4?"dto-high":dtoVta>3?"dto-medium":"dto-ok"}">${fP(dtoVta)}</td>
       </tr>`;
     });
   } catch(e) { console.error("renderVendedor:", e); }
@@ -1420,10 +1473,12 @@ function renderDetalleTable() {
     const alarm  = document.getElementById("cli-alarm-filter")?.value || "";
     const search = (document.getElementById("cli-search")?.value||"").toLowerCase();
     const zonaF  = document.getElementById("cli-zona-filter2")?.value || "";
+    const vendF  = document.getElementById("cli-vend-filter")?.value || "";
 
     let data = filtrarDetalle();
 
-    if (zonaF)  data = data.filter(r => r["Zona"] === zonaF);
+    if (zonaF)  data = data.filter(r => r["Zona"]     === zonaF);
+    if (vendF)  data = data.filter(r => r["Vendedor"] === vendF);
     if (search) data = data.filter(r =>
       (r["Cliente"]||"").toLowerCase().includes(search) ||
       (r["Descripción"]||"").toLowerCase().includes(search) ||

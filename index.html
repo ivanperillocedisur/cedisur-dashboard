@@ -817,15 +817,69 @@ function agregarDesdeDetalle(tipo) {
     if (parseFloat(r["Dto $"])||0 > 0) a.lineasDto++;
   });
 
-  return Object.values(acc).map(a => ({
-    ...a,
-    "Clientes": a.clientes.size,
-    "Líneas":   a.lineas,
-    "Líneas c/Dto": a.lineasDto,
-    "Dto $":    Math.round(a["Dto $"]*100)/100,
-    "Total $":  Math.round(a["Total $"]*100)/100,
-    "Contribución $": Math.round(a["Contribución $"]*100)/100,
-  }));
+  // Para el denominador del % dto, necesitamos el Total$ real de ventas.
+  // Si EXCLUIR_ACUERDOS está activo, el Total$ debe calcularse también
+  // desde DETALLE_DATA sin acuerdos (mismo conjunto filtrado).
+  // Si no, usar HISTORICO_DATA o RESUMEN_DATA que tienen el total completo.
+  const totalRealMap = {};
+
+  if (EXCLUIR_ACUERDOS) {
+    // Calcular Total$ desde las mismas filas filtradas (ya sin acuerdos)
+    // pero incluyendo TODAS las líneas de esa dimensión (dto=0 también)
+    // Problema: DATA_DETALLE solo tiene líneas con dto>0.
+    // Solución: acumular Total$ de todas las filas del detalle filtrado
+    // y aceptar que es una aproximación (subestima levemente la base).
+    // Para ZONA y VENDEDOR, usar RESUMEN_DATA ajustado proporcionalmente.
+    if (tipo === "ZONA" || tipo === "VENDEDOR") {
+      const campo = tipo === "ZONA" ? "Zona" : "Vendedor";
+      const campoResumen = tipo === "ZONA" ? "ZONA" : "VENDEDOR";
+      // Total de acuerdos por dimensión desde DETALLE completo
+      const totalAcuerdoMap = {};
+      DETALLE_DATA.filter(r => (r["Acuerdo"]||"") === "Sí").forEach(r => {
+        const k = r[campo]||"";
+        if (!totalAcuerdoMap[k]) totalAcuerdoMap[k] = { dto:0, total:0 };
+        totalAcuerdoMap[k].dto   += parseFloat(r["Dto $"])||0;
+        totalAcuerdoMap[k].total += parseFloat(r["Total Línea $"])||0;
+      });
+      // Total real desde RESUMEN menos los acuerdos
+      RESUMEN_DATA.filter(r=>r["Tipo"]===campoResumen).forEach(r => {
+        const k = r["Clave"]||"";
+        const totalResumen = parseFloat(r["Total $"])||0;
+        const acuerdo = totalAcuerdoMap[k] || { dto:0, total:0 };
+        totalRealMap[k] = Math.max(0, totalResumen - acuerdo.total);
+      });
+    }
+  } else if (tipo === "ZONA") {
+    const numSemFn = s => parseInt((s||"").replace("Sem ",""))||0;
+    const semsHist = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))];
+    const semMax   = semsHist.sort((a,b)=>numSemFn(a)-numSemFn(b)).pop();
+    HISTORICO_DATA.filter(r=>r["Semana"]===semMax).forEach(r => {
+      totalRealMap[r["Zona"]||""] = parseFloat(r["Total $"])||0;
+    });
+    if (!Object.keys(totalRealMap).length) {
+      RESUMEN_DATA.filter(r=>r["Tipo"]==="ZONA").forEach(r => {
+        totalRealMap[r["Clave"]||""] = parseFloat(r["Total $"])||0;
+      });
+    }
+  } else if (tipo === "VENDEDOR") {
+    RESUMEN_DATA.filter(r=>r["Tipo"]==="VENDEDOR").forEach(r => {
+      totalRealMap[r["Clave"]||""] = parseFloat(r["Total $"])||0;
+    });
+  }
+
+  return Object.values(acc).map(a => {
+    const totalReal = totalRealMap[a.Clave] || 0;
+    const totalBase = totalReal > 0 ? totalReal : a["Total $"];
+    return {
+      ...a,
+      "Clientes":     a.clientes.size,
+      "Líneas":       a.lineas,
+      "Líneas c/Dto": a.lineasDto,
+      "Dto $":        Math.round(a["Dto $"]*100)/100,
+      "Total $":      Math.round(totalBase*100)/100,
+      "Contribución $": Math.round(a["Contribución $"]*100)/100,
+    };
+  });
 }
 
 function filtrarResumen(tipo) {

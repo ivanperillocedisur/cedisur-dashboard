@@ -868,16 +868,6 @@ function poblarFiltros() {
   ], "Todas");
 }
 
-  if (!sel) return;
-  const current = sel.value;
-  const firstOpt = sel.options[0].outerHTML;
-  sel.innerHTML = firstOpt;
-  options.forEach(opt => {
-    const o = document.createElement("option");
-    if (typeof opt === "object") { o.value = opt.val; o.textContent = opt.label; }
-    else { o.value = opt; o.textContent = opt; }
-    sel.appendChild(o);
-  });
   if (current) sel.value = current;
 }
 

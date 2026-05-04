@@ -671,21 +671,22 @@ function msCreate(containerId, options, placeholder) {
   const id = containerId;
   if (!MS_STATE[id]) MS_STATE[id] = new Set();
 
-  wrap.innerHTML = `
-    <button class="ms-btn" id="${id}-btn" onclick="msToggle('${id}')">${placeholder}</button>
-    <div class="ms-dropdown" id="${id}-dd">
-      ${options.map(o => {
-        const val = typeof o === 'object' ? o.val : o;
-        const lbl = typeof o === 'object' ? o.label : o;
-        return `<label class="ms-item" onclick="event.stopPropagation()">
-          <input type="checkbox" value="${val}" onchange="msCheck('${id}', this)"> ${lbl}
-        </label>`;
-      }).join('')}
-      <div class="ms-clear" onclick="msClear('${id}')">✕ Limpiar</div>
-    </div>`;
+  const optionsHtml = options.map(function(o) {
+    const val = typeof o === 'object' ? o.val : o;
+    const lbl = typeof o === 'object' ? o.label : o;
+    return '<label class="ms-item" onclick="event.stopPropagation()">' +
+      '<input type="checkbox" value="' + val + '" onchange="msCheck(\'' + id + '\', this)"> ' + lbl +
+      '</label>';
+  }).join('');
 
-  // Cerrar al hacer clic fuera
-  document.addEventListener('click', (e) => {
+  wrap.innerHTML =
+    '<button class="ms-btn" id="' + id + '-btn" onclick="msToggle(\'' + id + '\')">' + placeholder + '</button>' +
+    '<div class="ms-dropdown" id="' + id + '-dd">' +
+      optionsHtml +
+      '<div class="ms-clear" onclick="msClear(\'' + id + '\')">&#10005; Limpiar</div>' +
+    '</div>';
+
+  document.addEventListener('click', function(e) {
     if (!wrap.contains(e.target)) msClose(id);
   }, { capture: false });
 }

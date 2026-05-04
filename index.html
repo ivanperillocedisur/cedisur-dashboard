@@ -294,36 +294,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   font-size: 10px; color: var(--muted); display: flex; gap: 18px; flex-wrap: wrap;
 }
 
-
-/* MULTISELECT */
-.ms-wrap { position:relative; display:inline-block; min-width:120px; }
-.ms-btn {
-  background: var(--surface); border: 1px solid var(--border);
-  color: var(--text); padding: 6px 28px 6px 10px; border-radius: 5px;
-  font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer;
-  width: 100%; text-align: left; white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; transition: border-color 0.2s; position:relative;
-}
-.ms-btn::after { content:"▾"; position:absolute; right:8px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:10px; }
-.ms-btn:focus, .ms-btn.open { border-color: var(--accent2); outline:none; }
-.ms-dropdown {
-  display:none; position:absolute; top:calc(100% + 3px); left:0; min-width:100%;
-  background: var(--surface); border:1px solid var(--border); border-radius:6px;
-  z-index:500; max-height:220px; overflow-y:auto; box-shadow:0 8px 24px rgba(0,0,0,0.4);
-}
-.ms-dropdown.open { display:block; }
-.ms-dropdown::-webkit-scrollbar { width:4px; }
-.ms-dropdown::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-.ms-item {
-  display:flex; align-items:center; gap:8px; padding:7px 12px;
-  font-size:11px; color:var(--text-dim); cursor:pointer; transition:background 0.15s;
-}
-.ms-item:hover { background:var(--surface2); color:var(--text); }
-.ms-item input[type=checkbox] { accent-color:var(--accent2); width:13px; height:13px; cursor:pointer; flex-shrink:0; }
-.ms-item.checked { color:var(--text); }
-.ms-clear { padding:6px 12px; font-size:10px; color:var(--muted); cursor:pointer; border-top:1px solid var(--border); text-align:center; }
-.ms-clear:hover { color:var(--red); }
-
 /* RESPONSIVE */
 @media (max-width: 960px) {
   .kpi-grid.cols5, .kpi-grid.cols4 { grid-template-columns: repeat(2, 1fr); }
@@ -363,6 +333,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 
 <!-- FILTERS BAR -->
 <div class="filters-bar">
+
+  <!-- Zona / Vendedor -->
   <div class="filter-group">
     <span class="filter-label">Zona</span>
     <select class="filter-select" id="f-zona" onchange="applyFilters()"><option value="">Todas</option></select>
@@ -372,6 +344,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     <select class="filter-select" id="f-vendedor" onchange="applyFilters()"><option value="">Todos</option></select>
   </div>
   <div class="filter-separator"></div>
+  <!-- Producto -->
   <div class="filter-group">
     <span class="filter-label">Proveedor</span>
     <select class="filter-select" id="f-proveedor" onchange="applyFilters()"><option value="">Todos</option></select>
@@ -385,6 +358,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     <select class="filter-select" id="f-grupo" onchange="applyFilters()"><option value="">Todos</option></select>
   </div>
   <div class="filter-separator"></div>
+  <!-- Depósito / Ecommerce -->
   <div class="filter-group">
     <span class="filter-label">Depósito</span>
     <select class="filter-select" id="f-deposito" onchange="applyFilters()"><option value="">Todos</option></select>
@@ -402,28 +376,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     <span class="filter-label">Grupo Cliente</span>
     <select class="filter-select" id="f-segmento" onchange="applyFilters()"><option value="">Todos</option></select>
   </div>
-  <div class="filter-group">
-    <span class="filter-label">Alarma</span>
-    <select class="filter-select" id="f-alarma" onchange="applyFilters()">
-      <option value="">Todas</option>
-      <option value="bonif">Bonificado &gt;90%</option>
-      <option value="alto">Alta 30–90%</option>
-      <option value="medio">Media 10–30%</option>
-      <option value="normal">Normal &lt;10%</option>
-    </select>
-  </div>
   <div class="filter-separator"></div>
   <div class="filter-group">
     <span class="filter-label">Acuerdos</span>
     <button id="toggle-acuerdos" onclick="toggleAcuerdos()"
       style="background:#ff4757;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;transition:all 0.2s">
       EXCLUIDOS
-    </button>
-  </div>
-  <button class="btn-clear-filters" onclick="clearFilters()">✕ Limpiar filtros</button>
-  <div class="rows-badge">Filas: <span id="rows-count">—</span></div>
-</div>
-
     </button>
   </div>
   <button class="btn-clear-filters" onclick="clearFilters()">✕ Limpiar filtros</button>
@@ -576,6 +534,20 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
   <div class="chart-card">
     <div class="search-bar">
+      <input class="search-input" type="text" id="cli-search" placeholder="Buscar cliente o producto…" oninput="renderDetalleTable()">
+      <select class="filter-select" id="cli-alarm-filter" onchange="renderDetalleTable()">
+        <option value="">Todas las alarmas</option>
+        <option value="bonif">🟣 Bonificado (&gt;90%)</option>
+        <option value="alto">🔴 Alarma alta (30–90%)</option>
+        <option value="medio">🟡 Media (10–30%)</option>
+        <option value="normal">🟢 Normal (&lt;10%)</option>
+      </select>
+      <select class="filter-select" id="cli-zona-filter2" onchange="renderDetalleTable()">
+        <option value="">Todas las zonas</option>
+      </select>
+      <select class="filter-select" id="cli-vend-filter" onchange="renderDetalleTable()">
+        <option value="">Todos los vendedores</option>
+      </select>
       <span class="result-count" id="cli-count">—</span>
     </div>
     <div class="table-scroll">
@@ -587,7 +559,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <th onclick="sortDetalle('cliente')">Nombre Comercial ↕</th>
           <th onclick="sortDetalle('descripcion')">Producto ↕</th>
           <th onclick="sortDetalle('marca')">Marca ↕</th>
-          <th class="num" onclick="sortDetalle('cantidad')">Cantidad ↕</th>
           <th class="num" onclick="sortDetalle('dto_pct')">% Dto ↕</th>
           <th class="num" onclick="sortDetalle('dto_plata')">$ Dto ↕</th>
           <th class="num" onclick="sortDetalle('pesoKg')">KG ↕</th>
@@ -661,15 +632,6 @@ let activeSection = "resumen";
 let chartsBuilt  = {};
 let chartInstances = {};
 let activeFilters  = {};        // filtros actuales seleccionados
-
-
-
-function msReset(id) {
-  MS_STATE[id] = new Set();
-  const dd = document.getElementById(id+'-dd');
-  if (dd) dd.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
-  msUpdateLabel(id);
-}
 
 // ============================================================
 // SECTION NAV
@@ -767,11 +729,13 @@ function parseCSVLine(line) {
 }
 
 function poblarFiltros() {
+  const MESES_N = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
   const fRows = RESUMEN_DATA.filter(r => r["Tipo"] === "FILTROS");
   const getVals = (clave) => {
     const row = fRows.find(r => r["Clave"] === clave);
     return row ? row["Zona"].split("|").filter(Boolean) : [];
   };
+  // Filtros de tiempo eliminados — dashboard muestra semana completa cargada
   fillSelect("f-zona",     getVals("zonas"));
   fillSelect("f-vendedor", getVals("vendedores"));
   fillSelect("f-proveedor",getVals("proveedores"));
@@ -779,6 +743,20 @@ function poblarFiltros() {
   fillSelect("f-grupo",    getVals("grupos"));
   fillSelect("f-deposito", getVals("depositos"));
   fillSelect("f-segmento", getVals("segmentos"));
+  const zSel = document.getElementById("cli-zona-filter2");
+  zSel.innerHTML = '<option value="">Todas las zonas</option>';
+  getVals("zonas").forEach(z => {
+    const o = document.createElement("option"); o.value = z; o.textContent = z;
+    zSel.appendChild(o);
+  });
+  const vSel = document.getElementById("cli-vend-filter");
+  if (vSel) {
+    vSel.innerHTML = '<option value="">Todos los vendedores</option>';
+    getVals("vendedores").forEach(v => {
+      const o = document.createElement("option"); o.value = v; o.textContent = v;
+      vSel.appendChild(o);
+    });
+  }
 }
 
 function fillSelect(id, options) {
@@ -914,6 +892,8 @@ function filtrarResumen(tipo) {
   const seg  = getFilterVal("f-segmento");
   const ecom = getFilterVal("f-ecommerce");
 
+  // Si hay filtros de producto/segmento/depósito/ecommerce activos,
+  // calcular agregados desde DETALLE_DATA (tiene todos los campos)
   const usarDetalle = prov || marca || grupo || dep || seg || ecom || EXCLUIR_ACUERDOS;
 
   if (usarDetalle) {
@@ -944,8 +924,7 @@ function filtrarDetalle() {
   const grupo= getFilterVal("f-grupo");
   const dep  = getFilterVal("f-deposito");
   const ecom = getFilterVal("f-ecommerce");
-  const seg    = getFilterVal("f-segmento");
-  const alarma = getFilterVal("f-alarma");
+  const seg  = getFilterVal("f-segmento");
 
   return DETALLE_DATA.filter(r => {
     if (EXCLUIR_ACUERDOS && (r["Acuerdo"]||"") === "Sí") return false;
@@ -957,13 +936,6 @@ function filtrarDetalle() {
     if (dep   && r["Depósito"]       !== dep)   return false;
     if (ecom  && r["Ecommerce"]      !== ecom)  return false;
     if (seg   && r["Segmento"]       !== seg)   return false;
-    if (alarma) {
-      const p = parseFloat(r["% Dto"]||0);
-      if (alarma==="bonif"  && p <= 90) return false;
-      if (alarma==="alto"   && !(p>30 && p<=90)) return false;
-      if (alarma==="medio"  && !(p>10 && p<=30)) return false;
-      if (alarma==="normal" && p > 10) return false;
-    }
     return true;
   });
 }
@@ -978,7 +950,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  ["f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce","f-segmento","f-alarma"]
+  ["f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce","f-segmento"]
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
   applyFilters();
 }
@@ -1080,7 +1052,7 @@ function renderResumen() {
       <div class="kpi-card yellow">
         <div class="kpi-label">Clientes con Dto</div>
         <div class="kpi-value">${fN(clientesConDto)}</div>
-        <div class="kpi-sub"><span class="kpi-badge badge-warn">Clientes &uacute;nicos</span></div>
+        <div class="kpi-sub"><span class="kpi-badge badge-warn">${pctCli}% del total</span></div>
       </div>
       <div class="kpi-card ${contrib<0?"red":"green"}">
         <div class="kpi-label">Contribución $</div>
@@ -1273,8 +1245,8 @@ function getSemanasConFiltro(n) {
 
 // ── Helper: últimas 4 semanas por zona desde HISTORICO_DATA ──
 function getUltimas4SemanasPorZona() {
-  const zonaFilt = [...msGetVals("ms-zona")][0] || "";
-  const vendFilt = [...msGetVals("ms-vendedor")][0] || "";
+  const zonaFilt = getFilterVal("f-zona");
+  const vendFilt = getFilterVal("f-vendedor");
 
   // Filtrar por zona/vendedor si aplica
   let rows = HISTORICO_DATA.filter(r => {
@@ -1567,8 +1539,27 @@ function sortDetalle(key) {
 function renderDetalleTable() {
   showLoading("detalle");
   try {
+    const alarm  = document.getElementById("cli-alarm-filter")?.value || "";
+    const search = (document.getElementById("cli-search")?.value||"").toLowerCase();
+    const zonaF  = document.getElementById("cli-zona-filter2")?.value || "";
+    const vendF  = document.getElementById("cli-vend-filter")?.value || "";
+
     let data = filtrarDetalle();
+
+    if (zonaF)  data = data.filter(r => r["Zona"]     === zonaF);
+    if (vendF)  data = data.filter(r => r["Vendedor"] === vendF);
+    if (search) data = data.filter(r =>
+      (r["Cliente"]||"").toLowerCase().includes(search) ||
+      (r["Descripción"]||"").toLowerCase().includes(search) ||
+      (r["Cod Cliente"]||"").toLowerCase().includes(search)
+    );
+
     const toNum = (r, col) => parseFloat(r[col]||0);
+
+    if (alarm === "bonif")  data = data.filter(r => toNum(r,"% Dto")>90);
+    else if (alarm==="alto") data = data.filter(r=>{const p=toNum(r,"% Dto");return p>30&&p<=90;});
+    else if (alarm==="medio")data = data.filter(r=>{const p=toNum(r,"% Dto");return p>10&&p<=30;});
+    else if (alarm==="normal")data= data.filter(r=>toNum(r,"% Dto")<=10);
 
     data.sort((a,b)=>toNum(b,"% Dto")-toNum(a,"% Dto"));
 
@@ -1591,7 +1582,6 @@ function renderDetalleTable() {
         <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${r["Cliente"]||""}</strong></td>
         <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px">${r["Descripción"]||""}</td>
         <td style="font-size:11px;color:var(--text-dim)">${r["Marca"]||""}</td>
-        <td class="num" style="color:var(--text-dim)">${r["Cantidad"]||"—"}</td>
         <td class="num ${dtoClass}">${fP(p)}</td>
         <td class="num">${fM(toNum(r,"Dto $"))}</td>
         <td class="num">${toNum(r,"Peso KG")?fN(toNum(r,"Peso KG")):"—"}</td>
@@ -1600,7 +1590,7 @@ function renderDetalleTable() {
       </tr>`;
     }
     if (data.length > 500) {
-      tbody.innerHTML += `<tr><td colspan="12" style="text-align:center;padding:12px;color:var(--muted);font-size:11px">
+      tbody.innerHTML += `<tr><td colspan="11" style="text-align:center;padding:12px;color:var(--muted);font-size:11px">
         Mostrando 500 de ${data.length.toLocaleString()} líneas. Usá los filtros para acotar.
       </td></tr>`;
     }

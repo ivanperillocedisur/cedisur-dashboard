@@ -868,9 +868,6 @@ function poblarFiltros() {
   ], "Todas");
 }
 
-  if (current) sel.value = current;
-}
-
 function getFilterVal(id) { return document.getElementById(id)?.value || ""; }
 
 // Agregar valores numéricos de filas de detalle para construir agregados
@@ -1195,7 +1192,7 @@ function renderResumen() {
     const zonasHistR = [...new Set(HISTORICO_DATA.map(r=>r["Zona"]).filter(Boolean))].sort();
     const zonasDetR  = [...new Set(DETALLE_DATA.map(r=>r["Zona"]).filter(Boolean))].sort();
     const todasZonas = [...new Set([...zonasHistR, ...zonasDetR])].sort();
-    const zonaFiltR  = getFilterVal("f-zona");
+    const zonaFiltR  = [...msGetVals("ms-zona")][0] || "";
     const zonasVisR  = zonaFiltR ? [zonaFiltR] : todasZonas;
 
     const dsZona = zonasVisR.map((z,i) => {
@@ -1336,8 +1333,8 @@ function getSemanas() {
 
 // ── Helper: últimas N semanas filtradas por zona/vendedor ──
 function getSemanasConFiltro(n) {
-  const zona = getFilterVal("f-zona");
-  const vend = getFilterVal("f-vendedor");
+  const zona = [...msGetVals("ms-zona")][0] || "";
+  const vend = [...msGetVals("ms-vendedor")][0] || "";
   const sems = getSemanas().slice(-n);
   // Para cada semana, sumar desde DETALLE filtrando zona/vend
   return sems.map(sem => {
@@ -1359,8 +1356,8 @@ function getSemanasConFiltro(n) {
 
 // ── Helper: últimas 4 semanas por zona desde HISTORICO_DATA ──
 function getUltimas4SemanasPorZona() {
-  const zonaFilt = getFilterVal("f-zona");
-  const vendFilt = getFilterVal("f-vendedor");
+  const zonaFilt = [...msGetVals("ms-zona")][0] || "";
+  const vendFilt = [...msGetVals("ms-vendedor")][0] || "";
 
   // Filtrar por zona/vendedor si aplica
   let rows = HISTORICO_DATA.filter(r => {
@@ -1479,7 +1476,7 @@ function renderEvolucion() {
     const numSem = s => parseInt((s||"").replace("Sem ",""))||0;
     const semsHist = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))]
       .sort((a,b)=>numSem(a)-numSem(b));
-    const zonaFilt = getFilterVal("f-zona");
+    const zonaFilt = [...msGetVals("ms-zona")][0] || "";
     const zonasHist = zonaFilt ? [zonaFilt] :
       [...new Set(HISTORICO_DATA.map(r=>r["Zona"]).filter(Boolean))].sort();
 

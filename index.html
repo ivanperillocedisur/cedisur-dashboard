@@ -405,9 +405,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 <!-- NAV -->
 <div class="nav-tabs">
   <div class="nav-tab active" onclick="showSection('resumen', this)">① Resumen Ejecutivo</div>
-  <div class="nav-tab" onclick="showSection('zona', this)">② Por Zona</div>
-  <div class="nav-tab" onclick="showSection('vendedor', this)">③ Por Vendedor</div>
-  <div class="nav-tab" onclick="showSection('detalle', this)">④ Detalle Clientes</div>
+  <div class="nav-tab" onclick="showSection('evolucion', this)">② Evolución</div>
+  <div class="nav-tab" onclick="showSection('zona', this)">③ Por Zona</div>
+  <div class="nav-tab" onclick="showSection('vendedor', this)">④ Por Vendedor</div>
+  <div class="nav-tab" onclick="showSection('detalle', this)">⑤ Detalle Clientes</div>
 </div>
 
 <div class="content">
@@ -467,6 +468,34 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     <div class="chart-card">
       <div class="chart-card-title">% Descuento por zona — Comparativo semanal</div>
       <div class="chart-wrap"><canvas id="c-evol-zona-sem" height="200"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ② EVOLUCIÓN -->
+<div id="sec-evolucion" class="section">
+  <div class="section-header">
+    <div class="section-title">Evolución</div>
+    <div class="section-desc">Últimos 6 meses · Semanal y mensual</div>
+  </div>
+  <div class="chart-row cols2">
+    <div class="chart-card">
+      <div class="chart-card-title">Dto $ por semana — Total general</div>
+      <div class="chart-wrap"><canvas id="c-evol-sem-dto" height="220"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">% Dto por semana — Total general</div>
+      <div class="chart-wrap"><canvas id="c-evol-sem-pct" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-row cols2">
+    <div class="chart-card">
+      <div class="chart-card-title">Dto $ por mes — Por zona</div>
+      <div class="chart-wrap"><canvas id="c-evol-mes-dto" height="220"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">% Dto por mes — Por zona</div>
+      <div class="chart-wrap"><canvas id="c-evol-mes-pct" height="220"></canvas></div>
     </div>
   </div>
 </div>
@@ -626,7 +655,8 @@ let CONFIG = { aiKey: localStorage.getItem("cedisur_ai_key") || "" };
 // servidor. El HTML solo pide JSON agregado, nunca el CSV crudo.
 // ============================================================
 // URLs CSV publicadas desde Google Sheets
-const URL_HISTORICO = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=494146848&single=true&output=csv";
+const URL_HISTORICO  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=494146848&single=true&output=csv";
+const URL_HIST_MENSUAL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1226473083&single=true&output=csv"; // ← publicar hoja HISTORICO_MENSUAL
 
 let CACHE        = {};          // cache por acción+params
 let activeSection = "resumen";
@@ -649,6 +679,7 @@ function showSection(name, el) {
 function renderSection(name) {
   if (name === "resumen")   renderResumen();
   else if (name === "evolucion") renderEvolucion();
+  else if (name === "evolucion") renderEvolucion();
   else if (name === "zona")      renderZona();
   else if (name === "vendedor")  renderVendedor();
   else if (name === "detalle")   renderDetalleTable();
@@ -662,7 +693,8 @@ function renderSection(name) {
 // ============================================================
 let RESUMEN_DATA  = [];
 let DETALLE_DATA  = [];
-let HISTORICO_DATA = [];
+let HISTORICO_DATA  = [];
+let MENSUAL_DATA   = [];
 let EXCLUIR_ACUERDOS = true; // true = excluidos por defecto
 
 // ============================================================
@@ -675,14 +707,16 @@ async function loadData() {
   CACHE = {};
 
   try {
-    const [csvResumen, csvDetalle, csvHistorico] = await Promise.all([
+    const [csvResumen, csvDetalle, csvHistorico, csvMensual] = await Promise.all([
       fetchCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1471861732&single=true&output=csv"),
       fetchCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1657795795&single=true&output=csv"),
-      fetchCSV(URL_HISTORICO)
+      fetchCSV(URL_HISTORICO),
+      URL_HIST_MENSUAL !== "PEGAR_URL_HISTORICO_MENSUAL_CSV" ? fetchCSV(URL_HIST_MENSUAL) : Promise.resolve("")
     ]);
-    RESUMEN_DATA  = parseCSV(csvResumen);
-    DETALLE_DATA  = parseCSV(csvDetalle);
+    RESUMEN_DATA   = parseCSV(csvResumen);
+    DETALLE_DATA   = parseCSV(csvDetalle);
     HISTORICO_DATA = parseCSV(csvHistorico);
+    MENSUAL_DATA   = csvMensual ? parseCSV(csvMensual) : [];
     poblarFiltros();
     document.getElementById("loading").classList.add("hidden");
     setSyncState("ok", "Actualizado · " + new Date().toLocaleTimeString("es-AR"));
@@ -1396,6 +1430,176 @@ function renderEvolucion() {
   hideLoading("evolucion");
 }
 
+
+// ============================================================
+// ② EVOLUCIÓN
+// ============================================================
+function renderEvolucion() {
+  showLoading("evolucion");
+  try {
+    const numSem = s => parseInt((s||"").replace("Sem ",""))||0;
+    const fN2    = v => v == null ? "—" : Number(v).toLocaleString("es-AR");
+
+    // ── Datos semanales desde MENSUAL_DATA + semana vigente ──
+    const semsHist = MENSUAL_DATA.filter(r=>r["Tipo"]==="SEMANA")
+      .sort((a,b)=>numSem(a["Clave"])-numSem(b["Clave"]));
+
+    // Agregar semana vigente desde DETALLE_DATA
+    const detFilt  = filtrarDetalle();
+    const semsVig  = [...new Set(detFilt.map(r=>r["Semana Fiscal"]||"").filter(Boolean))];
+    const numVig   = Math.max(...semsVig.map(s=>parseInt(s)||0));
+    const semVig   = numVig > 0 ? "Sem " + numVig : null;
+
+    let semsData = [...semsHist];
+    if (semVig && !semsData.find(r=>r["Clave"]===semVig)) {
+      const dtoV   = detFilt.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
+      const totalV = detFilt.reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
+      const contV  = detFilt.reduce((s,r)=>s+(parseFloat(r["Contribución $"])||0),0);
+      const mesV   = (()=>{ const d=detFilt[0]?.["Fecha"]||""; const p=d.split("/"); return p.length===3?p[2]+"-"+p[1].padStart(2,"0"):""; })();
+      semsData.push({"Tipo":"SEMANA","Clave":semVig,"Mes":mesV,"Dto $":dtoV,"Total $":totalV,"Contribución $":contV});
+    }
+    semsData.sort((a,b)=>numSem(a["Clave"])-numSem(b["Clave"]));
+
+    // Asignar color por mes
+    const mesesUnicos = [...new Set(semsData.map(r=>r["Mes"]||"").filter(Boolean))].sort();
+    const COLOR_MES = ["#00c8ff","#ff6b35","#7eff6a","#ffd166","#a855f7","#ff4757"];
+    const mesColor  = {};
+    mesesUnicos.forEach((m,i) => mesColor[m] = COLOR_MES[i % COLOR_MES.length]);
+
+    const labSems   = semsData.map(r=>r["Clave"]);
+    const colorsSem = semsData.map(r=>mesColor[r["Mes"]||""] || "#8b94b0");
+    const dtosSem   = semsData.map(r=>parseFloat(r["Dto $"])||0);
+    const pctsSem   = semsData.map(r=>{
+      const d=parseFloat(r["Dto $"])||0, t=parseFloat(r["Total $"])||0;
+      return (d+t)>0 ? parseFloat((d/(d+t)*100).toFixed(2)) : 0;
+    });
+
+    // Leyenda de meses para los gráficos semanales
+    const legendaMeses = {
+      display: true,
+      labels: {
+        generateLabels: () => mesesUnicos.map((m,i) => ({
+          text: m, fillStyle: COLOR_MES[i%COLOR_MES.length],
+          strokeStyle: COLOR_MES[i%COLOR_MES.length], lineWidth: 0
+        }))
+      }
+    };
+
+    // Gráfico 1: Dto$ por semana
+    mkChart("c-evol-sem-dto", {
+      type: "bar",
+      data: { labels: labSems, datasets: [{ label:"Dto $", data:dtosSem, backgroundColor:colorsSem, borderRadius:3 }] },
+      options: { ...chartDefaults(),
+        plugins: { ...chartDefaults().plugins, legend: legendaMeses,
+          tooltip: { callbacks: { label: ctx => " " + fM(ctx.raw) } }
+        },
+        scales: { ...chartDefaults().scales,
+          y: { ...chartDefaults().scales.y, ticks: { ...chartDefaults().scales.y.ticks, callback: v=>fM(v) } }
+        }
+      }
+    });
+
+    // Gráfico 2: % Dto por semana
+    mkChart("c-evol-sem-pct", {
+      type: "bar",
+      data: { labels: labSems, datasets: [{ label:"% Dto", data:pctsSem, backgroundColor:colorsSem, borderRadius:3 }] },
+      options: { ...chartDefaults(),
+        plugins: { ...chartDefaults().plugins, legend: legendaMeses,
+          tooltip: { callbacks: { label: ctx => " " + ctx.raw.toFixed(2)+"%" } }
+        },
+        scales: { ...chartDefaults().scales,
+          y: { ...chartDefaults().scales.y, ticks: { ...chartDefaults().scales.y.ticks, callback: v=>v+"%" } }
+        }
+      }
+    });
+
+    // ── Datos mensuales × zona desde MENSUAL_DATA + mes vigente ──
+    const mesZonaHist = MENSUAL_DATA.filter(r=>r["Tipo"]==="MES_ZONA");
+    const zonas = [...new Set([
+      ...mesZonaHist.map(r=>r["Zona"]||""),
+      ...detFilt.map(r=>r["Zona"]||"")
+    ].filter(Boolean))].sort();
+
+    // Meses disponibles en histórico
+    let mesesDisp = [...new Set(mesZonaHist.map(r=>r["Clave"]||"").filter(Boolean))].sort();
+
+    // Agregar mes vigente si no está
+    const mesVigente = (()=>{ const d=detFilt[0]?.["Fecha"]||""; const p=d.split("/"); return p.length===3?p[2]+"-"+p[1].padStart(2,"0"):""; })();
+    if (mesVigente && !mesesDisp.includes(mesVigente)) mesesDisp.push(mesVigente);
+    mesesDisp.sort();
+    // Últimos 6 meses
+    mesesDisp = mesesDisp.slice(-6);
+
+    const COLORES_ZONA = ["#00c8ff","#ff6b35","#7eff6a","#ffd166","#a855f7"];
+
+    const datasetsDtoMes = zonas.map((zona,i) => ({
+      label: zona,
+      data: mesesDisp.map(mes => {
+        if (mes === mesVigente) {
+          // Desde DETALLE_DATA vigente
+          const rows = detFilt.filter(r=>r["Zona"]===zona);
+          return rows.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
+        }
+        const row = mesZonaHist.find(r=>r["Clave"]===mes && r["Zona"]===zona);
+        return row ? parseFloat(row["Dto $"])||0 : 0;
+      }),
+      backgroundColor: COLORES_ZONA[i % COLORES_ZONA.length],
+      borderRadius: 3
+    }));
+
+    const datasetsPctMes = zonas.map((zona,i) => ({
+      label: zona,
+      data: mesesDisp.map(mes => {
+        let dto=0, total=0;
+        if (mes === mesVigente) {
+          const rows = detFilt.filter(r=>r["Zona"]===zona);
+          dto   = rows.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
+          total = rows.reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
+        } else {
+          const row = mesZonaHist.find(r=>r["Clave"]===mes && r["Zona"]===zona);
+          if (row) { dto=parseFloat(row["Dto $"])||0; total=parseFloat(row["Total $"])||0; }
+        }
+        return (dto+total)>0 ? parseFloat((dto/(dto+total)*100).toFixed(2)) : 0;
+      }),
+      backgroundColor: COLORES_ZONA[i % COLORES_ZONA.length],
+      borderRadius: 3
+    }));
+
+    // Gráfico 3: Dto$ por mes × zona
+    mkChart("c-evol-mes-dto", {
+      type: "bar",
+      data: { labels: mesesDisp, datasets: datasetsDtoMes },
+      options: { ...chartDefaults(),
+        plugins: { ...chartDefaults().plugins,
+          legend: { display:true, labels:{ color:"#8b94b0", font:{ family:"DM Sans", size:10 } } },
+          tooltip: { callbacks: { label: ctx => " "+ctx.dataset.label+": "+fM(ctx.raw) } }
+        },
+        scales: { ...chartDefaults().scales,
+          x: { ...chartDefaults().scales.x, stacked:false },
+          y: { ...chartDefaults().scales.y, stacked:false, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>fM(v) } }
+        }
+      }
+    });
+
+    // Gráfico 4: % Dto por mes × zona
+    mkChart("c-evol-mes-pct", {
+      type: "bar",
+      data: { labels: mesesDisp, datasets: datasetsPctMes },
+      options: { ...chartDefaults(),
+        plugins: { ...chartDefaults().plugins,
+          legend: { display:true, labels:{ color:"#8b94b0", font:{ family:"DM Sans", size:10 } } },
+          tooltip: { callbacks: { label: ctx => " "+ctx.dataset.label+": "+ctx.raw.toFixed(2)+"%" } }
+        },
+        scales: { ...chartDefaults().scales,
+          x: { ...chartDefaults().scales.x, stacked:false },
+          y: { ...chartDefaults().scales.y, stacked:false, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>v+"%" } }
+        }
+      }
+    });
+
+  } catch(e) { console.error("renderEvolucion:", e); }
+  hideLoading("evolucion");
+}
 // ============================================================
 // ③ POR ZONA
 // ============================================================
@@ -1578,7 +1782,7 @@ function renderDetalleTable() {
   hideLoading("detalle");
 }
 
-function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; HISTORICO_DATA=[]; CACHE={}; loadData(); }
+function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; HISTORICO_DATA=[]; MENSUAL_DATA=[]; CACHE={}; loadData(); }
 
 function toggleAcuerdos() {
   EXCLUIR_ACUERDOS = !EXCLUIR_ACUERDOS;

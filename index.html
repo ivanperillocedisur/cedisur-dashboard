@@ -376,6 +376,20 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     <span class="filter-label">Grupo Cliente</span>
     <select class="filter-select" id="f-segmento" onchange="applyFilters()"><option value="">Todos</option></select>
   </div>
+  <div class="filter-group">
+    <span class="filter-label">Alarma</span>
+    <select class="filter-select" id="f-alarma" onchange="applyFilters()">
+      <option value="">Todas</option>
+      <option value="bonif">Bonificado &gt;90%</option>
+      <option value="alto">Alta 30–90%</option>
+      <option value="medio">Media 10–30%</option>
+      <option value="normal">Normal &lt;10%</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Producto</span>
+    <select class="filter-select" id="f-producto" onchange="applyFilters()"><option value="">Todos</option></select>
+  </div>
   <div class="filter-separator"></div>
   <div class="filter-group">
     <span class="filter-label">Acuerdos</span>
@@ -534,20 +548,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
   <div class="chart-card">
     <div class="search-bar">
-      <input class="search-input" type="text" id="cli-search" placeholder="Buscar cliente o producto…" oninput="renderDetalleTable()">
-      <select class="filter-select" id="cli-alarm-filter" onchange="renderDetalleTable()">
-        <option value="">Todas las alarmas</option>
-        <option value="bonif">🟣 Bonificado (&gt;90%)</option>
-        <option value="alto">🔴 Alarma alta (30–90%)</option>
-        <option value="medio">🟡 Media (10–30%)</option>
-        <option value="normal">🟢 Normal (&lt;10%)</option>
-      </select>
-      <select class="filter-select" id="cli-zona-filter2" onchange="renderDetalleTable()">
-        <option value="">Todas las zonas</option>
-      </select>
-      <select class="filter-select" id="cli-vend-filter" onchange="renderDetalleTable()">
-        <option value="">Todos los vendedores</option>
-      </select>
       <span class="result-count" id="cli-count">—</span>
     </div>
     <div class="table-scroll">
@@ -559,6 +559,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <th onclick="sortDetalle('cliente')">Nombre Comercial ↕</th>
           <th onclick="sortDetalle('descripcion')">Producto ↕</th>
           <th onclick="sortDetalle('marca')">Marca ↕</th>
+          <th class="num" onclick="sortDetalle('cantidad')">Cantidad ↕</th>
           <th class="num" onclick="sortDetalle('dto_pct')">% Dto ↕</th>
           <th class="num" onclick="sortDetalle('dto_plata')">$ Dto ↕</th>
           <th class="num" onclick="sortDetalle('pesoKg')">KG ↕</th>
@@ -743,20 +744,8 @@ function poblarFiltros() {
   fillSelect("f-grupo",    getVals("grupos"));
   fillSelect("f-deposito", getVals("depositos"));
   fillSelect("f-segmento", getVals("segmentos"));
-  const zSel = document.getElementById("cli-zona-filter2");
-  zSel.innerHTML = '<option value="">Todas las zonas</option>';
-  getVals("zonas").forEach(z => {
-    const o = document.createElement("option"); o.value = z; o.textContent = z;
-    zSel.appendChild(o);
-  });
-  const vSel = document.getElementById("cli-vend-filter");
-  if (vSel) {
-    vSel.innerHTML = '<option value="">Todos los vendedores</option>';
-    getVals("vendedores").forEach(v => {
-      const o = document.createElement("option"); o.value = v; o.textContent = v;
-      vSel.appendChild(o);
-    });
-  }
+  const productos = [...new Set(DETALLE_DATA.map(r=>r["Descripción"]||"").filter(Boolean))].sort();
+  fillSelect("f-producto", productos);
 }
 
 function fillSelect(id, options) {
@@ -894,7 +883,7 @@ function filtrarResumen(tipo) {
 
   // Si hay filtros de producto/segmento/depósito/ecommerce activos,
   // calcular agregados desde DETALLE_DATA (tiene todos los campos)
-  const usarDetalle = prov || marca || grupo || dep || seg || ecom || EXCLUIR_ACUERDOS;
+  const usarDetalle = prov || marca || grupo || dep || seg || ecom || EXCLUIR_ACUERDOS || alarma || producto;
 
   if (usarDetalle) {
     return agregarDesdeDetalle(tipo).filter(r => {
@@ -924,18 +913,28 @@ function filtrarDetalle() {
   const grupo= getFilterVal("f-grupo");
   const dep  = getFilterVal("f-deposito");
   const ecom = getFilterVal("f-ecommerce");
-  const seg  = getFilterVal("f-segmento");
+  const seg     = getFilterVal("f-segmento");
+  const alarma  = getFilterVal("f-alarma");
+  const producto= getFilterVal("f-producto");
 
   return DETALLE_DATA.filter(r => {
     if (EXCLUIR_ACUERDOS && (r["Acuerdo"]||"") === "Sí") return false;
-    if (zona  && r["Zona"]           !== zona)  return false;
-    if (vend  && r["Vendedor"]       !== vend)  return false;
-    if (prov  && r["Proveedor"]      !== prov)  return false;
-    if (marca && r["Marca"]          !== marca) return false;
-    if (grupo && r["Grupo Artículo"] !== grupo) return false;
-    if (dep   && r["Depósito"]       !== dep)   return false;
-    if (ecom  && r["Ecommerce"]      !== ecom)  return false;
-    if (seg   && r["Segmento"]       !== seg)   return false;
+    if (zona    && r["Zona"]           !== zona)    return false;
+    if (vend    && r["Vendedor"]       !== vend)    return false;
+    if (prov    && r["Proveedor"]      !== prov)    return false;
+    if (marca   && r["Marca"]          !== marca)   return false;
+    if (grupo   && r["Grupo Artículo"] !== grupo)   return false;
+    if (dep     && r["Depósito"]       !== dep)     return false;
+    if (ecom    && r["Ecommerce"]      !== ecom)    return false;
+    if (seg     && r["Segmento"]       !== seg)     return false;
+    if (producto && r["Descripción"]   !== producto) return false;
+    if (alarma) {
+      const p = parseFloat(r["% Dto"]||0);
+      if (alarma==="bonif"  && p <= 90)              return false;
+      if (alarma==="alto"   && !(p>30 && p<=90))     return false;
+      if (alarma==="medio"  && !(p>10 && p<=30))     return false;
+      if (alarma==="normal" && p > 10)               return false;
+    }
     return true;
   });
 }
@@ -950,7 +949,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  ["f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce","f-segmento"]
+  ["f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce","f-segmento","f-alarma","f-producto"]
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
   applyFilters();
 }
@@ -1539,28 +1538,8 @@ function sortDetalle(key) {
 function renderDetalleTable() {
   showLoading("detalle");
   try {
-    const alarm  = document.getElementById("cli-alarm-filter")?.value || "";
-    const search = (document.getElementById("cli-search")?.value||"").toLowerCase();
-    const zonaF  = document.getElementById("cli-zona-filter2")?.value || "";
-    const vendF  = document.getElementById("cli-vend-filter")?.value || "";
-
     let data = filtrarDetalle();
-
-    if (zonaF)  data = data.filter(r => r["Zona"]     === zonaF);
-    if (vendF)  data = data.filter(r => r["Vendedor"] === vendF);
-    if (search) data = data.filter(r =>
-      (r["Cliente"]||"").toLowerCase().includes(search) ||
-      (r["Descripción"]||"").toLowerCase().includes(search) ||
-      (r["Cod Cliente"]||"").toLowerCase().includes(search)
-    );
-
     const toNum = (r, col) => parseFloat(r[col]||0);
-
-    if (alarm === "bonif")  data = data.filter(r => toNum(r,"% Dto")>90);
-    else if (alarm==="alto") data = data.filter(r=>{const p=toNum(r,"% Dto");return p>30&&p<=90;});
-    else if (alarm==="medio")data = data.filter(r=>{const p=toNum(r,"% Dto");return p>10&&p<=30;});
-    else if (alarm==="normal")data= data.filter(r=>toNum(r,"% Dto")<=10);
-
     data.sort((a,b)=>toNum(b,"% Dto")-toNum(a,"% Dto"));
 
     document.getElementById("cli-count").textContent = data.length.toLocaleString()+" líneas";
@@ -1582,6 +1561,7 @@ function renderDetalleTable() {
         <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${r["Cliente"]||""}</strong></td>
         <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px">${r["Descripción"]||""}</td>
         <td style="font-size:11px;color:var(--text-dim)">${r["Marca"]||""}</td>
+        <td class="num" style="color:var(--text-dim)">${r["Cantidad"]||"—"}</td>
         <td class="num ${dtoClass}">${fP(p)}</td>
         <td class="num">${fM(toNum(r,"Dto $"))}</td>
         <td class="num">${toNum(r,"Peso KG")?fN(toNum(r,"Peso KG")):"—"}</td>
@@ -1590,7 +1570,7 @@ function renderDetalleTable() {
       </tr>`;
     }
     if (data.length > 500) {
-      tbody.innerHTML += `<tr><td colspan="11" style="text-align:center;padding:12px;color:var(--muted);font-size:11px">
+      tbody.innerHTML += `<tr><td colspan="12" style="text-align:center;padding:12px;color:var(--muted);font-size:11px">
         Mostrando 500 de ${data.length.toLocaleString()} líneas. Usá los filtros para acotar.
       </td></tr>`;
     }

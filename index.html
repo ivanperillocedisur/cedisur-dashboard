@@ -679,7 +679,6 @@ function showSection(name, el) {
 function renderSection(name) {
   if (name === "resumen")   renderResumen();
   else if (name === "evolucion") renderEvolucion();
-  else if (name === "evolucion") renderEvolucion();
   else if (name === "zona")      renderZona();
   else if (name === "vendedor")  renderVendedor();
   else if (name === "detalle")   renderDetalleTable();
@@ -1339,97 +1338,6 @@ function getUltimas4SemanasPorZona() {
     }
   };
 }
-
-function renderEvolucion() {
-  showLoading("evolucion");
-  try {
-    const sems = getSemanasConFiltro(12);
-    const labs = sems.map(s=>s.sem);
-
-    // Dto$ por semana
-    mkChart("c-evol-dto-sem",{
-      type:"bar",
-      data:{labels:labs, datasets:[
-        {label:"Dto $",data:sems.map(s=>s.dto),backgroundColor:"rgba(255,107,53,0.7)",borderRadius:3,yAxisID:"y"},
-        {label:"% Dto",data:sems.map(s=>parseFloat(s.pct.toFixed(1))),type:"line",
-          borderColor:"#00c8ff",backgroundColor:"rgba(0,200,255,0.08)",
-          pointBackgroundColor:"#00c8ff",tension:0.4,yAxisID:"y2",fill:true}
-      ]},
-      options:{...chartDefaults(),
-        scales:{
-          x:{...chartDefaults().scales.x},
-          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}},
-          y2:{position:"right",ticks:{color:"#00c8ff",callback:v=>v+"%"},grid:{display:false}}
-        }
-      }
-    });
-
-    // % Dto por semana
-    mkChart("c-evol-pct-sem",{
-      type:"bar",
-      data:{labels:labs, datasets:[{
-        label:"% Dto",data:sems.map(s=>parseFloat(s.pct.toFixed(1))),
-        backgroundColor:sems.map(s=>s.pct>4?"rgba(255,71,87,0.8)":s.pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),
-        borderRadius:4
-      }]},
-      options:{...chartDefaults(),
-        plugins:{...chartDefaults().plugins,legend:{display:false}},
-        scales:{...chartDefaults().scales,
-          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>v+"%"}}}
-      }
-    });
-
-    // Contribución$ por semana
-    mkChart("c-evol-contrib-sem",{
-      type:"bar",
-      data:{labels:labs, datasets:[{
-        label:"Contribución $",data:sems.map(s=>s.contrib),
-        backgroundColor:sems.map(s=>s.contrib<0?"rgba(255,71,87,0.7)":"rgba(46,213,115,0.6)"),
-        borderRadius:4
-      }]},
-      options:{...chartDefaults(),
-        plugins:{...chartDefaults().plugins,legend:{display:false}},
-        scales:{...chartDefaults().scales,
-          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}}}
-      }
-    });
-
-    // % Dto por zona — comparativo semanal desde HISTORICO_DATA
-    const numSem = s => parseInt((s||"").replace("Sem ",""))||0;
-    const semsHist = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))]
-      .sort((a,b)=>numSem(a)-numSem(b));
-    const zonaFilt = getFilterVal("f-zona");
-    const zonasHist = zonaFilt ? [zonaFilt] :
-      [...new Set(HISTORICO_DATA.map(r=>r["Zona"]).filter(Boolean))].sort();
-
-    const datasetsZona = zonasHist.map((z,i) => {
-      const pcts = semsHist.map(sem => {
-        const fila = HISTORICO_DATA.find(r=>r["Semana"]===sem && r["Zona"]===z);
-        if (!fila) return 0;
-        const d=parseFloat(fila["Dto $"])||0, v=parseFloat(fila["Total $"])||0;
-        return (d+v)>0 ? parseFloat((d/(d+v)*100).toFixed(1)) : 0;
-      });
-      return { label:z, data:pcts, borderColor:COLORES[i%COLORES.length],
-        backgroundColor:"transparent", tension:0.4, pointRadius:4,
-        pointBackgroundColor:COLORES[i%COLORES.length] };
-    });
-
-    mkChart("c-evol-zona-sem",{
-      type:"line",
-      data:{ labels:semsHist, datasets:datasetsZona },
-      options:{...chartDefaults(),
-        plugins:{...chartDefaults().plugins,
-          legend:{display:true,labels:{color:"#8b94b0",font:{family:"DM Sans",size:10}}}
-        },
-        scales:{...chartDefaults().scales,
-          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>v+"%"}}}
-      }
-    });
-
-  } catch(e) { console.error("renderEvolucion:", e); }
-  hideLoading("evolucion");
-}
-
 
 // ============================================================
 // ② EVOLUCIÓN

@@ -32,163 +32,67 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 2rem; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding-bottom: 2rem;
-  }
+  /* HEADER */
+  .header { background: var(--accent); padding: 1.25rem 1.25rem 1rem; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+  .app-name { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: rgba(255,255,255,0.55); text-transform: uppercase; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .today-badge { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.12); padding: 3px 10px; border-radius: 20px; }
+  .btn-search { background: none; border: none; cursor: pointer; padding: 4px; color: rgba(255,255,255,0.75); display: flex; align-items: center; -webkit-tap-highlight-color: transparent; }
+  .btn-search svg { width: 18px; height: 18px; }
 
-  .header {
-    background: var(--accent);
-    padding: 1.25rem 1.25rem 1rem;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
-  }
-  .app-name {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.55);
-    text-transform: uppercase;
-  }
-  .today-badge {
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.7);
-    background: rgba(255,255,255,0.12);
-    padding: 3px 10px;
-    border-radius: 20px;
-  }
+  /* BUSCADOR */
+  .search-overlay { display: none; padding: 0 0 0.75rem; }
+  .search-overlay.active { display: block; }
+  .search-input-wrap { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 0.5rem 0.75rem; }
+  .search-input-wrap svg { width: 14px; height: 14px; color: rgba(255,255,255,0.6); flex-shrink: 0; }
+  .search-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; }
+  .search-input::placeholder { color: rgba(255,255,255,0.45); }
+  .btn-search-clear { background: none; border: none; cursor: pointer; padding: 0; color: rgba(255,255,255,0.5); font-size: 16px; line-height: 1; }
+
   select {
-    width: 100%;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: #fff;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    font-weight: 500;
-    padding: 0.6rem 0.75rem;
-    border-radius: 8px;
-    appearance: none;
-    -webkit-appearance: none;
+    width: 100%; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+    padding: 0.6rem 0.75rem; border-radius: 8px; appearance: none; -webkit-appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.6)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    cursor: pointer;
+    background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; margin-bottom: 0.75rem;
   }
   select option { background: #1d3a8f; color: #fff; }
   select:focus { outline: none; border-color: rgba(255,255,255,0.5); }
 
-  .days-strip {
-    display: flex;
-    gap: 6px;
-    padding: 0.875rem 1.25rem 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-    background: var(--accent);
-  }
+  .days-strip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
   .days-strip::-webkit-scrollbar { display: none; }
-  .day-tab {
-    flex-shrink: 0;
-    padding: 5px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid rgba(255,255,255,0.2);
-    color: rgba(255,255,255,0.6);
-    background: transparent;
-    transition: all 0.15s;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .day-tab.active {
-    background: #fff;
-    color: var(--accent);
-    border-color: transparent;
-    font-weight: 600;
-  }
+  .day-tab { flex-shrink: 0; padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); background: transparent; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .day-tab.active { background: #fff; color: var(--accent); border-color: transparent; font-weight: 600; }
 
-  .stats-bar {
-    display: flex;
-    gap: 8px;
-    padding: 1rem 1.25rem 0.5rem;
-  }
-  .stat {
-    flex: 1;
-    background: var(--surface);
-    border-radius: 10px;
-    padding: 0.6rem 0.75rem;
-    border: 1px solid var(--border);
-    text-align: center;
-  }
+  /* STATS */
+  .stats-bar { display: flex; gap: 8px; padding: 1rem 1.25rem 0.5rem; }
+  .stat { flex: 1; background: var(--surface); border-radius: 10px; padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: center; }
   .stat.bought { background: var(--card-bought-bg); border-color: var(--card-bought-border); }
   .stat.notbought { background: var(--card-notbought-bg); border-color: var(--card-notbought-border); }
-  .stat-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 20px;
-    font-weight: 500;
-    color: var(--text);
-    line-height: 1.1;
-  }
+  .stat-num { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; color: var(--text); line-height: 1.1; }
   .stat.bought .stat-num { color: #1F7A42; }
   .stat.notbought .stat-num { color: #A02020; }
   .stat-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
   .stat.bought .stat-label { color: #2D8A52; }
   .stat.notbought .stat-label { color: #C0392B; }
 
-  .filter-bar {
-    display: flex;
-    gap: 8px;
-    padding: 0.25rem 1.25rem 0.5rem;
-    justify-content: center;
-  }
-  .filter-chip {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
-    border-radius: 20px;
-    border: 1px solid transparent;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text2);
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-  }
+  /* FILTROS */
+  .filter-bar { display: flex; gap: 8px; padding: 0.25rem 1.25rem 0.5rem; justify-content: center; }
+  .filter-chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 20px; border: 1px solid transparent; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text2); user-select: none; -webkit-tap-highlight-color: transparent; }
   .filter-chip.presencial { background: var(--card-presencial-bg); border-color: var(--card-presencial-border); }
   .filter-chip.ecom { background: var(--card-ecom-bg); border-color: var(--card-ecom-border); }
   .filter-chip.telefonico { background: var(--card-tel-bg); border-color: var(--card-tel-border); }
-  .filter-chip input[type="checkbox"] {
-    width: 14px; height: 14px;
-    accent-color: var(--accent);
-    cursor: pointer; flex-shrink: 0;
-  }
+  .filter-chip input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
 
-  .list {
-    padding: 0.5rem 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
+  /* LISTA */
+  .list { padding: 0.5rem 1.25rem; display: flex; flex-direction: column; gap: 8px; }
+  .search-results-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); padding: 0.75rem 1.25rem 0.25rem; }
 
-  .client-card {
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    transition: background 0.2s, border-color 0.2s, opacity 0.2s;
-  }
+  /* TARJETAS */
+  .client-card { border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; transition: background 0.2s, border-color 0.2s, opacity 0.2s; }
   .client-card.presencial { background: var(--card-presencial-bg); border: 1px solid var(--card-presencial-border); }
   .client-card.ecom { background: var(--card-ecom-bg); border: 1px solid var(--card-ecom-border); }
   .client-card.telefonico { background: var(--card-tel-bg); border: 1px solid var(--card-tel-border); }
@@ -196,143 +100,36 @@
   .client-card.notbought { background: var(--card-notbought-bg) !important; border-color: var(--card-notbought-border) !important; opacity: 0.75; }
   .client-card.notbought .client-name { text-decoration: line-through; color: var(--text3); }
 
-  .card-main {
-    padding: 0.875rem 0.875rem 0.875rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-  }
-
-  .order-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text3);
-    min-width: 22px;
-    flex-shrink: 0;
-  }
-
+  .card-main { padding: 0.875rem 0.875rem 0.875rem 1rem; display: flex; align-items: center; gap: 10px; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
+  .order-num { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text3); min-width: 22px; flex-shrink: 0; }
   .client-info { flex: 1; min-width: 0; }
-  .client-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    line-height: 1.35;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .client-card.expanded .client-name {
-    -webkit-line-clamp: unset;
-    overflow: visible;
-  }
+  .client-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .client-subtext { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .client-card.expanded .client-name { -webkit-line-clamp: unset; overflow: visible; }
 
-  .card-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-shrink: 0;
-  }
-
-  .btn-action {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    background: transparent;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
+  .card-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+  .btn-action { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
   .btn-action:active { transform: scale(0.88); }
   .btn-action svg { width: 15px; height: 15px; pointer-events: none; }
-
   .client-card.bought .btn-check { background: var(--btn-check-color); border-color: var(--btn-check-color); }
   .client-card.notbought .btn-x { background: var(--btn-x-color); border-color: var(--btn-x-color); }
 
+  /* DETALLE */
   .card-detail { display: none; padding: 0 1rem 1rem 1rem; }
   .client-card.expanded .card-detail { display: block; }
   .detail-divider { height: 1px; background: rgba(0,0,0,0.08); margin-bottom: 0.75rem; }
   .detail-row { margin-bottom: 0.5rem; }
-  .detail-label {
-    font-size: 10px; font-weight: 600;
-    letter-spacing: 0.07em; text-transform: uppercase;
-    color: var(--text3); margin-bottom: 2px;
-  }
+  .detail-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); margin-bottom: 2px; }
   .detail-value { font-size: 13px; color: var(--text); line-height: 1.4; }
-
-  .btn-maps {
-    display: flex; align-items: center; justify-content: center;
-    gap: 6px; width: 100%; margin-top: 0.75rem;
-    font-size: 13px; font-weight: 600;
-    color: var(--accent-text); background: var(--accent-light);
-    border: none; padding: 9px 12px; border-radius: 8px;
-    cursor: pointer; text-decoration: none;
-    font-family: 'DM Sans', sans-serif;
-  }
+  .btn-maps { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 0.75rem; font-size: 13px; font-weight: 600; color: var(--accent-text); background: var(--accent-light); border: none; padding: 9px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; font-family: 'DM Sans', sans-serif; }
   .btn-maps svg { width: 13px; height: 13px; }
-
-  /* BUSCADOR */
-  .search-overlay {
-    display: none;
-    padding: 0.6rem 1.25rem 0.75rem;
-    background: var(--accent);
-  }
-  .search-overlay.active { display: block; }
-  .search-input-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 8px;
-    padding: 0.5rem 0.75rem;
-  }
-  .search-input-wrap svg { width: 14px; height: 14px; color: rgba(255,255,255,0.6); flex-shrink: 0; }
-  .search-input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #fff;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-  }
-  .search-input::placeholder { color: rgba(255,255,255,0.45); }
-  .btn-search-clear {
-    background: none; border: none; cursor: pointer; padding: 0;
-    color: rgba(255,255,255,0.5); font-size: 16px; line-height: 1;
-  }
-  .search-results-label {
-    font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
-    text-transform: uppercase; color: var(--text3);
-    padding: 0.75rem 1.25rem 0.25rem;
-  }
-  .btn-search {
-    background: none; border: none; cursor: pointer; padding: 4px;
-    color: rgba(255,255,255,0.7); display: flex; align-items: center;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .btn-search svg { width: 18px; height: 18px; }
-  .header-right { display: flex; align-items: center; gap: 8px; }
 
   .empty { text-align: center; padding: 3rem 1.5rem; color: var(--text3); }
   .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
   .empty-text { font-size: 15px; }
   .loader { text-align: center; padding: 3rem; color: var(--text3); font-size: 14px; }
   .reset-bar { padding: 0.5rem 1.25rem; display: flex; justify-content: flex-end; }
-  .btn-reset {
-    font-size: 11px; color: var(--text3); background: none;
-    border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
-    text-decoration: underline; padding: 4px;
-  }
+  .btn-reset { font-size: 11px; color: var(--text3); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: underline; padding: 4px; }
 </style>
 </head>
 <body>
@@ -343,13 +140,15 @@
     <div class="header-right">
       <button class="btn-search" onclick="toggleSearch()" title="Buscar cliente">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <circle cx="8.5" cy="8.5" r="5.5"/>
-          <path d="M15 15l-3-3"/>
+          <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/>
         </svg>
       </button>
       <span class="today-badge" id="today-label">—</span>
     </div>
   </div>
+  <select id="vendedor-select">
+    <option value="">— Seleccioná tu nombre —</option>
+  </select>
   <div class="search-overlay" id="search-overlay">
     <div class="search-input-wrap">
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -359,9 +158,6 @@
       <button class="btn-search-clear" onclick="clearSearch()">✕</button>
     </div>
   </div>
-  <select id="vendedor-select">
-    <option value="">— Seleccioná tu nombre —</option>
-  </select>
   <div class="days-strip" id="days-strip"></div>
 </div>
 
@@ -375,9 +171,11 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSN
 let allData = [];
 let selectedVendedor = '';
 let selectedDay = '';
+let searchQuery = '';
 const DAYS_ORDER = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO'];
 
-function storageKey(v, d, date) { return `ruteo2_${v}_${d}_${date}`; }
+// ── STORAGE ──────────────────────────────────────────────────────────────────
+function storageKey(v, d, date) { return 'ruteo2_' + v + '_' + d + '_' + date; }
 function todayStr() { return new Date().toISOString().slice(0,10); }
 function getStateMap(v, d) {
   try { return JSON.parse(localStorage.getItem(storageKey(v,d,todayStr())) || '{}'); }
@@ -391,13 +189,15 @@ function setClientState(codigo, state) {
   if (map[codigo] === state) delete map[codigo];
   else map[codigo] = state;
   saveStateMap(selectedVendedor, selectedDay, map);
-  render();
+  if (searchQuery) renderSearchResults();
+  else render();
 }
 
+// ── CSV ───────────────────────────────────────────────────────────────────────
 function parseCSV(text) {
   const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
-  return lines.slice(1).map(line => {
+  const headers = lines[0].split(',').map(function(h) { return h.trim().replace(/"/g,''); });
+  return lines.slice(1).map(function(line) {
     const vals = [];
     let cur = '', inQ = false;
     for (let i = 0; i < line.length; i++) {
@@ -408,54 +208,56 @@ function parseCSV(text) {
     }
     vals.push(cur.trim());
     const obj = {};
-    headers.forEach((h, i) => obj[h] = vals[i] || '');
+    headers.forEach(function(h, i) { obj[h] = vals[i] || ''; });
     return obj;
-  }).filter(r => r['NOMBRE COMERCIAL']);
+  }).filter(function(r) { return r['NOMBRE COMERCIAL']; });
 }
 
 function mapsUrl(address, city) {
-  return `https://maps.google.com/?q=${encodeURIComponent(address + ', ' + city + ', Argentina')}`;
+  return 'https://maps.google.com/?q=' + encodeURIComponent(address + ', ' + city + ', Argentina');
 }
 function todayDayName() {
   return ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'][new Date().getDay()];
 }
+function canalClass(canal) {
+  if (!canal) return 'presencial';
+  const c = canal.toLowerCase();
+  if (c.includes('ecom') || c.includes('auto')) return 'ecom';
+  if (c.includes('telef')) return 'telefonico';
+  return 'presencial';
+}
 
-let searchQuery = '';
-
+// ── BÚSQUEDA ──────────────────────────────────────────────────────────────────
 function toggleSearch() {
   const overlay = document.getElementById('search-overlay');
   const input = document.getElementById('search-input');
   const isActive = overlay.classList.toggle('active');
-  if (isActive) { input.focus(); }
-  else { clearSearch(); }
+  if (isActive) { setTimeout(function() { input.focus(); }, 100); }
+  else { searchQuery = ''; input.value = ''; render(); }
 }
 
 function clearSearch() {
   searchQuery = '';
   const input = document.getElementById('search-input');
   if (input) input.value = '';
-  renderSearchResults();
+  render();
 }
 
 function onSearch() {
   searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
-  renderSearchResults();
+  if (searchQuery) renderSearchResults();
+  else render();
 }
 
 function renderSearchResults() {
-  if (!searchQuery) {
-    render();
-    return;
-  }
   if (!selectedVendedor) return;
-
-  // Buscar en TODOS los dias del vendedor
-  const vendRows = allData.filter(r => r['VENDEDOR'] === selectedVendedor);
-  const matches = vendRows.filter(r =>
-    r['NOMBRE COMERCIAL'].toLowerCase().includes(searchQuery) ||
-    r['DIRECCION'].toLowerCase().includes(searchQuery) ||
-    r['LOCALIDAD'].toLowerCase().includes(searchQuery)
-  );
+  const vendRows = allData.filter(function(r) { return r['VENDEDOR'] === selectedVendedor; });
+  const matches = vendRows.filter(function(r) {
+    const q = searchQuery;
+    return r['NOMBRE COMERCIAL'].toLowerCase().includes(q) ||
+           r['DIRECCION'].toLowerCase().includes(q) ||
+           r['LOCALIDAD'].toLowerCase().includes(q);
+  });
 
   const content = document.getElementById('app-content');
   content.innerHTML = '';
@@ -474,52 +276,116 @@ function renderSearchResults() {
   const list = document.createElement('div');
   list.className = 'list';
 
-  matches.forEach(c => {
-    const codigo = c['CODIGO CLIENTE'];
-    const state = stateMap[codigo];
-    const canal = c['Canal actual (Presencial / Autogestión)'] || '';
-    const isEcom = canal.toLowerCase().includes('ecom') || canal.toLowerCase().includes('auto');
-    const isTel = canal.toLowerCase().includes('telef');
-    const canalClass = isEcom ? 'ecom' : isTel ? 'telefonico' : 'presencial';
-    const stateClass = state === 'bought' ? ' bought' : state === 'notbought' ? ' notbought' : '';
-    const checkStroke = state === 'bought' ? '#fff' : '#9E9B97';
-    const xStroke = state === 'notbought' ? '#fff' : '#9E9B97';
-    const dia = c['DIA CARGA DE PEDIDO'];
-
-    const card = document.createElement('div');
-    card.className = 'client-card ' + canalClass + stateClass;
-    card.id = 'search-card-' + codigo;
-    card.dataset.canal = canalClass;
-
-    card.innerHTML = '<div class="card-main" onclick="toggleExpandById(\'search-card-' + codigo + '\')"><div class="order-num">' + c['ORDEN'] + '</div><div class="client-info"><div class="client-name">' + c['NOMBRE COMERCIAL'] + '</div><div style="font-size:11px;color:var(--text3);margin-top:2px">' + dia.charAt(0) + dia.slice(1).toLowerCase() + ' · ' + c['LOCALIDAD'] + '</div></div><div class="card-actions"><button class="btn-action btn-check" onclick="event.stopPropagation(); setClientState('' + codigo + '', 'bought')" title="Compró"><svg viewBox="0 0 14 14" fill="none" stroke="' + checkStroke + '" stroke-width="2" stroke-linecap="round"><path d="M2.5 7l3 3 6-6"/></svg></button><button class="btn-action btn-x" onclick="event.stopPropagation(); setClientState('' + codigo + '', 'notbought')" title="No compró"><svg viewBox="0 0 14 14" fill="none" stroke="' + xStroke + '" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg></button></div></div><div class="card-detail"><div class="detail-divider"></div><div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + c['DIRECCION'] + '</div></div><div class="detail-row"><div class="detail-label">Localidad</div><div class="detail-value">' + c['LOCALIDAD'] + '</div></div><div class="detail-row"><div class="detail-label">Día</div><div class="detail-value">' + dia.charAt(0) + dia.slice(1).toLowerCase() + '</div></div><div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div><a class="btn-maps" href="' + mapsUrl(c['DIRECCION'], c['LOCALIDAD']) + '" target="_blank"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>Abrir en Maps</a></div>';
-    list.appendChild(card);
+  matches.forEach(function(c) {
+    list.appendChild(buildCard(c, stateMap, true));
   });
 
   content.appendChild(list);
 }
 
-function toggleExpandById(id) {
-  const card = document.getElementById(id);
-  if (card) card.classList.toggle('expanded');
+// ── TARJETA ───────────────────────────────────────────────────────────────────
+function buildCard(c, stateMap, isSearch) {
+  const codigo = c['CODIGO CLIENTE'];
+  const state = stateMap[codigo];
+  const cc = canalClass(c['Canal actual (Presencial / Autogestión)']);
+  const stateClass = state === 'bought' ? ' bought' : state === 'notbought' ? ' notbought' : '';
+  const checkStroke = state === 'bought' ? '#fff' : '#9E9B97';
+  const xStroke = state === 'notbought' ? '#fff' : '#9E9B97';
+  const dia = (c['DIA CARGA DE PEDIDO'] || '');
+  const diaLabel = dia.charAt(0) + dia.slice(1).toLowerCase();
+  const cardId = (isSearch ? 'sc-' : 'card-') + codigo;
+
+  const card = document.createElement('div');
+  card.className = 'client-card ' + cc + stateClass;
+  card.id = cardId;
+  card.dataset.canal = cc;
+
+  // Botones
+  const btnCheck = document.createElement('button');
+  btnCheck.className = 'btn-action btn-check';
+  btnCheck.title = 'Compró';
+  btnCheck.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="' + checkStroke + '" stroke-width="2" stroke-linecap="round"><path d="M2.5 7l3 3 6-6"/></svg>';
+  btnCheck.addEventListener('click', function(e) { e.stopPropagation(); setClientState(codigo, 'bought'); });
+
+  const btnX = document.createElement('button');
+  btnX.className = 'btn-action btn-x';
+  btnX.title = 'No compró';
+  btnX.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="' + xStroke + '" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>';
+  btnX.addEventListener('click', function(e) { e.stopPropagation(); setClientState(codigo, 'notbought'); });
+
+  const actions = document.createElement('div');
+  actions.className = 'card-actions';
+  actions.appendChild(btnCheck);
+  actions.appendChild(btnX);
+
+  const name = document.createElement('div');
+  name.className = 'client-name';
+  name.textContent = c['NOMBRE COMERCIAL'];
+
+  const info = document.createElement('div');
+  info.className = 'client-info';
+  info.appendChild(name);
+
+  if (isSearch) {
+    const sub = document.createElement('div');
+    sub.className = 'client-subtext';
+    sub.textContent = diaLabel + ' · ' + c['LOCALIDAD'];
+    info.appendChild(sub);
+  }
+
+  const main = document.createElement('div');
+  main.className = 'card-main';
+  main.appendChild(document.createElement('div'));
+  main.children[0].className = 'order-num';
+  main.children[0].textContent = c['ORDEN'];
+  main.appendChild(info);
+  main.appendChild(actions);
+  main.addEventListener('click', function() { card.classList.toggle('expanded'); });
+
+  // Detalle
+  const detail = document.createElement('div');
+  detail.className = 'card-detail';
+  detail.innerHTML =
+    '<div class="detail-divider"></div>' +
+    '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + c['DIRECCION'] + '</div></div>' +
+    '<div class="detail-row"><div class="detail-label">Localidad</div><div class="detail-value">' + c['LOCALIDAD'] + '</div></div>' +
+    (isSearch ? '<div class="detail-row"><div class="detail-label">Día</div><div class="detail-value">' + diaLabel + '</div></div>' : '') +
+    '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>' +
+    '<a class="btn-maps" href="' + mapsUrl(c['DIRECCION'], c['LOCALIDAD']) + '" target="_blank">' +
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
+    'Abrir en Maps</a>';
+
+  card.appendChild(main);
+  card.appendChild(detail);
+  return card;
 }
 
+// ── FILTRO ────────────────────────────────────────────────────────────────────
 function applyFilter() {
-  const showPresencial = document.getElementById('filter-presencial')?.checked ?? true;
-  const showEcom = document.getElementById('filter-ecom')?.checked ?? true;
-  const showTel = document.getElementById('filter-telefonico')?.checked ?? true;
-  document.querySelectorAll('.client-card').forEach(card => {
-    const base = card.dataset.canal;
+  const showP = document.getElementById('filter-presencial')?.checked ?? true;
+  const showE = document.getElementById('filter-ecom')?.checked ?? true;
+  const showT = document.getElementById('filter-telefonico')?.checked ?? true;
+  document.querySelectorAll('.client-card').forEach(function(card) {
+    const b = card.dataset.canal;
     let show = true;
-    if (base === 'presencial') show = showPresencial;
-    else if (base === 'ecom') show = showEcom;
-    else if (base === 'telefonico') show = showTel;
+    if (b === 'presencial') show = showP;
+    else if (b === 'ecom') show = showE;
+    else if (b === 'telefonico') show = showT;
     card.style.display = show ? '' : 'none';
   });
 }
 
-function toggleExpand(codigo) {
-  const card = document.getElementById('card-' + codigo);
-  if (card) card.classList.toggle('expanded');
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function renderDayTabs(days) {
+  const strip = document.getElementById('days-strip');
+  strip.innerHTML = '';
+  days.forEach(function(day) {
+    const btn = document.createElement('button');
+    btn.className = 'day-tab' + (day === selectedDay ? ' active' : '');
+    btn.textContent = day.charAt(0) + day.slice(1).toLowerCase();
+    btn.onclick = function() { selectedDay = day; render(); };
+    strip.appendChild(btn);
+  });
 }
 
 function resetDay() {
@@ -528,22 +394,11 @@ function resetDay() {
   render();
 }
 
-function renderDayTabs(days) {
-  const strip = document.getElementById('days-strip');
-  strip.innerHTML = '';
-  days.forEach(day => {
-    const btn = document.createElement('button');
-    btn.className = 'day-tab' + (day === selectedDay ? ' active' : '');
-    btn.textContent = day.charAt(0) + day.slice(1).toLowerCase();
-    btn.onclick = () => { selectedDay = day; render(); };
-    strip.appendChild(btn);
-  });
-}
-
+// ── RENDER PRINCIPAL ──────────────────────────────────────────────────────────
 function renderList(clients) {
   const stateMap = getStateMap(selectedVendedor, selectedDay);
-  const boughtCount = clients.filter(c => stateMap[c['CODIGO CLIENTE']] === 'bought').length;
-  const notBoughtCount = clients.filter(c => stateMap[c['CODIGO CLIENTE']] === 'notbought').length;
+  const boughtCount = clients.filter(function(c) { return stateMap[c['CODIGO CLIENTE']] === 'bought'; }).length;
+  const notBoughtCount = clients.filter(function(c) { return stateMap[c['CODIGO CLIENTE']] === 'notbought'; }).length;
   const total = clients.length;
 
   const content = document.getElementById('app-content');
@@ -551,134 +406,60 @@ function renderList(clients) {
 
   const stats = document.createElement('div');
   stats.className = 'stats-bar';
-  stats.innerHTML = `
-    <div class="stat">
-      <div class="stat-num">${total}</div>
-      <div class="stat-label">Total del día</div>
-    </div>
-    <div class="stat bought">
-      <div class="stat-num">${boughtCount}</div>
-      <div class="stat-label">Compraron</div>
-    </div>
-    <div class="stat notbought">
-      <div class="stat-num">${notBoughtCount}</div>
-      <div class="stat-label">No compraron</div>
-    </div>
-  `;
+  stats.innerHTML =
+    '<div class="stat"><div class="stat-num">' + total + '</div><div class="stat-label">Total del día</div></div>' +
+    '<div class="stat bought"><div class="stat-num">' + boughtCount + '</div><div class="stat-label">Compraron</div></div>' +
+    '<div class="stat notbought"><div class="stat-num">' + notBoughtCount + '</div><div class="stat-label">No compraron</div></div>';
   content.appendChild(stats);
 
   const filterBar = document.createElement('div');
   filterBar.className = 'filter-bar';
-  filterBar.innerHTML = `
-    <label class="filter-chip presencial">
-      <input type="checkbox" id="filter-presencial" checked onchange="applyFilter()"> Presencial
-    </label>
-    <label class="filter-chip ecom">
-      <input type="checkbox" id="filter-ecom" checked onchange="applyFilter()"> Ecommerce
-    </label>
-    <label class="filter-chip telefonico">
-      <input type="checkbox" id="filter-telefonico" checked onchange="applyFilter()"> Telefónico
-    </label>
-  `;
+  filterBar.innerHTML =
+    '<label class="filter-chip presencial"><input type="checkbox" id="filter-presencial" checked onchange="applyFilter()"> Presencial</label>' +
+    '<label class="filter-chip ecom"><input type="checkbox" id="filter-ecom" checked onchange="applyFilter()"> Ecommerce</label>' +
+    '<label class="filter-chip telefonico"><input type="checkbox" id="filter-telefonico" checked onchange="applyFilter()"> Telefónico</label>';
   content.appendChild(filterBar);
 
   if (boughtCount + notBoughtCount > 0) {
     const resetBar = document.createElement('div');
     resetBar.className = 'reset-bar';
-    resetBar.innerHTML = `<button class="btn-reset" onclick="resetDay()">Limpiar registros de hoy</button>`;
+    resetBar.innerHTML = '<button class="btn-reset" onclick="resetDay()">Limpiar registros de hoy</button>';
     content.appendChild(resetBar);
   }
 
   const list = document.createElement('div');
   list.className = 'list';
-  clients.sort((a,b) => parseInt(a['ORDEN']||0) - parseInt(b['ORDEN']||0));
-
-  clients.forEach(c => {
-    const codigo = c['CODIGO CLIENTE'];
-    const state = stateMap[codigo];
-    const canal = c['Canal actual (Presencial / Autogestión)'] || '';
-    const isEcom = canal.toLowerCase().includes('ecom') || canal.toLowerCase().includes('auto');
-    const isTel = canal.toLowerCase().includes('telef');
-    const canalClass = isEcom ? 'ecom' : isTel ? 'telefonico' : 'presencial';
-    const stateClass = state === 'bought' ? ' bought' : state === 'notbought' ? ' notbought' : '';
-    const checkStroke = state === 'bought' ? '#fff' : '#9E9B97';
-    const xStroke = state === 'notbought' ? '#fff' : '#9E9B97';
-
-    const card = document.createElement('div');
-    card.className = `client-card ${canalClass}${stateClass}`;
-    card.id = 'card-' + codigo;
-    card.dataset.canal = canalClass;
-
-    card.innerHTML = `
-      <div class="card-main" onclick="toggleExpand('${codigo}')">
-        <div class="order-num">${c['ORDEN']}</div>
-        <div class="client-info">
-          <div class="client-name">${c['NOMBRE COMERCIAL']}</div>
-        </div>
-        <div class="card-actions">
-          <button class="btn-action btn-check" onclick="event.stopPropagation(); setClientState('${codigo}', 'bought')" title="Compró">
-            <svg viewBox="0 0 14 14" fill="none" stroke="${checkStroke}" stroke-width="2" stroke-linecap="round">
-              <path d="M2.5 7l3 3 6-6"/>
-            </svg>
-          </button>
-          <button class="btn-action btn-x" onclick="event.stopPropagation(); setClientState('${codigo}', 'notbought')" title="No compró">
-            <svg viewBox="0 0 14 14" fill="none" stroke="${xStroke}" stroke-width="2" stroke-linecap="round">
-              <path d="M3 3l8 8M11 3l-8 8"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="card-detail">
-        <div class="detail-divider"></div>
-        <div class="detail-row">
-          <div class="detail-label">Dirección</div>
-          <div class="detail-value">${c['DIRECCION']}</div>
-        </div>
-        <div class="detail-row">
-          <div class="detail-label">Localidad</div>
-          <div class="detail-value">${c['LOCALIDAD']}</div>
-        </div>
-        <div class="detail-row">
-          <div class="detail-label">Código cliente</div>
-          <div class="detail-value">${codigo}</div>
-        </div>
-        <a class="btn-maps" href="${mapsUrl(c['DIRECCION'], c['LOCALIDAD'])}" target="_blank">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-            <path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/>
-            <circle cx="8" cy="5" r="1.5"/>
-          </svg>
-          Abrir en Maps
-        </a>
-      </div>
-    `;
-    list.appendChild(card);
-  });
-
+  clients.sort(function(a,b) { return parseInt(a['ORDEN']||0) - parseInt(b['ORDEN']||0); });
+  clients.forEach(function(c) { list.appendChild(buildCard(c, stateMap, false)); });
   content.appendChild(list);
 }
 
 function render() {
   if (!selectedVendedor) {
-    document.getElementById('app-content').innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">👋</div>
-        <div class="empty-text">Seleccioná tu nombre para ver tu ruteo</div>
-      </div>`;
+    document.getElementById('app-content').innerHTML =
+      '<div class="empty"><div class="empty-icon">👋</div><div class="empty-text">Seleccioná tu nombre para ver tu ruteo</div></div>';
     document.getElementById('days-strip').innerHTML = '';
     return;
   }
-  const vendRows = allData.filter(r => r['VENDEDOR'] === selectedVendedor);
-  const days = [...new Set(vendRows.map(r => r['DIA CARGA DE PEDIDO'].toUpperCase()))]
-    .sort((a,b) => DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b));
+  const vendRows = allData.filter(function(r) { return r['VENDEDOR'] === selectedVendedor; });
+  const days = [];
+  const seen = {};
+  vendRows.forEach(function(r) {
+    const d = r['DIA CARGA DE PEDIDO'].toUpperCase();
+    if (!seen[d]) { seen[d] = true; days.push(d); }
+  });
+  days.sort(function(a,b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
+
   if (!selectedDay || !days.includes(selectedDay)) {
     const today = todayDayName();
     selectedDay = days.includes(today) ? today : days[0];
   }
   renderDayTabs(days);
-  const clients = vendRows.filter(r => r['DIA CARGA DE PEDIDO'].toUpperCase() === selectedDay);
+
+  const clients = vendRows.filter(function(r) { return r['DIA CARGA DE PEDIDO'].toUpperCase() === selectedDay; });
   if (!clients.length) {
     document.getElementById('app-content').innerHTML =
-      `<div class="empty"><div class="empty-text">Sin visitas planificadas para este día.</div></div>`;
+      '<div class="empty"><div class="empty-text">Sin visitas planificadas para este día.</div></div>';
     return;
   }
   renderList(clients);
@@ -686,17 +467,24 @@ function render() {
 
 function init(csvText) {
   allData = parseCSV(csvText);
-  const vendedores = [...new Set(allData.map(r => r['VENDEDOR']))].sort();
+  const seen = {};
+  const vendedores = [];
+  allData.forEach(function(r) {
+    if (r['VENDEDOR'] && !seen[r['VENDEDOR']]) { seen[r['VENDEDOR']] = true; vendedores.push(r['VENDEDOR']); }
+  });
+  vendedores.sort();
   const sel = document.getElementById('vendedor-select');
-  vendedores.forEach(v => {
+  vendedores.forEach(function(v) {
     const opt = document.createElement('option');
     opt.value = v; opt.textContent = v;
     sel.appendChild(opt);
   });
-  sel.onchange = () => { selectedVendedor = sel.value; selectedDay = ''; render(); };
+  sel.onchange = function() { selectedVendedor = sel.value; selectedDay = ''; render(); };
+
   const d = new Date();
   document.getElementById('today-label').textContent =
     d.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
+
   render();
 }
 

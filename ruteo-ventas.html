@@ -107,6 +107,11 @@
   .client-subtext { font-size: 11px; color: var(--text3); margin-top: 2px; }
   .client-card.expanded .client-name { -webkit-line-clamp: unset; overflow: visible; }
 
+  /* CHIP SOLICITUD PENDIENTE */
+  .sol-chip { display: none; margin-top: 5px; }
+  .sol-chip.visible { display: inline-flex; align-items: center; gap: 4px; background: #F5F0FF; border: 1px solid #C4B5FD; border-radius: 20px; padding: 2px 8px; font-size: 11px; font-weight: 600; color: #7C3AED; }
+  .sol-chip svg { width: 10px; height: 10px; flex-shrink: 0; }
+
   .card-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
   .btn-action { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
   .btn-action:active { transform: scale(0.88); }
@@ -123,6 +128,49 @@
   .detail-value { font-size: 13px; color: var(--text); line-height: 1.4; }
   .btn-maps { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 0.75rem; font-size: 13px; font-weight: 600; color: var(--accent-text); background: var(--accent-light); border: none; padding: 9px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; font-family: 'DM Sans', sans-serif; }
   .btn-maps svg { width: 13px; height: 13px; }
+
+  /* BOTÓN SOLICITAR CAMBIO */
+  .btn-solicitar { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #7C3AED; background: #F5F0FF; border: 1.5px solid #C4B5FD; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s; }
+  .btn-solicitar:active { background: #EDE9FE; }
+  .btn-solicitar svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  /* MODAL SOLICITUD */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 20px 20px 0 0; padding: 1.5rem 1.25rem 2rem; width: 100%; max-width: 480px; animation: slideUp 0.25s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 1.25rem; }
+  .modal-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .modal-cliente { font-size: 12px; color: var(--text3); margin-bottom: 1.25rem; font-weight: 500; }
+
+  .tipo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+  .tipo-btn { padding: 0.75rem 0.4rem; border-radius: 10px; border: 2px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text2); cursor: pointer; text-align: center; transition: all 0.15s; line-height: 1.4; }
+  .tipo-btn .tipo-icon { display: block; font-size: 18px; margin-bottom: 4px; }
+  .tipo-btn.selected { border-color: #7C3AED; background: #F5F0FF; color: #7C3AED; }
+
+  .modal-field { margin-bottom: 1rem; }
+  .modal-field label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
+  .modal-field input, .modal-field select, .modal-field textarea { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); background: #fff; outline: none; }
+  .modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus { border-color: #7C3AED; }
+  .modal-field textarea { resize: none; height: 80px; }
+
+  .modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
+  .btn-cancelar { flex: 1; padding: 0.75rem; border-radius: 10px; border: 1.5px solid var(--border); background: transparent; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--text2); cursor: pointer; }
+  .btn-enviar { flex: 2; padding: 0.75rem; border-radius: 10px; border: none; background: #7C3AED; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-enviar:active { background: #6D28D9; }
+  .btn-enviar:disabled { background: var(--border); color: var(--text3); cursor: not-allowed; }
+
+  /* POP-UP CONFIRMACIÓN */
+  .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 300; align-items: center; justify-content: center; padding: 1.5rem; }
+  .confirm-overlay.open { display: flex; }
+  .confirm-popup { background: #E6F7ED; border: 1.5px solid #7DC99A; border-radius: 20px; padding: 2rem 1.5rem; width: 100%; max-width: 340px; text-align: center; animation: popIn 0.2s ease; }
+  @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .confirm-icon { width: 56px; height: 56px; background: #2D8A52; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+  .confirm-icon svg { width: 28px; height: 28px; }
+  .confirm-title { font-size: 17px; font-weight: 700; color: #1A3D28; margin-bottom: 6px; }
+  .confirm-detail { font-size: 13px; color: #2D6B40; line-height: 1.5; margin-bottom: 1.5rem; }
+  .btn-confirm-close { width: 100%; padding: 0.8rem; border-radius: 10px; border: none; background: #2D8A52; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-confirm-close:active { background: #1F7A42; }
 
   .empty { text-align: center; padding: 3rem 1.5rem; color: var(--text3); }
   .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
@@ -165,16 +213,74 @@
   <div class="loader">Cargando planilla...</div>
 </div>
 
+<!-- MODAL SOLICITUD -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Solicitar cambio</div>
+    <div class="modal-cliente" id="modal-cliente-nombre"></div>
+    <div class="tipo-grid">
+      <button class="tipo-btn" data-tipo="orden" onclick="selectTipo(this)">
+        <span class="tipo-icon">📋</span>CAMBIAR<br>ORDEN
+      </button>
+      <button class="tipo-btn" data-tipo="dia" onclick="selectTipo(this)">
+        <span class="tipo-icon">📅</span>CAMBIAR<br>DÍA
+      </button>
+      <button class="tipo-btn" data-tipo="eliminar" onclick="selectTipo(this)">
+        <span class="tipo-icon">🗑️</span>ELIMINAR<br>DEL RUTEO
+      </button>
+    </div>
+    <div id="campo-orden" class="modal-field" style="display:none">
+      <label>Nuevo número de orden</label>
+      <input type="number" id="input-orden" min="1" placeholder="Ej: 5" oninput="validarEnvio()">
+    </div>
+    <div id="campo-dia" class="modal-field" style="display:none">
+      <label>Nuevo día de visita</label>
+      <select id="input-dia" onchange="validarEnvio()">
+        <option value="">— Seleccioná —</option>
+        <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
+        <option>JUEVES</option><option>VIERNES</option>
+      </select>
+    </div>
+    <div id="campo-eliminar" class="modal-field" style="display:none">
+      <label>Motivo (opcional)</label>
+      <textarea id="input-motivo" placeholder="Ej: El cliente cerró el local..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-enviar" id="btn-enviar" disabled onclick="enviarSolicitud()">Enviar solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- POP-UP CONFIRMACIÓN -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-popup">
+    <div class="confirm-icon">
+      <svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round">
+        <path d="M5 14l6 6L23 7"/>
+      </svg>
+    </div>
+    <div class="confirm-title">¡Solicitud enviada!</div>
+    <div class="confirm-detail" id="confirm-detail"></div>
+    <button class="btn-confirm-close" onclick="cerrarConfirm()">Aceptar</button>
+  </div>
+</div>
+
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1071989663&single=true&output=csv';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNwnkqjWtkwVFZQMtqGCmKIgofMC0VUor35pllpNogNzU4wDTOesxA3H57qkmwDg3n7A/exec';
 
 let allData = [];
 let selectedVendedor = '';
 let selectedDay = '';
 let searchQuery = '';
+let modalData = null;
+let tipoSeleccionado = null;
+const solicitudes = {};
 const DAYS_ORDER = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO'];
 
-// ── STORAGE ──────────────────────────────────────────────────────────────────
+// ── STORAGE ───────────────────────────────────────────────────────────────────
 function storageKey(v, d, date) { return 'ruteo2_' + v + '_' + d + '_' + date; }
 function todayStr() { return new Date().toISOString().slice(0,10); }
 function getStateMap(v, d) {
@@ -193,7 +299,7 @@ function setClientState(codigo, state) {
   else render();
 }
 
-// ── CSV ───────────────────────────────────────────────────────────────────────
+// ── CSV ────────────────────────────────────────────────────────────────────────
 function parseCSV(text) {
   const lines = text.trim().split('\n');
   const headers = lines[0].split(',').map(function(h) { return h.trim().replace(/"/g,''); });
@@ -226,8 +332,13 @@ function canalClass(canal) {
   if (c.includes('telef')) return 'telefonico';
   return 'presencial';
 }
+function tipoLabel(tipo) {
+  if (tipo === 'orden') return '📋 Cambio de orden';
+  if (tipo === 'dia') return '📅 Cambio de día';
+  return '🗑️ Eliminar del ruteo';
+}
 
-// ── BÚSQUEDA ──────────────────────────────────────────────────────────────────
+// ── BÚSQUEDA ───────────────────────────────────────────────────────────────────
 function toggleSearch() {
   const overlay = document.getElementById('search-overlay');
   const input = document.getElementById('search-input');
@@ -235,20 +346,17 @@ function toggleSearch() {
   if (isActive) { setTimeout(function() { input.focus(); }, 100); }
   else { searchQuery = ''; input.value = ''; render(); }
 }
-
 function clearSearch() {
   searchQuery = '';
   const input = document.getElementById('search-input');
   if (input) input.value = '';
   render();
 }
-
 function onSearch() {
   searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
   if (searchQuery) renderSearchResults();
   else render();
 }
-
 function renderSearchResults() {
   if (!selectedVendedor) return;
   const vendRows = allData.filter(function(r) { return r['VENDEDOR'] === selectedVendedor; });
@@ -258,32 +366,107 @@ function renderSearchResults() {
            r['DIRECCION'].toLowerCase().includes(q) ||
            r['LOCALIDAD'].toLowerCase().includes(q);
   });
-
   const content = document.getElementById('app-content');
   content.innerHTML = '';
-
   if (!matches.length) {
     content.innerHTML = '<div class="empty"><div class="empty-text">Sin resultados para esa búsqueda.</div></div>';
     return;
   }
-
   const label = document.createElement('div');
   label.className = 'search-results-label';
   label.textContent = matches.length + ' resultado' + (matches.length !== 1 ? 's' : '');
   content.appendChild(label);
-
   const stateMap = getStateMap(selectedVendedor, selectedDay);
   const list = document.createElement('div');
   list.className = 'list';
-
-  matches.forEach(function(c) {
-    list.appendChild(buildCard(c, stateMap, true));
-  });
-
+  matches.forEach(function(c) { list.appendChild(buildCard(c, stateMap, true)); });
   content.appendChild(list);
 }
 
-// ── TARJETA ───────────────────────────────────────────────────────────────────
+// ── MODAL ──────────────────────────────────────────────────────────────────────
+function abrirModal(codigo) {
+  const row = allData.find(function(r) { return r['CODIGO CLIENTE'] === codigo && r['VENDEDOR'] === selectedVendedor; })
+           || allData.find(function(r) { return r['CODIGO CLIENTE'] === codigo; });
+  if (!row) return;
+  modalData = row;
+  tipoSeleccionado = null;
+  document.getElementById('modal-cliente-nombre').textContent = row['NOMBRE COMERCIAL'] + ' · ' + row['LOCALIDAD'];
+  document.querySelectorAll('.tipo-btn').forEach(function(b) { b.classList.remove('selected'); });
+  document.getElementById('campo-orden').style.display = 'none';
+  document.getElementById('campo-dia').style.display = 'none';
+  document.getElementById('campo-eliminar').style.display = 'none';
+  document.getElementById('input-orden').value = '';
+  document.getElementById('input-dia').value = '';
+  document.getElementById('input-motivo').value = '';
+  document.getElementById('btn-enviar').disabled = true;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function cerrarModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  modalData = null;
+  tipoSeleccionado = null;
+}
+function selectTipo(btn) {
+  document.querySelectorAll('.tipo-btn').forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  tipoSeleccionado = btn.dataset.tipo;
+  document.getElementById('campo-orden').style.display = tipoSeleccionado === 'orden' ? 'block' : 'none';
+  document.getElementById('campo-dia').style.display = tipoSeleccionado === 'dia' ? 'block' : 'none';
+  document.getElementById('campo-eliminar').style.display = tipoSeleccionado === 'eliminar' ? 'block' : 'none';
+  validarEnvio();
+}
+function validarEnvio() {
+  let ok = false;
+  if (tipoSeleccionado === 'orden') ok = parseInt(document.getElementById('input-orden').value) > 0;
+  else if (tipoSeleccionado === 'dia') ok = document.getElementById('input-dia').value !== '';
+  else if (tipoSeleccionado === 'eliminar') ok = true;
+  document.getElementById('btn-enviar').disabled = !ok;
+}
+function enviarSolicitud() {
+  if (!modalData) return;
+  const codigo = modalData['CODIGO CLIENTE'];
+  let detalle = '';
+  if (tipoSeleccionado === 'orden') detalle = 'Nuevo orden solicitado: ' + document.getElementById('input-orden').value;
+  else if (tipoSeleccionado === 'dia') detalle = 'Nuevo día solicitado: ' + document.getElementById('input-dia').value;
+  else {
+    const motivo = document.getElementById('input-motivo').value.trim();
+    detalle = motivo ? 'Motivo: ' + motivo : 'Sin motivo especificado';
+  }
+
+  const payload = {
+    vendedor:  selectedVendedor,
+    codigo:    codigo,
+    cliente:   modalData['NOMBRE COMERCIAL'],
+    localidad: modalData['LOCALIDAD'],
+    diaActual: modalData['DIA CARGA DE PEDIDO'],
+    tipo:      tipoSeleccionado === 'orden' ? 'Cambio de orden' : tipoSeleccionado === 'dia' ? 'Cambio de día' : 'Eliminar del ruteo',
+    detalle:   detalle
+  };
+
+  solicitudes[codigo] = { tipo: tipoSeleccionado, detalle: detalle };
+  cerrarModal();
+
+  document.getElementById('confirm-detail').innerHTML =
+    '<strong>' + modalData['NOMBRE COMERCIAL'] + '</strong><br>' +
+    tipoLabel(tipoSeleccionado) + '<br>' +
+    '<span style="color:#3D8A56">' + detalle + '</span>';
+  document.getElementById('confirm-overlay').classList.add('open');
+
+  if (searchQuery) renderSearchResults();
+  else render();
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(function(err) { console.warn('Error al enviar solicitud:', err); });
+}
+function cerrarConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+}
+
+// ── TARJETA ────────────────────────────────────────────────────────────────────
 function buildCard(c, stateMap, isSearch) {
   const codigo = c['CODIGO CLIENTE'];
   const state = stateMap[codigo];
@@ -293,14 +476,13 @@ function buildCard(c, stateMap, isSearch) {
   const xStroke = state === 'notbought' ? '#fff' : '#9E9B97';
   const dia = (c['DIA CARGA DE PEDIDO'] || '');
   const diaLabel = dia.charAt(0) + dia.slice(1).toLowerCase();
-  const cardId = (isSearch ? 'sc-' : 'card-') + codigo;
+  const sol = solicitudes[codigo];
 
   const card = document.createElement('div');
   card.className = 'client-card ' + cc + stateClass;
-  card.id = cardId;
+  card.id = (isSearch ? 'sc-' : 'card-') + codigo;
   card.dataset.canal = cc;
 
-  // Botones
   const btnCheck = document.createElement('button');
   btnCheck.className = 'btn-action btn-check';
   btnCheck.title = 'Compró';
@@ -322,9 +504,16 @@ function buildCard(c, stateMap, isSearch) {
   name.className = 'client-name';
   name.textContent = c['NOMBRE COMERCIAL'];
 
+  const chip = document.createElement('div');
+  chip.className = 'sol-chip' + (sol ? ' visible' : '');
+  if (sol) {
+    chip.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="5" r="4"/><path d="M5 3v2.5l1.5 1"/></svg>' + tipoLabel(sol.tipo);
+  }
+
   const info = document.createElement('div');
   info.className = 'client-info';
   info.appendChild(name);
+  info.appendChild(chip);
 
   if (isSearch) {
     const sub = document.createElement('div');
@@ -335,14 +524,14 @@ function buildCard(c, stateMap, isSearch) {
 
   const main = document.createElement('div');
   main.className = 'card-main';
-  main.appendChild(document.createElement('div'));
-  main.children[0].className = 'order-num';
-  main.children[0].textContent = c['ORDEN'];
+  const num = document.createElement('div');
+  num.className = 'order-num';
+  num.textContent = c['ORDEN'];
+  main.appendChild(num);
   main.appendChild(info);
   main.appendChild(actions);
   main.addEventListener('click', function() { card.classList.toggle('expanded'); });
 
-  // Detalle
   const detail = document.createElement('div');
   detail.className = 'card-detail';
   detail.innerHTML =
@@ -355,12 +544,18 @@ function buildCard(c, stateMap, isSearch) {
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
     'Abrir en Maps</a>';
 
+  const btnSol = document.createElement('button');
+  btnSol.className = 'btn-solicitar';
+  btnSol.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v5l3 3"/><circle cx="8" cy="8" r="6.5"/></svg> Solicitar cambio en el ruteo';
+  btnSol.addEventListener('click', function() { abrirModal(codigo); });
+  detail.appendChild(btnSol);
+
   card.appendChild(main);
   card.appendChild(detail);
   return card;
 }
 
-// ── FILTRO ────────────────────────────────────────────────────────────────────
+// ── FILTRO ─────────────────────────────────────────────────────────────────────
 function applyFilter() {
   const showP = document.getElementById('filter-presencial')?.checked ?? true;
   const showE = document.getElementById('filter-ecom')?.checked ?? true;
@@ -375,7 +570,7 @@ function applyFilter() {
   });
 }
 
-// ── TABS ──────────────────────────────────────────────────────────────────────
+// ── TABS ───────────────────────────────────────────────────────────────────────
 function renderDayTabs(days) {
   const strip = document.getElementById('days-strip');
   strip.innerHTML = '';
@@ -394,7 +589,7 @@ function resetDay() {
   render();
 }
 
-// ── RENDER PRINCIPAL ──────────────────────────────────────────────────────────
+// ── RENDER ─────────────────────────────────────────────────────────────────────
 function renderList(clients) {
   const stateMap = getStateMap(selectedVendedor, selectedDay);
   const boughtCount = clients.filter(function(c) { return stateMap[c['CODIGO CLIENTE']] === 'bought'; }).length;
@@ -449,13 +644,11 @@ function render() {
     if (!seen[d]) { seen[d] = true; days.push(d); }
   });
   days.sort(function(a,b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
-
   if (!selectedDay || !days.includes(selectedDay)) {
     const today = todayDayName();
     selectedDay = days.includes(today) ? today : days[0];
   }
   renderDayTabs(days);
-
   const clients = vendRows.filter(function(r) { return r['DIA CARGA DE PEDIDO'].toUpperCase() === selectedDay; });
   if (!clients.length) {
     document.getElementById('app-content').innerHTML =
@@ -484,7 +677,6 @@ function init(csvText) {
   const d = new Date();
   document.getElementById('today-label').textContent =
     d.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
-
   render();
 }
 
@@ -500,6 +692,13 @@ async function loadData() {
 }
 
 loadData();
+
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModal();
+});
+document.getElementById('confirm-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarConfirm();
+});
 </script>
 </body>
 </html>

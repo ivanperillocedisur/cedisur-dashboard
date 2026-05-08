@@ -422,6 +422,17 @@ function validarEnvio() {
   else if (tipoSeleccionado === 'eliminar') ok = true;
   document.getElementById('btn-enviar').disabled = !ok;
 }
+function solKey() { return 'sol_' + selectedVendedor + '_' + todayStr(); }
+function getSolicitudes() {
+  try { return JSON.parse(localStorage.getItem(solKey()) || '{}'); }
+  catch { return {}; }
+}
+function saveSolicitud(codigo, data) {
+  const map = getSolicitudes();
+  map[codigo] = data;
+  localStorage.setItem(solKey(), JSON.stringify(map));
+}
+
 function enviarSolicitud() {
   if (!modalData) return;
   const codigo = modalData['CODIGO CLIENTE'];
@@ -433,28 +444,38 @@ function enviarSolicitud() {
     detalle = motivo ? 'Motivo: ' + motivo : 'Sin motivo especificado';
   }
 
+  const tipo = tipoSeleccionado === 'orden' ? 'Cambio de orden' : tipoSeleccionado === 'dia' ? 'Cambio de día' : 'Eliminar del ruteo';
+
   const payload = {
     vendedor:  selectedVendedor,
     codigo:    codigo,
     cliente:   modalData['NOMBRE COMERCIAL'],
     localidad: modalData['LOCALIDAD'],
     diaActual: modalData['DIA CARGA DE PEDIDO'],
-    tipo:      tipoSeleccionado === 'orden' ? 'Cambio de orden' : tipoSeleccionado === 'dia' ? 'Cambio de día' : 'Eliminar del ruteo',
+    tipo:      tipo,
     detalle:   detalle
   };
 
-  solicitudes[codigo] = { tipo: tipoSeleccionado, detalle: detalle };
+  // 1. Guardar en localStorage para que el chip persista
+  saveSolicitud(codigo, { tipo: tipoSeleccionado, detalle: detalle });
+
+  // 2. Preparar texto del pop-up ANTES de cerrar el modal
+  const nombreCliente = modalData['NOMBRE COMERCIAL'];
+  const tipoStr = tipoSeleccionado;
+
+  // 3. Cerrar modal y re-renderizar
   cerrarModal();
-
-  document.getElementById('confirm-detail').innerHTML =
-    '<strong>' + modalData['NOMBRE COMERCIAL'] + '</strong><br>' +
-    tipoLabel(tipoSeleccionado) + '<br>' +
-    '<span style="color:#3D8A56">' + detalle + '</span>';
-  document.getElementById('confirm-overlay').classList.add('open');
-
   if (searchQuery) renderSearchResults();
   else render();
 
+  // 4. Mostrar pop-up DESPUÉS del render
+  document.getElementById('confirm-detail').innerHTML =
+    '<strong>' + nombreCliente + '</strong><br>' +
+    tipoLabel(tipoStr) + '<br>' +
+    '<span style="color:#3D8A56">' + detalle + '</span>';
+  document.getElementById('confirm-overlay').classList.add('open');
+
+  // 5. Enviar a Google Sheets
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
@@ -476,7 +497,7 @@ function buildCard(c, stateMap, isSearch) {
   const xStroke = state === 'notbought' ? '#fff' : '#9E9B97';
   const dia = (c['DIA CARGA DE PEDIDO'] || '');
   const diaLabel = dia.charAt(0) + dia.slice(1).toLowerCase();
-  const sol = solicitudes[codigo];
+  const sol = getSolicitudes()[codigo];
 
   const card = document.createElement('div');
   card.className = 'client-card ' + cc + stateClass;

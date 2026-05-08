@@ -242,6 +242,10 @@
         <option>JUEVES</option><option>VIERNES</option>
       </select>
     </div>
+    <div id="campo-dia-orden" class="modal-field" style="display:none">
+      <label>Nuevo orden en ese día</label>
+      <input type="number" id="input-dia-orden" min="1" placeholder="Ej: 3" oninput="validarEnvio()">
+    </div>
     <div id="campo-eliminar" class="modal-field" style="display:none">
       <label>Motivo (opcional)</label>
       <textarea id="input-motivo" placeholder="Ej: El cliente cerró el local..."></textarea>
@@ -398,6 +402,8 @@ function abrirModal(codigo) {
   document.getElementById('input-orden').value = '';
   document.getElementById('input-dia').value = '';
   document.getElementById('input-motivo').value = '';
+  document.getElementById('input-dia-orden').value = '';
+  document.getElementById('campo-dia-orden').style.display = 'none';
   document.getElementById('btn-enviar').disabled = true;
   document.getElementById('modal-overlay').classList.add('open');
 }
@@ -412,13 +418,14 @@ function selectTipo(btn) {
   tipoSeleccionado = btn.dataset.tipo;
   document.getElementById('campo-orden').style.display = tipoSeleccionado === 'orden' ? 'block' : 'none';
   document.getElementById('campo-dia').style.display = tipoSeleccionado === 'dia' ? 'block' : 'none';
+  document.getElementById('campo-dia-orden').style.display = tipoSeleccionado === 'dia' ? 'block' : 'none';
   document.getElementById('campo-eliminar').style.display = tipoSeleccionado === 'eliminar' ? 'block' : 'none';
   validarEnvio();
 }
 function validarEnvio() {
   let ok = false;
   if (tipoSeleccionado === 'orden') ok = parseInt(document.getElementById('input-orden').value) > 0;
-  else if (tipoSeleccionado === 'dia') ok = document.getElementById('input-dia').value !== '';
+  else if (tipoSeleccionado === 'dia') ok = document.getElementById('input-dia').value !== '' && parseInt(document.getElementById('input-dia-orden').value) > 0;
   else if (tipoSeleccionado === 'eliminar') ok = true;
   document.getElementById('btn-enviar').disabled = !ok;
 }
@@ -438,7 +445,7 @@ function enviarSolicitud() {
   const codigo = modalData['CODIGO CLIENTE'];
   let detalle = '';
   if (tipoSeleccionado === 'orden') detalle = 'Nuevo orden solicitado: ' + document.getElementById('input-orden').value;
-  else if (tipoSeleccionado === 'dia') detalle = 'Nuevo día solicitado: ' + document.getElementById('input-dia').value;
+  else if (tipoSeleccionado === 'dia') detalle = 'Nuevo día solicitado: ' + document.getElementById('input-dia').value + ' | Nuevo orden: ' + document.getElementById('input-dia-orden').value;
   else {
     const motivo = document.getElementById('input-motivo').value.trim();
     detalle = motivo ? 'Motivo: ' + motivo : 'Sin motivo especificado';

@@ -1339,8 +1339,8 @@ function renderEvolucion() {
 
     // Detalle de la semana vigente (para gráficos semanales)
     const detVig = DETALLE_DATA.filter(r => {
-      return parseInt((r["Semana Fiscal"]||"").toString().replace("Sem ",""))||0 === numVig
-        && (!zonaFilt || r["Zona"] === zonaFilt);
+      const sf = (parseInt((r["Semana Fiscal"]||"").toString().replace("Sem ",""))||0);
+      return sf === numVig && (!zonaFilt || r["Zona"] === zonaFilt);
     });
 
     // Para % sem vigente: necesitamos Total$ real (todas las ventas, no solo con dto)

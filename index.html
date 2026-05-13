@@ -384,6 +384,27 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
       EXCLUIDOS
     </button>
   </div>
+  <div class="filter-group">
+    <span class="filter-label">Bonificados</span>
+    <button id="toggle-bonif" onclick="toggleBonificados()"
+      style="background:#ff4757;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;transition:all 0.2s">
+      EXCLUIDOS
+    </button>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Promociones</span>
+    <button id="toggle-promos" onclick="togglePromociones()"
+      style="background:#ff4757;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;transition:all 0.2s">
+      EXCLUIDAS
+    </button>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Bonificados</span>
+    <button id="toggle-bonificados" onclick="toggleBonificados()"
+      style="background:#ff4757;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;transition:all 0.2s">
+      EXCLUIDOS
+    </button>
+  </div>
   <button class="btn-clear-filters" onclick="clearFilters()">✕ Limpiar filtros</button>
   <div class="rows-badge">Filas: <span id="rows-count">—</span></div>
 </div>
@@ -662,7 +683,8 @@ function renderSection(name) {
 let RESUMEN_DATA  = [];
 let DETALLE_DATA  = [];
 let HISTORICO_DATA = [];
-let EXCLUIR_ACUERDOS = true; // true = excluidos por defecto
+let EXCLUIR_ACUERDOS    = true; // true = excluidos por defecto
+let EXCLUIR_BONIFICADOS = true; // excluir productos bonificados >99% por defecto
 
 // ============================================================
 // CARGA INICIAL
@@ -898,7 +920,7 @@ function filtrarResumen(tipo) {
   // calcular agregados desde DETALLE_DATA (tiene todos los campos)
   const alarma  = getFilterVal("f-alarma");
   const producto= getFilterVal("f-producto");
-  const usarDetalle = prov || marca || grupo || dep || seg || ecom || EXCLUIR_ACUERDOS || alarma || producto;
+  const usarDetalle = prov || marca || grupo || dep || seg || ecom || EXCLUIR_ACUERDOS || EXCLUIR_BONIFICADOS || EXCLUIR_PROMOCIONES || alarma || producto;
 
   if (usarDetalle) {
     return agregarDesdeDetalle(tipo).filter(r => {
@@ -931,7 +953,8 @@ function filtrarDetalle() {
   const seg  = getFilterVal("f-segmento");
 
   return DETALLE_DATA.filter(r => {
-    if (EXCLUIR_ACUERDOS && (r["Acuerdo"]||"") === "Sí") return false;
+    if (EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"") === "Sí") return false;
+    if (EXCLUIR_BONIFICADOS && parseFloat(r["% Dto"]||0) > 99)  return false;
     if (zona  && r["Zona"]           !== zona)  return false;
     if (vend  && r["Vendedor"]       !== vend)  return false;
     if (prov  && r["Proveedor"]      !== prov)  return false;
@@ -1787,6 +1810,42 @@ function renderDetalleTable() {
 }
 
 function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; HISTORICO_DATA=[]; MENSUAL_DATA=[]; CACHE={}; loadData(); }
+
+function toggleBonificados() {
+  EXCLUIR_BONIFICADOS = !EXCLUIR_BONIFICADOS;
+  const btn = document.getElementById("toggle-bonificados");
+  if (EXCLUIR_BONIFICADOS) {
+    btn.textContent = "EXCLUIDOS";
+    btn.style.background = "#ff4757";
+    btn.style.color = "#fff";
+  } else {
+    btn.textContent = "INCLUIDOS";
+    btn.style.background = "#2ed573";
+    btn.style.color = "#0d0f14";
+  }
+  CACHE = {}; chartsBuilt = {};
+  renderSection(activeSection);
+}
+
+function toggleBonificados() {
+  EXCLUIR_BONIFICADOS = !EXCLUIR_BONIFICADOS;
+  const btn = document.getElementById("toggle-bonif");
+  btn.textContent    = EXCLUIR_BONIFICADOS ? "EXCLUIDOS" : "INCLUIDOS";
+  btn.style.background = EXCLUIR_BONIFICADOS ? "#ff4757" : "#2ed573";
+  btn.style.color      = EXCLUIR_BONIFICADOS ? "#fff"    : "#0d0f14";
+  CACHE = {}; chartsBuilt = {};
+  renderSection(activeSection);
+}
+
+function togglePromociones() {
+  EXCLUIR_PROMOCIONES = !EXCLUIR_PROMOCIONES;
+  const btn = document.getElementById("toggle-promos");
+  btn.textContent    = EXCLUIR_PROMOCIONES ? "EXCLUIDAS" : "INCLUIDAS";
+  btn.style.background = EXCLUIR_PROMOCIONES ? "#ff4757" : "#2ed573";
+  btn.style.color      = EXCLUIR_PROMOCIONES ? "#fff"    : "#0d0f14";
+  CACHE = {}; chartsBuilt = {};
+  renderSection(activeSection);
+}
 
 function toggleAcuerdos() {
   EXCLUIR_ACUERDOS = !EXCLUIR_ACUERDOS;

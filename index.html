@@ -421,7 +421,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
   <div class="chart-row cols3">
     <div class="chart-card">
-      <div class="chart-card-title">Top 10 Clientes — Mayor % Descuento</div>
+      <div class="chart-card-title">Top 10 Clientes — Mayor % Dto (exc. bonificados)</div>
       <div id="top-clientes-bars"></div>
     </div>
     <div class="chart-card">
@@ -1156,10 +1156,12 @@ function renderResumen() {
       </div>`;
     }).join("");
 
-    // Top 10 clientes con mayor % dto desde DETALLE_DATA filtrado
+    // Top 10 clientes — mayor % dto promedio (excluye bonificados >90%)
     const detTop = filtrarDetalle();
     const clienteMap = {};
     detTop.forEach(r => {
+      const pctLinea = parseFloat(r["% Dto"]||0);
+      if (pctLinea > 90) return; // excluir bonificados del cálculo
       const cod = r["Cod Cliente"]||"";
       const nom = r["Cliente"]||"";
       const d   = parseFloat(r["Dto $"])||0;
@@ -1168,17 +1170,20 @@ function renderResumen() {
       clienteMap[cod].dto   += d;
       clienteMap[cod].total += t;
     });
-    const topCli = Object.values(clienteMap).map(c => ({
-      nombre: c.nombre,
-      // Limitar % máximo a 100 — si supera es un problema de datos base
-      pct: Math.min((c.dto+c.total)>0?c.dto/(c.dto+c.total)*100:0, 100),
-      dto: c.dto
-    })).sort((a,b)=>b.pct-a.pct).slice(0,10);
+    const topCli = Object.values(clienteMap)
+      .filter(c => (c.dto+c.total) > 0)
+      .map(c => ({
+        nombre: c.nombre,
+        pct: Math.round(c.dto/(c.dto+c.total)*1000)/10,
+        dto: c.dto
+      }))
+      .sort((a,b) => b.pct-a.pct)
+      .slice(0,10);
     const maxPctC = Math.max(...topCli.map(c=>c.pct),1);
     document.getElementById("top-clientes-bars").innerHTML = topCli.map(c => {
       const w = (c.pct/maxPctC*100).toFixed(1);
       const cls = c.pct>30?"dto-high":c.pct>10?"dto-medium":"dto-ok";
-      const color = c.pct>90?"var(--purple)":c.pct>30?"var(--red)":c.pct>10?"var(--yellow)":"var(--green)";
+      const color = c.pct>30?"var(--red)":c.pct>10?"var(--yellow)":"var(--green)";
       return `<div style="margin-bottom:9px">
         <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
           <span style="color:var(--text);max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.nombre}</span>

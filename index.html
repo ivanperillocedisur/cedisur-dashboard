@@ -1343,25 +1343,55 @@ function renderEvolucion() {
         && (!zonaFilt || r["Zona"] === zonaFilt);
     });
 
-    // Para % sem vigente: usar Total$ real de HISTORICO_RESUMEN
-    // que tiene todas las ventas (no solo líneas con dto)
+    // Para % sem vigente: necesitamos Total$ real (todas las ventas, no solo con dto)
+    // Estrategia: buscar en MENSUAL_DATA si la semana vigente ya fue procesada,
+    // si no, usar el Total$ promedio de las semanas recientes del histórico por zona
     const numSemFn = s => parseInt((s||"").toString().replace("Sem ",""))||0;
-    const semsHR   = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))];
-    const semMaxHR = semsHR.sort((a,b)=>numSemFn(a)-numSemFn(b)).pop();
 
-    // Dto$ vigente (desde detalle, ya filtrado por zona)
+    // Dto$ vigente (desde DETALLE, filtrado por zona si aplica)
     const dtoVig = detVig.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
 
-    // Total$ vigente real desde HISTORICO_RESUMEN
-    // Si hay filtro de zona, sumar solo esa zona; si no, sumar todas
+    // Buscar si la semana vigente ya está en MENSUAL_DATA
+    const semVigEnMensual = MENSUAL_DATA.find(r => r["Tipo"]==="SEMANA" && r["Clave"]===semVig);
+
     let totalVigReal = 0;
-    const histSemVig = HISTORICO_DATA.filter(r => r["Semana"]===semMaxHR);
-    if (zonaFilt) {
-      const hRow = histSemVig.find(r => r["Zona"]===zonaFilt);
-      totalVigReal = hRow ? parseFloat(hRow["Total $"])||0 : 0;
+    if (semVigEnMensual) {
+      // Ya está calculado con el Total$ correcto
+      totalVigReal = parseFloat(semVigEnMensual["Total $"])||0;
     } else {
-      totalVigReal = histSemVig.reduce((s,r) => s+(parseFloat(r["Total $"])||0), 0);
+      // Estimar usando el promedio de Total$ de las últimas 4 semanas del histórico
+      // filtrado por zona si aplica
+      const semsRecientes = MENSUAL_DATA.filter(r => r["Tipo"]==="SEMANA")
+        .sort((a,b) => numSemFn(a["Clave"]) - numSemFn(b["Clave"]))
+        .slice(-4);
+
+      if (zonaFilt) {
+        // Para una zona: estimar proporción dto/total desde HISTORICO_RESUMEN
+        // usando la semana más reciente disponible
+        const semsHR   = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))];
+        const semMaxHR = semsHR.sort((a,b)=>numSemFn(a)-numSemFn(b)).pop();
+        const hRow = HISTORICO_DATA.find(r => r["Semana"]===semMaxHR && r["Zona"]===zonaFilt);
+        if (hRow) {
+          // Usar proporción: Total_zona / Total_todas_zonas de esa semana
+          const totalZona = parseFloat(hRow["Total $"])||0;
+          const totalAllZonas = HISTORICO_DATA.filter(r=>r["Semana"]===semMaxHR)
+            .reduce((s,r)=>s+(parseFloat(r["Total $"])||0),0);
+          const proporcion = totalAllZonas > 0 ? totalZona / totalAllZonas : 1;
+          // Aplicar proporción al total general estimado de semanas recientes
+          const totalPromedio = semsRecientes.length > 0
+            ? semsRecientes.reduce((s,r)=>s+(parseFloat(r["Total $"])||0),0) / semsRecientes.length
+            : 0;
+          totalVigReal = totalPromedio * proporcion;
+        }
+      } else {
+        // Sin filtro: promedio de Total$ de las últimas 4 semanas del mensual
+        totalVigReal = semsRecientes.length > 0
+          ? semsRecientes.reduce((s,r)=>s+(parseFloat(r["Total $"])||0),0) / semsRecientes.length
+          : 0;
+      }
     }
+
+    // Último fallback: sumar Total Línea $ del detalle (subestima pero evita 0)
     if (!totalVigReal) {
       totalVigReal = detVig.reduce((s,r) => s+(parseFloat(r["Total Línea $"])||0), 0);
     }
@@ -1481,10 +1511,13 @@ function renderEvolucion() {
       let dto=0, total=0;
       if (mes === mesVigente) {
         const rows = detFilt.filter(r => r["Zona"]===zona);
-        dto   = rows.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
-        // Total$ real desde HISTORICO_RESUMEN
-        const hRow = HISTORICO_DATA.find(r => r["Semana"]===semMaxHR && r["Zona"]===zona);
-        total = hRow ? parseFloat(hRow["Total $"])||0 : 0;
+        dto = rows.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
+        // Buscar el Total$ real más reciente disponible para esta zona
+        // desde HISTORICO_RESUMEN (semana reciente) como denominador
+        const semsHR2 = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))];
+        const semMaxHR2 = semsHR2.sort((a,b)=>numSemFn(a)-numSemFn(b)).pop();
+        const hRow2 = HISTORICO_DATA.find(r => r["Semana"]===semMaxHR2 && r["Zona"]===zona);
+        total = hRow2 ? parseFloat(hRow2["Total $"])||0 : 0;
         if (!total) total = rows.reduce((s,r) => s+(parseFloat(r["Total Línea $"])||0), 0);
       } else {
         const row = mesZonaHist.find(r => r["Clave"]===mes && r["Zona"]===zona);

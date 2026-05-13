@@ -828,13 +828,55 @@ function agregarDesdeDetalle(tipo) {
     if (parseFloat(r["Dto $"])||0 > 0) a.lineasDto++;
   });
 
-  // Denominador: siempre usar Total Línea $ de las filas filtradas.
-  // Esto garantiza consistencia en todos los casos (zona, vendedor, segmento,
-  // proveedor, acuerdos excluidos, etc.) — el % dto se calcula sobre el
-  // universo exacto que se está analizando, no sobre totales generales.
+  // Denominador para % dto:
+  // - Global / zona / vendedor → RESUMEN_DATA (tiene TODAS las ventas, no solo con dto)
+  // - Segmento / proveedor / marca / producto → DATA_DETALLE filtrado
+  //   (limitación aceptada: no hay desglose en RESUMEN_DATA para esos filtros)
+  const totalRealMap = {};
+
+  const seg_f    = getFilterVal("f-segmento");
+  const prov_f   = getFilterVal("f-proveedor");
+  const marca_f  = getFilterVal("f-marca");
+  const grupo_f  = getFilterVal("f-grupo");
+  const prod_f   = getFilterVal("f-producto");
+  const alarm_f  = getFilterVal("f-alarma");
+  const usarDetalleDenom = seg_f || prov_f || marca_f || grupo_f || prod_f || alarm_f;
+
+  if (!usarDetalleDenom && (tipo === "ZONA" || tipo === "VENDEDOR")) {
+    const campoResumen = tipo === "ZONA" ? "ZONA" : "VENDEDOR";
+
+    // Calcular cuánto restar por acuerdos/promociones excluidos
+    const campo = tipo === "ZONA" ? "Zona" : "Vendedor";
+    const restarMap = {};
+    DETALLE_DATA.forEach(r => {
+      const excl = (EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") ||
+                   (EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí");
+      if (!excl) return;
+      const k = r[campo]||"";
+      restarMap[k] = (restarMap[k]||0) + (parseFloat(r["Total Línea $"])||0);
+    });
+
+    // Total real = RESUMEN_DATA menos lo excluido
+    RESUMEN_DATA.filter(r => r["Tipo"]===campoResumen).forEach(r => {
+      const k = r["Clave"]||"";
+      totalRealMap[k] = Math.max(0, (parseFloat(r["Total $"])||0) - (restarMap[k]||0));
+    });
+
+    // Fallback a HISTORICO_DATA si RESUMEN está vacío
+    if (!Object.keys(totalRealMap).length && tipo === "ZONA") {
+      const numSemFn = s => parseInt((s||"").replace("Sem ",""))||0;
+      const semsHist = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))];
+      const semMax   = semsHist.sort((a,b)=>numSemFn(a)-numSemFn(b)).pop();
+      HISTORICO_DATA.filter(r=>r["Semana"]===semMax).forEach(r => {
+        totalRealMap[r["Zona"]||""] = parseFloat(r["Total $"])||0;
+      });
+    }
+  }
+  // Si usarDetalleDenom: totalRealMap vacío → se usa Total$ del detalle filtrado (acepta limitación)
 
   return Object.values(acc).map(a => {
-    const totalBase = a["Total $"]; // siempre del detalle filtrado
+    const totalReal = totalRealMap[a.Clave] || 0;
+    const totalBase = totalReal > 0 ? totalReal : a["Total $"];
     return {
       ...a,
       "Clientes":     a.clientes.size,

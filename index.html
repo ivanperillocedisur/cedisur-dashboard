@@ -1322,133 +1322,192 @@ function renderEvolucion() {
   showLoading("evolucion");
   try {
     const numSem = s => parseInt((s||"").replace("Sem ",""))||0;
+    const zonaFilt = getFilterVal("f-zona");
 
-    const semsHist = MENSUAL_DATA.filter(r=>r["Tipo"]==="SEMANA")
-      .sort((a,b)=>numSem(a["Clave"])-numSem(b["Clave"]));
+    // ── Datos semanales desde MENSUAL_DATA ──
+    let semsHist = MENSUAL_DATA.filter(r => r["Tipo"]==="SEMANA")
+      .sort((a,b) => numSem(a["Clave"]) - numSem(b["Clave"]));
 
+    // Agregar semana vigente desde DETALLE_DATA
     const detFilt = filtrarDetalle();
-    const semsVig = [...new Set(detFilt.map(r=>r["Semana Fiscal"]||"").filter(Boolean))];
-    const numVig  = Math.max(...semsVig.map(s=>parseInt(s)||0));
+    const semsVig = [...new Set(detFilt.map(r => r["Semana Fiscal"]||"").filter(Boolean))];
+    const numVig  = Math.max(...semsVig.map(s => parseInt(s)||0));
     const semVig  = numVig > 0 ? "Sem " + numVig : null;
 
     let semsData = [...semsHist];
-    if (semVig && !semsData.find(r=>r["Clave"]===semVig)) {
-      const dtoV   = detFilt.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
-      const totalV = detFilt.reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
-      const p      = detFilt[0]?.["Fecha"]||""; const pts = p.split("/");
-      const mesV   = pts.length===3 ? pts[2]+"-"+pts[1].padStart(2,"0") : "";
+    if (semVig && !semsData.find(r => r["Clave"]===semVig)) {
+      // Semana vigente: calcular desde detalle (ya filtrado por zona si aplica)
+      const dtoV   = detFilt.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
+      const totalV = detFilt.reduce((s,r) => s+(parseFloat(r["Total Línea $"])||0), 0);
+      const p0 = detFilt[0]?.["Fecha"]||""; const pts = p0.split("/");
+      const mesV = pts.length===3 ? pts[2]+"-"+pts[1].padStart(2,"0") : "";
       semsData.push({"Tipo":"SEMANA","Clave":semVig,"Mes":mesV,"Dto $":dtoV,"Total $":totalV});
     }
-    semsData.sort((a,b)=>numSem(a["Clave"])-numSem(b["Clave"]));
+    semsData.sort((a,b) => numSem(a["Clave"]) - numSem(b["Clave"]));
 
-    const mesesUnicos = [...new Set(semsData.map(r=>r["Mes"]||"").filter(Boolean))].sort();
-    const COLOR_MES = ["#00c8ff","#ff6b35","#7eff6a","#ffd166","#a855f7","#ff4757"];
-    const mesColor  = {};
+    // Colores por mes
+    const mesesUnicos = [...new Set(semsData.map(r => r["Mes"]||"").filter(Boolean))].sort();
+    const COLOR_MES   = ["#00c8ff","#ff6b35","#7eff6a","#ffd166","#a855f7","#ff4757"];
+    const mesColor    = {};
     mesesUnicos.forEach((m,i) => mesColor[m] = COLOR_MES[i % COLOR_MES.length]);
 
-    const labSems   = semsData.map(r=>r["Clave"]);
-    const colorsSem = semsData.map(r=>mesColor[r["Mes"]||""] || "#8b94b0");
-    const dtosSem   = semsData.map(r=>parseFloat(r["Dto $"])||0);
-    const pctsSem   = semsData.map(r=>{
+    const labSems   = semsData.map(r => r["Clave"]);
+    const colorsSem = semsData.map(r => mesColor[r["Mes"]||""] || "#8b94b0");
+    const dtosSem   = semsData.map(r => parseFloat(r["Dto $"])||0);
+    const pctsSem   = semsData.map(r => {
       const d=parseFloat(r["Dto $"])||0, t=parseFloat(r["Total $"])||0;
       return (d+t)>0 ? parseFloat((d/(d+t)*100).toFixed(2)) : 0;
     });
 
+    // Leyenda de meses — con color de texto correcto
     const legendaMeses = {
       display: true,
-      labels: { generateLabels: () => mesesUnicos.map((m,i) => ({
-        text: m, fillStyle: COLOR_MES[i%COLOR_MES.length],
-        strokeStyle: COLOR_MES[i%COLOR_MES.length], lineWidth: 0
-      }))}
+      labels: {
+        color: "#8b94b0",
+        font: { family:"DM Sans", size:10 },
+        generateLabels: () => mesesUnicos.map((m,i) => ({
+          text: m,
+          fillStyle:   COLOR_MES[i%COLOR_MES.length],
+          strokeStyle: COLOR_MES[i%COLOR_MES.length],
+          fontColor:   "#8b94b0",
+          lineWidth: 0
+        }))
+      }
     };
 
+    // Gráfico 1: Dto$ por semana — barras coloreadas por mes
     mkChart("c-evol-sem-dto", {
-      type:"bar",
-      data:{ labels:labSems, datasets:[{ label:"Dto $", data:dtosSem, backgroundColor:colorsSem, borderRadius:3 }] },
-      options:{ ...chartDefaults(),
-        plugins:{ ...chartDefaults().plugins, legend:legendaMeses,
-          tooltip:{ callbacks:{ label: ctx => " "+fM(ctx.raw) } }
+      type: "bar",
+      data: { labels: labSems, datasets: [{ label:"Dto $", data:dtosSem, backgroundColor:colorsSem, borderRadius:3 }] },
+      options: { ...chartDefaults(),
+        plugins: { ...chartDefaults().plugins, legend: legendaMeses,
+          tooltip: { callbacks: { label: ctx => " " + fM(ctx.raw) } }
         },
-        scales:{ ...chartDefaults().scales,
-          y:{ ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>fM(v) } }
+        scales: { ...chartDefaults().scales,
+          y: { ...chartDefaults().scales.y, ticks: { ...chartDefaults().scales.y.ticks, callback: v=>fM(v) } }
         }
       }
     });
 
+    // Gráfico 2: % Dto por semana — línea + puntos (estilo resumen ejecutivo)
     mkChart("c-evol-sem-pct", {
-      type:"bar",
-      data:{ labels:labSems, datasets:[{ label:"% Dto", data:pctsSem, backgroundColor:colorsSem, borderRadius:3 }] },
-      options:{ ...chartDefaults(),
-        plugins:{ ...chartDefaults().plugins, legend:legendaMeses,
-          tooltip:{ callbacks:{ label: ctx => " "+ctx.raw.toFixed(2)+"%" } }
+      type: "line",
+      data: { labels: labSems, datasets: [{
+        label: "% Dto",
+        data: pctsSem,
+        borderColor: colorsSem,
+        backgroundColor: "transparent",
+        segment: { borderColor: ctx => colorsSem[ctx.p0DataIndex] || "#8b94b0" },
+        pointBackgroundColor: colorsSem,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        borderWidth: 2.5,
+        tension: 0.4,
+        fill: false
+      }]},
+      options: { ...chartDefaults(),
+        plugins: { ...chartDefaults().plugins, legend: legendaMeses,
+          tooltip: { callbacks: { label: ctx => " " + ctx.raw.toFixed(2)+"%" } }
         },
-        scales:{ ...chartDefaults().scales,
-          y:{ ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>v+"%" } }
+        scales: { ...chartDefaults().scales,
+          y: { ...chartDefaults().scales.y, ticks: { ...chartDefaults().scales.y.ticks, callback: v=>v+"%" } }
         }
       }
     });
 
-    const mesZonaHist = MENSUAL_DATA.filter(r=>r["Tipo"]==="MES_ZONA");
-    const zonas = [...new Set([
-      ...mesZonaHist.map(r=>r["Zona"]||""),
-      ...detFilt.map(r=>r["Zona"]||"")
-    ].filter(Boolean))].sort();
+    // ── Datos mensuales × zona ──
+    const mesZonaHist = MENSUAL_DATA.filter(r => r["Tipo"]==="MES_ZONA");
 
-    let mesesDisp = [...new Set(mesZonaHist.map(r=>r["Clave"]||"").filter(Boolean))].sort();
+    // Zonas: si hay filtro aplicado, solo esa zona
+    let zonas = [...new Set([
+      ...mesZonaHist.map(r => r["Zona"]||""),
+      ...detFilt.map(r => r["Zona"]||"")
+    ].filter(Boolean))].sort();
+    if (zonaFilt) zonas = zonas.filter(z => z===zonaFilt);
+
+    // Meses disponibles en histórico
+    let mesesDisp = [...new Set(mesZonaHist.map(r => r["Clave"]||"").filter(Boolean))].sort();
+
+    // Mes vigente — calculado desde DATA_DETALLE (no sumarlo si ya está en histórico)
     const p0 = detFilt[0]?.["Fecha"]||""; const pp = p0.split("/");
     const mesVigente = pp.length===3 ? pp[2]+"-"+pp[1].padStart(2,"0") : "";
     if (mesVigente && !mesesDisp.includes(mesVigente)) mesesDisp.push(mesVigente);
     mesesDisp = mesesDisp.sort().slice(-6);
 
+    // Para el mes vigente, usar SOLO las semanas vigentes (no mezclar con histórico)
+    // El mes vigente puede estar parcialmente en HISTORICO_MENSUAL (semanas anteriores del mes)
+    // y parcialmente en DETALLE_DATA (semana actual)
+    // → Para consistencia, si el mes está en histórico Y hay semana vigente del mismo mes,
+    //   solo mostramos el mes vigente desde DETALLE (semana actual solamente)
+    //   para evitar doble conteo
+
     const COLORES_ZONA = ["#00c8ff","#ff6b35","#7eff6a","#ffd166","#a855f7"];
 
+    const getDtoMes = (zona, mes) => {
+      if (mes === mesVigente) {
+        // Solo desde DATA_DETALLE vigente (semana actual)
+        const rows = detFilt.filter(r => r["Zona"]===zona);
+        return rows.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
+      }
+      const row = mesZonaHist.find(r => r["Clave"]===mes && r["Zona"]===zona);
+      return row ? parseFloat(row["Dto $"])||0 : 0;
+    };
+
+    const getPctMes = (zona, mes) => {
+      let dto=0, total=0;
+      if (mes === mesVigente) {
+        const rows = detFilt.filter(r => r["Zona"]===zona);
+        dto   = rows.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
+        total = rows.reduce((s,r) => s+(parseFloat(r["Total Línea $"])||0), 0);
+      } else {
+        const row = mesZonaHist.find(r => r["Clave"]===mes && r["Zona"]===zona);
+        if (row) { dto=parseFloat(row["Dto $"])||0; total=parseFloat(row["Total $"])||0; }
+      }
+      return (dto+total)>0 ? parseFloat((dto/(dto+total)*100).toFixed(2)) : 0;
+    };
+
+    // Gráfico 3: Dto$ por mes × zona — barras agrupadas
     mkChart("c-evol-mes-dto", {
-      type:"bar",
-      data:{ labels:mesesDisp, datasets: zonas.map((zona,i) => ({
+      type: "bar",
+      data: { labels: mesesDisp, datasets: zonas.map((zona,i) => ({
         label: zona,
-        data: mesesDisp.map(mes => {
-          if (mes===mesVigente) return detFilt.filter(r=>r["Zona"]===zona).reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
-          const row = mesZonaHist.find(r=>r["Clave"]===mes && r["Zona"]===zona);
-          return row ? parseFloat(row["Dto $"])||0 : 0;
-        }),
-        backgroundColor: COLORES_ZONA[i%COLORES_ZONA.length], borderRadius:3
+        data: mesesDisp.map(mes => getDtoMes(zona, mes)),
+        backgroundColor: COLORES_ZONA[i%COLORES_ZONA.length],
+        borderRadius: 3
       }))},
-      options:{ ...chartDefaults(),
-        plugins:{ ...chartDefaults().plugins,
-          legend:{ display:true, labels:{ color:"#8b94b0", font:{ family:"DM Sans", size:10 } } },
-          tooltip:{ callbacks:{ label: ctx => " "+ctx.dataset.label+": "+fM(ctx.raw) } }
+      options: { ...chartDefaults(),
+        plugins: { ...chartDefaults().plugins,
+          legend: { display:true, labels:{ color:"#8b94b0", font:{ family:"DM Sans", size:10 } } },
+          tooltip: { callbacks: { label: ctx => " "+ctx.dataset.label+": "+fM(ctx.raw) } }
         },
-        scales:{ ...chartDefaults().scales,
-          y:{ ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>fM(v) } }
+        scales: { ...chartDefaults().scales,
+          y: { ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>fM(v) } }
         }
       }
     });
 
+    // Gráfico 4: % Dto por mes × zona — línea + puntos por zona
     mkChart("c-evol-mes-pct", {
-      type:"bar",
-      data:{ labels:mesesDisp, datasets: zonas.map((zona,i) => ({
+      type: "line",
+      data: { labels: mesesDisp, datasets: zonas.map((zona,i) => ({
         label: zona,
-        data: mesesDisp.map(mes => {
-          let dto=0, total=0;
-          if (mes===mesVigente) {
-            const rows = detFilt.filter(r=>r["Zona"]===zona);
-            dto   = rows.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
-            total = rows.reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
-          } else {
-            const row = mesZonaHist.find(r=>r["Clave"]===mes && r["Zona"]===zona);
-            if (row) { dto=parseFloat(row["Dto $"])||0; total=parseFloat(row["Total $"])||0; }
-          }
-          return (dto+total)>0 ? parseFloat((dto/(dto+total)*100).toFixed(2)) : 0;
-        }),
-        backgroundColor: COLORES_ZONA[i%COLORES_ZONA.length], borderRadius:3
+        data: mesesDisp.map(mes => getPctMes(zona, mes)),
+        borderColor: COLORES_ZONA[i%COLORES_ZONA.length],
+        backgroundColor: COLORES_ZONA[i%COLORES_ZONA.length]+"33",
+        pointBackgroundColor: COLORES_ZONA[i%COLORES_ZONA.length],
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        borderWidth: 2.5,
+        tension: 0.4,
+        fill: false
       }))},
-      options:{ ...chartDefaults(),
-        plugins:{ ...chartDefaults().plugins,
-          legend:{ display:true, labels:{ color:"#8b94b0", font:{ family:"DM Sans", size:10 } } },
-          tooltip:{ callbacks:{ label: ctx => " "+ctx.dataset.label+": "+ctx.raw.toFixed(2)+"%" } }
+      options: { ...chartDefaults(),
+        plugins: { ...chartDefaults().plugins,
+          legend: { display:true, labels:{ color:"#8b94b0", font:{ family:"DM Sans", size:10 } } },
+          tooltip: { callbacks: { label: ctx => " "+ctx.dataset.label+": "+ctx.raw.toFixed(2)+"%" } }
         },
-        scales:{ ...chartDefaults().scales,
-          y:{ ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>v+"%" } }
+        scales: { ...chartDefaults().scales,
+          y: { ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>v+"%" } }
         }
       }
     });

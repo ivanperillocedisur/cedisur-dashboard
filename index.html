@@ -376,20 +376,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
     <span class="filter-label">Grupo Cliente</span>
     <select class="filter-select" id="f-segmento" onchange="applyFilters()"><option value="">Todos</option></select>
   </div>
-  <div class="filter-group">
-    <span class="filter-label">Alarma</span>
-    <select class="filter-select" id="f-alarma" onchange="applyFilters()">
-      <option value="">Todas</option>
-      <option value="bonif">Bonificado &gt;90%</option>
-      <option value="alto">Alta 30–90%</option>
-      <option value="medio">Media 10–30%</option>
-      <option value="normal">Normal &lt;10%</option>
-    </select>
-  </div>
-  <div class="filter-group">
-    <span class="filter-label">Producto</span>
-    <select class="filter-select" id="f-producto" onchange="applyFilters()"><option value="">Todos</option></select>
-  </div>
   <div class="filter-separator"></div>
   <div class="filter-group">
     <span class="filter-label">Acuerdos</span>
@@ -405,10 +391,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 <!-- NAV -->
 <div class="nav-tabs">
   <div class="nav-tab active" onclick="showSection('resumen', this)">① Resumen Ejecutivo</div>
-  <div class="nav-tab" onclick="showSection('evolucion', this)">② Evolución</div>
-  <div class="nav-tab" onclick="showSection('zona', this)">③ Por Zona</div>
-  <div class="nav-tab" onclick="showSection('vendedor', this)">④ Por Vendedor</div>
-  <div class="nav-tab" onclick="showSection('detalle', this)">⑤ Detalle Clientes</div>
+  <div class="nav-tab" onclick="showSection('zona', this)">② Por Zona</div>
+  <div class="nav-tab" onclick="showSection('vendedor', this)">③ Por Vendedor</div>
+  <div class="nav-tab" onclick="showSection('detalle', this)">④ Detalle Clientes</div>
 </div>
 
 <div class="content">
@@ -445,36 +430,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 <!-- ② EVOLUCIÓN -->
 <div id="sec-evolucion" class="section">
   <div class="section-header">
-    <div class="section-title">Comparativo Semanal</div>
-    <div class="section-desc">Evolución semana a semana · Dto$ · % Dto · Contribución$</div>
-  </div>
-  <div class="chart-row cols1">
-    <div class="chart-card">
-      <div class="chart-card-title">Descuento $ por semana — Total</div>
-      <div class="chart-wrap"><canvas id="c-evol-dto-sem" height="150"></canvas></div>
-    </div>
-  </div>
-  <div class="chart-row cols2">
-    <div class="chart-card">
-      <div class="chart-card-title">% Descuento promedio por semana</div>
-      <div class="chart-wrap"><canvas id="c-evol-pct-sem" height="190"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-card-title">Contribución $ por semana</div>
-      <div class="chart-wrap"><canvas id="c-evol-contrib-sem" height="190"></canvas></div>
-    </div>
-  </div>
-  <div class="chart-row cols1">
-    <div class="chart-card">
-      <div class="chart-card-title">% Descuento por zona — Comparativo semanal</div>
-      <div class="chart-wrap"><canvas id="c-evol-zona-sem" height="200"></canvas></div>
-    </div>
-  </div>
-</div>
-
-<!-- ② EVOLUCIÓN -->
-<div id="sec-evolucion" class="section">
-  <div class="section-header">
     <div class="section-title">Evolución</div>
     <div class="section-desc">Últimos 6 meses · Semanal y mensual</div>
   </div>
@@ -497,6 +452,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
       <div class="chart-card-title">% Dto por mes — Por zona</div>
       <div class="chart-wrap"><canvas id="c-evol-mes-pct" height="220"></canvas></div>
     </div>
+  </div>
+</div>
   </div>
 </div>
 
@@ -577,6 +534,20 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
   <div class="chart-card">
     <div class="search-bar">
+      <input class="search-input" type="text" id="cli-search" placeholder="Buscar cliente o producto…" oninput="renderDetalleTable()">
+      <select class="filter-select" id="cli-alarm-filter" onchange="renderDetalleTable()">
+        <option value="">Todas las alarmas</option>
+        <option value="bonif">🟣 Bonificado (&gt;90%)</option>
+        <option value="alto">🔴 Alarma alta (30–90%)</option>
+        <option value="medio">🟡 Media (10–30%)</option>
+        <option value="normal">🟢 Normal (&lt;10%)</option>
+      </select>
+      <select class="filter-select" id="cli-zona-filter2" onchange="renderDetalleTable()">
+        <option value="">Todas las zonas</option>
+      </select>
+      <select class="filter-select" id="cli-vend-filter" onchange="renderDetalleTable()">
+        <option value="">Todos los vendedores</option>
+      </select>
       <span class="result-count" id="cli-count">—</span>
     </div>
     <div class="table-scroll">
@@ -588,7 +559,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <th onclick="sortDetalle('cliente')">Nombre Comercial ↕</th>
           <th onclick="sortDetalle('descripcion')">Producto ↕</th>
           <th onclick="sortDetalle('marca')">Marca ↕</th>
-          <th class="num" onclick="sortDetalle('cantidad')">Cantidad ↕</th>
           <th class="num" onclick="sortDetalle('dto_pct')">% Dto ↕</th>
           <th class="num" onclick="sortDetalle('dto_plata')">$ Dto ↕</th>
           <th class="num" onclick="sortDetalle('pesoKg')">KG ↕</th>
@@ -655,8 +625,8 @@ let CONFIG = { aiKey: localStorage.getItem("cedisur_ai_key") || "" };
 // servidor. El HTML solo pide JSON agregado, nunca el CSV crudo.
 // ============================================================
 // URLs CSV publicadas desde Google Sheets
-const URL_HISTORICO  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=494146848&single=true&output=csv";
-const URL_HIST_MENSUAL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1226473083&single=true&output=csv"; // ← publicar hoja HISTORICO_MENSUAL
+const URL_HISTORICO = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=494146848&single=true&output=csv";
+const URL_HIST_MENSUAL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1226473083&single=true&output=csv";
 
 let CACHE        = {};          // cache por acción+params
 let activeSection = "resumen";
@@ -692,8 +662,7 @@ function renderSection(name) {
 // ============================================================
 let RESUMEN_DATA  = [];
 let DETALLE_DATA  = [];
-let HISTORICO_DATA  = [];
-let MENSUAL_DATA   = [];
+let HISTORICO_DATA = [];
 let EXCLUIR_ACUERDOS = true; // true = excluidos por defecto
 
 // ============================================================
@@ -710,12 +679,12 @@ async function loadData() {
       fetchCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1471861732&single=true&output=csv"),
       fetchCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1657795795&single=true&output=csv"),
       fetchCSV(URL_HISTORICO),
-      URL_HIST_MENSUAL !== "PEGAR_URL_HISTORICO_MENSUAL_CSV" ? fetchCSV(URL_HIST_MENSUAL) : Promise.resolve("")
+      fetchCSV(URL_HIST_MENSUAL)
     ]);
     RESUMEN_DATA   = parseCSV(csvResumen);
     DETALLE_DATA   = parseCSV(csvDetalle);
     HISTORICO_DATA = parseCSV(csvHistorico);
-    MENSUAL_DATA   = csvMensual ? parseCSV(csvMensual) : [];
+    MENSUAL_DATA   = parseCSV(csvMensual);
     poblarFiltros();
     document.getElementById("loading").classList.add("hidden");
     setSyncState("ok", "Actualizado · " + new Date().toLocaleTimeString("es-AR"));
@@ -777,8 +746,20 @@ function poblarFiltros() {
   fillSelect("f-grupo",    getVals("grupos"));
   fillSelect("f-deposito", getVals("depositos"));
   fillSelect("f-segmento", getVals("segmentos"));
-  const productos = [...new Set(DETALLE_DATA.map(r=>r["Descripción"]||"").filter(Boolean))].sort();
-  fillSelect("f-producto", productos);
+  const zSel = document.getElementById("cli-zona-filter2");
+  zSel.innerHTML = '<option value="">Todas las zonas</option>';
+  getVals("zonas").forEach(z => {
+    const o = document.createElement("option"); o.value = z; o.textContent = z;
+    zSel.appendChild(o);
+  });
+  const vSel = document.getElementById("cli-vend-filter");
+  if (vSel) {
+    vSel.innerHTML = '<option value="">Todos los vendedores</option>';
+    getVals("vendedores").forEach(v => {
+      const o = document.createElement("option"); o.value = v; o.textContent = v;
+      vSel.appendChild(o);
+    });
+  }
 }
 
 function fillSelect(id, options) {
@@ -916,6 +897,8 @@ function filtrarResumen(tipo) {
 
   // Si hay filtros de producto/segmento/depósito/ecommerce activos,
   // calcular agregados desde DETALLE_DATA (tiene todos los campos)
+  const alarma  = getFilterVal("f-alarma");
+  const producto= getFilterVal("f-producto");
   const usarDetalle = prov || marca || grupo || dep || seg || ecom || EXCLUIR_ACUERDOS || alarma || producto;
 
   if (usarDetalle) {
@@ -946,28 +929,18 @@ function filtrarDetalle() {
   const grupo= getFilterVal("f-grupo");
   const dep  = getFilterVal("f-deposito");
   const ecom = getFilterVal("f-ecommerce");
-  const seg     = getFilterVal("f-segmento");
-  const alarma  = getFilterVal("f-alarma");
-  const producto= getFilterVal("f-producto");
+  const seg  = getFilterVal("f-segmento");
 
   return DETALLE_DATA.filter(r => {
     if (EXCLUIR_ACUERDOS && (r["Acuerdo"]||"") === "Sí") return false;
-    if (zona    && r["Zona"]           !== zona)    return false;
-    if (vend    && r["Vendedor"]       !== vend)    return false;
-    if (prov    && r["Proveedor"]      !== prov)    return false;
-    if (marca   && r["Marca"]          !== marca)   return false;
-    if (grupo   && r["Grupo Artículo"] !== grupo)   return false;
-    if (dep     && r["Depósito"]       !== dep)     return false;
-    if (ecom    && r["Ecommerce"]      !== ecom)    return false;
-    if (seg     && r["Segmento"]       !== seg)     return false;
-    if (producto && r["Descripción"]   !== producto) return false;
-    if (alarma) {
-      const p = parseFloat(r["% Dto"]||0);
-      if (alarma==="bonif"  && p <= 90)              return false;
-      if (alarma==="alto"   && !(p>30 && p<=90))     return false;
-      if (alarma==="medio"  && !(p>10 && p<=30))     return false;
-      if (alarma==="normal" && p > 10)               return false;
-    }
+    if (zona  && r["Zona"]           !== zona)  return false;
+    if (vend  && r["Vendedor"]       !== vend)  return false;
+    if (prov  && r["Proveedor"]      !== prov)  return false;
+    if (marca && r["Marca"]          !== marca) return false;
+    if (grupo && r["Grupo Artículo"] !== grupo) return false;
+    if (dep   && r["Depósito"]       !== dep)   return false;
+    if (ecom  && r["Ecommerce"]      !== ecom)  return false;
+    if (seg   && r["Segmento"]       !== seg)   return false;
     return true;
   });
 }
@@ -982,7 +955,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  ["f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce","f-segmento","f-alarma","f-producto"]
+  ["f-zona","f-vendedor","f-proveedor","f-marca","f-grupo","f-deposito","f-ecommerce","f-segmento"]
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
   applyFilters();
 }
@@ -1339,6 +1312,8 @@ function getUltimas4SemanasPorZona() {
   };
 }
 
+
+
 // ============================================================
 // ② EVOLUCIÓN
 // ============================================================
@@ -1346,29 +1321,25 @@ function renderEvolucion() {
   showLoading("evolucion");
   try {
     const numSem = s => parseInt((s||"").replace("Sem ",""))||0;
-    const fN2    = v => v == null ? "—" : Number(v).toLocaleString("es-AR");
 
-    // ── Datos semanales desde MENSUAL_DATA + semana vigente ──
     const semsHist = MENSUAL_DATA.filter(r=>r["Tipo"]==="SEMANA")
       .sort((a,b)=>numSem(a["Clave"])-numSem(b["Clave"]));
 
-    // Agregar semana vigente desde DETALLE_DATA
-    const detFilt  = filtrarDetalle();
-    const semsVig  = [...new Set(detFilt.map(r=>r["Semana Fiscal"]||"").filter(Boolean))];
-    const numVig   = Math.max(...semsVig.map(s=>parseInt(s)||0));
-    const semVig   = numVig > 0 ? "Sem " + numVig : null;
+    const detFilt = filtrarDetalle();
+    const semsVig = [...new Set(detFilt.map(r=>r["Semana Fiscal"]||"").filter(Boolean))];
+    const numVig  = Math.max(...semsVig.map(s=>parseInt(s)||0));
+    const semVig  = numVig > 0 ? "Sem " + numVig : null;
 
     let semsData = [...semsHist];
     if (semVig && !semsData.find(r=>r["Clave"]===semVig)) {
       const dtoV   = detFilt.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
       const totalV = detFilt.reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
-      const contV  = detFilt.reduce((s,r)=>s+(parseFloat(r["Contribución $"])||0),0);
-      const mesV   = (()=>{ const d=detFilt[0]?.["Fecha"]||""; const p=d.split("/"); return p.length===3?p[2]+"-"+p[1].padStart(2,"0"):""; })();
-      semsData.push({"Tipo":"SEMANA","Clave":semVig,"Mes":mesV,"Dto $":dtoV,"Total $":totalV,"Contribución $":contV});
+      const p      = detFilt[0]?.["Fecha"]||""; const pts = p.split("/");
+      const mesV   = pts.length===3 ? pts[2]+"-"+pts[1].padStart(2,"0") : "";
+      semsData.push({"Tipo":"SEMANA","Clave":semVig,"Mes":mesV,"Dto $":dtoV,"Total $":totalV});
     }
     semsData.sort((a,b)=>numSem(a["Clave"])-numSem(b["Clave"]));
 
-    // Asignar color por mes
     const mesesUnicos = [...new Set(semsData.map(r=>r["Mes"]||"").filter(Boolean))].sort();
     const COLOR_MES = ["#00c8ff","#ff6b35","#7eff6a","#ffd166","#a855f7","#ff4757"];
     const mesColor  = {};
@@ -1382,125 +1353,101 @@ function renderEvolucion() {
       return (d+t)>0 ? parseFloat((d/(d+t)*100).toFixed(2)) : 0;
     });
 
-    // Leyenda de meses para los gráficos semanales
     const legendaMeses = {
       display: true,
-      labels: {
-        generateLabels: () => mesesUnicos.map((m,i) => ({
-          text: m, fillStyle: COLOR_MES[i%COLOR_MES.length],
-          strokeStyle: COLOR_MES[i%COLOR_MES.length], lineWidth: 0
-        }))
-      }
+      labels: { generateLabels: () => mesesUnicos.map((m,i) => ({
+        text: m, fillStyle: COLOR_MES[i%COLOR_MES.length],
+        strokeStyle: COLOR_MES[i%COLOR_MES.length], lineWidth: 0
+      }))}
     };
 
-    // Gráfico 1: Dto$ por semana
     mkChart("c-evol-sem-dto", {
-      type: "bar",
-      data: { labels: labSems, datasets: [{ label:"Dto $", data:dtosSem, backgroundColor:colorsSem, borderRadius:3 }] },
-      options: { ...chartDefaults(),
-        plugins: { ...chartDefaults().plugins, legend: legendaMeses,
-          tooltip: { callbacks: { label: ctx => " " + fM(ctx.raw) } }
+      type:"bar",
+      data:{ labels:labSems, datasets:[{ label:"Dto $", data:dtosSem, backgroundColor:colorsSem, borderRadius:3 }] },
+      options:{ ...chartDefaults(),
+        plugins:{ ...chartDefaults().plugins, legend:legendaMeses,
+          tooltip:{ callbacks:{ label: ctx => " "+fM(ctx.raw) } }
         },
-        scales: { ...chartDefaults().scales,
-          y: { ...chartDefaults().scales.y, ticks: { ...chartDefaults().scales.y.ticks, callback: v=>fM(v) } }
+        scales:{ ...chartDefaults().scales,
+          y:{ ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>fM(v) } }
         }
       }
     });
 
-    // Gráfico 2: % Dto por semana
     mkChart("c-evol-sem-pct", {
-      type: "bar",
-      data: { labels: labSems, datasets: [{ label:"% Dto", data:pctsSem, backgroundColor:colorsSem, borderRadius:3 }] },
-      options: { ...chartDefaults(),
-        plugins: { ...chartDefaults().plugins, legend: legendaMeses,
-          tooltip: { callbacks: { label: ctx => " " + ctx.raw.toFixed(2)+"%" } }
+      type:"bar",
+      data:{ labels:labSems, datasets:[{ label:"% Dto", data:pctsSem, backgroundColor:colorsSem, borderRadius:3 }] },
+      options:{ ...chartDefaults(),
+        plugins:{ ...chartDefaults().plugins, legend:legendaMeses,
+          tooltip:{ callbacks:{ label: ctx => " "+ctx.raw.toFixed(2)+"%" } }
         },
-        scales: { ...chartDefaults().scales,
-          y: { ...chartDefaults().scales.y, ticks: { ...chartDefaults().scales.y.ticks, callback: v=>v+"%" } }
+        scales:{ ...chartDefaults().scales,
+          y:{ ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>v+"%" } }
         }
       }
     });
 
-    // ── Datos mensuales × zona desde MENSUAL_DATA + mes vigente ──
     const mesZonaHist = MENSUAL_DATA.filter(r=>r["Tipo"]==="MES_ZONA");
     const zonas = [...new Set([
       ...mesZonaHist.map(r=>r["Zona"]||""),
       ...detFilt.map(r=>r["Zona"]||"")
     ].filter(Boolean))].sort();
 
-    // Meses disponibles en histórico
     let mesesDisp = [...new Set(mesZonaHist.map(r=>r["Clave"]||"").filter(Boolean))].sort();
-
-    // Agregar mes vigente si no está
-    const mesVigente = (()=>{ const d=detFilt[0]?.["Fecha"]||""; const p=d.split("/"); return p.length===3?p[2]+"-"+p[1].padStart(2,"0"):""; })();
+    const p0 = detFilt[0]?.["Fecha"]||""; const pp = p0.split("/");
+    const mesVigente = pp.length===3 ? pp[2]+"-"+pp[1].padStart(2,"0") : "";
     if (mesVigente && !mesesDisp.includes(mesVigente)) mesesDisp.push(mesVigente);
-    mesesDisp.sort();
-    // Últimos 6 meses
-    mesesDisp = mesesDisp.slice(-6);
+    mesesDisp = mesesDisp.sort().slice(-6);
 
     const COLORES_ZONA = ["#00c8ff","#ff6b35","#7eff6a","#ffd166","#a855f7"];
 
-    const datasetsDtoMes = zonas.map((zona,i) => ({
-      label: zona,
-      data: mesesDisp.map(mes => {
-        if (mes === mesVigente) {
-          // Desde DETALLE_DATA vigente
-          const rows = detFilt.filter(r=>r["Zona"]===zona);
-          return rows.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
-        }
-        const row = mesZonaHist.find(r=>r["Clave"]===mes && r["Zona"]===zona);
-        return row ? parseFloat(row["Dto $"])||0 : 0;
-      }),
-      backgroundColor: COLORES_ZONA[i % COLORES_ZONA.length],
-      borderRadius: 3
-    }));
-
-    const datasetsPctMes = zonas.map((zona,i) => ({
-      label: zona,
-      data: mesesDisp.map(mes => {
-        let dto=0, total=0;
-        if (mes === mesVigente) {
-          const rows = detFilt.filter(r=>r["Zona"]===zona);
-          dto   = rows.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
-          total = rows.reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
-        } else {
-          const row = mesZonaHist.find(r=>r["Clave"]===mes && r["Zona"]===zona);
-          if (row) { dto=parseFloat(row["Dto $"])||0; total=parseFloat(row["Total $"])||0; }
-        }
-        return (dto+total)>0 ? parseFloat((dto/(dto+total)*100).toFixed(2)) : 0;
-      }),
-      backgroundColor: COLORES_ZONA[i % COLORES_ZONA.length],
-      borderRadius: 3
-    }));
-
-    // Gráfico 3: Dto$ por mes × zona
     mkChart("c-evol-mes-dto", {
-      type: "bar",
-      data: { labels: mesesDisp, datasets: datasetsDtoMes },
-      options: { ...chartDefaults(),
-        plugins: { ...chartDefaults().plugins,
-          legend: { display:true, labels:{ color:"#8b94b0", font:{ family:"DM Sans", size:10 } } },
-          tooltip: { callbacks: { label: ctx => " "+ctx.dataset.label+": "+fM(ctx.raw) } }
+      type:"bar",
+      data:{ labels:mesesDisp, datasets: zonas.map((zona,i) => ({
+        label: zona,
+        data: mesesDisp.map(mes => {
+          if (mes===mesVigente) return detFilt.filter(r=>r["Zona"]===zona).reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
+          const row = mesZonaHist.find(r=>r["Clave"]===mes && r["Zona"]===zona);
+          return row ? parseFloat(row["Dto $"])||0 : 0;
+        }),
+        backgroundColor: COLORES_ZONA[i%COLORES_ZONA.length], borderRadius:3
+      }))},
+      options:{ ...chartDefaults(),
+        plugins:{ ...chartDefaults().plugins,
+          legend:{ display:true, labels:{ color:"#8b94b0", font:{ family:"DM Sans", size:10 } } },
+          tooltip:{ callbacks:{ label: ctx => " "+ctx.dataset.label+": "+fM(ctx.raw) } }
         },
-        scales: { ...chartDefaults().scales,
-          x: { ...chartDefaults().scales.x, stacked:false },
-          y: { ...chartDefaults().scales.y, stacked:false, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>fM(v) } }
+        scales:{ ...chartDefaults().scales,
+          y:{ ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>fM(v) } }
         }
       }
     });
 
-    // Gráfico 4: % Dto por mes × zona
     mkChart("c-evol-mes-pct", {
-      type: "bar",
-      data: { labels: mesesDisp, datasets: datasetsPctMes },
-      options: { ...chartDefaults(),
-        plugins: { ...chartDefaults().plugins,
-          legend: { display:true, labels:{ color:"#8b94b0", font:{ family:"DM Sans", size:10 } } },
-          tooltip: { callbacks: { label: ctx => " "+ctx.dataset.label+": "+ctx.raw.toFixed(2)+"%" } }
+      type:"bar",
+      data:{ labels:mesesDisp, datasets: zonas.map((zona,i) => ({
+        label: zona,
+        data: mesesDisp.map(mes => {
+          let dto=0, total=0;
+          if (mes===mesVigente) {
+            const rows = detFilt.filter(r=>r["Zona"]===zona);
+            dto   = rows.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
+            total = rows.reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
+          } else {
+            const row = mesZonaHist.find(r=>r["Clave"]===mes && r["Zona"]===zona);
+            if (row) { dto=parseFloat(row["Dto $"])||0; total=parseFloat(row["Total $"])||0; }
+          }
+          return (dto+total)>0 ? parseFloat((dto/(dto+total)*100).toFixed(2)) : 0;
+        }),
+        backgroundColor: COLORES_ZONA[i%COLORES_ZONA.length], borderRadius:3
+      }))},
+      options:{ ...chartDefaults(),
+        plugins:{ ...chartDefaults().plugins,
+          legend:{ display:true, labels:{ color:"#8b94b0", font:{ family:"DM Sans", size:10 } } },
+          tooltip:{ callbacks:{ label: ctx => " "+ctx.dataset.label+": "+ctx.raw.toFixed(2)+"%" } }
         },
-        scales: { ...chartDefaults().scales,
-          x: { ...chartDefaults().scales.x, stacked:false },
-          y: { ...chartDefaults().scales.y, stacked:false, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>v+"%" } }
+        scales:{ ...chartDefaults().scales,
+          y:{ ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>v+"%" } }
         }
       }
     });
@@ -1508,6 +1455,7 @@ function renderEvolucion() {
   } catch(e) { console.error("renderEvolucion:", e); }
   hideLoading("evolucion");
 }
+
 // ============================================================
 // ③ POR ZONA
 // ============================================================
@@ -1650,8 +1598,28 @@ function sortDetalle(key) {
 function renderDetalleTable() {
   showLoading("detalle");
   try {
+    const alarm  = document.getElementById("cli-alarm-filter")?.value || "";
+    const search = (document.getElementById("cli-search")?.value||"").toLowerCase();
+    const zonaF  = document.getElementById("cli-zona-filter2")?.value || "";
+    const vendF  = document.getElementById("cli-vend-filter")?.value || "";
+
     let data = filtrarDetalle();
+
+    if (zonaF)  data = data.filter(r => r["Zona"]     === zonaF);
+    if (vendF)  data = data.filter(r => r["Vendedor"] === vendF);
+    if (search) data = data.filter(r =>
+      (r["Cliente"]||"").toLowerCase().includes(search) ||
+      (r["Descripción"]||"").toLowerCase().includes(search) ||
+      (r["Cod Cliente"]||"").toLowerCase().includes(search)
+    );
+
     const toNum = (r, col) => parseFloat(r[col]||0);
+
+    if (alarm === "bonif")  data = data.filter(r => toNum(r,"% Dto")>90);
+    else if (alarm==="alto") data = data.filter(r=>{const p=toNum(r,"% Dto");return p>30&&p<=90;});
+    else if (alarm==="medio")data = data.filter(r=>{const p=toNum(r,"% Dto");return p>10&&p<=30;});
+    else if (alarm==="normal")data= data.filter(r=>toNum(r,"% Dto")<=10);
+
     data.sort((a,b)=>toNum(b,"% Dto")-toNum(a,"% Dto"));
 
     document.getElementById("cli-count").textContent = data.length.toLocaleString()+" líneas";
@@ -1673,7 +1641,6 @@ function renderDetalleTable() {
         <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${r["Cliente"]||""}</strong></td>
         <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px">${r["Descripción"]||""}</td>
         <td style="font-size:11px;color:var(--text-dim)">${r["Marca"]||""}</td>
-        <td class="num" style="color:var(--text-dim)">${r["Cantidad"]||"—"}</td>
         <td class="num ${dtoClass}">${fP(p)}</td>
         <td class="num">${fM(toNum(r,"Dto $"))}</td>
         <td class="num">${toNum(r,"Peso KG")?fN(toNum(r,"Peso KG")):"—"}</td>
@@ -1682,7 +1649,7 @@ function renderDetalleTable() {
       </tr>`;
     }
     if (data.length > 500) {
-      tbody.innerHTML += `<tr><td colspan="12" style="text-align:center;padding:12px;color:var(--muted);font-size:11px">
+      tbody.innerHTML += `<tr><td colspan="11" style="text-align:center;padding:12px;color:var(--muted);font-size:11px">
         Mostrando 500 de ${data.length.toLocaleString()} líneas. Usá los filtros para acotar.
       </td></tr>`;
     }
@@ -1722,9 +1689,6 @@ function setSyncState(state, label) {
 // INIT
 // ============================================================
 window.addEventListener("load", () => {
-  // Pre-cargar API key si existe
-  if (CONFIG.aiKey) document.getElementById("ai-api-key").value = CONFIG.aiKey;
-
   loadData();
 });
 </script>

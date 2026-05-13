@@ -1170,7 +1170,8 @@ function renderResumen() {
     });
     const topCli = Object.values(clienteMap).map(c => ({
       nombre: c.nombre,
-      pct: (c.dto+c.total)>0?c.dto/(c.dto+c.total)*100:0,
+      // Limitar % máximo a 100 — si supera es un problema de datos base
+      pct: Math.min((c.dto+c.total)>0?c.dto/(c.dto+c.total)*100:0, 100),
       dto: c.dto
     })).sort((a,b)=>b.pct-a.pct).slice(0,10);
     const maxPctC = Math.max(...topCli.map(c=>c.pct),1);
@@ -1193,11 +1194,14 @@ function renderResumen() {
     const topP = [...provR].sort((a,b)=>(parseFloat(b["Dto $"])||0)-(parseFloat(a["Dto $"])||0)).slice(0,8);
     mkChart("c-dto-prov",{
       type:"bar",
-      data:{labels:topP.map(p=>p["Clave"].substring(0,18)),
+      data:{labels:topP.map(p=>p["Clave"].substring(0,22)),
         datasets:[{label:"Dto $",data:topP.map(p=>parseFloat(p["Dto $"])||0),backgroundColor:COLORES,borderRadius:4}]},
       options:{...chartDefaults(),indexAxis:"y",
         plugins:{...chartDefaults().plugins,legend:{display:false}},
-        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}}}
+        scales:{
+          x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}},
+          y:{...chartDefaults().scales.y,ticks:{color:"#8b94b0",font:{family:"DM Sans",size:10}}}
+        }
       }
     });
 
@@ -1217,7 +1221,13 @@ function renderResumen() {
         datasets:[{data:[rg.bonif,rg.alto,rg.medio,rg.normal,rg.sin],
           backgroundColor:["#a855f7","#ff4757","#ffd166","#2ed573","#5a6380"],borderWidth:0}]
       },
-      options:{...chartDefaults(),plugins:{...chartDefaults().plugins,legend:{position:"bottom",labels:{color:"#8b94b0",font:{size:10}}}}}
+      options:{
+        color:"#8b94b0",
+        plugins:{
+          legend:{position:"bottom",labels:{color:"#8b94b0",font:{size:10}}},
+          tooltip:{callbacks:{label: ctx => " "+ctx.label+": "+ctx.raw.toLocaleString("es-AR")+" líneas"}}
+        }
+      }
     });
 
   } catch(e) { console.error("renderResumen:", e); }

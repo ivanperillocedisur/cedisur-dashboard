@@ -300,7 +300,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   .chart-row.cols2, .chart-row.cols3, .chart-row.cols2x1 { grid-template-columns: 1fr; }
   .filters-bar { padding: 10px 16px; }
   .content { padding: 16px; }
-  
+}
 </style>
 </head>
 <body>
@@ -1607,16 +1607,22 @@ function renderZona() {
       data:{labels:rows.map(z=>z.zona),datasets:[{label:"Dto $",data:rows.map(z=>z.dto_total),backgroundColor:COLORES,borderRadius:4}]},
       options:{...chartDefaults(),indexAxis:"y",
         plugins:{...chartDefaults().plugins,legend:{display:false}},
-        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}}}
+        scales:{
+          x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}},
+          y:{...chartDefaults().scales.y,ticks:{color:"#8b94b0",font:{family:"DM Sans",size:11}}}
+        }
       }
     });
     mkChart("c-zona-pct",{
       type:"bar",
-      data:{labels:rows.map(z=>z.zona),datasets:[{label:"% Dto",data:rows.map(z=>parseFloat(z.dto_pct.toFixed(1))),
+      data:{labels:rows.map(z=>z.zona),datasets:[{label:"% Dto",data:rows.map(z=>Math.round(z.dto_pct*10)/10),
         backgroundColor:rows.map(z=>z.dto_pct>4?"rgba(255,71,87,0.8)":z.dto_pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),borderRadius:4}]},
       options:{...chartDefaults(),indexAxis:"y",
         plugins:{...chartDefaults().plugins,legend:{display:false}},
-        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>{ const n=parseFloat(v); return (isNaN(n)?v:Number.isInteger(n)?n:n.toFixed(1))+"%"; }}}}
+        scales:{
+          x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>{ const n=parseFloat(v); return (isNaN(n)?v:Number.isInteger(n)?n:n.toFixed(1))+"%"; }}},
+          y:{...chartDefaults().scales.y,ticks:{color:"#8b94b0",font:{family:"DM Sans",size:11}}}
+        }
       }
     });
 
@@ -1673,18 +1679,24 @@ function renderVendedor() {
           backgroundColor:top10dto.map((_,i)=>COLORES[i%COLORES.length]),borderRadius:4}]},
       options:{...chartDefaults(),indexAxis:"y",
         plugins:{...chartDefaults().plugins,legend:{display:false}},
-        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}}}
+        scales:{
+          x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>fM(v)}},
+          y:{...chartDefaults().scales.y,ticks:{color:"#8b94b0",font:{family:"DM Sans",size:11}}}
+        }
       }
     });
     mkChart("c-vend-pct",{
       type:"bar",
       data:{labels:top10pct.map(v=>v.vendedor.split(" ").slice(0,2).join(" ")),
-        datasets:[{label:"% Dto",data:top10pct.map(v=>parseFloat(v.dto_pct.toFixed(1))),
+        datasets:[{label:"% Dto",data:top10pct.map(v=>Math.round(v.dto_pct*10)/10),
           backgroundColor:top10pct.map(v=>v.dto_pct>4?"rgba(255,71,87,0.8)":v.dto_pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),
           borderRadius:4}]},
       options:{...chartDefaults(),indexAxis:"y",
         plugins:{...chartDefaults().plugins,legend:{display:false}},
-        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>{ const n=parseFloat(v); return (isNaN(n)?v:Number.isInteger(n)?n:n.toFixed(1))+"%"; }}}}
+        scales:{
+          x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>{ const n=parseFloat(v); return (isNaN(n)?v:Number.isInteger(n)?n:n.toFixed(1))+"%"; }}},
+          y:{...chartDefaults().scales.y,ticks:{color:"#8b94b0",font:{family:"DM Sans",size:11}}}
+        }
       }
     });
 

@@ -398,13 +398,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
       EXCLUIDAS
     </button>
   </div>
-  <div class="filter-group">
-    <span class="filter-label">Bonificados</span>
-    <button id="toggle-bonificados" onclick="toggleBonificados()"
-      style="background:#ff4757;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;transition:all 0.2s">
-      EXCLUIDOS
-    </button>
-  </div>
   <button class="btn-clear-filters" onclick="clearFilters()">✕ Limpiar filtros</button>
   <div class="rows-badge">Filas: <span id="rows-count">—</span></div>
 </div>
@@ -1813,7 +1806,7 @@ function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; HISTORICO_DATA=[]; MEN
 
 function toggleBonificados() {
   EXCLUIR_BONIFICADOS = !EXCLUIR_BONIFICADOS;
-  const btn = document.getElementById("toggle-bonificados");
+  const btn = document.getElementById("toggle-bonif");
   if (EXCLUIR_BONIFICADOS) {
     btn.textContent = "EXCLUIDOS";
     btn.style.background = "#ff4757";

@@ -979,7 +979,7 @@ function chartDefaults() {
     plugins: { legend: { labels: { color:"#8b94b0", font:{ family:"DM Sans", size:11 } } } },
     scales: {
       x: { ticks:{ color:"#8b94b0", font:{ family:"DM Sans", size:11 }, maxRotation:45 }, grid:{ color:"rgba(37,42,58,0.6)" } },
-      y: { ticks:{ color:"#8b94b0", font:{ family:"DM Sans", size:11 }, callback: v => typeof v === "number" && !Number.isInteger(v) ? v.toFixed(1) : v }, grid:{ color:"rgba(37,42,58,0.6)" } }
+      y: { ticks:{ color:"#8b94b0", font:{ family:"DM Sans", size:11 }, callback: v => { const n=parseFloat(v); return isNaN(n)?v:Number.isInteger(n)?n:n.toFixed(1); } }, grid:{ color:"rgba(37,42,58,0.6)" } }
     }
   };
 }
@@ -1100,13 +1100,13 @@ function renderResumen() {
           });
           const dto = filas.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
           const vta = filas.reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
-          return (dto+vta)>0 ? parseFloat((dto/(dto+vta)*100).toFixed(2)) : 0;
+          return (dto+vta)>0 ? Math.round(dto/(dto+vta)*1000)/10 : 0;
         } else {
           // Leer del histórico
           const f = HISTORICO_DATA.find(r=>r["Semana"]===sem&&r["Zona"]===z);
           if (!f) return null;
           const d=parseFloat(f["Dto $"])||0, v=parseFloat(f["Total $"])||0;
-          return (d+v)>0 ? parseFloat((d/(d+v)*100).toFixed(2)) : 0;
+          return (d+v)>0 ? Math.round(d/(d+v)*1000)/10 : 0;
         }
       });
       return { label:z, data:pcts, borderColor:COLORES[i%COLORES.length],
@@ -1124,7 +1124,7 @@ function renderResumen() {
           legend:{display:true,labels:{color:"#8b94b0",font:{family:"DM Sans",size:11}}}
         },
         scales:{...chartDefaults().scales,
-          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>v+"%"}}}
+          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>{ const n=parseFloat(v); return (isNaN(n)?v:Number.isInteger(n)?n:n.toFixed(1))+"%"; }}}}
       }
     });
 
@@ -1352,16 +1352,16 @@ function renderEvolucion() {
     // Dto$ vigente (desde detalle, ya filtrado por zona)
     const dtoVig = detVig.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
 
-    // Total$ vigente real desde HISTORICO_RESUMEN por zona (o suma de zonas)
+    // Total$ vigente real desde HISTORICO_RESUMEN
+    // Si hay filtro de zona, sumar solo esa zona; si no, sumar todas
     let totalVigReal = 0;
+    const histSemVig = HISTORICO_DATA.filter(r => r["Semana"]===semMaxHR);
     if (zonaFilt) {
-      const hRow = HISTORICO_DATA.find(r => r["Semana"]===semMaxHR && r["Zona"]===zonaFilt);
+      const hRow = histSemVig.find(r => r["Zona"]===zonaFilt);
       totalVigReal = hRow ? parseFloat(hRow["Total $"])||0 : 0;
     } else {
-      totalVigReal = HISTORICO_DATA.filter(r => r["Semana"]===semMaxHR)
-        .reduce((s,r) => s+(parseFloat(r["Total $"])||0), 0);
+      totalVigReal = histSemVig.reduce((s,r) => s+(parseFloat(r["Total $"])||0), 0);
     }
-    // Fallback si HISTORICO_RESUMEN no tiene la semana vigente
     if (!totalVigReal) {
       totalVigReal = detVig.reduce((s,r) => s+(parseFloat(r["Total Línea $"])||0), 0);
     }
@@ -1441,10 +1441,10 @@ function renderEvolucion() {
       }]},
       options: { ...chartDefaults(),
         plugins: { ...chartDefaults().plugins, legend:legendaMeses,
-          tooltip: { callbacks: { label: ctx => " "+ctx.raw.toFixed(1)+"%" } }
+          tooltip: { callbacks: { label: ctx => " "+(Math.round(ctx.raw*10)/10).toFixed(1)+"%" } }
         },
         scales: { ...chartDefaults().scales,
-          y: { ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>v+"%" } }
+          y: { ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>{ const n=parseFloat(v); return (isNaN(n)?v:Number.isInteger(n)?n:n.toFixed(1))+"%"; } } }
         }
       }
     });
@@ -1490,7 +1490,7 @@ function renderEvolucion() {
         const row = mesZonaHist.find(r => r["Clave"]===mes && r["Zona"]===zona);
         if (row) { dto=parseFloat(row["Dto $"])||0; total=parseFloat(row["Total $"])||0; }
       }
-      return (dto+total)>0 ? parseFloat((dto/(dto+total)*100).toFixed(1)) : 0;
+      return (dto+total)>0 ? Math.round(dto/(dto+total)*1000)/10 : 0;
     };
 
     const COLORES_ZONA = ["#00c8ff","#ff6b35","#7eff6a","#ffd166","#a855f7"];
@@ -1530,10 +1530,10 @@ function renderEvolucion() {
       options: { ...chartDefaults(),
         plugins: { ...chartDefaults().plugins,
           legend:{ display:true, labels:{ color:"#8b94b0", font:{ family:"DM Sans", size:10 } } },
-          tooltip:{ callbacks:{ label: ctx => " "+ctx.dataset.label+": "+ctx.raw.toFixed(1)+"%" } }
+          tooltip:{ callbacks:{ label: ctx => " "+ctx.dataset.label+": "+(Math.round(ctx.raw*10)/10).toFixed(1)+"%" } }
         },
         scales: { ...chartDefaults().scales,
-          y:{ ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>v+"%" } }
+          y:{ ...chartDefaults().scales.y, ticks:{ ...chartDefaults().scales.y.ticks, callback:v=>{ const n=parseFloat(v); return (isNaN(n)?v:Number.isInteger(n)?n:n.toFixed(1))+"%"; } } }
         }
       }
     });
@@ -1583,7 +1583,7 @@ function renderZona() {
         backgroundColor:rows.map(z=>z.dto_pct>4?"rgba(255,71,87,0.8)":z.dto_pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),borderRadius:4}]},
       options:{...chartDefaults(),indexAxis:"y",
         plugins:{...chartDefaults().plugins,legend:{display:false}},
-        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>v+"%"}}}
+        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>{ const n=parseFloat(v); return (isNaN(n)?v:Number.isInteger(n)?n:n.toFixed(1))+"%"; }}}}
       }
     });
 
@@ -1651,7 +1651,7 @@ function renderVendedor() {
           borderRadius:4}]},
       options:{...chartDefaults(),indexAxis:"y",
         plugins:{...chartDefaults().plugins,legend:{display:false}},
-        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>v+"%"}}}
+        scales:{...chartDefaults().scales,x:{...chartDefaults().scales.x,ticks:{...chartDefaults().scales.x.ticks,callback:v=>{ const n=parseFloat(v); return (isNaN(n)?v:Number.isInteger(n)?n:n.toFixed(1))+"%"; }}}}
       }
     });
 

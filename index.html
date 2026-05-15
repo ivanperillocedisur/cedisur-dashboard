@@ -670,6 +670,7 @@ let RESUMEN_DATA  = [];
 let DETALLE_DATA  = [];
 let HISTORICO_DATA = [];
 let MENSUAL_DATA   = [];
+let DATA_COMPLETA  = [];
 let EXCLUIR_ACUERDOS    = true;
 let EXCLUIR_PROMOCIONES = true;
 
@@ -683,16 +684,18 @@ async function loadData() {
   CACHE = {};
 
   try {
-    const [csvResumen, csvDetalle, csvHistorico, csvMensual] = await Promise.all([
+    const [csvResumen, csvDetalle, csvHistorico, csvMensual, csvData] = await Promise.all([
       fetchCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1471861732&single=true&output=csv"),
       fetchCSV("https://docs.google.com/spreadsheets/d/e/2PACX-1vQplajZsoBFgArulQPnJcLmVdMBpRvddmYfm1H6POS7pNuaBhybRiUa0_joBVbhXGy1wbM0UrIh11SR/pub?gid=1657795795&single=true&output=csv"),
       fetchCSV(URL_HISTORICO),
-      fetchCSV(URL_HIST_MENSUAL)
+      fetchCSV(URL_HIST_MENSUAL),
+      fetchCSV(URL_DATA)
     ]);
     RESUMEN_DATA   = parseCSV(csvResumen);
     DETALLE_DATA   = parseCSV(csvDetalle);
     HISTORICO_DATA = parseCSV(csvHistorico);
     MENSUAL_DATA   = parseCSV(csvMensual);
+    DATA_COMPLETA  = parseCSV(csvData);
     poblarFiltros();
     document.getElementById("loading").classList.add("hidden");
     setSyncState("ok", "Actualizado · " + new Date().toLocaleTimeString("es-AR"));
@@ -828,51 +831,37 @@ function agregarDesdeDetalle(tipo) {
     if (parseFloat(r["Dto $"])||0 > 0) a.lineasDto++;
   });
 
-  // Denominador para % dto:
-  // - Global / zona / vendedor → RESUMEN_DATA (tiene TODAS las ventas, no solo con dto)
-  // - Segmento / proveedor / marca / producto → DATA_DETALLE filtrado
-  //   (limitación aceptada: no hay desglose en RESUMEN_DATA para esos filtros)
+  // Denominador desde DATA_COMPLETA (todas las ventas, incluyendo sin descuento)
+  // filtrada exactamente igual que el detalle para máxima precisión
   const totalRealMap = {};
-
-  const seg_f    = getFilterVal("f-segmento");
-  const prov_f   = getFilterVal("f-proveedor");
-  const marca_f  = getFilterVal("f-marca");
-  const grupo_f  = getFilterVal("f-grupo");
-  const prod_f   = getFilterVal("f-producto");
-  const alarm_f  = getFilterVal("f-alarma");
-  const usarDetalleDenom = seg_f || prov_f || marca_f || grupo_f || prod_f || alarm_f;
-
-  if (!usarDetalleDenom && (tipo === "ZONA" || tipo === "VENDEDOR")) {
-    const campoResumen = tipo === "ZONA" ? "ZONA" : "VENDEDOR";
-
-    // Calcular cuánto restar por acuerdos/promociones excluidos
+  if (DATA_COMPLETA.length && (tipo === "ZONA" || tipo === "VENDEDOR")) {
     const campo = tipo === "ZONA" ? "Zona" : "Vendedor";
-    const restarMap = {};
-    DETALLE_DATA.forEach(r => {
-      const excl = (EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") ||
-                   (EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí");
-      if (!excl) return;
+    const zona_f = getFilterVal("f-zona");
+    const vend_f = getFilterVal("f-vendedor");
+    const seg_f  = getFilterVal("f-segmento");
+    const prov_f = getFilterVal("f-proveedor");
+    const marca_f= getFilterVal("f-marca");
+    const grupo_f= getFilterVal("f-grupo");
+    const prod_f = getFilterVal("f-producto");
+    const ecom_f = getFilterVal("f-ecommerce");
+
+    DATA_COMPLETA.forEach(r => {
+      // Aplicar mismos filtros que filtrarDetalle
+      if (EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") return;
+      if (EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí") return;
+      if (zona_f  && r["Zona"]            !== zona_f)  return;
+      if (vend_f  && r["Vendedor"]        !== vend_f)  return;
+      if (seg_f   && r["Segmento"]        !== seg_f)   return;
+      if (prov_f  && r["Proveedor"]       !== prov_f)  return;
+      if (marca_f && r["Marca"]           !== marca_f) return;
+      if (grupo_f && r["Grupo Artículo"]  !== grupo_f) return;
+      if (prod_f  && r["Descripción"]     !== prod_f)  return;
+      if (ecom_f  && r["Ecommerce"]       !== ecom_f)  return;
       const k = r[campo]||"";
-      restarMap[k] = (restarMap[k]||0) + (parseFloat(r["Total Línea $"])||0);
+      if (!k) return;
+      totalRealMap[k] = (totalRealMap[k]||0) + (parseFloat(r["Total Línea $"])||0);
     });
-
-    // Total real = RESUMEN_DATA menos lo excluido
-    RESUMEN_DATA.filter(r => r["Tipo"]===campoResumen).forEach(r => {
-      const k = r["Clave"]||"";
-      totalRealMap[k] = Math.max(0, (parseFloat(r["Total $"])||0) - (restarMap[k]||0));
-    });
-
-    // Fallback a HISTORICO_DATA si RESUMEN está vacío
-    if (!Object.keys(totalRealMap).length && tipo === "ZONA") {
-      const numSemFn = s => parseInt((s||"").replace("Sem ",""))||0;
-      const semsHist = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))];
-      const semMax   = semsHist.sort((a,b)=>numSemFn(a)-numSemFn(b)).pop();
-      HISTORICO_DATA.filter(r=>r["Semana"]===semMax).forEach(r => {
-        totalRealMap[r["Zona"]||""] = parseFloat(r["Total $"])||0;
-      });
-    }
   }
-  // Si usarDetalleDenom: totalRealMap vacío → se usa Total$ del detalle filtrado (acepta limitación)
 
   return Object.values(acc).map(a => {
     const totalReal = totalRealMap[a.Clave] || 0;
@@ -1807,7 +1796,7 @@ function renderDetalleTable() {
   hideLoading("detalle");
 }
 
-function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; HISTORICO_DATA=[]; MENSUAL_DATA=[]; CACHE={}; loadData(); }
+function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; HISTORICO_DATA=[]; MENSUAL_DATA=[]; DATA_COMPLETA=[]; CACHE={}; loadData(); }
 
 function togglePromociones() {
   EXCLUIR_PROMOCIONES = !EXCLUIR_PROMOCIONES;

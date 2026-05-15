@@ -1858,7 +1858,7 @@ function renderCliente() {
     mkChart("c-cli-pct", {
       type:"bar",
       data:{ labels:["Este cliente", "Promedio vendedor"],
-        datasets:[{ data:[pct, Math.round(pctVendProm*10)/10],
+        datasets:[{ data:[parseFloat(pct.toFixed(1)), parseFloat(pctVendProm.toFixed(1))],
           backgroundColor:[pct>pctVendProm?"rgba(255,71,87,0.8)":"rgba(46,213,115,0.8)","rgba(139,148,176,0.4)"],
           borderRadius:6 }]},
       options:{...chartDefaults(),

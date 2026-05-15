@@ -401,7 +401,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   <div class="nav-tab" onclick="showSection('evolucion', this)">② Evolución</div>
   <div class="nav-tab" onclick="showSection('zona', this)">③ Por Zona</div>
   <div class="nav-tab" onclick="showSection('vendedor', this)">④ Por Vendedor</div>
-  <div class="nav-tab" onclick="showSection('detalle', this)">⑤ Detalle Clientes</div>
+  <div class="nav-tab" onclick="showSection('cliente', this)">⑤ Cliente</div>
+  <div class="nav-tab" onclick="showSection('detalle', this)">⑥ Detalle Clientes</div>
 </div>
 
 <div class="content">
@@ -532,6 +533,64 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
 </div>
 
+<!-- ⑤ CLIENTE INDIVIDUAL -->
+<div id="sec-cliente" class="section">
+  <div class="section-header">
+    <div class="section-title">Cliente</div>
+    <div class="section-desc">Análisis individual · Semana vigente</div>
+  </div>
+
+  <!-- Buscador -->
+  <div class="chart-card" style="margin-bottom:14px;padding:16px 20px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="position:relative;flex:1;min-width:260px">
+        <input type="text" id="cli-search-ind" placeholder="Buscar cliente por nombre o código…"
+          oninput="buscarCliente(this.value)"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);
+                 padding:9px 14px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+        <div id="cli-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+             background:var(--surface);border:1px solid var(--border);border-radius:6px;z-index:300;
+             max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
+      </div>
+      <div id="cli-sel-badge" style="font-size:12px;color:var(--muted)">Seleccioná un cliente</div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid cols4" id="kpi-cliente" style="margin-bottom:14px"></div>
+
+  <!-- Tabla productos -->
+  <div class="chart-card" style="margin-bottom:14px">
+    <div class="chart-card-title">Detalle por Producto</div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr>
+          <th onclick="sortCliProd('descripcion')">Producto ↕</th>
+          <th onclick="sortCliProd('marca')">Marca ↕</th>
+          <th class="num" onclick="sortCliProd('cantidad')">Cantidad ↕</th>
+          <th class="num" onclick="sortCliProd('kg')">KG ↕</th>
+          <th class="num" onclick="sortCliProd('dto')">Dto $ ↕</th>
+          <th class="num" onclick="sortCliProd('pct')">% Dto ↕</th>
+          <th class="num" onclick="sortCliProd('contrib')">Contribución $ ↕</th>
+        </tr></thead>
+        <tbody id="cli-prod-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Contexto comparativo -->
+  <div class="chart-row cols2">
+    <div class="chart-card">
+      <div class="chart-card-title">% Dto — Cliente vs Vendedor</div>
+      <div class="chart-wrap"><canvas id="c-cli-pct" height="200"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">Contribución $ — Cliente vs promedio Vendedor</div>
+      <div class="chart-wrap"><canvas id="c-cli-contrib" height="200"></canvas></div>
+    </div>
+  </div>
+</div>
+
 <!-- ④ DETALLE CLIENTES -->
 <div id="sec-detalle" class="section">
   <div class="section-header">
@@ -658,6 +717,7 @@ function renderSection(name) {
   else if (name === "evolucion") renderEvolucion();
   else if (name === "zona")      renderZona();
   else if (name === "vendedor")  renderVendedor();
+  else if (name === "cliente")   renderCliente();
   else if (name === "detalle")   renderDetalleTable();
 }
 
@@ -1606,6 +1666,199 @@ function renderEvolucion() {
 
   } catch(e) { console.error("renderEvolucion:", e); }
   hideLoading("evolucion");
+}
+
+
+// ============================================================
+// ⑤ CLIENTE INDIVIDUAL
+// ============================================================
+let clienteSeleccionado = null;
+let cliProdSort = { key:"contrib", dir:-1 };
+
+function buscarCliente(query) {
+  const dd = document.getElementById("cli-dropdown");
+  if (!query || query.length < 2) { dd.style.display="none"; return; }
+  const q = query.toLowerCase();
+  const det = filtrarDetalle();
+  const map = {};
+  det.forEach(r => {
+    const cod = r["Cod Cliente"]||"";
+    const nom = r["Cliente"]||"";
+    if (!map[cod] && (nom.toLowerCase().includes(q) || cod.toLowerCase().includes(q))) {
+      map[cod] = { cod, nom };
+    }
+  });
+  const resultados = Object.values(map).slice(0,12);
+  if (!resultados.length) { dd.style.display="none"; return; }
+  dd.innerHTML = resultados.map(r =>
+    `<div onclick="seleccionarCliente('${r.cod}','${r.nom.replace(/'/g,"\'")}')"
+      style="padding:9px 14px;cursor:pointer;font-size:12px;color:var(--text);
+             border-bottom:1px solid var(--border)"
+      onmouseover="this.style.background='var(--surface2)'"
+      onmouseout="this.style.background=''"
+    ><strong>${r.cod}</strong> — ${r.nom}</div>`
+  ).join("");
+  dd.style.display = "block";
+}
+
+function seleccionarCliente(cod, nom) {
+  clienteSeleccionado = { cod, nom };
+  document.getElementById("cli-search-ind").value = nom;
+  document.getElementById("cli-dropdown").style.display = "none";
+  document.getElementById("cli-sel-badge").textContent = cod + " · " + nom;
+  document.getElementById("cli-sel-badge").style.color = "var(--accent2)";
+  renderCliente();
+}
+
+function sortCliProd(key) {
+  if (cliProdSort.key===key) cliProdSort.dir*=-1;
+  else { cliProdSort.key=key; cliProdSort.dir=-1; }
+  renderCliente();
+}
+
+function renderCliente() {
+  if (!clienteSeleccionado) return;
+  showLoading("cliente");
+  try {
+    const cod     = clienteSeleccionado.cod;
+    const det     = filtrarDetalle().filter(r => (r["Cod Cliente"]||"") === cod);
+    const dataCli = DATA_COMPLETA.filter(r => (r["Cod Cliente"]||"") === cod &&
+      !(EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") &&
+      !(EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí")
+    );
+
+    if (!det.length && !dataCli.length) {
+      document.getElementById("kpi-cliente").innerHTML =
+        `<div style="grid-column:1/-1;padding:24px;text-align:center;color:var(--muted)">
+          Sin datos para este cliente en la semana vigente.</div>`;
+      hideLoading("cliente");
+      return;
+    }
+
+    // ── KPIs ──
+    const dtoTotal  = det.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
+    const totalReal = dataCli.reduce((s,r) => s+(parseFloat(r["Total Línea $"])||0), 0);
+    const contrib   = det.reduce((s,r) => s+(parseFloat(r["Contribución $"])||0), 0);
+    const pct       = (dtoTotal+totalReal)>0 ? Math.round(dtoTotal/(dtoTotal+totalReal)*1000)/10 : 0;
+    const vendedor  = det[0]?.["Vendedor"] || dataCli[0]?.["Vendedor"] || "—";
+
+    document.getElementById("kpi-cliente").innerHTML = `
+      <div class="kpi-card blue">
+        <div class="kpi-label">Venta Total $</div>
+        <div class="kpi-value">${fM(totalReal)}</div>
+        <div class="kpi-sub"><span class="kpi-badge badge-pos">${vendedor}</span></div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">Dto $ Total</div>
+        <div class="kpi-value">${fM(dtoTotal)}</div>
+        <div class="kpi-sub"><span class="kpi-badge badge-warn">${fP(pct)} promedio</span></div>
+      </div>
+      <div class="kpi-card ${pct>10?"red":pct>5?"yellow":"green"}">
+        <div class="kpi-label">% Dto Promedio</div>
+        <div class="kpi-value">${fP(pct)}</div>
+        <div class="kpi-sub"><span class="kpi-badge badge-warn">Ponderado</span></div>
+      </div>
+      <div class="kpi-card ${contrib<0?"red":"green"}">
+        <div class="kpi-label">Contribución $</div>
+        <div class="kpi-value">${fM(contrib)}</div>
+        <div class="kpi-sub"><span class="kpi-badge ${contrib<0?"badge-neg":"badge-pos"}">Margen neto</span></div>
+      </div>`;
+
+    // ── Tabla productos ──
+    const prodMap = {};
+    det.forEach(r => {
+      const k = (r["Descripción"]||"")+"|||"+(r["Marca"]||"");
+      if (!prodMap[k]) prodMap[k] = { desc:r["Descripción"]||"", marca:r["Marca"]||"",
+        cantidad:0, kg:0, dto:0, totalLinea:0, contrib:0 };
+      prodMap[k].cantidad += parseFloat(r["Cantidad"]||0);
+      prodMap[k].kg       += parseFloat(r["Peso KG"]||0);
+      prodMap[k].dto      += parseFloat(r["Dto $"])||0;
+      prodMap[k].contrib  += parseFloat(r["Contribución $"])||0;
+    });
+    // Total$ por producto desde DATA_COMPLETA
+    dataCli.forEach(r => {
+      const k = (r["Descripción"]||"")+"|||"+(r["Marca"]||"");
+      if (prodMap[k]) prodMap[k].totalLinea += parseFloat(r["Total Línea $"])||0;
+    });
+
+    let prods = Object.values(prodMap).map(p => ({
+      ...p,
+      pct: (p.dto+p.totalLinea)>0 ? Math.round(p.dto/(p.dto+p.totalLinea)*1000)/10 : 0
+    }));
+
+    const sk = cliProdSort.key, sd = cliProdSort.dir;
+    prods.sort((a,b) => {
+      const va = a[sk]||0, vb = b[sk]||0;
+      return typeof va==="string" ? va.localeCompare(vb)*sd : (va-vb)*sd;
+    });
+
+    const tbody = document.getElementById("cli-prod-body");
+    tbody.innerHTML = prods.map(p => {
+      const cls = p.pct>30?"dto-high":p.pct>10?"dto-medium":"dto-ok";
+      const cc  = p.contrib<0?"dto-high":"";
+      return `<tr>
+        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.desc}</td>
+        <td style="font-size:11px;color:var(--text-dim)">${p.marca}</td>
+        <td class="num">${fN(Math.round(p.cantidad))}</td>
+        <td class="num">${p.kg?fN(Math.round(p.kg)):"—"}</td>
+        <td class="num">${fM(p.dto)}</td>
+        <td class="num ${cls}">${fP(p.pct)}</td>
+        <td class="num ${cc}">${fM(p.contrib)}</td>
+      </tr>`;
+    }).join("");
+
+    // ── Bloque 3: Comparativo vs clientes del mismo vendedor ──
+    const detVend  = filtrarDetalle().filter(r => r["Vendedor"]===vendedor && (r["Cod Cliente"]||"")!==cod);
+    const dataVend = DATA_COMPLETA.filter(r => r["Vendedor"]===vendedor && (r["Cod Cliente"]||"")!==cod &&
+      !(EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") &&
+      !(EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí")
+    );
+
+    // Promedio por cliente del vendedor
+    const clientesVend = {};
+    detVend.forEach(r => {
+      const k = r["Cod Cliente"]||"";
+      if (!clientesVend[k]) clientesVend[k] = { dto:0, total:0, contrib:0 };
+      clientesVend[k].dto    += parseFloat(r["Dto $"])||0;
+      clientesVend[k].contrib+= parseFloat(r["Contribución $"])||0;
+    });
+    dataVend.forEach(r => {
+      const k = r["Cod Cliente"]||"";
+      if (clientesVend[k]) clientesVend[k].total += parseFloat(r["Total Línea $"])||0;
+    });
+    const pctVendArr    = Object.values(clientesVend).map(v => (v.dto+v.total)>0?v.dto/(v.dto+v.total)*100:0);
+    const contribVendArr= Object.values(clientesVend).map(v => v.contrib);
+    const pctVendProm   = pctVendArr.length ? pctVendArr.reduce((s,v)=>s+v,0)/pctVendArr.length : 0;
+    const contribVendProm = contribVendArr.length ? contribVendArr.reduce((s,v)=>s+v,0)/contribVendArr.length : 0;
+
+    mkChart("c-cli-pct", {
+      type:"bar",
+      data:{ labels:["Este cliente", "Promedio vendedor"],
+        datasets:[{ data:[pct, Math.round(pctVendProm*10)/10],
+          backgroundColor:[pct>pctVendProm?"rgba(255,71,87,0.8)":"rgba(46,213,115,0.8)","rgba(139,148,176,0.4)"],
+          borderRadius:6 }]},
+      options:{...chartDefaults(),
+        plugins:{...chartDefaults().plugins,legend:{display:false}},
+        scales:{...chartDefaults().scales,
+          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>v+"%"}}}
+      }
+    });
+
+    mkChart("c-cli-contrib", {
+      type:"bar",
+      data:{ labels:["Este cliente", "Promedio vendedor"],
+        datasets:[{ data:[contrib, Math.round(contribVendProm)],
+          backgroundColor:[contrib>=contribVendProm?"rgba(46,213,115,0.8)":"rgba(255,71,87,0.8)","rgba(139,148,176,0.4)"],
+          borderRadius:6 }]},
+      options:{...chartDefaults(),
+        plugins:{...chartDefaults().plugins,legend:{display:false}},
+        scales:{...chartDefaults().scales,
+          y:{...chartDefaults().scales.y,ticks:{...chartDefaults().scales.y.ticks,callback:v=>fM(v)}}}
+      }
+    });
+
+  } catch(e) { console.error("renderCliente:", e); }
+  hideLoading("cliente");
 }
 
 // ============================================================

@@ -1720,12 +1720,29 @@ function renderCliente() {
   if (!clienteSeleccionado) return;
   showLoading("cliente");
   try {
-    const cod     = clienteSeleccionado.cod;
-    const det     = filtrarDetalle().filter(r => (r["Cod Cliente"]||"") === cod);
-    const dataCli = DATA_COMPLETA.filter(r => (r["Cod Cliente"]||"") === cod &&
-      !(EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") &&
-      !(EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí")
-    );
+    const cod = clienteSeleccionado.cod;
+
+    // Respetar los mismos filtros activos en la barra superior
+    const zona_fc  = getFilterVal("f-zona");
+    const vend_fc  = getFilterVal("f-vendedor");
+    const seg_fc   = getFilterVal("f-segmento");
+    const prov_fc  = getFilterVal("f-proveedor");
+    const marca_fc = getFilterVal("f-marca");
+    const grupo_fc = getFilterVal("f-grupo");
+    const prod_fc  = getFilterVal("f-producto");
+    const ecom_fc  = getFilterVal("f-ecommerce");
+
+    const det = filtrarDetalle().filter(r => (r["Cod Cliente"]||"") === cod);
+
+    // DATA_COMPLETA para el cliente — SIN filtros superiores (zona, vendedor, etc.)
+    // La pestaña Cliente es independiente de los filtros globales.
+    // Solo se aplican acuerdos y promociones.
+    const dataCli = DATA_COMPLETA.filter(r => {
+      if ((r["Cod Cliente"]||"") !== cod)                         return false;
+      if (EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") return false;
+      if (EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí") return false;
+      return true;
+    });
 
     if (!det.length && !dataCli.length) {
       document.getElementById("kpi-cliente").innerHTML =
@@ -1737,9 +1754,11 @@ function renderCliente() {
 
     // ── KPIs ──
     const dtoTotal  = det.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
-    const totalReal = dataCli.reduce((s,r) => s+(parseFloat(r["Total Línea $"])||0), 0);
+    // Venta Total = Total Línea $ + Dto $ (facturación bruta antes del descuento)
+    const totalReal = dataCli.reduce((s,r) =>
+      s+(parseFloat(r["Total Línea $"])||0)+(parseFloat(r["Dto $"])||0), 0);
     const contrib   = det.reduce((s,r) => s+(parseFloat(r["Contribución $"])||0), 0);
-    const pct       = (dtoTotal+totalReal)>0 ? Math.round(dtoTotal/(dtoTotal+totalReal)*1000)/10 : 0;
+    const pct       = totalReal>0 ? Math.round(dtoTotal/totalReal*1000)/10 : 0;
     const vendedor  = det[0]?.["Vendedor"] || dataCli[0]?.["Vendedor"] || "—";
 
     document.getElementById("kpi-cliente").innerHTML = `
@@ -1775,15 +1794,16 @@ function renderCliente() {
       prodMap[k].dto      += parseFloat(r["Dto $"])||0;
       prodMap[k].contrib  += parseFloat(r["Contribución $"])||0;
     });
-    // Total$ por producto desde DATA_COMPLETA
+    // Total$ bruto por producto = Total Línea $ + Dto $
     dataCli.forEach(r => {
       const k = (r["Descripción"]||"")+"|||"+(r["Marca"]||"");
-      if (prodMap[k]) prodMap[k].totalLinea += parseFloat(r["Total Línea $"])||0;
+      if (prodMap[k]) prodMap[k].totalLinea +=
+        (parseFloat(r["Total Línea $"])||0) + (parseFloat(r["Dto $"])||0);
     });
 
     let prods = Object.values(prodMap).map(p => ({
       ...p,
-      pct: (p.dto+p.totalLinea)>0 ? Math.round(p.dto/(p.dto+p.totalLinea)*1000)/10 : 0
+      pct: p.totalLinea>0 ? Math.round(p.dto/p.totalLinea*1000)/10 : 0
     }));
 
     const sk = cliProdSort.key, sd = cliProdSort.dir;
@@ -1808,28 +1828,32 @@ function renderCliente() {
     }).join("");
 
     // ── Bloque 3: Comparativo vs clientes del mismo vendedor ──
-    const detVend  = filtrarDetalle().filter(r => r["Vendedor"]===vendedor && (r["Cod Cliente"]||"")!==cod);
-    const dataVend = DATA_COMPLETA.filter(r => r["Vendedor"]===vendedor && (r["Cod Cliente"]||"")!==cod &&
+    // Sin filtros superiores — universo completo del vendedor
+    const detVend  = DETALLE_DATA.filter(r =>
+      r["Vendedor"]===vendedor && (r["Cod Cliente"]||"")!==cod &&
+      !(EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") &&
+      !(EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí")
+    );
+    const dataVend = DATA_COMPLETA.filter(r =>
+      r["Vendedor"]===vendedor && (r["Cod Cliente"]||"")!==cod &&
       !(EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") &&
       !(EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí")
     );
 
-    // Promedio por cliente del vendedor
-    const clientesVend = {};
+    // Promedio PONDERADO: dto_total / ventas_brutas_total del vendedor
+    const dtoVendTotal  = detVend.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
+    const totalVendBruto = dataVend.reduce((s,r)=>
+      s+(parseFloat(r["Total Línea $"])||0)+(parseFloat(r["Dto $"])||0),0);
+    const pctVendProm   = totalVendBruto>0 ? Math.round(dtoVendTotal/totalVendBruto*1000)/10 : 0;
+
+    // Contribución promedio por cliente del vendedor
+    const contribPorCli = {};
     detVend.forEach(r => {
       const k = r["Cod Cliente"]||"";
-      if (!clientesVend[k]) clientesVend[k] = { dto:0, total:0, contrib:0 };
-      clientesVend[k].dto    += parseFloat(r["Dto $"])||0;
-      clientesVend[k].contrib+= parseFloat(r["Contribución $"])||0;
+      contribPorCli[k] = (contribPorCli[k]||0) + (parseFloat(r["Contribución $"])||0);
     });
-    dataVend.forEach(r => {
-      const k = r["Cod Cliente"]||"";
-      if (clientesVend[k]) clientesVend[k].total += parseFloat(r["Total Línea $"])||0;
-    });
-    const pctVendArr    = Object.values(clientesVend).map(v => (v.dto+v.total)>0?v.dto/(v.dto+v.total)*100:0);
-    const contribVendArr= Object.values(clientesVend).map(v => v.contrib);
-    const pctVendProm   = pctVendArr.length ? pctVendArr.reduce((s,v)=>s+v,0)/pctVendArr.length : 0;
-    const contribVendProm = contribVendArr.length ? contribVendArr.reduce((s,v)=>s+v,0)/contribVendArr.length : 0;
+    const contribVals = Object.values(contribPorCli);
+    const contribVendProm = contribVals.length ? Math.round(contribVals.reduce((s,v)=>s+v,0)/contribVals.length) : 0;
 
     mkChart("c-cli-pct", {
       type:"bar",

@@ -1142,22 +1142,46 @@ function renderResumen() {
       </div>`;
     }).join("");
 
-    // Top 10 clientes — mayor % dto promedio (excluye bonificados >90%)
+    // Top 10 clientes — mayor % dto promedio (exc. bonificados)
+    // Dto$ desde DETALLE (líneas con dto, excluyendo bonificados >90%)
+    // Total$ desde DATA_COMPLETA (todas las ventas del cliente, mismo filtro)
     const detTop = filtrarDetalle();
-    const clienteMap = {};
+    const dtoMap = {};
     detTop.forEach(r => {
       const pctLinea = parseFloat(r["% Dto"]||0);
-      if (pctLinea > 90) return; // excluir bonificados del cálculo
+      if (pctLinea > 90) return;
       const cod = r["Cod Cliente"]||"";
       const nom = r["Cliente"]||"";
       const d   = parseFloat(r["Dto $"])||0;
-      const t   = parseFloat(r["Total Línea $"])||0;
-      if (!clienteMap[cod]) clienteMap[cod] = { nombre:nom, dto:0, total:0 };
-      clienteMap[cod].dto   += d;
-      clienteMap[cod].total += t;
+      if (!dtoMap[cod]) dtoMap[cod] = { nombre:nom, dto:0, total:0 };
+      dtoMap[cod].dto += d;
     });
-    const topCli = Object.values(clienteMap)
-      .filter(c => (c.dto+c.total) > 0)
+    // Total$ real desde DATA_COMPLETA con los mismos filtros activos
+    const zona_fc  = getFilterVal("f-zona");
+    const vend_fc  = getFilterVal("f-vendedor");
+    const seg_fc   = getFilterVal("f-segmento");
+    const prov_fc  = getFilterVal("f-proveedor");
+    const marca_fc = getFilterVal("f-marca");
+    const grupo_fc = getFilterVal("f-grupo");
+    const prod_fc  = getFilterVal("f-producto");
+    const ecom_fc  = getFilterVal("f-ecommerce");
+    DATA_COMPLETA.forEach(r => {
+      if (EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") return;
+      if (EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí") return;
+      if (zona_fc  && r["Zona"]           !== zona_fc)  return;
+      if (vend_fc  && r["Vendedor"]       !== vend_fc)  return;
+      if (seg_fc   && r["Segmento"]       !== seg_fc)   return;
+      if (prov_fc  && r["Proveedor"]      !== prov_fc)  return;
+      if (marca_fc && r["Marca"]          !== marca_fc) return;
+      if (grupo_fc && r["Grupo Artículo"] !== grupo_fc) return;
+      if (prod_fc  && r["Descripción"]    !== prod_fc)  return;
+      if (ecom_fc  && r["Ecommerce"]      !== ecom_fc)  return;
+      const cod = r["Cod Cliente"]||"";
+      if (!dtoMap[cod]) return; // solo clientes que tienen dto
+      dtoMap[cod].total += parseFloat(r["Total Línea $"])||0;
+    });
+    const topCli = Object.values(dtoMap)
+      .filter(c => c.total > 0)
       .map(c => ({
         nombre: c.nombre,
         pct: Math.round(c.dto/(c.dto+c.total)*1000)/10,
@@ -1683,7 +1707,7 @@ function renderVendedor() {
 
     mkChart("c-vend-dto",{
       type:"bar",
-      data:{labels:top10dto.map(v=>v.vendedor.split(" ").slice(0,2).join(" ")),
+      data:{labels:top10dto.map(v=>v.vendedor),
         datasets:[{label:"Dto $",data:top10dto.map(v=>v.dto_total),
           backgroundColor:top10dto.map((_,i)=>COLORES[i%COLORES.length]),borderRadius:4}]},
       options:{...chartDefaults(),indexAxis:"y",
@@ -1696,7 +1720,7 @@ function renderVendedor() {
     });
     mkChart("c-vend-pct",{
       type:"bar",
-      data:{labels:top10pct.map(v=>v.vendedor.split(" ").slice(0,2).join(" ")),
+      data:{labels:top10pct.map(v=>v.vendedor),
         datasets:[{label:"% Dto",data:top10pct.map(v=>Math.round(v.dto_pct*10)/10),
           backgroundColor:top10pct.map(v=>v.dto_pct>4?"rgba(255,71,87,0.8)":v.dto_pct>3?"rgba(255,209,102,0.8)":"rgba(46,213,115,0.7)"),
           borderRadius:4}]},
@@ -1785,7 +1809,7 @@ function renderDetalleTable() {
         <td class="num">${fM(toNum(r,"Dto $"))}</td>
         <td class="num">${toNum(r,"Peso KG")?fN(toNum(r,"Peso KG")):"—"}</td>
         <td class="num ${contrib<0?"dto-high":""}">${fM(contrib)}</td>
-        <td style="font-size:11px">${(r["Vendedor"]||"").split(" ").slice(0,2).join(" ")}</td>
+        <td style="font-size:11px">${(r["Vendedor"]||"")}</td>
       </tr>`;
     }
     if (data.length > 500) {

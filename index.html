@@ -1597,30 +1597,30 @@ function renderEvolucion() {
     const colorMesBar   = mesesDisp.map(m => m === mesVigenteEfectivo ? COLOR_VIGENTE : null); // null = por zona
 
     const getDtoMes = (zona, mes) => {
-      if (mes === mesVigenteEfectivo) {
-        return detFilt.filter(r => r["Zona"]===zona)
-          .reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
-      }
+      // HISTORICO_MENSUAL ya tiene el mes completo (Sem 49 + Sem 50)
+      // Solo usar detFilt si el mes aún no está en el histórico
       const row = mesZonaHist.find(r => r["Clave"]===mes && r["Zona"]===zona);
-      return row ? parseFloat(row["Dto $"])||0 : 0;
+      if (row) return parseFloat(row["Dto $"])||0;
+      return detFilt.filter(r => r["Zona"]===zona)
+        .reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
     };
 
     const getPctMes = (zona, mes) => {
-      let dto=0, total=0;
-      if (mes === mesVigenteEfectivo) {
-        const rows = detFilt.filter(r => r["Zona"]===zona);
-        dto = rows.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
-        // Buscar el Total$ real más reciente disponible para esta zona
-        // desde HISTORICO_RESUMEN (semana reciente) como denominador
-        const semsHR2 = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))];
-        const semMaxHR2 = semsHR2.sort((a,b)=>numSemFn(a)-numSemFn(b)).pop();
-        const hRow2 = HISTORICO_DATA.find(r => r["Semana"]===semMaxHR2 && r["Zona"]===zona);
-        total = hRow2 ? parseFloat(hRow2["Total $"])||0 : 0;
-        if (!total) total = rows.reduce((s,r) => s+(parseFloat(r["Total Línea $"])||0), 0);
-      } else {
-        const row = mesZonaHist.find(r => r["Clave"]===mes && r["Zona"]===zona);
-        if (row) { dto=parseFloat(row["Dto $"])||0; total=parseFloat(row["Total $"])||0; }
+      // HISTORICO_MENSUAL tiene Total$ real de todas las ventas del mes
+      const row = mesZonaHist.find(r => r["Clave"]===mes && r["Zona"]===zona);
+      if (row) {
+        const dto   = parseFloat(row["Dto $"])||0;
+        const total = parseFloat(row["Total $"])||0;
+        return (dto+total)>0 ? Math.round(dto/(dto+total)*1000)/10 : 0;
       }
+      // Fallback: mes aún no procesado en el histórico
+      const rows = detFilt.filter(r => r["Zona"]===zona);
+      const dto   = rows.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
+      const semsHR2 = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))];
+      const semMaxHR2 = semsHR2.sort((a,b)=>numSemFn(a)-numSemFn(b)).pop();
+      const hRow2 = HISTORICO_DATA.find(r => r["Semana"]===semMaxHR2 && r["Zona"]===zona);
+      const total = hRow2 ? parseFloat(hRow2["Total $"])||0
+        : rows.reduce((s,r) => s+(parseFloat(r["Total Línea $"])||0), 0);
       return (dto+total)>0 ? Math.round(dto/(dto+total)*1000)/10 : 0;
     };
 

@@ -4,37 +4,43 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Cotizador CEDISUR</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0e0f11;
-    --surface: #16181c;
-    --card: #1d2026;
-    --border: #2a2d35;
-    --accent: #00e5a0;
-    --accent2: #ff6b35;
-    --warn: #ffd23f;
-    --text: #e8eaf0;
-    --muted: #6b7280;
-    --positive: #00e5a0;
-    --negative: #ff6b35;
+    --bg: #F5F3EF;
+    --surface: #FFFFFF;
+    --border: #D8D4CC;
+    --text: #1A1814;
+    --text2: #6B6760;
+    --text3: #9E9B97;
+    --accent: #1d3a8f;
+    --accent-light: #E8EDFB;
+    --positive-bg: #E6F7ED;
+    --positive-border: #7DC99A;
+    --positive-text: #1F7A42;
+    --negative-bg: #FDEAEA;
+    --negative-border: #E89090;
+    --negative-text: #A02020;
+    --warn-bg: #FFF8E6;
+    --warn-border: #F5C99A;
+    --warn-text: #7A4A10;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
+    font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
-    font-family: 'DM Mono', monospace;
     min-height: 100vh;
     padding-bottom: 2rem;
   }
 
   /* HEADER */
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 1rem 1rem 0.75rem;
+  .header {
+    background: var(--accent);
+    padding: 1.25rem 1.25rem 1rem;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -47,97 +53,92 @@
     margin-bottom: 0.75rem;
   }
 
-  .logo {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
+  .app-name {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
   }
 
-  .logo span { color: var(--accent); }
-
-  .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-    display: inline-block;
-    margin-right: 6px;
-    transition: background 0.3s;
-  }
-  .status-dot.live { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-
-  .status-text {
-    font-size: 0.65rem;
-    color: var(--muted);
+  .status-badge {
     display: flex;
     align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.12);
+    padding: 3px 10px;
+    border-radius: 20px;
   }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .status-dot.live { background: #7DC99A; }
 
   /* SEARCH */
-  .search-wrap {
-    position: relative;
-    margin-bottom: 0.5rem;
+  .search-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.75rem;
   }
-
-  .search-wrap input {
-    width: 100%;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.85rem;
-    padding: 0.65rem 2.5rem 0.65rem 0.85rem;
+  .search-input-wrap svg { width: 14px; height: 14px; color: rgba(255,255,255,0.6); flex-shrink: 0; }
+  .search-input-wrap input {
+    flex: 1;
+    background: transparent;
+    border: none;
     outline: none;
-    transition: border-color 0.2s;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
   }
-  .search-wrap input:focus { border-color: var(--accent); }
-  .search-wrap input::placeholder { color: var(--muted); }
-
-  .search-icon {
-    position: absolute;
-    right: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--muted);
-    font-size: 0.9rem;
-    pointer-events: none;
-  }
+  .search-input-wrap input::placeholder { color: rgba(255,255,255,0.45); }
 
   /* TABS */
-  .tabs {
+  .days-strip {
     display: flex;
-    gap: 0.4rem;
+    gap: 6px;
     overflow-x: auto;
-    padding-bottom: 0.5rem;
     scrollbar-width: none;
   }
-  .tabs::-webkit-scrollbar { display: none; }
+  .days-strip::-webkit-scrollbar { display: none; }
 
-  .tab-btn {
-    background: transparent;
-    border: 1px solid var(--border);
+  .day-tab {
+    flex-shrink: 0;
+    padding: 5px 14px;
     border-radius: 20px;
-    color: var(--muted);
-    cursor: pointer;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    padding: 0.3rem 0.7rem;
-    white-space: nowrap;
-    transition: all 0.2s;
-  }
-  .tab-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #000;
+    font-size: 13px;
     font-weight: 500;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.6);
+    background: transparent;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .day-tab.active {
+    background: #fff;
+    color: var(--accent);
+    border-color: transparent;
+    font-weight: 600;
   }
 
   /* MAIN */
-  main { padding: 0.75rem 0.75rem 0; }
+  main { padding: 1rem 1.25rem 0; }
 
-  /* REFRESH BUTTON */
-  .refresh-bar {
+  /* TOP BAR */
+  .top-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -145,351 +146,58 @@
   }
 
   .count-text {
-    font-size: 0.7rem;
-    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text3);
   }
   .count-text strong { color: var(--accent); }
 
   .refresh-btn {
-    background: transparent;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    color: var(--muted);
+    color: var(--text2);
     cursor: pointer;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    padding: 0.3rem 0.6rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 10px;
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-    transition: all 0.2s;
+    gap: 5px;
+    box-shadow: var(--shadow);
+    transition: all 0.15s;
   }
-  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .refresh-btn:active { background: var(--bg); }
   .refresh-btn.spinning svg { animation: spin 1s linear infinite; }
-
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* PRODUCT CARDS */
-  .products-list { display: flex; flex-direction: column; gap: 0.5rem; }
-
-  .product-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .product-card.expanded { border-color: var(--accent); }
-
-  .card-header {
-    padding: 0.85rem 0.9rem;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-  }
-
-  .card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .product-name {
-    font-size: 0.82rem;
-    font-weight: 500;
-    line-height: 1.3;
-    flex: 1;
-  }
-
-  .expand-icon {
-    color: var(--muted);
-    font-size: 0.75rem;
-    flex-shrink: 0;
-    transition: transform 0.25s;
-  }
-  .expanded .expand-icon { transform: rotate(180deg); color: var(--accent); }
-
-  .price-chips {
-    display: flex;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-  }
-
-  .chip {
-    border-radius: 6px;
-    font-size: 0.68rem;
-    padding: 0.2rem 0.5rem;
-  }
-
-  .chip-price {
-    background: rgba(0,229,160,0.1);
-    border: 1px solid rgba(0,229,160,0.25);
-    color: var(--accent);
-  }
-  .chip-price-iva {
-    background: rgba(0,229,160,0.05);
-    border: 1px solid rgba(0,229,160,0.15);
-    color: rgba(0,229,160,0.7);
-  }
-  .chip-contrib {
-    background: rgba(255,210,63,0.1);
-    border: 1px solid rgba(255,210,63,0.25);
-    color: var(--warn);
-  }
-
-  /* EXPANDED BODY */
-  .card-body {
-    display: none;
-    padding: 0 0.9rem 0.9rem;
-    border-top: 1px solid var(--border);
-    padding-top: 0.75rem;
-  }
-  .expanded .card-body { display: block; }
-
-  .section-label {
-    font-size: 0.62rem;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-    margin-top: 0.75rem;
-  }
-  .section-label:first-child { margin-top: 0; }
-
-  /* DATA GRID */
-  .data-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.4rem;
-  }
-
-  .data-cell {
-    background: var(--surface);
-    border-radius: 8px;
-    padding: 0.5rem 0.6rem;
-  }
-
-  .data-cell .label {
-    font-size: 0.6rem;
-    color: var(--muted);
-    margin-bottom: 0.2rem;
-  }
-
-  .data-cell .value {
-    font-size: 0.82rem;
-    font-weight: 500;
-  }
-
-  .value.positive { color: var(--positive); }
-  .value.negative { color: var(--negative); }
-  .value.neutral { color: var(--warn); }
-
-  /* INPUT FIELDS */
-  .inputs-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .input-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--surface);
-    border-radius: 8px;
-    padding: 0.4rem 0.6rem;
-  }
-
-  .input-row label {
-    font-size: 0.65rem;
-    color: var(--muted);
-    flex: 1;
-  }
-
-  .input-row input {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    padding: 0.3rem 0.5rem;
-    text-align: right;
-    width: 110px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .input-row input:focus { border-color: var(--accent); }
-
-  .input-unit {
-    font-size: 0.65rem;
-    color: var(--muted);
-    width: 20px;
-  }
-
-  /* RESULTS SECTION */
-  .results-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.4rem;
-  }
-
-  .result-card {
-    background: var(--surface);
-    border-radius: 8px;
-    padding: 0.55rem 0.6rem;
-    border: 1px solid transparent;
-  }
-
-  .result-card.highlight {
-    border-color: rgba(0,229,160,0.3);
-    background: rgba(0,229,160,0.05);
-  }
-
-  .result-card.warn-card {
-    border-color: rgba(255,107,53,0.3);
-    background: rgba(255,107,53,0.05);
-  }
-
-  .result-card .label {
-    font-size: 0.6rem;
-    color: var(--muted);
-    margin-bottom: 0.2rem;
-  }
-
-  .result-card .value {
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-
-  /* DIFF BADGE */
-  .diff-badge {
-    display: inline-block;
-    border-radius: 5px;
-    font-size: 0.65rem;
-    padding: 0.1rem 0.4rem;
-    margin-top: 0.2rem;
-  }
-  .diff-positive { background: rgba(0,229,160,0.15); color: var(--positive); }
-  .diff-negative { background: rgba(255,107,53,0.15); color: var(--negative); }
-
-  /* LOADING / ERROR */
-  .loading-screen, .error-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 50vh;
-    gap: 1rem;
-    text-align: center;
-    padding: 2rem;
-  }
-
-  .loading-dots {
-    display: flex;
-    gap: 0.4rem;
-  }
-
-  .loading-dots span {
-    width: 8px; height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: bounce 1.2s infinite;
-  }
-  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes bounce {
-    0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
-    40% { transform: scale(1.2); opacity: 1; }
-  }
-
-  .loading-text {
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-
-  .error-icon { font-size: 2rem; }
-  .error-msg { font-size: 0.8rem; color: var(--muted); max-width: 280px; }
-  .retry-btn {
-    background: var(--accent);
-    border: none;
-    border-radius: 8px;
-    color: #000;
-    cursor: pointer;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    font-weight: 500;
-    padding: 0.5rem 1.2rem;
-  }
-
-  /* CONFIG PANEL */
-  .config-banner {
-    background: rgba(255,210,63,0.08);
-    border: 1px solid rgba(255,210,63,0.2);
-    border-radius: 10px;
-    padding: 0.75rem 0.9rem;
-    margin-bottom: 0.75rem;
-    font-size: 0.72rem;
-    color: var(--warn);
-    line-height: 1.5;
-  }
-
-  .config-banner a {
-    color: var(--accent);
-    text-decoration: none;
-  }
-
-  .url-input-row {
-    display: flex;
-    gap: 0.4rem;
-    margin-top: 0.5rem;
-  }
-
-  .url-input-row input {
-    flex: 1;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    padding: 0.4rem 0.6rem;
-    outline: none;
-  }
-
-  .url-input-row button {
-    background: var(--accent);
-    border: none;
-    border-radius: 8px;
-    color: #000;
-    cursor: pointer;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    font-weight: 500;
-    padding: 0.4rem 0.7rem;
-    white-space: nowrap;
-  }
-
+  /* IVA TOGGLE */
   .iva-selector {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     background: var(--surface);
-    border-radius: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
     padding: 0.5rem 0.75rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    box-shadow: var(--shadow);
   }
-  .iva-selector label { font-size: 0.7rem; color: var(--muted); flex: 1; }
+  .iva-selector .iva-label {
+    font-size: 13px;
+    color: var(--text2);
+    font-weight: 500;
+    flex: 1;
+  }
   .toggle {
     position: relative;
     width: 40px;
     height: 22px;
     cursor: pointer;
+    flex-shrink: 0;
   }
   .toggle input { display: none; }
   .toggle-track {
@@ -506,60 +214,290 @@
     background: #fff;
     border-radius: 50%;
     transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   }
   .toggle input:checked ~ .toggle-thumb { left: 21px; }
+
+  /* PRODUCT CARDS */
+  .products-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .product-card.expanded { border-color: var(--accent); }
+
+  .card-header {
+    padding: 0.875rem 0.875rem 0.875rem 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .card-info { flex: 1; min-width: 0; }
+
+  .product-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.35;
+    margin-bottom: 4px;
+  }
+
+  .group-badge {
+    display: inline-block;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text3);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 1px 8px;
+    margin-bottom: 5px;
+  }
+
+  .price-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+
+  .chip {
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border: 1px solid transparent;
+  }
+  .chip-price {
+    background: var(--accent-light);
+    border-color: #c5d0f0;
+    color: var(--accent);
+  }
+  .chip-contrib {
+    background: var(--warn-bg);
+    border-color: var(--warn-border);
+    color: var(--warn-text);
+  }
+
+  .expand-icon {
+    color: var(--text3);
+    font-size: 11px;
+    flex-shrink: 0;
+    margin-top: 4px;
+    transition: transform 0.25s;
+  }
+  .expanded .expand-icon { transform: rotate(180deg); color: var(--accent); }
+
+  /* CARD BODY */
+  .card-body {
+    display: none;
+    padding: 0 1rem 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .expanded .card-body { display: block; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin: 0.75rem 0 0.4rem;
+  }
+
+  /* DATA GRID */
+  .data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .data-cell {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.45rem 0.6rem;
+  }
+  .data-cell .label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 2px;
+  }
+  .data-cell .value {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .data-cell .value.positive { color: var(--positive-text); }
+  .data-cell .value.neutral  { color: var(--warn-text); }
+
+  /* INPUT ROWS */
+  .inputs-section { display: flex; flex-direction: column; gap: 6px; }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+  }
+  .input-row label {
+    font-size: 13px;
+    color: var(--text2);
+    font-weight: 500;
+    flex: 1;
+  }
+  .input-row input {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0.3rem 0.5rem;
+    text-align: right;
+    width: 100px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-row input:focus { border-color: var(--accent); }
+  .input-unit {
+    font-size: 12px;
+    color: var(--text3);
+    font-weight: 600;
+    width: 16px;
+    text-align: center;
+  }
+
+  /* RESULTS GRID */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .result-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.6rem;
+  }
+  .result-card.highlight {
+    background: var(--positive-bg);
+    border-color: var(--positive-border);
+  }
+  .result-card.warn-card {
+    background: var(--negative-bg);
+    border-color: var(--negative-border);
+  }
+  .result-card .label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 2px;
+  }
+  .result-card.highlight .label { color: #2D8A52; }
+  .result-card.warn-card .label  { color: #A02020; }
+  .result-card .value {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .result-card.highlight .value { color: var(--positive-text); }
+  .result-card.warn-card .value  { color: var(--negative-text); }
+  .value.positive { color: var(--positive-text); }
+  .value.negative { color: var(--negative-text); }
+  .value.neutral  { color: var(--warn-text); }
+
+  /* LOADING / ERROR */
+  .loading-screen, .error-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 45vh;
+    gap: 1rem;
+    text-align: center;
+    padding: 2rem;
+  }
+  .loading-dots { display: flex; gap: 6px; }
+  .loading-dots span {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: bounce 1.2s infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.3; }
+    40% { transform: scale(1.2); opacity: 1; }
+  }
+  .loading-text { font-size: 14px; color: var(--text3); }
+  .error-icon { font-size: 2rem; }
+  .error-msg { font-size: 13px; color: var(--text2); max-width: 280px; line-height: 1.5; }
+  .retry-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 0.6rem 1.4rem;
+  }
 
   .no-results {
     text-align: center;
     padding: 3rem 1rem;
-    color: var(--muted);
-    font-size: 0.8rem;
+    color: var(--text3);
   }
   .no-results .icon { font-size: 2rem; margin-bottom: 0.5rem; }
-
-  /* GROUP BADGE */
-  .group-badge {
-    background: rgba(107,114,128,0.15);
-    border-radius: 5px;
-    color: var(--muted);
-    font-size: 0.6rem;
-    padding: 0.1rem 0.4rem;
-    display: inline-block;
-  }
+  .no-results p { font-size: 14px; }
 </style>
 </head>
 <body>
 
-<header>
+<div class="header">
   <div class="header-top">
-    <div class="logo">CEDI<span>SUR</span></div>
-    <div class="status-text">
+    <span class="app-name">Cotizador CEDISUR</span>
+    <div class="status-badge">
       <span class="status-dot" id="statusDot"></span>
       <span id="statusText">Cargando...</span>
     </div>
   </div>
-  <div class="search-wrap">
+
+  <div class="search-input-wrap">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/>
+    </svg>
     <input type="text" id="searchInput" placeholder="Buscar producto..." autocomplete="off" autocorrect="off" spellcheck="false">
-    <span class="search-icon">🔍</span>
   </div>
-  <div class="tabs" id="groupTabs">
-    <button class="tab-btn active" data-group="todos">Todos</button>
+
+  <div class="days-strip" id="groupTabs">
+    <button class="day-tab active" data-group="todos">Todos</button>
   </div>
-</header>
+</div>
 
 <main>
-  <!-- Config banner mostrado si no hay URL configurada -->
-  <div class="config-banner" id="configBanner" style="display:none">
-    ⚙️ <strong>Configuración inicial:</strong> Publicá tu Google Sheet como CSV y pegá la URL acá.<br>
-    <small>Archivo → Compartir → Publicar en la web → CSV → Hoja "Lista_Precios"</small>
-    <div class="url-input-row">
-      <input type="url" id="csvUrlInput" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
-      <button onclick="saveUrl()">Guardar</button>
-    </div>
-  </div>
-
   <div class="iva-selector">
-    <label>Mostrar precios con IVA</label>
+    <span class="iva-label">Mostrar precios con IVA</span>
     <label class="toggle">
       <input type="checkbox" id="ivaToggle" checked>
       <div class="toggle-track"></div>
@@ -567,10 +505,10 @@
     </label>
   </div>
 
-  <div class="refresh-bar">
+  <div class="top-bar">
     <span class="count-text" id="countText">—</span>
     <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
         <path d="M23 4v6h-6M1 20v-6h6"/>
         <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
       </svg>
@@ -579,9 +517,7 @@
   </div>
 
   <div id="loadingScreen" class="loading-screen">
-    <div class="loading-dots">
-      <span></span><span></span><span></span>
-    </div>
+    <div class="loading-dots"><span></span><span></span><span></span></div>
     <div class="loading-text">Cargando precios...</div>
   </div>
 
@@ -594,85 +530,52 @@
   <div id="productsList" class="products-list" style="display:none"></div>
   <div id="noResults" class="no-results" style="display:none">
     <div class="icon">🔍</div>
-    Sin resultados para tu búsqueda.
+    <p>Sin resultados para tu búsqueda.</p>
   </div>
 </main>
 
 <script>
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
-// Reemplazá esta URL con tu Google Sheet publicado como CSV (hoja Lista_Precios)
 const DEFAULT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQGFSioOghyJPoBKByRXq-QdUgJWeSZ_sLyZcGBLGg202C6VLE1XAKhg4qZ9WekD8TldPxpTjtB2LEP/pub?gid=0&single=true&output=csv';
-
 const IVA_RATE = 0.21;
 const STORAGE_KEY = 'cedisur_csv_url';
 
-// ─── STATE ────────────────────────────────────────────────────────────────────
 let allProducts = [];
 let activeGroup = 'todos';
 let searchQuery = '';
 let showIva = true;
 
-// ─── URL MANAGEMENT ───────────────────────────────────────────────────────────
 function getCsvUrl() {
   return localStorage.getItem(STORAGE_KEY) || DEFAULT_CSV_URL;
 }
 
-function saveUrl() {
-  const url = document.getElementById('csvUrlInput').value.trim();
-  if (url) {
-    localStorage.setItem(STORAGE_KEY, url);
-    document.getElementById('configBanner').style.display = 'none';
-    loadData();
-  }
-}
-
-// ─── LOAD DATA FROM GOOGLE SHEETS CSV ─────────────────────────────────────────
 async function loadData() {
   const url = getCsvUrl();
-
-  if (!url) {
-    document.getElementById('configBanner').style.display = 'block';
-    document.getElementById('loadingScreen').style.display = 'none';
-    showError('Configurá la URL del CSV para continuar.');
-    return;
-  }
-
   setLoading(true);
   setStatus(false, 'Actualizando...');
-
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('spinning');
 
   try {
-    // Usamos un proxy CORS si es necesario; Google Sheets en modo público no lo necesita
     const response = await fetch(url, { cache: 'no-cache' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
     const text = await response.text();
     allProducts = parseCSV(text);
-
     if (allProducts.length === 0) throw new Error('CSV vacío o formato incorrecto');
-
     buildGroupTabs();
     renderProducts();
     setStatus(true, `Actualizado ${formatTime(new Date())}`);
     setLoading(false);
   } catch (err) {
-    console.error(err);
-    showError(`Error: ${err.message}. Verificá que el Sheet esté publicado correctamente.`);
+    showError(`Error: ${err.message}. Verificá que el Sheet esté publicado.`);
     setStatus(false, 'Error al cargar');
   }
 
   btn.classList.remove('spinning');
 }
 
-// ─── CSV PARSER ───────────────────────────────────────────────────────────────
 function parseCSV(text) {
   const lines = text.trim().split('\n');
   if (lines.length < 2) return [];
-
-  // Skip header row (row 0 is "Última actualización...", row 1 is the real header)
-  // Detect header: buscar la fila que tenga "Nombre" o "Artículo"
   let dataStart = 0;
   for (let i = 0; i < Math.min(5, lines.length); i++) {
     const row = lines[i].toLowerCase();
@@ -681,70 +584,54 @@ function parseCSV(text) {
       break;
     }
   }
-
   const products = [];
   for (let i = dataStart; i < lines.length; i++) {
     const cols = parseCSVLine(lines[i]);
     if (cols.length < 3) continue;
-
     const nombre = (cols[0] || '').trim();
-    const grupo = (cols[1] || '').trim();
-    const costo = parseFloat((cols[2] || '').replace(',', '.')) || 0;
+    const grupo  = (cols[1] || '').trim();
+    const costo  = parseFloat((cols[2] || '').replace(',', '.')) || 0;
     const precio = parseFloat((cols[3] || '').replace(',', '.')) || 0;
     const contrib = parseFloat((cols[4] || '').replace(',', '.')) || 0;
-
     if (!nombre || precio === 0) continue;
-
     products.push({ nombre, grupo, costo, precio, contrib });
   }
-
   return products;
 }
 
 function parseCSVLine(line) {
   const result = [];
-  let current = '';
-  let inQuotes = false;
-
+  let current = '', inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
-    if (ch === '"') {
-      inQuotes = !inQuotes;
-    } else if (ch === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += ch;
-    }
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+    else { current += ch; }
   }
   result.push(current);
   return result;
 }
 
-// ─── GROUP TABS ───────────────────────────────────────────────────────────────
 function buildGroupTabs() {
   const groups = ['todos', ...new Set(allProducts.map(p => p.grupo).filter(Boolean))].sort((a, b) => {
     if (a === 'todos') return -1;
     if (b === 'todos') return 1;
     return a.localeCompare(b);
   });
-
   const tabs = document.getElementById('groupTabs');
   tabs.innerHTML = groups.map(g =>
-    `<button class="tab-btn${g === activeGroup ? ' active' : ''}" data-group="${g}" onclick="selectGroup('${g}')">${g === 'todos' ? 'Todos' : g}</button>`
+    `<button class="day-tab${g === activeGroup ? ' active' : ''}" data-group="${g}" onclick="selectGroup('${g}')">${g === 'todos' ? 'Todos' : g}</button>`
   ).join('');
 }
 
 function selectGroup(group) {
   activeGroup = group;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.group === group));
+  document.querySelectorAll('.day-tab').forEach(b => b.classList.toggle('active', b.dataset.group === group));
   renderProducts();
 }
 
-// ─── RENDER ───────────────────────────────────────────────────────────────────
 function renderProducts() {
   const query = searchQuery.toLowerCase().trim();
-
   const filtered = allProducts.filter(p => {
     const matchGroup = activeGroup === 'todos' || p.grupo === activeGroup;
     const matchSearch = !query || p.nombre.toLowerCase().includes(query) || p.grupo.toLowerCase().includes(query);
@@ -753,15 +640,13 @@ function renderProducts() {
 
   const list = document.getElementById('productsList');
   const noResults = document.getElementById('noResults');
-
-  document.getElementById('countText').innerHTML = `<strong>${filtered.length}</strong> productos`;
+  document.getElementById('countText').innerHTML = `<strong>${filtered.length}</strong> producto${filtered.length !== 1 ? 's' : ''}`;
 
   if (filtered.length === 0) {
     list.style.display = 'none';
     noResults.style.display = 'block';
     return;
   }
-
   noResults.style.display = 'none';
   list.style.display = 'flex';
   list.innerHTML = filtered.map((p, i) => buildCard(p, i)).join('');
@@ -771,24 +656,21 @@ function buildCard(p, idx) {
   const precioSinIva = p.precio;
   const precioConIva = p.precio * (1 + IVA_RATE);
   const margen = p.costo > 0 ? ((p.precio - p.costo) / p.precio * 100) : 0;
-
   const precioMostrar = showIva ? precioConIva : precioSinIva;
   const labelIva = showIva ? 'c/IVA' : 's/IVA';
 
   return `
   <div class="product-card" id="card-${idx}">
     <div class="card-header" onclick="toggleCard(${idx})">
-      <div class="card-top">
-        <div>
-          <div class="product-name">${p.nombre}</div>
-          ${p.grupo ? `<span class="group-badge">${p.grupo}</span>` : ''}
+      <div class="card-info">
+        <div class="product-name">${p.nombre}</div>
+        ${p.grupo ? `<div class="group-badge">${p.grupo}</div>` : ''}
+        <div class="price-chips">
+          <span class="chip chip-price">$${fmt(precioMostrar)}/kg ${labelIva}</span>
+          <span class="chip chip-contrib">Margen ${margen.toFixed(1)}%</span>
         </div>
-        <span class="expand-icon">▼</span>
       </div>
-      <div class="price-chips">
-        <span class="chip chip-price">$${fmt(precioMostrar)}/kg ${labelIva}</span>
-        <span class="chip chip-contrib">Margen ${margen.toFixed(1)}%</span>
-      </div>
+      <span class="expand-icon">▼</span>
     </div>
     <div class="card-body" id="body-${idx}">
       <div class="section-label">Precios base</div>
@@ -816,30 +698,30 @@ function buildCard(p, idx) {
         <div class="input-row">
           <label>Precio competencia</label>
           <input type="number" inputmode="decimal" placeholder="0" id="comp-${idx}"
-            oninput="calcCard(${idx}, ${p.precio}, ${p.costo})" value="">
+            oninput="calcCard(${idx}, ${p.precio}, ${p.costo})">
           <span class="input-unit">$</span>
         </div>
         <div class="input-row">
           <label>Descuento</label>
           <input type="number" inputmode="decimal" placeholder="0" id="desc-${idx}" min="0" max="100"
-            oninput="calcCard(${idx}, ${p.precio}, ${p.costo})" value="">
+            oninput="calcCard(${idx}, ${p.precio}, ${p.costo})">
           <span class="input-unit">%</span>
         </div>
       </div>
 
       <div class="section-label">Resultado</div>
-      <div class="results-grid" id="results-${idx}">
+      <div class="results-grid">
         <div class="result-card">
           <div class="label">P. c/desc s/IVA</div>
           <div class="value" id="res-siva-${idx}">—</div>
         </div>
-        <div class="result-card highlight">
+        <div class="result-card">
           <div class="label">P. c/desc c/IVA</div>
-          <div class="value positive" id="res-civa-${idx}">—</div>
+          <div class="value" id="res-civa-${idx}">—</div>
         </div>
         <div class="result-card">
           <div class="label">Contrib. c/desc</div>
-          <div class="value neutral" id="res-contrib-${idx}">—</div>
+          <div class="value" id="res-contrib-${idx}">—</div>
         </div>
         <div class="result-card" id="res-diff-card-${idx}">
           <div class="label">vs Competencia</div>
@@ -851,21 +733,17 @@ function buildCard(p, idx) {
 }
 
 function toggleCard(idx) {
-  const card = document.getElementById(`card-${idx}`);
-  card.classList.toggle('expanded');
+  document.getElementById(`card-${idx}`).classList.toggle('expanded');
 }
 
 function calcCard(idx, precio, costo) {
-  const compInput = document.getElementById(`comp-${idx}`);
-  const descInput = document.getElementById(`desc-${idx}`);
+  const comp    = parseFloat(document.getElementById(`comp-${idx}`).value) || 0;
+  const descPct = parseFloat(document.getElementById(`desc-${idx}`).value) || 0;
 
-  const comp = parseFloat(compInput.value) || 0;
-  const descPct = parseFloat(descInput.value) || 0;
-
-  const descFactor = 1 - (descPct / 100);
+  const descFactor       = 1 - (descPct / 100);
   const precioDescSinIva = precio * descFactor;
   const precioDescConIva = precioDescSinIva * (1 + IVA_RATE);
-  const contribDesc = precioDescSinIva - costo;
+  const contribDesc      = precioDescSinIva - costo;
 
   document.getElementById(`res-siva-${idx}`).textContent = `$${fmt(precioDescSinIva)}`;
   document.getElementById(`res-civa-${idx}`).textContent = `$${fmt(precioDescConIva)}`;
@@ -874,13 +752,12 @@ function calcCard(idx, precio, costo) {
   contribEl.textContent = `$${fmt(contribDesc)}`;
   contribEl.className = `value ${contribDesc >= 0 ? 'positive' : 'negative'}`;
 
-  const diffEl = document.getElementById(`res-diff-${idx}`);
+  const diffEl   = document.getElementById(`res-diff-${idx}`);
   const diffCard = document.getElementById(`res-diff-card-${idx}`);
   if (comp > 0) {
     const diff = ((precioDescConIva - comp) / comp) * 100;
-    const sign = diff >= 0 ? '+' : '';
-    diffEl.innerHTML = `${sign}${diff.toFixed(1)}%`;
-    diffEl.className = `value ${diff <= 0 ? 'positive' : 'negative'}`;
+    diffEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
+    diffEl.className = 'value';
     diffCard.className = `result-card ${diff <= 0 ? 'highlight' : 'warn-card'}`;
   } else {
     diffEl.textContent = '—';
@@ -889,7 +766,6 @@ function calcCard(idx, precio, costo) {
   }
 }
 
-// ─── UTILS ────────────────────────────────────────────────────────────────────
 function fmt(n) {
   if (!n && n !== 0) return '—';
   return Math.round(n).toLocaleString('es-AR');
@@ -913,11 +789,10 @@ function showError(msg) {
 }
 
 function setStatus(ok, text) {
-  document.getElementById('statusDot').className = `status-dot ${ok ? 'live' : ''}`;
+  document.getElementById('statusDot').className = `status-dot${ok ? ' live' : ''}`;
   document.getElementById('statusText').textContent = text;
 }
 
-// ─── EVENTS ───────────────────────────────────────────────────────────────────
 document.getElementById('searchInput').addEventListener('input', e => {
   searchQuery = e.target.value;
   renderProducts();
@@ -928,17 +803,7 @@ document.getElementById('ivaToggle').addEventListener('change', e => {
   renderProducts();
 });
 
-// ─── INIT ─────────────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
-  const url = getCsvUrl();
-  if (!url) {
-    document.getElementById('configBanner').style.display = 'block';
-    document.getElementById('loadingScreen').style.display = 'none';
-    setStatus(false, 'Sin configurar');
-  } else {
-    loadData();
-  }
-});
+loadData();
 </script>
 </body>
 </html>

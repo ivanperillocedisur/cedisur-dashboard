@@ -1497,10 +1497,13 @@ function renderEvolucion() {
       semsData.push({
         "Tipo":"SEMANA","Clave":semVig,"Mes":mesV,
         "Dto $":dtoVig,"Total $":totalVigReal,
-        "_vigente": true
       });
     }
     semsData.sort((a,b) => numSem(a["Clave"]) - numSem(b["Clave"]));
+
+    // La semana vigente es siempre la última (mayor número), esté o no en el histórico
+    semsData.forEach(r => delete r["_vigente"]);
+    if (semsData.length > 0) semsData[semsData.length - 1]["_vigente"] = true;
 
     // Colores por mes — el mes vigente siempre en color diferente al resto
     const mesesHistoricos = [...new Set(semsHist.map(r => r["Mes"]||"").filter(Boolean))].sort();
@@ -1586,13 +1589,15 @@ function renderEvolucion() {
     const mesVigente = pp.length===3 ? pp[2]+"-"+pp[1].padStart(2,"0") : "";
     if (mesVigente && !mesesDisp.includes(mesVigente)) mesesDisp.push(mesVigente);
     mesesDisp = mesesDisp.sort().slice(-6);
+    // El mes vigente es siempre el último (más reciente), esté o no en el histórico
+    const mesVigenteEfectivo = mesesDisp[mesesDisp.length - 1] || mesVigente;
 
     // Etiquetas de meses: los 5 históricos en sus colores + vigente en blanco
-    const mesesHistDisp = mesesDisp.filter(m => m !== mesVigente);
-    const colorMesBar   = mesesDisp.map(m => m === mesVigente ? COLOR_VIGENTE : null); // null = por zona
+    const mesesHistDisp = mesesDisp.filter(m => m !== mesVigenteEfectivo);
+    const colorMesBar   = mesesDisp.map(m => m === mesVigenteEfectivo ? COLOR_VIGENTE : null); // null = por zona
 
     const getDtoMes = (zona, mes) => {
-      if (mes === mesVigente) {
+      if (mes === mesVigenteEfectivo) {
         return detFilt.filter(r => r["Zona"]===zona)
           .reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
       }
@@ -1602,7 +1607,7 @@ function renderEvolucion() {
 
     const getPctMes = (zona, mes) => {
       let dto=0, total=0;
-      if (mes === mesVigente) {
+      if (mes === mesVigenteEfectivo) {
         const rows = detFilt.filter(r => r["Zona"]===zona);
         dto = rows.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
         // Buscar el Total$ real más reciente disponible para esta zona
@@ -1649,7 +1654,7 @@ function renderEvolucion() {
         borderColor: COLORES_ZONA[i%COLORES_ZONA.length],
         backgroundColor: COLORES_ZONA[i%COLORES_ZONA.length]+"33",
         pointBackgroundColor: mesesDisp.map(mes =>
-          mes === mesVigente ? COLOR_VIGENTE : COLORES_ZONA[i%COLORES_ZONA.length]
+          mes === mesVigenteEfectivo ? COLOR_VIGENTE : COLORES_ZONA[i%COLORES_ZONA.length]
         ),
         pointRadius:6, pointHoverRadius:8, borderWidth:2.5, tension:0.4, fill:false
       }))},

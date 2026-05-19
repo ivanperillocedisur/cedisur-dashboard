@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Cotizador CEDISUR</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --card: #1d2026;
+    --border: #2a2d35;
+    --accent: #00e5a0;
+    --accent2: #ff6b35;
+    --warn: #ffd23f;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --positive: #00e5a0;
+    --negative: #ff6b35;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding-bottom: 2rem;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1rem 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    display: inline-block;
+    margin-right: 6px;
+    transition: background 0.3s;
+  }
+  .status-dot.live { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+  .status-text {
+    font-size: 0.65rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+  }
+
+  /* SEARCH */
+  .search-wrap {
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    padding: 0.65rem 2.5rem 0.65rem 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--muted); }
+
+  .search-icon {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 0.9rem;
+    pointer-events: none;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.7rem;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    font-weight: 500;
+  }
+
+  /* MAIN */
+  main { padding: 0.75rem 0.75rem 0; }
+
+  /* REFRESH BUTTON */
+  .refresh-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .count-text {
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .count-text strong { color: var(--accent); }
+
+  .refresh-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: all 0.2s;
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .refresh-btn.spinning svg { animation: spin 1s linear infinite; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* PRODUCT CARDS */
+  .products-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .product-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .product-card.expanded { border-color: var(--accent); }
+
+  .card-header {
+    padding: 0.85rem 0.9rem;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .product-name {
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.3;
+    flex: 1;
+  }
+
+  .expand-icon {
+    color: var(--muted);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    transition: transform 0.25s;
+  }
+  .expanded .expand-icon { transform: rotate(180deg); color: var(--accent); }
+
+  .price-chips {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    border-radius: 6px;
+    font-size: 0.68rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .chip-price {
+    background: rgba(0,229,160,0.1);
+    border: 1px solid rgba(0,229,160,0.25);
+    color: var(--accent);
+  }
+  .chip-price-iva {
+    background: rgba(0,229,160,0.05);
+    border: 1px solid rgba(0,229,160,0.15);
+    color: rgba(0,229,160,0.7);
+  }
+  .chip-contrib {
+    background: rgba(255,210,63,0.1);
+    border: 1px solid rgba(255,210,63,0.25);
+    color: var(--warn);
+  }
+
+  /* EXPANDED BODY */
+  .card-body {
+    display: none;
+    padding: 0 0.9rem 0.9rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.75rem;
+  }
+  .expanded .card-body { display: block; }
+
+  .section-label {
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    margin-top: 0.75rem;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* DATA GRID */
+  .data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+
+  .data-cell {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .data-cell .label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+
+  .data-cell .value {
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+
+  .value.positive { color: var(--positive); }
+  .value.negative { color: var(--negative); }
+  .value.neutral { color: var(--warn); }
+
+  /* INPUT FIELDS */
+  .inputs-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .input-row label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    flex: 1;
+  }
+
+  .input-row input {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.5rem;
+    text-align: right;
+    width: 110px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-row input:focus { border-color: var(--accent); }
+
+  .input-unit {
+    font-size: 0.65rem;
+    color: var(--muted);
+    width: 20px;
+  }
+
+  /* RESULTS SECTION */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+
+  .result-card {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid transparent;
+  }
+
+  .result-card.highlight {
+    border-color: rgba(0,229,160,0.3);
+    background: rgba(0,229,160,0.05);
+  }
+
+  .result-card.warn-card {
+    border-color: rgba(255,107,53,0.3);
+    background: rgba(255,107,53,0.05);
+  }
+
+  .result-card .label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+
+  .result-card .value {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  /* DIFF BADGE */
+  .diff-badge {
+    display: inline-block;
+    border-radius: 5px;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    margin-top: 0.2rem;
+  }
+  .diff-positive { background: rgba(0,229,160,0.15); color: var(--positive); }
+  .diff-negative { background: rgba(255,107,53,0.15); color: var(--negative); }
+
+  /* LOADING / ERROR */
+  .loading-screen, .error-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    gap: 1rem;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .loading-dots {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .loading-dots span {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+    40% { transform: scale(1.2); opacity: 1; }
+  }
+
+  .loading-text {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .error-icon { font-size: 2rem; }
+  .error-msg { font-size: 0.8rem; color: var(--muted); max-width: 280px; }
+  .retry-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.5rem 1.2rem;
+  }
+
+  /* CONFIG PANEL */
+  .config-banner {
+    background: rgba(255,210,63,0.08);
+    border: 1px solid rgba(255,210,63,0.2);
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.72rem;
+    color: var(--warn);
+    line-height: 1.5;
+  }
+
+  .config-banner a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .url-input-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+
+  .url-input-row input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.4rem 0.6rem;
+    outline: none;
+  }
+
+  .url-input-row button {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 0.4rem 0.7rem;
+    white-space: nowrap;
+  }
+
+  .iva-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .iva-selector label { font-size: 0.7rem; color: var(--muted); flex: 1; }
+  .toggle {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    cursor: pointer;
+  }
+  .toggle input { display: none; }
+  .toggle-track {
+    width: 100%; height: 100%;
+    background: var(--border);
+    border-radius: 11px;
+    transition: background 0.2s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle-thumb {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: left 0.2s;
+  }
+  .toggle input:checked ~ .toggle-thumb { left: 21px; }
+
+  .no-results {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  .no-results .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+  /* GROUP BADGE */
+  .group-badge {
+    background: rgba(107,114,128,0.15);
+    border-radius: 5px;
+    color: var(--muted);
+    font-size: 0.6rem;
+    padding: 0.1rem 0.4rem;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo">CEDI<span>SUR</span></div>
+    <div class="status-text">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Cargando...</span>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <input type="text" id="searchInput" placeholder="Buscar producto..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <span class="search-icon">🔍</span>
+  </div>
+  <div class="tabs" id="groupTabs">
+    <button class="tab-btn active" data-group="todos">Todos</button>
+  </div>
+</header>
+
+<main>
+  <!-- Config banner mostrado si no hay URL configurada -->
+  <div class="config-banner" id="configBanner" style="display:none">
+    ⚙️ <strong>Configuración inicial:</strong> Publicá tu Google Sheet como CSV y pegá la URL acá.<br>
+    <small>Archivo → Compartir → Publicar en la web → CSV → Hoja "Lista_Precios"</small>
+    <div class="url-input-row">
+      <input type="url" id="csvUrlInput" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+      <button onclick="saveUrl()">Guardar</button>
+    </div>
+  </div>
+
+  <div class="iva-selector">
+    <label>Mostrar precios con IVA</label>
+    <label class="toggle">
+      <input type="checkbox" id="ivaToggle" checked>
+      <div class="toggle-track"></div>
+      <div class="toggle-thumb"></div>
+    </label>
+  </div>
+
+  <div class="refresh-bar">
+    <span class="count-text" id="countText">—</span>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M23 4v6h-6M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+      Actualizar
+    </button>
+  </div>
+
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-dots">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="loading-text">Cargando precios...</div>
+  </div>
+
+  <div id="errorScreen" class="error-screen" style="display:none">
+    <div class="error-icon">⚠️</div>
+    <div class="error-msg" id="errorMsg">No se pudo cargar la lista de precios.</div>
+    <button class="retry-btn" onclick="loadData()">Reintentar</button>
+  </div>
+
+  <div id="productsList" class="products-list" style="display:none"></div>
+  <div id="noResults" class="no-results" style="display:none">
+    <div class="icon">🔍</div>
+    Sin resultados para tu búsqueda.
+  </div>
+</main>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+// Reemplazá esta URL con tu Google Sheet publicado como CSV (hoja Lista_Precios)
+const DEFAULT_CSV_URL = '';
+
+const IVA_RATE = 0.21;
+const STORAGE_KEY = 'cedisur_csv_url';
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let allProducts = [];
+let activeGroup = 'todos';
+let searchQuery = '';
+let showIva = true;
+
+// ─── URL MANAGEMENT ───────────────────────────────────────────────────────────
+function getCsvUrl() {
+  return localStorage.getItem(STORAGE_KEY) || DEFAULT_CSV_URL;
+}
+
+function saveUrl() {
+  const url = document.getElementById('csvUrlInput').value.trim();
+  if (url) {
+    localStorage.setItem(STORAGE_KEY, url);
+    document.getElementById('configBanner').style.display = 'none';
+    loadData();
+  }
+}
+
+// ─── LOAD DATA FROM GOOGLE SHEETS CSV ─────────────────────────────────────────
+async function loadData() {
+  const url = getCsvUrl();
+
+  if (!url) {
+    document.getElementById('configBanner').style.display = 'block';
+    document.getElementById('loadingScreen').style.display = 'none';
+    showError('Configurá la URL del CSV para continuar.');
+    return;
+  }
+
+  setLoading(true);
+  setStatus(false, 'Actualizando...');
+
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+
+  try {
+    // Usamos un proxy CORS si es necesario; Google Sheets en modo público no lo necesita
+    const response = await fetch(url, { cache: 'no-cache' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const text = await response.text();
+    allProducts = parseCSV(text);
+
+    if (allProducts.length === 0) throw new Error('CSV vacío o formato incorrecto');
+
+    buildGroupTabs();
+    renderProducts();
+    setStatus(true, `Actualizado ${formatTime(new Date())}`);
+    setLoading(false);
+  } catch (err) {
+    console.error(err);
+    showError(`Error: ${err.message}. Verificá que el Sheet esté publicado correctamente.`);
+    setStatus(false, 'Error al cargar');
+  }
+
+  btn.classList.remove('spinning');
+}
+
+// ─── CSV PARSER ───────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+
+  // Skip header row (row 0 is "Última actualización...", row 1 is the real header)
+  // Detect header: buscar la fila que tenga "Nombre" o "Artículo"
+  let dataStart = 0;
+  for (let i = 0; i < Math.min(5, lines.length); i++) {
+    const row = lines[i].toLowerCase();
+    if (row.includes('nombre') || row.includes('artículo') || row.includes('articulo') || row.includes('producto')) {
+      dataStart = i + 1;
+      break;
+    }
+  }
+
+  const products = [];
+  for (let i = dataStart; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (cols.length < 3) continue;
+
+    const nombre = (cols[0] || '').trim();
+    const grupo = (cols[1] || '').trim();
+    const costo = parseFloat((cols[2] || '').replace(',', '.')) || 0;
+    const precio = parseFloat((cols[3] || '').replace(',', '.')) || 0;
+    const contrib = parseFloat((cols[4] || '').replace(',', '.')) || 0;
+
+    if (!nombre || precio === 0) continue;
+
+    products.push({ nombre, grupo, costo, precio, contrib });
+  }
+
+  return products;
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+// ─── GROUP TABS ───────────────────────────────────────────────────────────────
+function buildGroupTabs() {
+  const groups = ['todos', ...new Set(allProducts.map(p => p.grupo).filter(Boolean))].sort((a, b) => {
+    if (a === 'todos') return -1;
+    if (b === 'todos') return 1;
+    return a.localeCompare(b);
+  });
+
+  const tabs = document.getElementById('groupTabs');
+  tabs.innerHTML = groups.map(g =>
+    `<button class="tab-btn${g === activeGroup ? ' active' : ''}" data-group="${g}" onclick="selectGroup('${g}')">${g === 'todos' ? 'Todos' : g}</button>`
+  ).join('');
+}
+
+function selectGroup(group) {
+  activeGroup = group;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.group === group));
+  renderProducts();
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderProducts() {
+  const query = searchQuery.toLowerCase().trim();
+
+  const filtered = allProducts.filter(p => {
+    const matchGroup = activeGroup === 'todos' || p.grupo === activeGroup;
+    const matchSearch = !query || p.nombre.toLowerCase().includes(query) || p.grupo.toLowerCase().includes(query);
+    return matchGroup && matchSearch;
+  });
+
+  const list = document.getElementById('productsList');
+  const noResults = document.getElementById('noResults');
+
+  document.getElementById('countText').innerHTML = `<strong>${filtered.length}</strong> productos`;
+
+  if (filtered.length === 0) {
+    list.style.display = 'none';
+    noResults.style.display = 'block';
+    return;
+  }
+
+  noResults.style.display = 'none';
+  list.style.display = 'flex';
+  list.innerHTML = filtered.map((p, i) => buildCard(p, i)).join('');
+}
+
+function buildCard(p, idx) {
+  const precioSinIva = p.precio;
+  const precioConIva = p.precio * (1 + IVA_RATE);
+  const margen = p.costo > 0 ? ((p.precio - p.costo) / p.precio * 100) : 0;
+
+  const precioMostrar = showIva ? precioConIva : precioSinIva;
+  const labelIva = showIva ? 'c/IVA' : 's/IVA';
+
+  return `
+  <div class="product-card" id="card-${idx}">
+    <div class="card-header" onclick="toggleCard(${idx})">
+      <div class="card-top">
+        <div>
+          <div class="product-name">${p.nombre}</div>
+          ${p.grupo ? `<span class="group-badge">${p.grupo}</span>` : ''}
+        </div>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="price-chips">
+        <span class="chip chip-price">$${fmt(precioMostrar)}/kg ${labelIva}</span>
+        <span class="chip chip-contrib">Margen ${margen.toFixed(1)}%</span>
+      </div>
+    </div>
+    <div class="card-body" id="body-${idx}">
+      <div class="section-label">Precios base</div>
+      <div class="data-grid">
+        <div class="data-cell">
+          <div class="label">Precio s/IVA</div>
+          <div class="value">$${fmt(precioSinIva)}</div>
+        </div>
+        <div class="data-cell">
+          <div class="label">Precio c/IVA</div>
+          <div class="value positive">$${fmt(precioConIva)}</div>
+        </div>
+        <div class="data-cell">
+          <div class="label">Costo/kg</div>
+          <div class="value">$${fmt(p.costo)}</div>
+        </div>
+        <div class="data-cell">
+          <div class="label">Contribución</div>
+          <div class="value neutral">$${fmt(p.contrib)}</div>
+        </div>
+      </div>
+
+      <div class="section-label">Simulación</div>
+      <div class="inputs-section">
+        <div class="input-row">
+          <label>Precio competencia</label>
+          <input type="number" inputmode="decimal" placeholder="0" id="comp-${idx}"
+            oninput="calcCard(${idx}, ${p.precio}, ${p.costo})" value="">
+          <span class="input-unit">$</span>
+        </div>
+        <div class="input-row">
+          <label>Descuento</label>
+          <input type="number" inputmode="decimal" placeholder="0" id="desc-${idx}" min="0" max="100"
+            oninput="calcCard(${idx}, ${p.precio}, ${p.costo})" value="">
+          <span class="input-unit">%</span>
+        </div>
+      </div>
+
+      <div class="section-label">Resultado</div>
+      <div class="results-grid" id="results-${idx}">
+        <div class="result-card">
+          <div class="label">P. c/desc s/IVA</div>
+          <div class="value" id="res-siva-${idx}">—</div>
+        </div>
+        <div class="result-card highlight">
+          <div class="label">P. c/desc c/IVA</div>
+          <div class="value positive" id="res-civa-${idx}">—</div>
+        </div>
+        <div class="result-card">
+          <div class="label">Contrib. c/desc</div>
+          <div class="value neutral" id="res-contrib-${idx}">—</div>
+        </div>
+        <div class="result-card" id="res-diff-card-${idx}">
+          <div class="label">vs Competencia</div>
+          <div class="value" id="res-diff-${idx}">—</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleCard(idx) {
+  const card = document.getElementById(`card-${idx}`);
+  card.classList.toggle('expanded');
+}
+
+function calcCard(idx, precio, costo) {
+  const compInput = document.getElementById(`comp-${idx}`);
+  const descInput = document.getElementById(`desc-${idx}`);
+
+  const comp = parseFloat(compInput.value) || 0;
+  const descPct = parseFloat(descInput.value) || 0;
+
+  const descFactor = 1 - (descPct / 100);
+  const precioDescSinIva = precio * descFactor;
+  const precioDescConIva = precioDescSinIva * (1 + IVA_RATE);
+  const contribDesc = precioDescSinIva - costo;
+
+  document.getElementById(`res-siva-${idx}`).textContent = `$${fmt(precioDescSinIva)}`;
+  document.getElementById(`res-civa-${idx}`).textContent = `$${fmt(precioDescConIva)}`;
+
+  const contribEl = document.getElementById(`res-contrib-${idx}`);
+  contribEl.textContent = `$${fmt(contribDesc)}`;
+  contribEl.className = `value ${contribDesc >= 0 ? 'positive' : 'negative'}`;
+
+  const diffEl = document.getElementById(`res-diff-${idx}`);
+  const diffCard = document.getElementById(`res-diff-card-${idx}`);
+  if (comp > 0) {
+    const diff = ((precioDescConIva - comp) / comp) * 100;
+    const sign = diff >= 0 ? '+' : '';
+    diffEl.innerHTML = `${sign}${diff.toFixed(1)}%`;
+    diffEl.className = `value ${diff <= 0 ? 'positive' : 'negative'}`;
+    diffCard.className = `result-card ${diff <= 0 ? 'highlight' : 'warn-card'}`;
+  } else {
+    diffEl.textContent = '—';
+    diffEl.className = 'value';
+    diffCard.className = 'result-card';
+  }
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function fmt(n) {
+  if (!n && n !== 0) return '—';
+  return Math.round(n).toLocaleString('es-AR');
+}
+
+function formatTime(d) {
+  return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function setLoading(isLoading) {
+  document.getElementById('loadingScreen').style.display = isLoading ? 'flex' : 'none';
+  document.getElementById('errorScreen').style.display = 'none';
+  if (!isLoading) document.getElementById('productsList').style.display = 'flex';
+}
+
+function showError(msg) {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('errorScreen').style.display = 'flex';
+  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('productsList').style.display = 'none';
+}
+
+function setStatus(ok, text) {
+  document.getElementById('statusDot').className = `status-dot ${ok ? 'live' : ''}`;
+  document.getElementById('statusText').textContent = text;
+}
+
+// ─── EVENTS ───────────────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderProducts();
+});
+
+document.getElementById('ivaToggle').addEventListener('change', e => {
+  showIva = e.target.checked;
+  renderProducts();
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const url = getCsvUrl();
+  if (!url) {
+    document.getElementById('configBanner').style.display = 'block';
+    document.getElementById('loadingScreen').style.display = 'none';
+    setStatus(false, 'Sin configurar');
+  } else {
+    loadData();
+  }
+});
+</script>
+</body>
+</html>

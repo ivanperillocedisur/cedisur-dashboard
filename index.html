@@ -398,13 +398,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
       EXCLUIDOS
     </button>
   </div>
-  <div class="filter-group">
-    <span class="filter-label">Distribuidores</span>
-    <button id="toggle-distrib" onclick="toggleDistribuidores()"
-      style="background:#ff4757;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;transition:all 0.2s">
-      EXCLUIDOS
-    </button>
-  </div>
   <button class="btn-clear-filters" onclick="clearFilters()">✕ Limpiar filtros</button>
   <div class="rows-badge">Filas: <span id="rows-count">—</span></div>
 </div>
@@ -2137,15 +2130,6 @@ function renderDetalleTable() {
 
 function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; HISTORICO_DATA=[]; MENSUAL_DATA=[]; DATA_COMPLETA=[]; CACHE={}; loadData(); }
 
-function toggleDistribuidores() {
-  EXCLUIR_DISTRIBUIDORES = !EXCLUIR_DISTRIBUIDORES;
-  const btn = document.getElementById("toggle-distrib");
-  btn.textContent      = EXCLUIR_DISTRIBUIDORES ? "EXCLUIDOS" : "INCLUIDOS";
-  btn.style.background = EXCLUIR_DISTRIBUIDORES ? "#ff4757" : "#2ed573";
-  btn.style.color      = EXCLUIR_DISTRIBUIDORES ? "#fff"    : "#0d0f14";
-  CACHE = {}; chartsBuilt = {};
-  renderSection(activeSection);
-}
 
 function toggleDistribuidores() {
   EXCLUIR_DISTRIBUIDORES = !EXCLUIR_DISTRIBUIDORES;

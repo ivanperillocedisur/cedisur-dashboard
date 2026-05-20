@@ -778,7 +778,7 @@ function buildCard(p, idx) {
       <div class="section-label">Simulación</div>
       <div class="inputs-section">
         <div class="input-row">
-          <label>Precio competencia</label>
+          <label>Precio competencia <span style="font-weight:400;color:var(--text3)">${showIva ? '(c/IVA)' : '(s/IVA)'}</span></label>
           <input type="number" inputmode="decimal" placeholder="0" id="comp-${idx}"
             oninput="calcCard(${idx})">
           <span class="input-unit">$</span>
@@ -850,7 +850,8 @@ function calcCard(idx) {
   const dEl   = document.getElementById(`rs-diff-${idx}`);
   const dCard = document.getElementById(`rs-diff-card-${idx}`);
   if (comp > 0) {
-    const diff = ((pCiva - comp) / comp) * 100;
+    const myPrice = showIva ? pCiva : pSiva;
+    const diff = ((myPrice - comp) / comp) * 100;
     dEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
     dEl.className   = 'value';
     dCard.className = `result-card ${diff <= 0 ? 'highlight' : 'warn-card'}`;

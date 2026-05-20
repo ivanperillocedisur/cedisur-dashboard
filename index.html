@@ -391,6 +391,20 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
       EXCLUIDAS
     </button>
   </div>
+  <div class="filter-group">
+    <span class="filter-label">Distribuidores</span>
+    <button id="toggle-distrib" onclick="toggleDistribuidores()"
+      style="background:#ff4757;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;transition:all 0.2s">
+      EXCLUIDOS
+    </button>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Distribuidores</span>
+    <button id="toggle-distrib" onclick="toggleDistribuidores()"
+      style="background:#ff4757;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;transition:all 0.2s">
+      EXCLUIDOS
+    </button>
+  </div>
   <button class="btn-clear-filters" onclick="clearFilters()">✕ Limpiar filtros</button>
   <div class="rows-badge">Filas: <span id="rows-count">—</span></div>
 </div>
@@ -557,7 +571,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
 
   <!-- KPIs -->
-  <div class="kpi-grid cols4" id="kpi-cliente" style="margin-bottom:14px"></div>
+  <div class="kpi-grid cols5" id="kpi-cliente" style="margin-bottom:14px"></div>
 
   <!-- Tabla productos -->
   <div class="chart-card" style="margin-bottom:14px">
@@ -732,8 +746,9 @@ let DETALLE_DATA  = [];
 let HISTORICO_DATA = [];
 let MENSUAL_DATA   = [];
 let DATA_COMPLETA  = [];
-let EXCLUIR_ACUERDOS    = true;
-let EXCLUIR_PROMOCIONES = true;
+let EXCLUIR_ACUERDOS      = true;
+let EXCLUIR_PROMOCIONES   = true;
+let EXCLUIR_DISTRIBUIDORES = true;
 
 // ============================================================
 // CARGA INICIAL
@@ -908,8 +923,9 @@ function agregarDesdeDetalle(tipo) {
 
     DATA_COMPLETA.forEach(r => {
       // Aplicar mismos filtros que filtrarDetalle
-      if (EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") return;
-      if (EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí") return;
+      if (EXCLUIR_ACUERDOS       && (r["Acuerdo"]||"")   === "Sí")           return;
+      if (EXCLUIR_PROMOCIONES    && (r["Promocion"]||"") === "Sí")           return;
+      if (EXCLUIR_DISTRIBUIDORES && (r["Segmento"]||"") === "Distribuidores") return;
       if (zona_f  && r["Zona"]            !== zona_f)  return;
       if (vend_f  && r["Vendedor"]        !== vend_f)  return;
       if (seg_f   && r["Segmento"]        !== seg_f)   return;
@@ -953,7 +969,7 @@ function filtrarResumen(tipo) {
   // calcular agregados desde DETALLE_DATA (tiene todos los campos)
   const alarma  = getFilterVal("f-alarma");
   const producto= getFilterVal("f-producto");
-  const usarDetalle = prov || marca || grupo || dep || seg || ecom || EXCLUIR_ACUERDOS || EXCLUIR_PROMOCIONES || alarma || producto;
+  const usarDetalle = prov || marca || grupo || dep || seg || ecom || EXCLUIR_ACUERDOS || EXCLUIR_PROMOCIONES || EXCLUIR_DISTRIBUIDORES || alarma || producto;
 
   if (usarDetalle) {
     return agregarDesdeDetalle(tipo).filter(r => {
@@ -986,8 +1002,9 @@ function filtrarDetalle() {
   const seg  = getFilterVal("f-segmento");
 
   return DETALLE_DATA.filter(r => {
-    if (EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") return false;
-    if (EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí") return false;
+    if (EXCLUIR_ACUERDOS       && (r["Acuerdo"]||"")   === "Sí")           return false;
+    if (EXCLUIR_PROMOCIONES    && (r["Promocion"]||"") === "Sí")           return false;
+    if (EXCLUIR_DISTRIBUIDORES && (r["Segmento"]||"") === "Distribuidores") return false;
     if (zona  && r["Zona"]           !== zona)  return false;
     if (vend  && r["Vendedor"]       !== vend)  return false;
     if (prov  && r["Proveedor"]      !== prov)  return false;
@@ -1118,6 +1135,11 @@ function renderResumen() {
         <div class="kpi-label">Contribución $</div>
         <div class="kpi-value">${fM(contrib)}</div>
         <div class="kpi-sub"><span class="kpi-badge ${contrib<0?"badge-neg":"badge-pos"}">Margen neto</span></div>
+      </div>
+      <div class="kpi-card ${margenPct<0?"red":margenPct<10?"yellow":"green"}">
+        <div class="kpi-label">% Margen Contribución</div>
+        <div class="kpi-value">${fP(margenPct)}</div>
+        <div class="kpi-sub"><span class="kpi-badge ${margenPct<0?"badge-neg":margenPct<10?"badge-warn":"badge-pos"}">Sobre venta bruta</span></div>
       </div>`;
 
     // Gráfico: % Dto por zona — histórico + semana vigente
@@ -1226,8 +1248,9 @@ function renderResumen() {
     const prod_fc  = getFilterVal("f-producto");
     const ecom_fc  = getFilterVal("f-ecommerce");
     DATA_COMPLETA.forEach(r => {
-      if (EXCLUIR_ACUERDOS    && (r["Acuerdo"]||"")   === "Sí") return;
-      if (EXCLUIR_PROMOCIONES && (r["Promocion"]||"") === "Sí") return;
+      if (EXCLUIR_ACUERDOS       && (r["Acuerdo"]||"")   === "Sí")           return;
+      if (EXCLUIR_PROMOCIONES    && (r["Promocion"]||"") === "Sí")           return;
+      if (EXCLUIR_DISTRIBUIDORES && (r["Segmento"]||"") === "Distribuidores") return;
       if (zona_fc  && r["Zona"]           !== zona_fc)  return;
       if (vend_fc  && r["Vendedor"]       !== vend_fc)  return;
       if (seg_fc   && r["Segmento"]       !== seg_fc)   return;
@@ -1759,17 +1782,21 @@ function renderCliente() {
 
     // ── KPIs ──
     const dtoTotal  = det.reduce((s,r) => s+(parseFloat(r["Dto $"])||0), 0);
-    // Venta Total = Total Línea $ + Dto $ (facturación bruta antes del descuento)
-    const totalReal = dataCli.reduce((s,r) =>
+    // Venta bruta = Total Línea $ (neto) + Dto $ = precio antes de descuento
+    const ventaBruta = dataCli.reduce((s,r) =>
       s+(parseFloat(r["Total Línea $"])||0)+(parseFloat(r["Dto $"])||0), 0);
-    const contrib   = det.reduce((s,r) => s+(parseFloat(r["Contribución $"])||0), 0);
-    const pct       = totalReal>0 ? Math.round(dtoTotal/totalReal*1000)/10 : 0;
-    const vendedor  = det[0]?.["Vendedor"] || dataCli[0]?.["Vendedor"] || "—";
+    const ventaNeta  = dataCli.reduce((s,r) => s+(parseFloat(r["Total Línea $"])||0), 0);
+    // Contribución de TODAS las líneas (con y sin descuento)
+    const contrib    = dataCli.reduce((s,r) => s+(parseFloat(r["Contribución $"])||0), 0);
+    const pct        = ventaBruta>0 ? Math.round(dtoTotal/ventaBruta*1000)/10 : 0;
+    // % Margen neto = Contribución / Venta Neta
+    const margenPct  = ventaNeta>0 ? Math.round(contrib/ventaNeta*1000)/10 : 0;
+    const vendedor   = det[0]?.["Vendedor"] || dataCli[0]?.["Vendedor"] || "—";
 
     document.getElementById("kpi-cliente").innerHTML = `
       <div class="kpi-card blue">
         <div class="kpi-label">Venta Total $</div>
-        <div class="kpi-value">${fM(totalReal)}</div>
+        <div class="kpi-value">${fM(ventaBruta)}</div>
         <div class="kpi-sub"><span class="kpi-badge badge-pos">${vendedor}</span></div>
       </div>
       <div class="kpi-card orange">
@@ -1786,6 +1813,11 @@ function renderCliente() {
         <div class="kpi-label">Contribución $</div>
         <div class="kpi-value">${fM(contrib)}</div>
         <div class="kpi-sub"><span class="kpi-badge ${contrib<0?"badge-neg":"badge-pos"}">Margen neto</span></div>
+      </div>
+      <div class="kpi-card ${margenPct<0?"red":margenPct<10?"yellow":"green"}">
+        <div class="kpi-label">% Margen Contribución</div>
+        <div class="kpi-value">${fP(margenPct)}</div>
+        <div class="kpi-sub"><span class="kpi-badge ${margenPct<0?"badge-neg":margenPct<10?"badge-warn":"badge-pos"}">Sobre venta bruta</span></div>
       </div>`;
 
     // ── Tabla productos ──
@@ -2104,6 +2136,26 @@ function renderDetalleTable() {
 }
 
 function reloadData() { RESUMEN_DATA=[]; DETALLE_DATA=[]; HISTORICO_DATA=[]; MENSUAL_DATA=[]; DATA_COMPLETA=[]; CACHE={}; loadData(); }
+
+function toggleDistribuidores() {
+  EXCLUIR_DISTRIBUIDORES = !EXCLUIR_DISTRIBUIDORES;
+  const btn = document.getElementById("toggle-distrib");
+  btn.textContent      = EXCLUIR_DISTRIBUIDORES ? "EXCLUIDOS" : "INCLUIDOS";
+  btn.style.background = EXCLUIR_DISTRIBUIDORES ? "#ff4757" : "#2ed573";
+  btn.style.color      = EXCLUIR_DISTRIBUIDORES ? "#fff"    : "#0d0f14";
+  CACHE = {}; chartsBuilt = {};
+  renderSection(activeSection);
+}
+
+function toggleDistribuidores() {
+  EXCLUIR_DISTRIBUIDORES = !EXCLUIR_DISTRIBUIDORES;
+  const btn = document.getElementById("toggle-distrib");
+  btn.textContent    = EXCLUIR_DISTRIBUIDORES ? "EXCLUIDOS" : "INCLUIDOS";
+  btn.style.background = EXCLUIR_DISTRIBUIDORES ? "#ff4757" : "#2ed573";
+  btn.style.color      = EXCLUIR_DISTRIBUIDORES ? "#fff"    : "#0d0f14";
+  CACHE = {}; chartsBuilt = {};
+  renderSection(activeSection);
+}
 
 function togglePromociones() {
   EXCLUIR_PROMOCIONES = !EXCLUIR_PROMOCIONES;

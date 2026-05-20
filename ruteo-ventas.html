@@ -129,6 +129,16 @@
   .btn-maps { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 0.75rem; font-size: 13px; font-weight: 600; color: var(--accent-text); background: var(--accent-light); border: none; padding: 9px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; font-family: 'DM Sans', sans-serif; }
   .btn-maps svg { width: 13px; height: 13px; }
 
+  /* BOTÓN GEOLOCALIZAR */
+  .btn-geo { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #0F766E; background: #F0FDFA; border: 1.5px solid #5EEAD4; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s; }
+  .btn-geo:active { background: #CCFBF1; }
+  .btn-geo:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-geo svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .geo-chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; margin-top: 8px; width: 100%; }
+  .geo-chip.ok { background: #F0FDFA; color: #0F766E; border: 1px solid #5EEAD4; }
+  .geo-chip.pending { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
+  .geo-chip svg { width: 11px; height: 11px; flex-shrink: 0; }
+
   /* BOTÓN SOLICITAR CAMBIO */
   .btn-solicitar { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #7C3AED; background: #F5F0FF; border: 1.5px solid #C4B5FD; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s; }
   .btn-solicitar:active { background: #EDE9FE; }
@@ -574,14 +584,167 @@ function buildCard(c, stateMap, isSearch) {
 
   const btnSol = document.createElement('button');
   btnSol.className = 'btn-solicitar';
-  btnSol.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v5l3 3"/><circle cx="8" cy="8" r="6.5"/></svg> Solicitar cambio en el ruteo de venta';
+  btnSol.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v5l3 3"/><circle cx="8" cy="8" r="6.5"/></svg> Solicitar cambio en el ruteo';
   btnSol.addEventListener('click', function() { abrirModal(codigo); });
   detail.appendChild(btnSol);
+
+  // Botón geolocalizar
+  const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
+  const geoGuardada = getGeoLocal(codigo);
+  const btnGeo = document.createElement('button');
+  btnGeo.className = 'btn-geo';
+  btnGeo.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg> ' + (tieneCoords ? 'Actualizar ubicación' : 'Geolocalizar cliente');
+  btnGeo.addEventListener('click', function() { capturarGeo(codigo, c['NOMBRE COMERCIAL'], btnGeo); });
+  detail.appendChild(btnGeo);
+
+  // Chip de estado geo
+  const geoChip = document.createElement('div');
+  if (geoGuardada) {
+    geoChip.className = 'geo-chip pending';
+    geoChip.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="5"/><path d="M6 3.5v2.5l1.5 1"/></svg> Ubicación pendiente de sincronizar';
+  } else if (tieneCoords) {
+    geoChip.className = 'geo-chip ok';
+    geoChip.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 6l2.5 2.5L10 3.5"/></svg> Ubicación registrada';
+  }
+  if (geoChip.className) detail.appendChild(geoChip);
 
   card.appendChild(main);
   card.appendChild(detail);
   return card;
 }
+
+// ── GEOLOCALIZACIÓN ───────────────────────────────────────────────────────────
+
+function geoKey() { return 'geo_pendiente_' + selectedVendedor; }
+
+function getGeoLocal(codigo) {
+  try {
+    var map = JSON.parse(localStorage.getItem(geoKey()) || '{}');
+    return map[codigo] || null;
+  } catch(e) { return null; }
+}
+
+function saveGeoLocal(codigo, lat, lon) {
+  try {
+    var map = JSON.parse(localStorage.getItem(geoKey()) || '{}');
+    map[codigo] = { lat: lat, lon: lon, ts: Date.now() };
+    localStorage.setItem(geoKey(), JSON.stringify(map));
+  } catch(e) {}
+}
+
+function removeGeoLocal(codigo) {
+  try {
+    var map = JSON.parse(localStorage.getItem(geoKey()) || '{}');
+    delete map[codigo];
+    localStorage.setItem(geoKey(), JSON.stringify(map));
+  } catch(e) {}
+}
+
+function capturarGeo(codigo, nombre, btnEl) {
+  if (!navigator.geolocation) {
+    alert('Tu dispositivo no soporta geolocalización.');
+    return;
+  }
+  btnEl.disabled = true;
+  btnEl.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg> Obteniendo ubicación...';
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      var lat = pos.coords.latitude.toFixed(6);
+      var lon = pos.coords.longitude.toFixed(6);
+      enviarGeo(codigo, nombre, lat, lon, btnEl);
+    },
+    function(err) {
+      btnEl.disabled = false;
+      btnEl.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg> Error al obtener ubicación. Reintentar';
+      alert('No se pudo obtener la ubicación: ' + err.message);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+function enviarGeo(codigo, nombre, lat, lon, btnEl) {
+  var payload = {
+    accion:    'geolocalizar',
+    codigo:    codigo,
+    cliente:   nombre,
+    vendedor:  selectedVendedor,
+    lat:       lat,
+    lon:       lon
+  };
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(function() {
+    // Con no-cors no podemos leer la respuesta, asumimos éxito
+    removeGeoLocal(codigo);
+    mostrarGeoConfirm(nombre, lat, lon);
+    if (searchQuery) renderSearchResults();
+    else render();
+  }).catch(function() {
+    // Sin señal: guardar localmente
+    saveGeoLocal(codigo, lat, lon);
+    mostrarGeoConfirm(nombre, lat, lon, true);
+    if (searchQuery) renderSearchResults();
+    else render();
+  });
+}
+
+function mostrarGeoConfirm(nombre, lat, lon, pendiente) {
+  var detail = document.getElementById('confirm-detail');
+  var titulo = document.getElementById('confirm-title') || document.querySelector('.confirm-title');
+  if (titulo) titulo.textContent = pendiente ? '📍 Guardado sin conexión' : '📍 Ubicación registrada';
+  detail.innerHTML =
+    '<strong>' + nombre + '</strong><br>' +
+    'Lat: ' + lat + ' | Lon: ' + lon + '<br>' +
+    (pendiente ? '<span style="color:#C2410C">Se sincronizará cuando haya conexión.</span>'
+               : '<span style="color:#0F766E">Datos enviados al sistema.</span>');
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+function sincronizarGeoPendientes() {
+  try {
+    var map = JSON.parse(localStorage.getItem(geoKey()) || '{}');
+    var codigos = Object.keys(map);
+    if (!codigos.length) return;
+
+    codigos.forEach(function(codigo) {
+      var geo = map[codigo];
+      var row = allData.find(function(r) { return r['CODIGO CLIENTE'] === codigo; });
+      var nombre = row ? row['NOMBRE COMERCIAL'] : codigo;
+      var payload = {
+        accion:   'geolocalizar',
+        codigo:   codigo,
+        cliente:  nombre,
+        vendedor: selectedVendedor,
+        lat:      geo.lat,
+        lon:      geo.lon
+      };
+      var delay = Math.floor(Math.random() * 25000) + 5000; // 5-30 seg aleatorio
+      setTimeout(function() {
+        fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(function() {
+          removeGeoLocal(codigo);
+          console.log('Geo sincronizada: ' + codigo);
+        }).catch(function() {
+          console.log('Reintento fallido para: ' + codigo);
+        });
+      }, delay);
+    });
+  } catch(e) {}
+}
+
+// Escuchar reconexión y sincronizar pendientes automáticamente
+window.addEventListener('online', function() {
+  setTimeout(sincronizarGeoPendientes, 2000);
+});
 
 // ── FILTRO ─────────────────────────────────────────────────────────────────────
 function applyFilter() {

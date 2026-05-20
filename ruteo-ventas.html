@@ -107,6 +107,10 @@
   .client-subtext { font-size: 11px; color: var(--text3); margin-top: 2px; }
   .client-card.expanded .client-name { -webkit-line-clamp: unset; overflow: visible; }
 
+  /* CHIP GEO EN TARJETA CERRADA */
+  .geo-pin-chip { display: none; }
+  .geo-pin-chip.visible { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: #0F766E; background: #F0FDFA; border: 1px solid #99F6E4; border-radius: 20px; padding: 1px 7px; margin-top: 4px; }
+
   /* CHIP SOLICITUD PENDIENTE */
   .sol-chip { display: none; margin-top: 5px; }
   .sol-chip.visible { display: inline-flex; align-items: center; gap: 4px; background: #F5F0FF; border: 1px solid #C4B5FD; border-radius: 20px; padding: 2px 8px; font-size: 11px; font-weight: 600; color: #7C3AED; }
@@ -548,10 +552,16 @@ function buildCard(c, stateMap, isSearch) {
     chip.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="5" r="4"/><path d="M5 3v2.5l1.5 1"/></svg>' + tipoLabel(sol.tipo);
   }
 
+  const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
+  const pinChip = document.createElement('div');
+  pinChip.className = 'geo-pin-chip' + (tieneCoords ? ' visible' : '');
+  if (tieneCoords) pinChip.textContent = '\u{1F4CD} Geolocalizado';
+
   const info = document.createElement('div');
   info.className = 'client-info';
   info.appendChild(name);
   info.appendChild(chip);
+  info.appendChild(pinChip);
 
   if (isSearch) {
     const sub = document.createElement('div');
@@ -578,7 +588,7 @@ function buildCard(c, stateMap, isSearch) {
     '<div class="detail-row"><div class="detail-label">Localidad</div><div class="detail-value">' + c['LOCALIDAD'] + '</div></div>' +
     (isSearch ? '<div class="detail-row"><div class="detail-label">Día</div><div class="detail-value">' + diaLabel + '</div></div>' : '') +
     '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>' +
-    '<a class="btn-maps" href="' + mapsUrl(c['DIRECCION'], c['LOCALIDAD']) + '" target="_blank">' +
+    '<a class="btn-maps" href="' + (tieneCoords ? 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'] : mapsUrl(c['DIRECCION'], c['LOCALIDAD'])) + '" target="_blank">' +
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
     'Abrir en Maps</a>';
 
@@ -589,7 +599,6 @@ function buildCard(c, stateMap, isSearch) {
   detail.appendChild(btnSol);
 
   // Botón geolocalizar
-  const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
   const geoGuardada = getGeoLocal(codigo);
   const btnGeo = document.createElement('button');
   btnGeo.className = 'btn-geo';

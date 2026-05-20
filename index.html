@@ -1128,11 +1128,6 @@ function renderResumen() {
         <div class="kpi-label">Contribución $</div>
         <div class="kpi-value">${fM(contrib)}</div>
         <div class="kpi-sub"><span class="kpi-badge ${contrib<0?"badge-neg":"badge-pos"}">Margen neto</span></div>
-      </div>
-      <div class="kpi-card ${margenPct<0?"red":margenPct<10?"yellow":"green"}">
-        <div class="kpi-label">% Margen Contribución</div>
-        <div class="kpi-value">${fP(margenPct)}</div>
-        <div class="kpi-sub"><span class="kpi-badge ${margenPct<0?"badge-neg":margenPct<10?"badge-warn":"badge-pos"}">Sobre venta bruta</span></div>
       </div>`;
 
     // Gráfico: % Dto por zona — histórico + semana vigente

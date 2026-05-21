@@ -103,6 +103,22 @@
     font-size: 14px;
   }
   .search-input-wrap input::placeholder { color: rgba(255,255,255,0.45); }
+  .search-mode-select {
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.75);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    outline: none;
+    padding: 0 2px 0 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .search-mode-select option { background: #1d3a8f; color: #fff; }
 
   /* MAIN */
   main { padding: 1rem 1.25rem 0; }
@@ -475,6 +491,11 @@
       <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/>
     </svg>
     <input type="text" id="searchInput" placeholder="Buscar producto..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <select id="searchModeSelect" class="search-mode-select">
+      <option value="nombre">Producto</option>
+      <option value="grupo">Grupo</option>
+      <option value="marca">Marca</option>
+    </select>
   </div>
 </div>
 
@@ -538,6 +559,7 @@ let filteredList = [];   // espejo del render actual para calcCard
 let searchQuery  = '';
 let showIva      = true;
 let showKg       = true;
+let searchMode   = 'nombre';
 
 /* ─── Parseo de números en formato argentino "3.530,61" → 3530.61 ─── */
 function argNum(str) {
@@ -676,9 +698,12 @@ async function loadData() {
 /* ─── Render de tarjetas ─────────────────────────────────────────────── */
 function renderProducts() {
   const q = searchQuery.toLowerCase().trim();
-  filteredList = allProducts.filter(p =>
-    !q || p.nombre.toLowerCase().includes(q) || p.grupo.toLowerCase().includes(q)
-  );
+  filteredList = allProducts.filter(p => {
+    if (!q) return true;
+    if (searchMode === 'grupo') return p.grupo.toLowerCase().includes(q);
+    if (searchMode === 'marca') return p.prov.toLowerCase().includes(q);
+    return p.nombre.toLowerCase().includes(q);
+  });
 
   const list      = document.getElementById('productsList');
   const noResults = document.getElementById('noResults');
@@ -794,11 +819,11 @@ function buildCard(p, idx) {
       <div class="section-label">Resultado</div>
       <div class="results-grid">
         <div class="result-card">
-          <div class="label">P. c/desc s/IVA</div>
+          <div class="label">Precio c/desc ${showIva ? 'c/IVA' : 's/IVA'} ${showKg ? '/kg' : '/u'}</div>
           <div class="value" id="rs-siva-${idx}">—</div>
         </div>
         <div class="result-card">
-          <div class="label">P. c/desc c/IVA</div>
+          <div class="label">% Margen c/desc</div>
           <div class="value" id="rs-civa-${idx}">—</div>
         </div>
         <div class="result-card">
@@ -840,8 +865,15 @@ function calcCard(idx) {
 
   const contrib = pSiva - costo;
 
-  document.getElementById(`rs-siva-${idx}`).textContent = `$${fmt(pSiva)}`;
-  document.getElementById(`rs-civa-${idx}`).textContent = `$${fmt(pCiva)}`;
+  // Card 1: precio según toggles IVA + kg
+  const displayPrice = showIva ? pCiva : pSiva;
+  document.getElementById(`rs-siva-${idx}`).textContent = `$${fmt(displayPrice)}`;
+
+  // Card 2: % margen = ganancia sobre costo
+  const margenPct = costo > 0 ? ((pSiva - costo) / costo * 100) : 0;
+  const mEl = document.getElementById(`rs-civa-${idx}`);
+  mEl.textContent = `${margenPct >= 0 ? '+' : ''}${margenPct.toFixed(1)}%`;
+  mEl.className   = `value ${margenPct >= 0 ? 'positive' : 'negative'}`;
 
   const cEl = document.getElementById(`rs-cont-${idx}`);
   cEl.textContent = `$${fmt(contrib)}`;
@@ -891,7 +923,13 @@ document.getElementById('searchInput').addEventListener('input', e => {
   searchQuery = e.target.value;
   renderProducts();
 });
-document.getElementById('ivaToggle').addEventListener('change', e => {
+document.getElementById('searchModeSelect').addEventListener('change', e => {
+  searchMode = e.target.value;
+  const placeholders = { nombre: 'Buscar producto...', grupo: 'Buscar por grupo...', marca: 'Buscar por marca...' };
+  document.getElementById('searchInput').placeholder = placeholders[searchMode];
+  searchQuery = document.getElementById('searchInput').value;
+  renderProducts();
+});
   showIva = e.target.checked;
   renderProducts();
 });

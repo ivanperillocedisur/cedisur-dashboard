@@ -209,6 +209,23 @@
   .refresh-btn.spinning svg { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  .cotizar-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 8px rgba(29,58,143,0.25);
+  }
+  .cotizar-btn:active { opacity: 0.85; }
+
   /* PRODUCT CARDS */
   .products-list { display: flex; flex-direction: column; gap: 8px; }
 
@@ -550,6 +567,57 @@
 
   .panel-body { overflow-y: auto; flex: 1; padding: 1rem 1.25rem; }
 
+  .panel-search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 6px;
+  }
+  .panel-search-wrap svg { width: 14px; height: 14px; color: var(--text3); flex-shrink: 0; }
+  .panel-search-wrap input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+  }
+  .panel-search-wrap input::placeholder { color: var(--text3); }
+
+  .panel-search-results {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .ps-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .ps-row:last-child { border-bottom: none; }
+  .ps-info { flex: 1; min-width: 0; }
+  .ps-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .ps-meta { font-size: 11px; color: var(--text3); margin-top: 1px; }
+  .ps-price { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; color: var(--accent); white-space: nowrap; }
+  .ps-add {
+    background: var(--accent-light);
+    border: 1px solid #c5d0f0;
+    border-radius: 6px; color: var(--accent);
+    cursor: pointer; font-size: 15px; font-weight: 700;
+    width: 28px; height: 28px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .ps-add.added {
+    background: var(--positive-bg); border-color: var(--positive-border);
+    color: var(--positive-text); font-size: 12px;
+  }
+
   .bulk-row { display: flex; gap: 8px; margin-bottom: 8px; }
   .bulk-select {
     flex: 1;
@@ -729,13 +797,17 @@
 
   <div class="top-bar">
     <span class="count-text" id="countText">—</span>
-    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-        <path d="M23 4v6h-6M1 20v-6h6"/>
-        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-      </svg>
-      Actualizar
-    </button>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="refresh-btn" id="refreshBtn" onclick="loadData()" title="Actualizar precios" style="padding:5px 8px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M23 4v6h-6M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      </button>
+      <button class="cotizar-btn" onclick="openBudgetPanel()">
+        🧾 Cotizar
+      </button>
+    </div>
   </div>
 
   <div id="loadingScreen" class="loading-screen">
@@ -952,23 +1024,6 @@ function buildCard(p, idx) {
   const ivaChipLbl  = showIva ? 'c/IVA' : 's/IVA';
   const margen      = pSiva > 0 ? ((pSiva - costo) / pSiva * 100) : 0;
 
-  // Sección extra (peso / IVA) solo en modo unidad
-  const extraGrid = !showKg ? `
-    <div class="data-grid three" style="margin-top:6px">
-      <div class="data-cell">
-        <div class="label">Peso venta</div>
-        <div class="value">${p.peso > 0 ? p.peso + ' kg' : '—'}</div>
-      </div>
-      <div class="data-cell">
-        <div class="label">Costo/u</div>
-        <div class="value">$${fmt(costo)}</div>
-      </div>
-      <div class="data-cell">
-        <div class="label">IVA</div>
-        <div class="value">${ivaLabel}</div>
-      </div>
-    </div>` : '';
-
   return `
   <div class="product-card" id="card-${idx}">
     <div class="card-header" onclick="toggleCard(${idx})">
@@ -1010,7 +1065,6 @@ function buildCard(p, idx) {
           <div class="value neutral">$${fmt(contrib)}</div>
         </div>
       </div>
-      ${extraGrid}
 
       <div class="section-label">Simulación</div>
       <div class="inputs-section">
@@ -1175,6 +1229,19 @@ function addToBudget(idx) {
   }
 }
 
+function toggleFromPanel(productIdx) {
+  const p  = allProducts[productIdx];
+  if (!p) return;
+  const ei = budgetItems.findIndex(b => b.product === p);
+  if (ei >= 0) { budgetItems.splice(ei, 1); }
+  else { budgetItems.push({ product: p, qty: 1, discount: 0 }); }
+  updateBudgetFab();
+  renderBudgetItems();
+  // Refrescar resultados del buscador del panel
+  const q = document.getElementById('panelSearchInput');
+  if (q && q.value) renderPanelSearch(q.value);
+}
+
 function addBulk(type) {
   const sel   = document.getElementById(type === 'grupo' ? 'bulkGroupSelect' : 'bulkMarcaSelect');
   const value = sel.value;
@@ -1215,9 +1282,49 @@ function openBudgetPanel() {
     '<option value="">— Grupo —</option>' + grupos.map(g => `<option value="${g}">${g}</option>`).join('');
   document.getElementById('bulkMarcaSelect').innerHTML =
     '<option value="">— Marca —</option>' + marcas.map(m => `<option value="${m}">${m}</option>`).join('');
+  // Limpiar buscador del panel
+  const psi = document.getElementById('panelSearchInput');
+  if (psi) { psi.value = ''; }
+  document.getElementById('panelSearchResults').style.display = 'none';
   renderBudgetItems();
   document.getElementById('budgetOverlay').classList.add('open');
   document.getElementById('budgetPanel').classList.add('open');
+}
+
+function renderPanelSearch(q) {
+  const results = document.getElementById('panelSearchResults');
+  const query   = q.toLowerCase().trim();
+  if (!query) { results.style.display = 'none'; results.innerHTML = ''; return; }
+
+  const matches = allProducts.filter(p =>
+    p.nombre.toLowerCase().includes(query) ||
+    p.grupo.toLowerCase().includes(query)  ||
+    p.prov.toLowerCase().includes(query)
+  ).slice(0, 25); // límite de 25 para no saturar
+
+  if (!matches.length) {
+    results.style.display = 'block';
+    results.innerHTML = '<div style="padding:0.75rem;font-size:13px;color:var(--text3);text-align:center">Sin resultados</div>';
+    return;
+  }
+
+  const modoUnit = showKg ? 'kg' : 'u';
+  results.style.display = 'block';
+  results.innerHTML = matches.map((p, i) => {
+    const precio  = showKg ? p.precioKg * (showIva ? (1 + p.ivaRate) : 1) : (showIva ? p.civaU : p.precioU);
+    const inB     = budgetItems.some(b => b.product === p);
+    return `
+    <div class="ps-row">
+      <div class="ps-info">
+        <div class="ps-name">${p.nombre}</div>
+        <div class="ps-meta">${p.grupo || ''}${p.prov ? ' · ' + p.prov : ''}</div>
+      </div>
+      <span class="ps-price">$${fmt(precio)}/${modoUnit}</span>
+      <button class="ps-add${inB ? ' added' : ''}" onclick="toggleFromPanel(${allProducts.indexOf(p)})">
+        ${inB ? '✓' : '+'}
+      </button>
+    </div>`;
+  }).join('');
 }
 
 function closeBudgetPanel() {
@@ -1383,7 +1490,7 @@ async function shareWhatsApp() {
 
 loadData();
 </script>
-<!-- ── BUDGET FAB ──────────────────────────────────────────────── -->
+<!-- ── BUDGET FAB (contador flotante, sin abrir panel) ──────────── -->
 <button class="budget-fab hidden" id="budgetFab" onclick="openBudgetPanel()">
   🧾 <span class="fab-count" id="budgetFabCount">0</span>
 </button>
@@ -1394,23 +1501,39 @@ loadData();
 <!-- ── BUDGET PANEL ───────────────────────────────────────────── -->
 <div class="budget-panel" id="budgetPanel">
   <div class="panel-header">
-    <span class="panel-title">🧾 Presupuesto</span>
+    <span class="panel-title">🧾 Cotización</span>
     <button class="panel-close" onclick="closeBudgetPanel()">✕</button>
   </div>
 
   <div class="panel-body">
 
-    <div class="section-label" style="margin-top:0">Agregar por grupo o marca</div>
+    <!-- Buscador interno del panel -->
+    <div class="section-label" style="margin-top:0">Buscar y agregar productos</div>
+    <div class="panel-search-wrap">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/>
+      </svg>
+      <input type="text" id="panelSearchInput" placeholder="Buscar producto, grupo o marca..."
+        autocomplete="off" autocorrect="off" spellcheck="false"
+        oninput="renderPanelSearch(this.value)">
+    </div>
+
+    <!-- Resultados de búsqueda del panel -->
+    <div id="panelSearchResults" class="panel-search-results" style="display:none"></div>
+
+    <!-- Agregar en bloque -->
+    <div class="section-label" style="margin-top:0.75rem">Agregar por grupo o marca</div>
     <div class="bulk-row">
       <select id="bulkGroupSelect" class="bulk-select"><option value="">— Grupo —</option></select>
-      <button class="bulk-btn" onclick="addBulk('grupo')">+ Grupo</button>
+      <button class="bulk-btn" onclick="addBulk('grupo')">+ Agregar</button>
     </div>
     <div class="bulk-row">
       <select id="bulkMarcaSelect" class="bulk-select"><option value="">— Marca —</option></select>
-      <button class="bulk-btn" onclick="addBulk('marca')">+ Marca</button>
+      <button class="bulk-btn" onclick="addBulk('marca')">+ Agregar</button>
     </div>
 
-    <div class="section-label">Productos en cotización</div>
+    <!-- Items del presupuesto -->
+    <div class="section-label" style="margin-top:0.75rem">Productos en cotización</div>
     <div id="budgetItemsContainer" class="budget-items"></div>
 
     <div class="budget-total-row">
@@ -1418,6 +1541,7 @@ loadData();
       <span class="budget-total-value" id="budgetTotal">$0</span>
     </div>
 
+    <!-- Opciones PDF -->
     <div class="section-label">Opciones del PDF</div>
     <div class="pdf-options">
       <div class="pdf-opt-row">

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ruteo de Visitas</title>
+<title>Ruteo de Ventas</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -198,7 +198,7 @@
 
 <div class="header">
   <div class="header-top">
-    <span class="app-name">Ruteo de visitas</span>
+    <span class="app-name">Ruteo de ventas</span>
     <div class="header-right">
       <button class="btn-search" onclick="toggleSearch()" title="Buscar cliente">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -555,7 +555,7 @@ function buildCard(c, stateMap, isSearch) {
   const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
   const pinChip = document.createElement('div');
   pinChip.className = 'geo-pin-chip' + (tieneCoords ? ' visible' : '');
-  if (tieneCoords) pinChip.textContent = '\u{1F4CD} Geolocalizado';
+  if (tieneCoords) pinChip.textContent = '\u{1F4CD}';
 
   const info = document.createElement('div');
   info.className = 'client-info';

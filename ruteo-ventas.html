@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ruteo de Ventas</title>
+<title>Ruteo de Visitas</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -198,7 +198,7 @@
 
 <div class="header">
   <div class="header-top">
-    <span class="app-name">Ruteo de ventas</span>
+    <span class="app-name">Ruteo de visitas</span>
     <div class="header-right">
       <button class="btn-search" onclick="toggleSearch()" title="Buscar cliente">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -544,7 +544,8 @@ function buildCard(c, stateMap, isSearch) {
 
   const name = document.createElement('div');
   name.className = 'client-name';
-  name.textContent = c['NOMBRE COMERCIAL'];
+  const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
+  name.textContent = c['NOMBRE COMERCIAL'] + (tieneCoords ? ' 📍' : '');
 
   const chip = document.createElement('div');
   chip.className = 'sol-chip' + (sol ? ' visible' : '');
@@ -552,16 +553,10 @@ function buildCard(c, stateMap, isSearch) {
     chip.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="5" r="4"/><path d="M5 3v2.5l1.5 1"/></svg>' + tipoLabel(sol.tipo);
   }
 
-  const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
-  const pinChip = document.createElement('div');
-  pinChip.className = 'geo-pin-chip' + (tieneCoords ? ' visible' : '');
-  if (tieneCoords) pinChip.textContent = '\u{1F4CD}';
-
   const info = document.createElement('div');
   info.className = 'client-info';
   info.appendChild(name);
   info.appendChild(chip);
-  info.appendChild(pinChip);
 
   if (isSearch) {
     const sub = document.createElement('div');

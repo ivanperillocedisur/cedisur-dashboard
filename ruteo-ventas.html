@@ -585,7 +585,7 @@ function buildCard(c, stateMap, isSearch) {
     '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>' +
     '<a class="btn-maps" href="' + (tieneCoords ? 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'] : mapsUrl(c['DIRECCION'], c['LOCALIDAD'])) + '" target="_blank">' +
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
-    'Abrir en Maps</a>';
+    'ABRIR EN MAPS</a>';
 
   const btnSol = document.createElement('button');
   btnSol.className = 'btn-solicitar';

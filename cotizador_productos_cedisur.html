@@ -1142,6 +1142,7 @@ document.getElementById('searchModeSelect').addEventListener('change', e => {
   searchQuery = document.getElementById('searchInput').value;
   renderProducts();
 });
+document.getElementById('ivaToggle').addEventListener('change', e => {
   showIva = e.target.checked;
   renderProducts();
 });

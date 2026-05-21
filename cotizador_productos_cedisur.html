@@ -473,7 +473,213 @@
   }
   .no-results .icon { font-size: 2rem; margin-bottom: 0.5rem; }
   .no-results p { font-size: 14px; }
+
+  /* ── BUDGET FAB ─────────────────────────────────────────────────────── */
+  .budget-fab {
+    position: fixed;
+    bottom: 1.5rem; right: 1.25rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 28px;
+    padding: 0.65rem 1.1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(29,58,143,0.4);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    z-index: 200;
+    transition: transform 0.2s;
+  }
+  .budget-fab:active { transform: scale(0.95); }
+  .budget-fab.hidden { display: none; }
+  .fab-count {
+    background: rgba(255,255,255,0.25);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 20px;
+    padding: 1px 6px;
+    text-align: center;
+  }
+
+  /* ── BUDGET PANEL ───────────────────────────────────────────────────── */
+  .budget-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 300;
+    display: none;
+  }
+  .budget-overlay.open { display: block; }
+
+  .budget-panel {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-height: 93vh;
+    background: var(--bg);
+    border-radius: 20px 20px 0 0;
+    z-index: 400;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+  }
+  .budget-panel.open { transform: translateY(0); }
+
+  .panel-header {
+    background: var(--accent);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .panel-title { font-size: 15px; font-weight: 600; color: #fff; }
+  .panel-close {
+    background: rgba(255,255,255,0.15);
+    border: none; border-radius: 50%;
+    color: #fff; cursor: pointer;
+    font-size: 15px;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .panel-body { overflow-y: auto; flex: 1; padding: 1rem 1.25rem; }
+
+  .bulk-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .bulk-select {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 0.45rem 0.6rem;
+    outline: none;
+  }
+  .bulk-btn {
+    background: var(--accent-light);
+    border: 1px solid #c5d0f0;
+    border-radius: 8px;
+    color: var(--accent);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0.45rem 0.8rem;
+    white-space: nowrap;
+  }
+
+  .budget-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+
+  .budget-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem;
+  }
+  .bi-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; line-height: 1.3; }
+  .bi-controls { display: flex; gap: 6px; align-items: flex-end; }
+  .bi-field { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .bi-field label {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--text3);
+  }
+  .bi-field input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 0.3rem 0.4rem;
+    outline: none; width: 100%; text-align: right;
+  }
+  .bi-field input:focus { border-color: var(--accent); }
+  .bi-price {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; color: var(--text2); margin-top: 6px;
+  }
+  .bi-remove {
+    background: var(--negative-bg);
+    border: 1px solid var(--negative-border);
+    border-radius: 6px; color: var(--negative-text);
+    cursor: pointer; font-size: 13px;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .budget-total-row {
+    display: flex; justify-content: flex-end; align-items: center;
+    gap: 8px; margin-bottom: 1rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .budget-total-label { font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); }
+  .budget-total-value { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 600; color: var(--accent); }
+
+  .pdf-options {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .pdf-opt-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; }
+  .pdf-opt-row + .pdf-opt-row { border-top: 1px solid var(--border); }
+  .pdf-opt-label { flex: 1; font-size: 13px; color: var(--text2); font-weight: 500; }
+
+  .panel-actions {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 1rem 1.25rem 1.75rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .action-btn {
+    border: none; border-radius: 10px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600;
+    padding: 0.85rem;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .action-btn.primary   { background: var(--accent); color: #fff; }
+  .action-btn.whatsapp  { background: #25D366; color: #fff; }
+  .action-btn:active    { opacity: 0.85; }
+  .action-btn:disabled  { opacity: 0.4; cursor: not-allowed; }
+
+  /* Botón + en cada tarjeta */
+  .add-budget-btn {
+    background: var(--accent-light);
+    border: 1px solid #c5d0f0;
+    border-radius: 6px; color: var(--accent);
+    cursor: pointer; font-size: 16px; font-weight: 700;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+  }
+  .add-budget-btn.added {
+    background: var(--positive-bg);
+    border-color: var(--positive-border);
+    color: var(--positive-text);
+    font-size: 13px;
+  }
+
+  .empty-budget { text-align: center; padding: 2rem 1rem; color: var(--text3); }
+  .empty-budget .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .empty-budget p { font-size: 14px; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -775,7 +981,13 @@ function buildCard(p, idx) {
           <span class="chip chip-iva ${ivaClass}">${ivaLabel}</span>
         </div>
       </div>
-      <span class="expand-icon">▼</span>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+        <button class="add-budget-btn${budgetItems.some(b=>b.product===p)?' added':''}" id="add-btn-${idx}"
+          onclick="addToBudget(${idx});event.stopPropagation()" title="Agregar al presupuesto">
+          ${budgetItems.some(b=>b.product===p)?'✓':'+'}
+        </button>
+        <span class="expand-icon">▼</span>
+      </div>
     </div>
 
     <div class="card-body" id="body-${idx}">
@@ -938,7 +1150,304 @@ document.getElementById('kgToggle').addEventListener('change', e => {
   renderProducts();
 });
 
+/* ─── PRESUPUESTO ─────────────────────────────────────────────────── */
+let budgetItems = [];   // [{ product, qty, discount }]
+let pdfShowIva  = true;
+let pdfShowDesc = true;
+
+function addToBudget(idx) {
+  const p = filteredList[idx];
+  if (!p) return;
+  const ei = budgetItems.findIndex(b => b.product === p);
+  if (ei >= 0) {
+    budgetItems.splice(ei, 1);
+  } else {
+    budgetItems.push({ product: p, qty: 1, discount: 0 });
+  }
+  updateBudgetFab();
+  // Actualizar botón de esta tarjeta sin re-renderizar todo
+  const btn = document.getElementById(`add-btn-${idx}`);
+  if (btn) {
+    const inB = budgetItems.some(b => b.product === p);
+    btn.textContent = inB ? '✓' : '+';
+    btn.className   = `add-budget-btn${inB ? ' added' : ''}`;
+  }
+}
+
+function addBulk(type) {
+  const sel   = document.getElementById(type === 'grupo' ? 'bulkGroupSelect' : 'bulkMarcaSelect');
+  const value = sel.value;
+  if (!value) return;
+  allProducts
+    .filter(p => type === 'grupo' ? p.grupo === value : p.prov === value)
+    .forEach(p => {
+      if (!budgetItems.some(b => b.product === p))
+        budgetItems.push({ product: p, qty: 1, discount: 0 });
+    });
+  updateBudgetFab();
+  renderBudgetItems();
+}
+
+function removeFromBudget(i) {
+  budgetItems.splice(i, 1);
+  updateBudgetFab();
+  renderBudgetItems();
+  renderProducts(); // refresca estados de botones + en las tarjetas
+}
+
+function updateBudgetItem(i, field, value) {
+  budgetItems[i][field] = parseFloat(value) || 0;
+  renderBudgetItems();
+}
+
+function updateBudgetFab() {
+  const fab = document.getElementById('budgetFab');
+  document.getElementById('budgetFabCount').textContent = budgetItems.length;
+  fab.classList.toggle('hidden', budgetItems.length === 0);
+}
+
+function openBudgetPanel() {
+  // Poblar selects de grupo y marca
+  const grupos = [...new Set(allProducts.map(p => p.grupo).filter(Boolean))].sort();
+  const marcas = [...new Set(allProducts.map(p => p.prov).filter(Boolean))].sort();
+  document.getElementById('bulkGroupSelect').innerHTML =
+    '<option value="">— Grupo —</option>' + grupos.map(g => `<option value="${g}">${g}</option>`).join('');
+  document.getElementById('bulkMarcaSelect').innerHTML =
+    '<option value="">— Marca —</option>' + marcas.map(m => `<option value="${m}">${m}</option>`).join('');
+  renderBudgetItems();
+  document.getElementById('budgetOverlay').classList.add('open');
+  document.getElementById('budgetPanel').classList.add('open');
+}
+
+function closeBudgetPanel() {
+  document.getElementById('budgetOverlay').classList.remove('open');
+  document.getElementById('budgetPanel').classList.remove('open');
+}
+
+function renderBudgetItems() {
+  const container = document.getElementById('budgetItemsContainer');
+  if (!container) return;
+  if (!budgetItems.length) {
+    container.innerHTML = `
+      <div class="empty-budget">
+        <div class="icon">🛒</div>
+        <p>Agregá productos usando el botón <strong>+</strong> en las tarjetas</p>
+      </div>`;
+    document.getElementById('budgetTotal').textContent = '$0';
+    return;
+  }
+  const modoUnit = showKg ? 'kg' : 'u';
+  container.innerHTML = budgetItems.map((b, i) => {
+    const p      = b.product;
+    const pSiva  = showKg ? p.precioKg           : p.precioU;
+    const pCiva  = showKg ? p.precioKg * (1 + p.ivaRate) : p.civaU;
+    const costo  = showKg ? p.costoKg             : p.costoKg * p.peso;
+    const descF  = 1 - b.discount / 100;
+    const final  = (pdfShowIva ? pCiva : pSiva) * descF;
+    const total  = final * b.qty;
+    const ivaTag = `<span style="color:var(--text3);font-size:11px">IVA ${p.ivaRate === 0.105 ? '10,5' : '21'}%</span>`;
+    return `
+    <div class="budget-item">
+      <div class="bi-name">${p.nombre}</div>
+      <div class="bi-controls">
+        <div class="bi-field">
+          <label>Cant. (${modoUnit})</label>
+          <input type="number" inputmode="decimal" value="${b.qty}" min="0.01" step="0.5"
+            oninput="updateBudgetItem(${i},'qty',this.value)">
+        </div>
+        <div class="bi-field">
+          <label>Dto %</label>
+          <input type="number" inputmode="decimal" value="${b.discount}" min="0" max="100"
+            oninput="updateBudgetItem(${i},'discount',this.value)">
+        </div>
+        <button class="bi-remove" onclick="removeFromBudget(${i})">✕</button>
+      </div>
+      <div class="bi-price">
+        $${fmt(final)}/${modoUnit} × ${b.qty} = <strong>$${fmt(total)}</strong> · ${ivaTag}
+      </div>
+    </div>`;
+  }).join('');
+  // Calcular total general
+  let grand = 0;
+  budgetItems.forEach(b => {
+    const p     = b.product;
+    const pSiva = showKg ? p.precioKg           : p.precioU;
+    const pCiva = showKg ? p.precioKg * (1 + p.ivaRate) : p.civaU;
+    grand += (pdfShowIva ? pCiva : pSiva) * (1 - b.discount / 100) * b.qty;
+  });
+  document.getElementById('budgetTotal').textContent = `$${fmt(grand)}`;
+}
+
+/* ─── GENERACIÓN DE PDF ───────────────────────────────────────────── */
+async function generatePDF(download = true) {
+  if (!budgetItems.length) { alert('El presupuesto está vacío.'); return null; }
+
+  const { jsPDF } = window.jspdf;
+  const doc       = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const today     = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const ivaLabel  = pdfShowIva ? 'c/IVA' : 's/IVA';
+  const modoLabel = showKg ? 'kg' : 'u';
+
+  // ── Header azul ──────────────────────────────────────────────────
+  doc.setFillColor(29, 58, 143);
+  doc.rect(0, 0, 210, 30, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(22); doc.setFont('helvetica', 'bold');
+  doc.text('CEDISUR', 14, 13);
+
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.text('Distribuidora de alimentos', 14, 19);
+
+  doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+  doc.text('COTIZACIÓN DE PRECIOS', 14, 27);
+
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.text(`Fecha: ${today}`, 196, 13, { align: 'right' });
+  doc.text(`Precios ${ivaLabel} · Por ${modoLabel}`, 196, 19, { align: 'right' });
+
+  // ── Tabla ────────────────────────────────────────────────────────
+  const head = pdfShowDesc
+    ? [['Producto', 'Unidad', 'P. Lista', 'Dto.', 'P. Final', 'Total']]
+    : [['Producto', 'Unidad', 'Precio', 'Total']];
+
+  let grandTotal = 0;
+  const body = budgetItems.map(b => {
+    const p      = b.product;
+    const pSiva  = showKg ? p.precioKg           : p.precioU;
+    const pCiva  = showKg ? p.precioKg * (1 + p.ivaRate) : p.civaU;
+    const base   = pdfShowIva ? pCiva : pSiva;
+    const descF  = 1 - b.discount / 100;
+    const final  = base * descF;
+    const total  = final * b.qty;
+    grandTotal  += total;
+
+    if (pdfShowDesc) {
+      return [
+        p.nombre,
+        `${b.qty} ${modoLabel}`,
+        `$${fmt(base)}`,
+        b.discount > 0 ? `${b.discount}%` : '—',
+        `$${fmt(final)}`,
+        `$${fmt(total)}`
+      ];
+    }
+    return [ p.nombre, `${b.qty} ${modoLabel}`, `$${fmt(final)}`, `$${fmt(total)}` ];
+  });
+
+  const colCount = head[0].length;
+  doc.autoTable({
+    startY: 36,
+    head,
+    body,
+    foot: [[{
+      content: 'TOTAL',
+      colSpan: colCount - 1,
+      styles: { halign: 'right', fontStyle: 'bold' }
+    }, `$${fmt(grandTotal)}`]],
+    styles: { font: 'helvetica', fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: [29, 58, 143], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+    footStyles: { fillColor: [235, 240, 255], textColor: [29, 58, 143], fontStyle: 'bold', fontSize: 10 },
+    alternateRowStyles: { fillColor: [248, 247, 244] },
+    columnStyles: { 0: { cellWidth: 'auto' } },
+    margin: { left: 14, right: 14 },
+    theme: 'grid',
+  });
+
+  // ── Pie de página ────────────────────────────────────────────────
+  const pH = doc.internal.pageSize.height;
+  doc.setFontSize(7.5); doc.setTextColor(160, 160, 160); doc.setFont('helvetica', 'normal');
+  doc.text('Precios sujetos a cambios sin previo aviso. Cotización válida al día de la fecha.', 14, pH - 8);
+
+  if (download) { doc.save(`cotizacion-cedisur-${today.replace(/\//g, '-')}.pdf`); return null; }
+  return doc.output('blob');
+}
+
+async function shareWhatsApp() {
+  const blob = await generatePDF(false);
+  if (!blob) return;
+  const today = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const file  = new File([blob], `cotizacion-cedisur-${today.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ title: 'Cotización CEDISUR', text: `Cotización CEDISUR · ${today}`, files: [file] });
+    } catch (e) {
+      if (e.name !== 'AbortError') generatePDF(true);
+    }
+  } else {
+    // Fallback escritorio: descarga directa
+    generatePDF(true);
+  }
+}
+
 loadData();
 </script>
+<!-- ── BUDGET FAB ──────────────────────────────────────────────── -->
+<button class="budget-fab hidden" id="budgetFab" onclick="openBudgetPanel()">
+  🧾 <span class="fab-count" id="budgetFabCount">0</span>
+</button>
+
+<!-- ── BUDGET OVERLAY ─────────────────────────────────────────── -->
+<div class="budget-overlay" id="budgetOverlay" onclick="closeBudgetPanel()"></div>
+
+<!-- ── BUDGET PANEL ───────────────────────────────────────────── -->
+<div class="budget-panel" id="budgetPanel">
+  <div class="panel-header">
+    <span class="panel-title">🧾 Presupuesto</span>
+    <button class="panel-close" onclick="closeBudgetPanel()">✕</button>
+  </div>
+
+  <div class="panel-body">
+
+    <div class="section-label" style="margin-top:0">Agregar por grupo o marca</div>
+    <div class="bulk-row">
+      <select id="bulkGroupSelect" class="bulk-select"><option value="">— Grupo —</option></select>
+      <button class="bulk-btn" onclick="addBulk('grupo')">+ Grupo</button>
+    </div>
+    <div class="bulk-row">
+      <select id="bulkMarcaSelect" class="bulk-select"><option value="">— Marca —</option></select>
+      <button class="bulk-btn" onclick="addBulk('marca')">+ Marca</button>
+    </div>
+
+    <div class="section-label">Productos en cotización</div>
+    <div id="budgetItemsContainer" class="budget-items"></div>
+
+    <div class="budget-total-row">
+      <span class="budget-total-label">Total</span>
+      <span class="budget-total-value" id="budgetTotal">$0</span>
+    </div>
+
+    <div class="section-label">Opciones del PDF</div>
+    <div class="pdf-options">
+      <div class="pdf-opt-row">
+        <span class="pdf-opt-label">Mostrar precios con IVA</span>
+        <label class="toggle">
+          <input type="checkbox" id="pdfIvaToggle" checked onchange="pdfShowIva=this.checked;renderBudgetItems()">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="pdf-opt-row">
+        <span class="pdf-opt-label">Mostrar descuentos aplicados</span>
+        <label class="toggle">
+          <input type="checkbox" id="pdfDescToggle" checked onchange="pdfShowDesc=this.checked;renderBudgetItems()">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+  </div><!-- /panel-body -->
+
+  <div class="panel-actions">
+    <button class="action-btn primary" id="pdfBtn" onclick="generatePDF(true)">
+      📄 Generar PDF
+    </button>
+    <button class="action-btn whatsapp" id="waBtn" onclick="shareWhatsApp()">
+      💬 Compartir por WhatsApp
+    </button>
+  </div>
+</div>
+
 </body>
 </html>

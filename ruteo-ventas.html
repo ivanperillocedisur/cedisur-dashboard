@@ -143,6 +143,18 @@
   .geo-chip.pending { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
   .geo-chip svg { width: 11px; height: 11px; flex-shrink: 0; }
 
+  /* ÚLTIMAS 4 VISITAS */
+  .visitas-section { margin-top: 0.75rem; }
+  .visitas-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
+  .visitas-row { display: flex; gap: 6px; }
+  .visita-item { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
+  .visita-fecha { font-size: 9px; color: var(--text3); font-family: 'DM Mono', monospace; text-align: center; }
+  .visita-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .visita-btn svg { width: 13px; height: 13px; }
+  .visita-btn.bought { background: var(--btn-check-color); border-color: var(--btn-check-color); }
+  .visita-btn.notbought { background: var(--btn-x-color); border-color: var(--btn-x-color); }
+  .visita-btn.none { background: transparent; border-color: var(--border); }
+
   /* BOTÓN SOLICITAR CAMBIO */
   .btn-solicitar { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #7C3AED; background: #F5F0FF; border: 1.5px solid #C4B5FD; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s; }
   .btn-solicitar:active { background: #EDE9FE; }
@@ -315,6 +327,78 @@ function setClientState(codigo, state) {
   saveStateMap(selectedVendedor, selectedDay, map);
   if (searchQuery) renderSearchResults();
   else render();
+}
+
+// ── HISTORIAL DE VISITAS ──────────────────────────────────────────────────────
+
+function historialKey(vendedor) { return 'historial_' + vendedor; }
+
+function getHistorial(vendedor) {
+  try { return JSON.parse(localStorage.getItem(historialKey(vendedor)) || '{}'); }
+  catch { return {}; }
+}
+
+function saveHistorial(vendedor, hist) {
+  localStorage.setItem(historialKey(vendedor), JSON.stringify(hist));
+}
+
+// Registra el estado final del día para todos los clientes planificados
+function cerrarJornada(vendedor, dia, fecha) {
+  var hist = getHistorial(vendedor);
+  var stateMap = getStateMap(vendedor, dia);
+  var clientes = allData.filter(function(r) {
+    return r['VENDEDOR'] === vendedor && r['DIA CARGA DE PEDIDO'].toUpperCase() === dia;
+  });
+  clientes.forEach(function(c) {
+    var codigo = c['CODIGO CLIENTE'];
+    var estado = stateMap[codigo] || 'none';
+    if (!hist[codigo]) hist[codigo] = [];
+    // Evitar duplicados del mismo día
+    var yaRegistrado = hist[codigo].some(function(e) { return e.fecha === fecha; });
+    if (!yaRegistrado) {
+      hist[codigo].push({ fecha: fecha, estado: estado });
+      // Mantener solo las últimas 20 entradas por cliente
+      if (hist[codigo].length > 20) hist[codigo] = hist[codigo].slice(-20);
+    }
+  });
+  saveHistorial(vendedor, hist);
+}
+
+// Devuelve las últimas N visitas de un cliente
+function getUltimasVisitas(vendedor, codigo, n) {
+  var hist = getHistorial(vendedor);
+  var entradas = hist[codigo] || [];
+  return entradas.slice(-n);
+}
+
+// Cierre automático: se ejecuta al cargar la app y verifica si hay jornadas pasadas sin cerrar
+function verificarCierresPendientes() {
+  if (!selectedVendedor || !allData.length) return;
+  var hoy = todayStr();
+  var dias = DAYS_ORDER.filter(function(d) {
+    return allData.some(function(r) {
+      return r['VENDEDOR'] === selectedVendedor && r['DIA CARGA DE PEDIDO'].toUpperCase() === d;
+    });
+  });
+  // Revisar los últimos 7 días
+  for (var i = 1; i <= 7; i++) {
+    var fecha = new Date();
+    fecha.setDate(fecha.getDate() - i);
+    var fechaStr = fecha.toISOString().slice(0, 10);
+    var diaNombre = ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'][fecha.getDay()];
+    if (dias.indexOf(diaNombre) === -1) continue;
+    // Verificar si ya se cerró ese día
+    var hist = getHistorial(selectedVendedor);
+    var clientes = allData.filter(function(r) {
+      return r['VENDEDOR'] === selectedVendedor && r['DIA CARGA DE PEDIDO'].toUpperCase() === diaNombre;
+    });
+    if (!clientes.length) continue;
+    var primero = clientes[0]['CODIGO CLIENTE'];
+    var yaHayCierre = hist[primero] && hist[primero].some(function(e) { return e.fecha === fechaStr; });
+    if (!yaHayCierre) {
+      cerrarJornada(selectedVendedor, diaNombre, fechaStr);
+    }
+  }
 }
 
 // ── CSV ────────────────────────────────────────────────────────────────────────
@@ -585,7 +669,52 @@ function buildCard(c, stateMap, isSearch) {
     '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>' +
     '<a class="btn-maps" href="' + (tieneCoords ? 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'] : mapsUrl(c['DIRECCION'], c['LOCALIDAD'])) + '" target="_blank">' +
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
-    'ABRIR EN MAPS</a>';
+    'Abrir en Maps</a>';
+
+  // Últimas 4 visitas
+  const ultimasVisitas = getUltimasVisitas(selectedVendedor, codigo, 4);
+  const visitasSection = document.createElement('div');
+  visitasSection.className = 'visitas-section';
+  const visitasLabel = document.createElement('div');
+  visitasLabel.className = 'visitas-label';
+  visitasLabel.textContent = 'Últimas 4 visitas';
+  visitasSection.appendChild(visitasLabel);
+  const visitasRow = document.createElement('div');
+  visitasRow.className = 'visitas-row';
+
+  // Siempre mostrar 4 slots
+  var slots = [{fecha:'', estado:'none'},{fecha:'', estado:'none'},{fecha:'', estado:'none'},{fecha:'', estado:'none'}];
+  for (var vi = 0; vi < ultimasVisitas.length; vi++) {
+    slots[4 - ultimasVisitas.length + vi] = ultimasVisitas[vi];
+  }
+
+  slots.forEach(function(v) {
+    var item = document.createElement('div');
+    item.className = 'visita-item';
+    var btn = document.createElement('div');
+    btn.className = 'visita-btn ' + v.estado;
+    if (v.estado === 'bought') {
+      btn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M2.5 7l3 3 6-6"/></svg>';
+    } else if (v.estado === 'notbought') {
+      btn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>';
+    } else {
+      btn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h6"/></svg>';
+    }
+    var fecha = document.createElement('div');
+    fecha.className = 'visita-fecha';
+    if (v.fecha) {
+      var parts = v.fecha.split('-');
+      fecha.textContent = parts[2] + '/' + parts[1];
+    } else {
+      fecha.textContent = '--';
+    }
+    item.appendChild(btn);
+    item.appendChild(fecha);
+    visitasRow.appendChild(item);
+  });
+
+  visitasSection.appendChild(visitasRow);
+  detail.appendChild(visitasSection);
 
   const btnSol = document.createElement('button');
   btnSol.className = 'btn-solicitar';
@@ -867,7 +996,7 @@ function init(csvText) {
     opt.value = v; opt.textContent = v;
     sel.appendChild(opt);
   });
-  sel.onchange = function() { selectedVendedor = sel.value; selectedDay = ''; render(); };
+  sel.onchange = function() { selectedVendedor = sel.value; selectedDay = ''; render(); setTimeout(verificarCierresPendientes, 500); };
 
   const d = new Date();
   document.getElementById('today-label').textContent =

@@ -1983,11 +1983,38 @@ let zonaRankSort = {key:"dto_total", dir:-1};
 function renderZona() {
   showLoading("zona");
   try {
+
+    // Contribución real por zona desde DATA_COMPLETA (todas las líneas, no solo con dto)
+    const zona_fc  = getFilterVal("f-zona");
+    const vend_fc  = getFilterVal("f-vendedor");
+    const seg_fc   = getFilterVal("f-segmento");
+    const prov_fc  = getFilterVal("f-proveedor");
+    const marca_fc = getFilterVal("f-marca");
+    const grupo_fc = getFilterVal("f-grupo");
+    const prod_fc  = getFilterVal("f-producto");
+    const ecom_fc  = getFilterVal("f-ecommerce");
+    const contribMapZona = {};
+    DATA_COMPLETA.forEach(r => {
+      if (EXCLUIR_ACUERDOS       && (r["Acuerdo"]||"")   === "Sí")             return;
+      if (EXCLUIR_PROMOCIONES    && (r["Promocion"]||"") === "Sí")             return;
+      if (EXCLUIR_DISTRIBUIDORES && (r["Segmento"]||"")  === "Distribuidores") return;
+      if (zona_fc  && r["Zona"]           !== zona_fc)  return;
+      if (vend_fc  && r["Vendedor"]       !== vend_fc)  return;
+      if (seg_fc   && r["Segmento"]       !== seg_fc)   return;
+      if (prov_fc  && r["Proveedor"]      !== prov_fc)  return;
+      if (marca_fc && r["Marca"]          !== marca_fc) return;
+      if (grupo_fc && r["Grupo Artículo"] !== grupo_fc) return;
+      if (prod_fc  && r["Descripción"]    !== prod_fc)  return;
+      if (ecom_fc  && r["Ecommerce"]      !== ecom_fc)  return;
+      const k = r["Zona"]||"";
+      if (!k) return;
+      contribMapZona[k] = (contribMapZona[k]||0) + (parseFloat(r["Contribución $"])||0);
+    });
     let rows = filtrarResumen("ZONA").map(r => ({
       zona:       r["Clave"],
       dto_total:  parseFloat(r["Dto $"])||0,
       venta_total:parseFloat(r["Total $"])||0,
-      contrib:    parseFloat(r["Contribución $"])||0,
+      contrib:    contribMapZona[r["Clave"]] || 0,
       clientes:   parseInt(r["Clientes"])||0,
       dto_pct:    (()=>{const d=parseFloat(r["Dto $"])||0,v=parseFloat(r["Total $"])||0;return (d+v)>0?d/(d+v)*100:0;})()
     }));
@@ -2057,12 +2084,39 @@ function sortVendRank(key) {
 function renderVendedor() {
   showLoading("vendedor");
   try {
+
+    // Contribución real por vendedor desde DATA_COMPLETA (todas las líneas, no solo con dto)
+    const zona_fc  = getFilterVal("f-zona");
+    const vend_fc  = getFilterVal("f-vendedor");
+    const seg_fc   = getFilterVal("f-segmento");
+    const prov_fc  = getFilterVal("f-proveedor");
+    const marca_fc = getFilterVal("f-marca");
+    const grupo_fc = getFilterVal("f-grupo");
+    const prod_fc  = getFilterVal("f-producto");
+    const ecom_fc  = getFilterVal("f-ecommerce");
+    const contribMapVend = {};
+    DATA_COMPLETA.forEach(r => {
+      if (EXCLUIR_ACUERDOS       && (r["Acuerdo"]||"")   === "Sí")             return;
+      if (EXCLUIR_PROMOCIONES    && (r["Promocion"]||"") === "Sí")             return;
+      if (EXCLUIR_DISTRIBUIDORES && (r["Segmento"]||"")  === "Distribuidores") return;
+      if (zona_fc  && r["Zona"]           !== zona_fc)  return;
+      if (vend_fc  && r["Vendedor"]       !== vend_fc)  return;
+      if (seg_fc   && r["Segmento"]       !== seg_fc)   return;
+      if (prov_fc  && r["Proveedor"]      !== prov_fc)  return;
+      if (marca_fc && r["Marca"]          !== marca_fc) return;
+      if (grupo_fc && r["Grupo Artículo"] !== grupo_fc) return;
+      if (prod_fc  && r["Descripción"]    !== prod_fc)  return;
+      if (ecom_fc  && r["Ecommerce"]      !== ecom_fc)  return;
+      const k = r["Vendedor"]||"";
+      if (!k) return;
+      contribMapVend[k] = (contribMapVend[k]||0) + (parseFloat(r["Contribución $"])||0);
+    });
     let rows = filtrarResumen("VENDEDOR").map(r => ({
       vendedor:   r["Clave"],
       zona:       r["Zona"]||"",
       dto_total:  parseFloat(r["Dto $"])||0,
       venta_total:parseFloat(r["Total $"])||0,
-      contrib:    parseFloat(r["Contribución $"])||0,
+      contrib:    contribMapVend[r["Clave"]] || 0,
       lineas:     parseInt(r["Líneas c/Dto"])||0,
       dto_pct:    (()=>{const d=parseFloat(r["Dto $"])||0,v=parseFloat(r["Total $"])||0;return (d+v)>0?d/(d+v)*100:0;})()
     }));

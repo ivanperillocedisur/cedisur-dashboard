@@ -490,6 +490,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <th class="num" onclick="sortZonaRank('dto_pct')">% Dto Prom ↕</th>
           <th class="num" onclick="sortZonaRank('clientes')">Clientes c/Dto ↕</th>
           <th class="num" onclick="sortZonaRank('total_venta')">Venta $ Total ↕</th>
+          <th class="num" onclick="sortZonaRank('contrib')">Contribución $ ↕</th>
         </tr></thead>
         <tbody id="zona-rank-body"></tbody>
       </table>
@@ -550,6 +551,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <th class="num" onclick="sortVendRank('dto_pct')">% Dto Prom ↕</th>
           <th class="num" onclick="sortVendRank('lineas')">Líneas c/Dto ↕</th>
           <th class="num" onclick="sortVendRank('total_venta')">Venta $ Total ↕</th>
+          <th class="num" onclick="sortVendRank('contrib')">Contribución $ ↕</th>
         </tr></thead>
         <tbody id="vend-rank-body"></tbody>
       </table>
@@ -2030,6 +2032,7 @@ function renderZona() {
         <td class="num ${r.dto_pct>4?"dto-high":r.dto_pct>3?"dto-medium":"dto-ok"}">${fP(r.dto_pct)}</td>
         <td class="num">${fN(r.clientes)}</td>
         <td class="num">${fM(r.venta_total)}</td>
+        <td class="num ${r.contrib<0?"dto-high":""}">${fM(r.contrib)}</td>
       </tr>`;
     });
   } catch(e) { console.error("renderZona:", e); }
@@ -2059,6 +2062,7 @@ function renderVendedor() {
       zona:       r["Zona"]||"",
       dto_total:  parseFloat(r["Dto $"])||0,
       venta_total:parseFloat(r["Total $"])||0,
+      contrib:    parseFloat(r["Contribución $"])||0,
       lineas:     parseInt(r["Líneas c/Dto"])||0,
       dto_pct:    (()=>{const d=parseFloat(r["Dto $"])||0,v=parseFloat(r["Total $"])||0;return (d+v)>0?d/(d+v)*100:0;})()
     }));
@@ -2111,6 +2115,7 @@ function renderVendedor() {
         <td class="num ${r.dto_pct>4?"dto-high":r.dto_pct>3?"dto-medium":"dto-ok"}">${fP(r.dto_pct)}</td>
         <td class="num">${fN(r.lineas)}</td>
         <td class="num">${fM(r.venta_total)}</td>
+        <td class="num ${r.contrib<0?"dto-high":""}">${fM(r.contrib)}</td>
       </tr>`;
     });
   } catch(e) { console.error("renderVendedor:", e); }

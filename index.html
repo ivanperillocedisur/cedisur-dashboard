@@ -419,7 +419,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   <div class="kpi-grid cols5" id="kpi-resumen" style="--kpi-colors:1"></div>
   <div class="chart-row cols2x1">
     <div class="chart-card">
-      <div class="chart-card-title">% Descuento por zona — Últimas 10 semanas</div>
+      <div class="chart-card-title">% Descuento por zona — Últimas 4 semanas</div>
       <div class="chart-wrap"><canvas id="c-semanas-zona" height="180"></canvas></div>
     </div>
     <div class="chart-card">
@@ -492,6 +492,30 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <th class="num" onclick="sortZonaRank('total_venta')">Venta $ Total ↕</th>
         </tr></thead>
         <tbody id="zona-rank-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="chart-card" style="margin-bottom:14px">
+    <div class="chart-card-title">Ranking de Clientes — Mayor % Dto (exc. bonificados)</div>
+    <div class="search-bar" style="margin-bottom:8px">
+      <input type="text" id="cli-zona-search" placeholder="Buscar cliente…"
+        oninput="filtrarTablaClientes(this.value)"
+        class="search-input" style="width:220px">
+      <span class="result-count" id="cli-zona-count">—</span>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr>
+          <th onclick="sortCliZona('cod')">Cód. Cliente ↕</th>
+          <th onclick="sortCliZona('nombre')">Cliente ↕</th>
+          <th onclick="sortCliZona('zona')">Zona ↕</th>
+          <th onclick="sortCliZona('vendedor')">Vendedor ↕</th>
+          <th class="num" onclick="sortCliZona('venta')">Venta $ ↕</th>
+          <th class="num" onclick="sortCliZona('dto')">Dto $ ↕</th>
+          <th class="num" onclick="sortCliZona('pct')">% Dto ↕</th>
+          <th class="num" onclick="sortCliZona('lineas')">Líneas c/Dto ↕</th>
+        </tr></thead>
+        <tbody id="cli-zona-body"></tbody>
       </table>
     </div>
   </div>
@@ -1842,7 +1866,107 @@ function renderCliente() {
 // ============================================================
 // ③ POR ZONA
 // ============================================================
-let zonaRankSort = {key:"dto_total", dir:-1};
+let cliZonaSort = { key:"pct", dir:-1 };
+let cliZonaData = []; // cache de datos para el buscador
+
+function sortCliZona(key) {
+  if (cliZonaSort.key===key) cliZonaSort.dir*=-1;
+  else { cliZonaSort.key=key; cliZonaSort.dir=-1; }
+  renderTablaClientes(cliZonaData);
+}
+
+function filtrarTablaClientes(query) {
+  if (!query) { renderTablaClientes(cliZonaData); return; }
+  const q = query.toLowerCase();
+  const filtrado = cliZonaData.filter(r =>
+    r.nombre.toLowerCase().includes(q) || r.cod.toLowerCase().includes(q)
+  );
+  renderTablaClientes(filtrado);
+}
+
+function renderTablaClientes(data) {
+  const sk = cliZonaSort.key, sd = cliZonaSort.dir;
+  const sorted = [...data].sort((a,b) => {
+    const va = a[sk], vb = b[sk];
+    return typeof va === "string" ? va.localeCompare(vb)*sd : (va-vb)*sd;
+  });
+
+  document.getElementById("cli-zona-count").textContent =
+    sorted.length.toLocaleString("es-AR") + " clientes";
+
+  const tbody = document.getElementById("cli-zona-body");
+  const limit = Math.min(sorted.length, 500);
+  tbody.innerHTML = sorted.slice(0, limit).map(r => {
+    const cls = r.pct>30?"dto-high":r.pct>10?"dto-medium":"dto-ok";
+    return `<tr>
+      <td style="font-size:10px;color:var(--muted)">${r.cod}</td>
+      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${r.nombre}</strong></td>
+      <td><span style="font-size:10px;background:var(--surface2);padding:2px 7px;border-radius:3px;color:var(--text-dim)">${r.zona}</span></td>
+      <td style="font-size:11px">${r.vendedor}</td>
+      <td class="num">${fM(r.venta)}</td>
+      <td class="num">${fM(r.dto)}</td>
+      <td class="num ${cls}">${fP(r.pct)}</td>
+      <td class="num">${fN(r.lineas)}</td>
+    </tr>`;
+  }).join("");
+
+  if (sorted.length > 500) {
+    tbody.innerHTML += `<tr><td colspan="8" style="text-align:center;padding:10px;color:var(--muted);font-size:11px">
+      Mostrando 500 de ${sorted.length.toLocaleString("es-AR")} clientes. Usá los filtros para acotar.
+    </td></tr>`;
+  }
+}
+
+function buildRankingClientes() {
+  // Acumular Dto$ desde DETALLE_DATA filtrado (excluye bonificados >90%)
+  const det = filtrarDetalle();
+  const dtoMap = {};
+  det.forEach(r => {
+    if (parseFloat(r["% Dto"]||0) > 90) return; // excluir bonificados
+    const cod  = r["Cod Cliente"]||"";
+    const nom  = r["Cliente"]||"";
+    const zona = r["Zona"]||"";
+    const vend = r["Vendedor"]||"";
+    const dto  = parseFloat(r["Dto $"])||0;
+    if (!dtoMap[cod]) dtoMap[cod] = { cod, nombre:nom, zona, vendedor:vend, dto:0, venta:0, lineas:0 };
+    dtoMap[cod].dto    += dto;
+    dtoMap[cod].lineas += dto>0 ? 1 : 0;
+  });
+
+  // Total$ real desde DATA_COMPLETA (todas las ventas, mismos filtros)
+  const zona_f = getFilterVal("f-zona");
+  const vend_f = getFilterVal("f-vendedor");
+  const seg_f  = getFilterVal("f-segmento");
+  const prov_f = getFilterVal("f-proveedor");
+  const marca_f= getFilterVal("f-marca");
+  const grupo_f= getFilterVal("f-grupo");
+  const prod_f = getFilterVal("f-producto");
+  const ecom_f = getFilterVal("f-ecommerce");
+
+  DATA_COMPLETA.forEach(r => {
+    const cod = r["Cod Cliente"]||"";
+    if (!dtoMap[cod]) return; // solo clientes que tienen dto
+    if (EXCLUIR_ACUERDOS       && (r["Acuerdo"]||"")   === "Sí")           return;
+    if (EXCLUIR_PROMOCIONES    && (r["Promocion"]||"") === "Sí")           return;
+    if (EXCLUIR_DISTRIBUIDORES && (r["Segmento"]||"")  === "Distribuidores") return;
+    if (zona_f  && r["Zona"]           !== zona_f)  return;
+    if (vend_f  && r["Vendedor"]       !== vend_f)  return;
+    if (seg_f   && r["Segmento"]       !== seg_f)   return;
+    if (prov_f  && r["Proveedor"]      !== prov_f)  return;
+    if (marca_f && r["Marca"]          !== marca_f) return;
+    if (grupo_f && r["Grupo Artículo"] !== grupo_f) return;
+    if (prod_f  && r["Descripción"]    !== prod_f)  return;
+    if (ecom_f  && r["Ecommerce"]      !== ecom_f)  return;
+    dtoMap[cod].venta += (parseFloat(r["Total Línea $"])||0) + (parseFloat(r["Dto $"])||0);
+  });
+
+  // Calcular % dto ponderado: Dto$ / Venta$
+  return Object.values(dtoMap)
+    .filter(r => r.venta > 0)
+    .map(r => ({ ...r, pct: Math.round(r.dto/r.venta*1000)/10 }));
+}
+
+
 function sortZonaRank(key) {
   if(zonaRankSort.key===key) zonaRankSort.dir*=-1; else {zonaRankSort.key=key;zonaRankSort.dir=-1;}
   renderZona();
@@ -1904,6 +2028,12 @@ function renderZona() {
     });
   } catch(e) { console.error("renderZona:", e); }
   hideLoading("zona");
+  // Ranking de clientes (se construye después de renderizar la zona)
+  try {
+    cliZonaData = buildRankingClientes();
+    document.getElementById("cli-zona-search").value = "";
+    renderTablaClientes(cliZonaData);
+  } catch(e) { console.error("buildRankingClientes:", e); }
 }
 
 // ============================================================

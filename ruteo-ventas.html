@@ -144,13 +144,15 @@
   .geo-chip svg { width: 11px; height: 11px; flex-shrink: 0; }
 
   /* ÚLTIMAS 4 VISITAS */
-  .visitas-section { margin-top: 0.75rem; }
-  .visitas-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
-  .visitas-row { display: flex; gap: 6px; }
-  .visita-item { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
-  .visita-fecha { font-size: 9px; color: var(--text3); font-family: 'DM Mono', monospace; text-align: center; }
-  .visita-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .visita-btn svg { width: 13px; height: 13px; }
+  .detail-body { display: flex; gap: 10px; align-items: flex-start; }
+  .detail-data { flex: 1; min-width: 0; }
+  .visitas-section { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding-top: 2px; }
+  .visitas-label { font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; text-align: center; white-space: nowrap; }
+  .visitas-row { display: flex; flex-direction: column; gap: 5px; }
+  .visita-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .visita-fecha { font-size: 8px; color: var(--text3); font-family: 'DM Mono', monospace; text-align: center; }
+  .visita-btn { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border); background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .visita-btn svg { width: 11px; height: 11px; }
   .visita-btn.bought { background: var(--btn-check-color); border-color: var(--btn-check-color); }
   .visita-btn.notbought { background: var(--btn-x-color); border-color: var(--btn-x-color); }
   .visita-btn.none { background: transparent; border-color: var(--border); }
@@ -661,17 +663,36 @@ function buildCard(c, stateMap, isSearch) {
 
   const detail = document.createElement('div');
   detail.className = 'card-detail';
-  detail.innerHTML =
-    '<div class="detail-divider"></div>' +
+
+  const divider = document.createElement('div');
+  divider.className = 'detail-divider';
+  detail.appendChild(divider);
+
+  // Contenedor de dos columnas
+  const body = document.createElement('div');
+  body.className = 'detail-body';
+
+  // Columna izquierda: datos
+  const dataCol = document.createElement('div');
+  dataCol.className = 'detail-data';
+  dataCol.innerHTML =
     '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + c['DIRECCION'] + '</div></div>' +
     '<div class="detail-row"><div class="detail-label">Localidad</div><div class="detail-value">' + c['LOCALIDAD'] + '</div></div>' +
     (isSearch ? '<div class="detail-row"><div class="detail-label">Día</div><div class="detail-value">' + diaLabel + '</div></div>' : '') +
-    '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>' +
-    '<a class="btn-maps" href="' + (tieneCoords ? 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'] : mapsUrl(c['DIRECCION'], c['LOCALIDAD'])) + '" target="_blank">' +
-    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
-    'Abrir en Maps</a>';
+    '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>';
 
-  // Últimas 4 visitas
+  body.appendChild(dataCol);
+  detail.appendChild(body);
+
+  // Botón maps va debajo del body, full width
+  const mapsLink = document.createElement('a');
+  mapsLink.className = 'btn-maps';
+  mapsLink.href = tieneCoords ? 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'] : mapsUrl(c['DIRECCION'], c['LOCALIDAD']);
+  mapsLink.target = '_blank';
+  mapsLink.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>Abrir en Maps';
+  detail.appendChild(mapsLink);
+
+  // Últimas 4 visitas — columna derecha del body
   const ultimasVisitas = getUltimasVisitas(selectedVendedor, codigo, 4);
   const visitasSection = document.createElement('div');
   visitasSection.className = 'visitas-section';
@@ -682,8 +703,7 @@ function buildCard(c, stateMap, isSearch) {
   const visitasRow = document.createElement('div');
   visitasRow.className = 'visitas-row';
 
-  // Siempre mostrar 4 slots
-  var slots = [{fecha:'', estado:'none'},{fecha:'', estado:'none'},{fecha:'', estado:'none'},{fecha:'', estado:'none'}];
+  var slots = [{fecha:'',estado:'none'},{fecha:'',estado:'none'},{fecha:'',estado:'none'},{fecha:'',estado:'none'}];
   for (var vi = 0; vi < ultimasVisitas.length; vi++) {
     slots[4 - ultimasVisitas.length + vi] = ultimasVisitas[vi];
   }
@@ -702,19 +722,14 @@ function buildCard(c, stateMap, isSearch) {
     }
     var fecha = document.createElement('div');
     fecha.className = 'visita-fecha';
-    if (v.fecha) {
-      var parts = v.fecha.split('-');
-      fecha.textContent = parts[2] + '/' + parts[1];
-    } else {
-      fecha.textContent = '--';
-    }
+    fecha.textContent = v.fecha ? v.fecha.split('-').slice(1).reverse().join('/') : '--';
     item.appendChild(btn);
     item.appendChild(fecha);
     visitasRow.appendChild(item);
   });
 
   visitasSection.appendChild(visitasRow);
-  detail.appendChild(visitasSection);
+  body.appendChild(visitasSection);
 
   const btnSol = document.createElement('button');
   btnSol.className = 'btn-solicitar';

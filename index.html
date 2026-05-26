@@ -513,6 +513,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <th class="num" onclick="sortCliZona('venta')">Venta $ ↕</th>
           <th class="num" onclick="sortCliZona('dto')">Dto $ ↕</th>
           <th class="num" onclick="sortCliZona('pct')">% Dto ↕</th>
+          <th class="num" onclick="sortCliZona('contrib')">Contribución $ ↕</th>
           <th class="num" onclick="sortCliZona('lineas')">Líneas c/Dto ↕</th>
         </tr></thead>
         <tbody id="cli-zona-body"></tbody>
@@ -1898,6 +1899,7 @@ function renderTablaClientes(data) {
   const limit = Math.min(sorted.length, 500);
   tbody.innerHTML = sorted.slice(0, limit).map(r => {
     const cls = r.pct>30?"dto-high":r.pct>10?"dto-medium":"dto-ok";
+    const cc  = r.contrib<0?"dto-high":"";
     return `<tr>
       <td style="font-size:10px;color:var(--muted)">${r.cod}</td>
       <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${r.nombre}</strong></td>
@@ -1906,12 +1908,13 @@ function renderTablaClientes(data) {
       <td class="num">${fM(r.venta)}</td>
       <td class="num">${fM(r.dto)}</td>
       <td class="num ${cls}">${fP(r.pct)}</td>
+      <td class="num ${cc}">${fM(r.contrib)}</td>
       <td class="num">${fN(r.lineas)}</td>
     </tr>`;
   }).join("");
 
   if (sorted.length > 500) {
-    tbody.innerHTML += `<tr><td colspan="8" style="text-align:center;padding:10px;color:var(--muted);font-size:11px">
+    tbody.innerHTML += `<tr><td colspan="9" style="text-align:center;padding:10px;color:var(--muted);font-size:11px">
       Mostrando 500 de ${sorted.length.toLocaleString("es-AR")} clientes. Usá los filtros para acotar.
     </td></tr>`;
   }
@@ -1928,8 +1931,9 @@ function buildRankingClientes() {
     const zona = r["Zona"]||"";
     const vend = r["Vendedor"]||"";
     const dto  = parseFloat(r["Dto $"])||0;
-    if (!dtoMap[cod]) dtoMap[cod] = { cod, nombre:nom, zona, vendedor:vend, dto:0, venta:0, lineas:0 };
+    if (!dtoMap[cod]) dtoMap[cod] = { cod, nombre:nom, zona, vendedor:vend, dto:0, venta:0, contrib:0, lineas:0 };
     dtoMap[cod].dto    += dto;
+    dtoMap[cod].contrib+= parseFloat(r["Contribución $"])||0;
     dtoMap[cod].lineas += dto>0 ? 1 : 0;
   });
 
@@ -1971,6 +1975,8 @@ function sortZonaRank(key) {
   if(zonaRankSort.key===key) zonaRankSort.dir*=-1; else {zonaRankSort.key=key;zonaRankSort.dir=-1;}
   renderZona();
 }
+
+let zonaRankSort = {key:"dto_total", dir:-1};
 
 function renderZona() {
   showLoading("zona");

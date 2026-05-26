@@ -382,11 +382,12 @@ function verificarCierresPendientes() {
       return r['VENDEDOR'] === selectedVendedor && r['DIA CARGA DE PEDIDO'].toUpperCase() === d;
     });
   });
-  // Revisar los últimos 7 días
+  // Revisar los últimos 7 días (solo días anteriores, nunca hoy)
   for (var i = 1; i <= 7; i++) {
     var fecha = new Date();
     fecha.setDate(fecha.getDate() - i);
     var fechaStr = fecha.toISOString().slice(0, 10);
+    if (fechaStr >= hoy) continue; // nunca cerrar el día actual
     var diaNombre = ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'][fecha.getDay()];
     if (dias.indexOf(diaNombre) === -1) continue;
     // Verificar si ya se cerró ese día
@@ -689,7 +690,7 @@ function buildCard(c, stateMap, isSearch) {
   mapsLink.className = 'btn-maps';
   mapsLink.href = tieneCoords ? 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'] : mapsUrl(c['DIRECCION'], c['LOCALIDAD']);
   mapsLink.target = '_blank';
-  mapsLink.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>ABRIR EN MAPS';
+  mapsLink.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>Abrir en Maps';
   detail.appendChild(mapsLink);
 
   // Últimas 4 visitas — columna derecha del body
@@ -703,9 +704,19 @@ function buildCard(c, stateMap, isSearch) {
   const visitasRow = document.createElement('div');
   visitasRow.className = 'visitas-row';
 
+  // Incluir el estado de hoy en tiempo real (sin esperar al cierre)
+  var todayStateMap = getStateMap(selectedVendedor, selectedDay);
+  var estadoHoy = todayStateMap[codigo] || 'none';
+  var entradaHoy = { fecha: todayStr(), estado: estadoHoy };
+
+  // Combinar historial pasado + entrada de hoy
+  var todasVisitas = ultimasVisitas.filter(function(v) { return v.fecha !== todayStr(); });
+  todasVisitas.push(entradaHoy);
+  todasVisitas = todasVisitas.slice(-4);
+
   var slots = [{fecha:'',estado:'none'},{fecha:'',estado:'none'},{fecha:'',estado:'none'},{fecha:'',estado:'none'}];
-  for (var vi = 0; vi < ultimasVisitas.length; vi++) {
-    slots[4 - ultimasVisitas.length + vi] = ultimasVisitas[vi];
+  for (var vi = 0; vi < todasVisitas.length; vi++) {
+    slots[4 - todasVisitas.length + vi] = todasVisitas[vi];
   }
 
   slots.forEach(function(v) {

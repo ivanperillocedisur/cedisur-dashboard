@@ -144,15 +144,15 @@
   .geo-chip svg { width: 11px; height: 11px; flex-shrink: 0; }
 
   /* ÚLTIMAS 4 VISITAS */
-  .detail-body { display: flex; gap: 10px; align-items: flex-start; }
+  .detail-body { display: flex; gap: 12px; align-items: flex-start; }
   .detail-data { flex: 1; min-width: 0; }
-  .visitas-section { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding-top: 2px; }
-  .visitas-label { font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; text-align: center; white-space: nowrap; }
-  .visitas-row { display: flex; flex-direction: column; gap: 5px; }
+  .visitas-section { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .visitas-label { font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); white-space: nowrap; text-align: right; }
+  .visitas-row { display: flex; flex-direction: row; gap: 5px; }
   .visita-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .visita-fecha { font-size: 8px; color: var(--text3); font-family: 'DM Mono', monospace; text-align: center; }
-  .visita-btn { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border); background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .visita-btn svg { width: 11px; height: 11px; }
+  .visita-btn { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border); background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .visita-btn svg { width: 10px; height: 10px; }
   .visita-btn.bought { background: var(--btn-check-color); border-color: var(--btn-check-color); }
   .visita-btn.notbought { background: var(--btn-x-color); border-color: var(--btn-x-color); }
   .visita-btn.none { background: transparent; border-color: var(--border); }
@@ -689,7 +689,7 @@ function buildCard(c, stateMap, isSearch) {
   mapsLink.className = 'btn-maps';
   mapsLink.href = tieneCoords ? 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'] : mapsUrl(c['DIRECCION'], c['LOCALIDAD']);
   mapsLink.target = '_blank';
-  mapsLink.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>Abrir en Maps';
+  mapsLink.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>ABRIR EN MAPS';
   detail.appendChild(mapsLink);
 
   // Últimas 4 visitas — columna derecha del body

@@ -419,7 +419,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   <div class="kpi-grid cols5" id="kpi-resumen" style="--kpi-colors:1"></div>
   <div class="chart-row cols2x1">
     <div class="chart-card">
-      <div class="chart-card-title">% Descuento por zona — Últimas 4 semanas</div>
+      <div class="chart-card-title">% Descuento por zona — Últimas 10 semanas</div>
       <div class="chart-wrap"><canvas id="c-semanas-zona" height="180"></canvas></div>
     </div>
     <div class="chart-card">
@@ -1172,19 +1172,41 @@ function renderResumen() {
     const dsZona = zonasVisR.map((z,i) => {
       const pcts = todasSems.map(sem => {
         if (sem === semVigente) {
-          // Calcular desde DETALLE_DATA
-          const filas = DETALLE_DATA.filter(r => {
+          // Semana vigente: usar filtrarDetalle() — aplica los 3 toggles
+          const filas = filtrarDetalle().filter(r => {
             const rSem = "Sem " + (parseInt(r["Semana Fiscal"])||0);
             return rSem === semVigente && r["Zona"] === z;
           });
           const dto = filas.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
-          const vta = filas.reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
+          // Denominador desde DATA_COMPLETA filtrado (todas las ventas, mismos toggles)
+          const vta = DATA_COMPLETA.filter(r => {
+            const rSem = "Sem " + (parseInt(r["Semana Fiscal"])||0);
+            if (rSem !== semVigente || r["Zona"] !== z) return false;
+            if (EXCLUIR_ACUERDOS       && (r["Acuerdo"]||"")   === "Sí")             return false;
+            if (EXCLUIR_PROMOCIONES    && (r["Promocion"]||"") === "Sí")             return false;
+            if (EXCLUIR_DISTRIBUIDORES && (r["Segmento"]||"")  === "Distribuidores") return false;
+            return true;
+          }).reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
           return (dto+vta)>0 ? Math.round(dto/(dto+vta)*1000)/10 : 0;
         } else {
-          // Leer del histórico
+          // Semanas históricas: descontar categorías excluidas usando columnas de desglose
           const f = HISTORICO_DATA.find(r=>r["Semana"]===sem&&r["Zona"]===z);
           if (!f) return null;
-          const d=parseFloat(f["Dto $"])||0, v=parseFloat(f["Total $"])||0;
+          let d = parseFloat(f["Dto $"])||0;
+          let v = parseFloat(f["Total $"])||0;
+          if (EXCLUIR_ACUERDOS) {
+            d -= parseFloat(f["Dto Acuerdos"])||0;
+            v -= parseFloat(f["Total Acuerdos"])||0;
+          }
+          if (EXCLUIR_PROMOCIONES) {
+            d -= parseFloat(f["Dto Promos"])||0;
+            v -= parseFloat(f["Total Promos"])||0;
+          }
+          if (EXCLUIR_DISTRIBUIDORES) {
+            d -= parseFloat(f["Dto Distrib"])||0;
+            v -= parseFloat(f["Total Distrib"])||0;
+          }
+          d = Math.max(0, d); v = Math.max(0, v);
           return (d+v)>0 ? Math.round(d/(d+v)*1000)/10 : 0;
         }
       });
@@ -1391,13 +1413,31 @@ function getUltimas4SemanasPorZona() {
   const datasets = zonas.map((z,i) => {
     const dtos = sems.map(sem => {
       const fila = rows.find(r => r["Semana"]===sem && r["Zona"]===z);
-      return fila ? parseFloat(fila["Dto $"])||0 : 0;
+      if (!fila) return 0;
+      let d = parseFloat(fila["Dto $"])||0;
+      if (EXCLUIR_ACUERDOS)    d -= parseFloat(fila["Dto Acuerdos"])||0;
+      if (EXCLUIR_PROMOCIONES) d -= parseFloat(fila["Dto Promos"])||0;
+      if (EXCLUIR_DISTRIBUIDORES) d -= parseFloat(fila["Dto Distrib"])||0;
+      return Math.max(0, d);
     });
     const pcts = sems.map(sem => {
       const fila = rows.find(r => r["Semana"]===sem && r["Zona"]===z);
       if (!fila) return 0;
-      const d = parseFloat(fila["Dto $"])||0;
-      const v = parseFloat(fila["Total $"])||0;
+      let d = parseFloat(fila["Dto $"])||0;
+      let v = parseFloat(fila["Total $"])||0;
+      if (EXCLUIR_ACUERDOS) {
+        d -= parseFloat(fila["Dto Acuerdos"])||0;
+        v -= parseFloat(fila["Total Acuerdos"])||0;
+      }
+      if (EXCLUIR_PROMOCIONES) {
+        d -= parseFloat(fila["Dto Promos"])||0;
+        v -= parseFloat(fila["Total Promos"])||0;
+      }
+      if (EXCLUIR_DISTRIBUIDORES) {
+        d -= parseFloat(fila["Dto Distrib"])||0;
+        v -= parseFloat(fila["Total Distrib"])||0;
+      }
+      d = Math.max(0, d); v = Math.max(0, v);
       return (d+v)>0 ? parseFloat((d/(d+v)*100).toFixed(1)) : 0;
     });
     return {

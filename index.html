@@ -1154,7 +1154,7 @@ function renderResumen() {
 
     // Semana vigente desde DATA_DETALLE (la más reciente)
     const semsDetalle = [...new Set(DETALLE_DATA.map(r=>r["Semana Fiscal"]).filter(Boolean))];
-    const semVigenteNum = Math.max(...semsDetalle.map(s=>parseInt(s)||0));
+    const semVigenteNum = Math.max(...semsDetalle.map(s=>parseInt((s||"").toString().replace("Sem ",""))||0));
     const semVigente = semVigenteNum > 0 ? "Sem " + semVigenteNum : null;
 
     // Combinar: histórico + vigente (sin duplicados)
@@ -1174,14 +1174,14 @@ function renderResumen() {
         if (sem === semVigente) {
           // Semana vigente: usar filtrarDetalle() — aplica los 3 toggles
           const filas = filtrarDetalle().filter(r => {
-            const rSem = "Sem " + (parseInt(r["Semana Fiscal"])||0);
-            return rSem === semVigente && r["Zona"] === z;
+            const rSemF = (r["Semana Fiscal"]||"").toString().trim();
+            return rSemF === semVigente && r["Zona"] === z;
           });
           const dto = filas.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
           // Denominador desde DATA_COMPLETA filtrado (todas las ventas, mismos toggles)
           const vta = DATA_COMPLETA.filter(r => {
-            const rSem = "Sem " + (parseInt(r["Semana Fiscal"])||0);
-            if (rSem !== semVigente || r["Zona"] !== z) return false;
+            const rSemV = (r["Semana Fiscal"]||"").toString().trim();
+            if (rSemV !== semVigente || r["Zona"] !== z) return false;
             if (EXCLUIR_ACUERDOS       && (r["Acuerdo"]||"")   === "Sí")             return false;
             if (EXCLUIR_PROMOCIONES    && (r["Promocion"]||"") === "Sí")             return false;
             if (EXCLUIR_DISTRIBUIDORES && (r["Segmento"]||"")  === "Distribuidores") return false;

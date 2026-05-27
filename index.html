@@ -1570,8 +1570,10 @@ function renderEvolucion() {
     };
 
     // Para cada sem+zona obtener dto y total efectivos
+    // La semana vigente SIEMPRE se calcula desde DETALLE_DATA/DATA_COMPLETA
+    // para garantizar coherencia con los KPIs (independiente del histórico)
     const getDatosSemZona = (sem, zona) => {
-      if (sem === semVigente && semVigEsNueva) {
+      if (sem === semVigente) {
         return getVigDetalle(zona);
       }
       const row = HISTORICO_DATA.find(r => r["Semana"]===sem && r["Zona"]===zona);
@@ -1580,7 +1582,7 @@ function renderEvolucion() {
 
     // Total Cedisur por semana
     const getDatosSemTotal = (sem) => {
-      if (sem === semVigente && semVigEsNueva) {
+      if (sem === semVigente) {
         return getVigDetalle(zonaFilt||null);
       }
       if (zonaFilt) return getDatosSemZona(sem, zonaFilt);

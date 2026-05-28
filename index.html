@@ -977,7 +977,7 @@ function filtrarResumen(tipo) {
   // calcular agregados desde DETALLE_DATA (tiene todos los campos)
   const alarma  = getFilterVal("f-alarma");
   const producto= getFilterVal("f-producto");
-  const usarDetalle = prov || marca || grupo || dep || seg || ecom || EXCLUIR_ACUERDOS || EXCLUIR_PROMOCIONES || EXCLUIR_DISTRIBUIDORES || alarma || producto;
+  const usarDetalle = vend || prov || marca || grupo || dep || seg || ecom || EXCLUIR_ACUERDOS || EXCLUIR_PROMOCIONES || EXCLUIR_DISTRIBUIDORES || alarma || producto;
 
   if (usarDetalle) {
     return agregarDesdeDetalle(tipo).filter(r => {
@@ -1107,7 +1107,30 @@ function renderResumen() {
 
     const dtoTotal   = sumar(zonas, "Dto $");
     const ventaTotal = sumar(zonas, "Total $");
-    const contrib    = sumar(zonas, "Contribución $");
+    // Contribución desde DATA_COMPLETA (todas las líneas, no solo con dto)
+    const _zona_f  = getFilterVal("f-zona");
+    const _vend_f  = getFilterVal("f-vendedor");
+    const _seg_f   = getFilterVal("f-segmento");
+    const _prov_f  = getFilterVal("f-proveedor");
+    const _marca_f = getFilterVal("f-marca");
+    const _grupo_f = getFilterVal("f-grupo");
+    const _prod_f  = getFilterVal("f-producto");
+    const _ecom_f  = getFilterVal("f-ecommerce");
+    let contrib = 0;
+    DATA_COMPLETA.forEach(r => {
+      if (EXCLUIR_ACUERDOS       && (r["Acuerdo"]||"")   === "Sí")             return;
+      if (EXCLUIR_PROMOCIONES    && (r["Promocion"]||"") === "Sí")             return;
+      if (EXCLUIR_DISTRIBUIDORES && (r["Segmento"]||"")  === "Distribuidores") return;
+      if (_zona_f  && r["Zona"]           !== _zona_f)  return;
+      if (_vend_f  && r["Vendedor"]       !== _vend_f)  return;
+      if (_seg_f   && r["Segmento"]       !== _seg_f)   return;
+      if (_prov_f  && r["Proveedor"]      !== _prov_f)  return;
+      if (_marca_f && r["Marca"]          !== _marca_f) return;
+      if (_grupo_f && r["Grupo Artículo"] !== _grupo_f) return;
+      if (_prod_f  && r["Descripción"]    !== _prod_f)  return;
+      if (_ecom_f  && r["Ecommerce"]      !== _ecom_f)  return;
+      contrib += parseFloat(r["Contribución $"])||0;
+    });
     const base       = ventaTotal + dtoTotal;
     const dtoPct     = base > 0 ? dtoTotal / base * 100 : 0;
     const clientesConDto = zonas.reduce((s,r)=>s+(parseInt(r["Clientes"])||0),0);

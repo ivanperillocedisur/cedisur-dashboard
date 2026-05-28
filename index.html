@@ -1195,26 +1195,24 @@ function renderResumen() {
     const dsZona = zonasVisR.map((z,i) => {
       const pcts = todasSems.map(sem => {
         if (sem === semVigente) {
-          // Semana vigente: usar filtrarDetalle() — aplica los 3 toggles
-          const filas = filtrarDetalle().filter(r => {
+          // Semana vigente: calcular totales de ZONA (sin filtros de vendedor/marca/producto)
+          // Este gráfico es de contexto zonal — el desglose por vendedor va en otras pestañas.
+          // Solo se aplican toggles (acuerdos/promos/distribuidores) y el filtro de zona.
+          const filasVig = DETALLE_DATA.filter(r => {
             const rSemF = (r["Semana Fiscal"]||"").toString().trim();
-            return rSemF === semVigente && r["Zona"] === z;
+            if (rSemF !== semVigente || r["Zona"] !== z) return false;
+            if (EXCLUIR_ACUERDOS       && (r["Acuerdo"]||"")   === "Sí")             return false;
+            if (EXCLUIR_PROMOCIONES    && (r["Promocion"]||"") === "Sí")             return false;
+            if (EXCLUIR_DISTRIBUIDORES && (r["Segmento"]||"")  === "Distribuidores") return false;
+            return true;
           });
-          const dto = filas.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
-          // Denominador desde DATA_COMPLETA filtrado (todas las ventas, mismos toggles Y filtros de barra)
+          const dto = filasVig.reduce((s,r)=>s+(parseFloat(r["Dto $"])||0),0);
           const vta = DATA_COMPLETA.filter(r => {
             const rSemV = (r["Semana Fiscal"]||"").toString().trim();
             if (rSemV !== semVigente || r["Zona"] !== z) return false;
             if (EXCLUIR_ACUERDOS       && (r["Acuerdo"]||"")   === "Sí")             return false;
             if (EXCLUIR_PROMOCIONES    && (r["Promocion"]||"") === "Sí")             return false;
             if (EXCLUIR_DISTRIBUIDORES && (r["Segmento"]||"")  === "Distribuidores") return false;
-            if (_vend_f  && r["Vendedor"]       !== _vend_f)  return false;
-            if (_seg_f   && r["Segmento"]       !== _seg_f)   return false;
-            if (_prov_f  && r["Proveedor"]      !== _prov_f)  return false;
-            if (_marca_f && r["Marca"]          !== _marca_f) return false;
-            if (_grupo_f && r["Grupo Artículo"] !== _grupo_f) return false;
-            if (_prod_f  && r["Descripción"]    !== _prod_f)  return false;
-            if (_ecom_f  && r["Ecommerce"]      !== _ecom_f)  return false;
             return true;
           }).reduce((s,r)=>s+(parseFloat(r["Total Línea $"])||0),0);
           return (dto+vta)>0 ? Math.round(dto/(dto+vta)*1000)/10 : 0;

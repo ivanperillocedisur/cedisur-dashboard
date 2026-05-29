@@ -318,8 +318,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   <div class="header-left">
     <div class="logo-block">CEDISUR</div>
     <div>
-      <div class="header-title">Dashboard de Descuentos</div>
-      <div class="header-sub">Control Comercial · Gerencia y Supervisores</div>
+      <div class="header-title">Tablero de Descuentos</div>
+      <div class="header-sub">Control Comercial · Vendedores y Clientes</div>
     </div>
   </div>
   <div class="header-right">
@@ -1155,7 +1155,7 @@ function renderResumen() {
       <div class="kpi-card blue">
         <div class="kpi-label">Venta Bruta $</div>
         <div class="kpi-value">${fM(base)}</div>
-        <div class="kpi-sub"><span class="kpi-badge badge-pos">Antes del DTO</span></div>
+        <div class="kpi-sub"><span class="kpi-badge badge-pos">Antes de dto</span></div>
       </div>
       <div class="kpi-card yellow">
         <div class="kpi-label">Clientes con Dto</div>
@@ -1172,18 +1172,33 @@ function renderResumen() {
     const numSemR = s => parseInt((s||"").replace("Sem ",""))||0;
 
     // Semanas del histórico
-    const semsHistR = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))]
-      .sort((a,b)=>numSemR(a)-numSemR(b));
-
-    // Semana vigente desde DATA_DETALLE (la más reciente)
-    const semsDetalle = [...new Set(DETALLE_DATA.map(r=>r["Semana Fiscal"]).filter(Boolean))];
-    const semVigenteNum = Math.max(...semsDetalle.map(s=>parseInt((s||"").toString().replace("Sem ",""))||0));
-    const semVigente = semVigenteNum > 0 ? "Sem " + semVigenteNum : null;
-
-    // Combinar: histórico + vigente (sin duplicados)
+        // Fechas reales de DETALLE_DATA para ordenar semanas por fecha (maneja cambio de año)
+    const detalleFechasR = {};
+    DETALLE_DATA.forEach(r => {
+      const sf = (r["Semana Fiscal"]||"").toString().trim();
+      const f  = r["Fecha"]||"";
+      if (!sf || !f) return;
+      const p = f.split("/");
+      if (p.length!==3) return;
+      const d = p[2]+"-"+p[1].padStart(2,"0")+"-"+p[0].padStart(2,"0");
+      if (!detalleFechasR[sf] || d < detalleFechasR[sf]) detalleFechasR[sf] = d;
+    });
+    const getOrdenR = sem => {
+      const row = HISTORICO_DATA.find(r => r["Semana"]===sem);
+      if (row && row["Orden"]) return row["Orden"];
+      return detalleFechasR[sem] || "";
+    };
+    const sortSemsR = (a, b) => {
+      const oa = getOrdenR(a), ob = getOrdenR(b);
+      if (oa && ob) return oa.localeCompare(ob);
+      return numSemR(a) - numSemR(b);
+    };
+    const semsHistR = [...new Set(HISTORICO_DATA.map(r=>r["Semana"]).filter(Boolean))].sort(sortSemsR);
+    // Semana vigente = la de fecha más reciente en DETALLE_DATA
+    const semVigente = Object.entries(detalleFechasR).sort((a,b)=>b[1].localeCompare(a[1]))[0]?.[0] || null;
     const todasSems = [...semsHistR];
     if (semVigente && !todasSems.includes(semVigente)) todasSems.push(semVigente);
-    todasSems.sort((a,b)=>numSemR(a)-numSemR(b));
+    todasSems.sort(sortSemsR);
 
     // Zonas disponibles
     const zonasHistR = [...new Set(HISTORICO_DATA.map(r=>r["Zona"]).filter(Boolean))].sort();
@@ -1526,14 +1541,36 @@ function renderEvolucion() {
       : [];
 
     // Obtener semanas y zonas disponibles
-    const semsHist = [...new Set(HISTORICO_DATA.map(r => r["Semana"]||r["semana"]||"").filter(Boolean))]
-      .sort((a,b) => numSem(a)-numSem(b));
+    // Fechas reales de DETALLE_DATA por semana (para manejar cambio de año fiscal)
+    const detalleFechasE = {};
+    DETALLE_DATA.forEach(r => {
+      const sf = (r["Semana Fiscal"]||"").toString().trim();
+      const f  = r["Fecha"]||"";
+      if (!sf || !f) return;
+      const p = f.split("/");
+      if (p.length!==3) return;
+      const d = p[2]+"-"+p[1].padStart(2,"0")+"-"+p[0].padStart(2,"0");
+      if (!detalleFechasE[sf] || d < detalleFechasE[sf]) detalleFechasE[sf] = d;
+    });
 
-    // Semana vigente desde DETALLE_DATA
-    const numVig = Math.max(...DETALLE_DATA.map(r =>
-      parseInt((r["Semana Fiscal"]||"").toString().replace("Sem ",""))||0
-    ).filter(n => n > 0));
-    const semVig = numVig > 0 ? "Sem " + numVig : null;
+    // Helper orden por fecha real
+    const getOrdenE = sem => {
+      const row = HISTORICO_DATA.find(r => r["Semana"]===sem);
+      if (row && row["Orden"]) return row["Orden"];
+      return detalleFechasE[sem] || "";
+    };
+    const sortSems = (a, b) => {
+      const oa = getOrdenE(a), ob = getOrdenE(b);
+      if (oa && ob) return oa.localeCompare(ob);
+      return numSem(a) - numSem(b);
+    };
+
+    const semsHist = [...new Set(HISTORICO_DATA.map(r => r["Semana"]||r["semana"]||"").filter(Boolean))]
+      .sort(sortSems);
+
+    // Semana vigente = la de fecha más reciente en DETALLE_DATA
+    const semVig = Object.entries(detalleFechasE).sort((a,b)=>b[1].localeCompare(a[1]))[0]?.[0] || null;
+    const numVig = semVig ? parseInt(semVig.replace("Sem ",""))||0 : 0;
 
     // Si la semana vigente no está en HISTORICO_RESUMEN, construirla desde DETALLE_DATA
     let histVigente = HISTORICO_DATA.filter(r => (r["Semana"]||"") === semVig);
@@ -1542,7 +1579,7 @@ function renderEvolucion() {
     // Combinar semanas: históricas + vigente si es nueva
     let todasSems = [...semsHist];
     if (semVigEsNueva) todasSems.push(semVig);
-    todasSems.sort((a,b) => numSem(a)-numSem(b));
+    todasSems.sort(sortSems);
     todasSems = todasSems.slice(-10); // solo últimas 10
 
     // La vigente es siempre la última

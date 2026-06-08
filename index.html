@@ -294,6 +294,23 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   font-size: 10px; color: var(--muted); display: flex; gap: 18px; flex-wrap: wrap;
 }
 
+/* TENDENCIA */
+.tend-up   { color: var(--red);    font-weight:700; }
+.tend-down { color: var(--green);  font-weight:700; }
+.tend-flat { color: var(--muted);  font-weight:500; }
+.alerta-tend-panel {
+  background: rgba(255,71,87,0.06); border: 1px solid rgba(255,71,87,0.25);
+  border-radius:8px; padding:12px 18px; margin-bottom:18px;
+  display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+}
+.alerta-tend-title { font-size:11px; text-transform:uppercase; letter-spacing:1.5px;
+  color:var(--red); font-weight:600; margin-right:6px; white-space:nowrap; }
+.alerta-tend-item {
+  display:inline-flex; align-items:center; gap:6px;
+  background:rgba(255,71,87,0.12); border:1px solid rgba(255,71,87,0.3);
+  border-radius:20px; padding:3px 12px; font-size:11px; font-weight:600; color:var(--red);
+}
+
 /* RESPONSIVE */
 @media (max-width: 960px) {
   .kpi-grid.cols5, .kpi-grid.cols4 { grid-template-columns: repeat(2, 1fr); }
@@ -417,6 +434,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 <!-- ① RESUMEN -->
 <div id="sec-resumen" class="section active">
   <div class="kpi-grid cols5" id="kpi-resumen" style="--kpi-colors:1"></div>
+  <div id="panel-tendencias" style="display:none" class="alerta-tend-panel"></div>
   <div class="chart-row cols2x1">
     <div class="chart-card">
       <div class="chart-card-title">% Descuento por zona — Últimas 10 semanas</div>
@@ -491,6 +509,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <th class="num" onclick="sortZonaRank('clientes')">Clientes c/Dto ↕</th>
           <th class="num" onclick="sortZonaRank('total_venta')">Venta $ Total ↕</th>
           <th class="num" onclick="sortZonaRank('contrib')">Contribución $ ↕</th>
+          <th class="num" onclick="sortZonaRank('tend')">Tend. 4 sem ↕</th>
         </tr></thead>
         <tbody id="zona-rank-body"></tbody>
       </table>
@@ -1092,6 +1111,81 @@ function hideLoading(sectionId) {
   if (ldr) ldr.style.display = "none";
 }
 
+
+// ============================================================
+// TENDENCIA — helpers para alertas de tendencia sostenida
+// ============================================================
+
+// Convierte el campo Orden (Date object o string YYYY-MM-DD) a string comparable
+function normOrden(val) {
+  if (!val) return "";
+  if (typeof val === "object") {
+    try {
+      const d = new Date(val);
+      return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    } catch(e) { return ""; }
+  }
+  const s = String(val).trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
+}
+
+// Calcula la tendencia de % dto de una zona en las últimas 4 semanas del HISTORICO_RESUMEN
+// Respeta los 3 toggles de exclusión
+// Devuelve { delta, alerta, baja, pcts } o null si no hay datos suficientes
+function tendenciaZona(zona) {
+  const numSemFn = s => parseInt((s||"").toString().replace("Sem ",""))||0;
+
+  const rows = HISTORICO_DATA
+    .filter(r => (r["Zona"]||"") === zona)
+    .sort((a,b) => {
+      const oa = normOrden(a["Orden"]), ob = normOrden(b["Orden"]);
+      if (oa && ob) return oa.localeCompare(ob);
+      return numSemFn(a["Semana"]) - numSemFn(b["Semana"]);
+    })
+    .slice(-4);
+
+  if (rows.length < 4) return null;
+
+  const getPct = r => {
+    let dto   = parseFloat(r["Dto $"])||0;
+    let total = parseFloat(r["Total $"])||0;
+    if (EXCLUIR_ACUERDOS) {
+      dto   -= parseFloat(r["Dto Acuerdos"])||0;
+      total -= parseFloat(r["Total Acuerdos"])||0;
+    }
+    if (EXCLUIR_PROMOCIONES) {
+      dto   -= parseFloat(r["Dto Promos"])||0;
+      total -= parseFloat(r["Total Promos"])||0;
+    }
+    if (EXCLUIR_DISTRIBUIDORES) {
+      dto   -= parseFloat(r["Dto Distrib"])||0;
+      total -= parseFloat(r["Total Distrib"])||0;
+    }
+    dto = Math.max(0,dto); total = Math.max(0,total);
+    return (dto+total)>0 ? dto/(dto+total)*100 : 0;
+  };
+
+  const pcts = rows.map(getPct);
+  // Comparar promedio de primeras 2 vs últimas 2 semanas
+  const avg12 = (pcts[0]+pcts[1])/2;
+  const avg34 = (pcts[2]+pcts[3])/2;
+  const delta = avg34 - avg12;
+
+  // Subas consecutivas (de 3 posibles cambios entre 4 semanas)
+  let subas = 0, bajas = 0;
+  for (let i=1; i<pcts.length; i++) {
+    if (pcts[i] > pcts[i-1]) subas++;
+    else if (pcts[i] < pcts[i-1]) bajas++;
+  }
+
+  return {
+    delta: Math.round(delta*10)/10,
+    alerta: subas >= 3 && delta > 0.3,   // suba sostenida
+    baja:   bajas >= 3 && delta < -0.3,  // baja sostenida
+    pcts
+  };
+}
+
 // ============================================================
 // ① RESUMEN
 // ============================================================
@@ -1397,6 +1491,28 @@ function renderResumen() {
     });
 
   } catch(e) { console.error("renderResumen:", e); }
+
+  // Panel de alertas de tendencia (Opción B)
+  try {
+    const zonasHist = [...new Set(HISTORICO_DATA.map(r=>r["Zona"]).filter(Boolean))];
+    const zonasAlerta = zonasHist
+      .map(z => ({ z, t: tendenciaZona(z) }))
+      .filter(({t}) => t && t.alerta);
+
+    const panel = document.getElementById("panel-tendencias");
+    if (zonasAlerta.length > 0) {
+      panel.style.display = "flex";
+      panel.innerHTML =
+        `<span class="alerta-tend-title">⚠ Tendencia al alza sostenida</span>` +
+        zonasAlerta.map(({z, t}) =>
+          `<span class="alerta-tend-item">▲ ${z} &nbsp;+${t.delta.toFixed(1)}% en 4 sem.</span>`
+        ).join("");
+    } else {
+      panel.style.display = "none";
+      panel.innerHTML = "";
+    }
+  } catch(e) { console.error("panel-tendencias:", e); }
+
   hideLoading("resumen");
 }
 
@@ -2117,14 +2233,26 @@ function renderZona() {
       if (!k) return;
       contribMapZona[k] = (contribMapZona[k]||0) + (parseFloat(r["Contribución $"])||0);
     });
-    let rows = filtrarResumen("ZONA").map(r => ({
-      zona:       r["Clave"],
-      dto_total:  parseFloat(r["Dto $"])||0,
-      venta_total:(parseFloat(r["Total $"])||0)+(parseFloat(r["Dto $"])||0),
-      contrib:    contribMapZona[r["Clave"]] || 0,
-      clientes:   parseInt(r["Clientes"])||0,
-      dto_pct:    (()=>{const d=parseFloat(r["Dto $"])||0,v=parseFloat(r["Total $"])||0;return (d+v)>0?d/(d+v)*100:0;})()
-    }));
+    // Calcular tendencias por zona (Opción A)
+    const tendMapZona = {};
+    [...new Set(HISTORICO_DATA.map(r=>r["Zona"]).filter(Boolean))].forEach(z => {
+      tendMapZona[z] = tendenciaZona(z);
+    });
+
+    let rows = filtrarResumen("ZONA").map(r => {
+      const t = tendMapZona[r["Clave"]] || null;
+      return {
+        zona:       r["Clave"],
+        dto_total:  parseFloat(r["Dto $"])||0,
+        venta_total:(parseFloat(r["Total $"])||0)+(parseFloat(r["Dto $"])||0),
+        contrib:    contribMapZona[r["Clave"]] || 0,
+        clientes:   parseInt(r["Clientes"])||0,
+        dto_pct:    (()=>{const d=parseFloat(r["Dto $"])||0,v=parseFloat(r["Total $"])||0;return (d+v)>0?d/(d+v)*100:0;})(),
+        tend:       t ? t.delta : null,
+        tend_alerta: t ? t.alerta : false,
+        tend_baja:   t ? t.baja  : false
+      };
+    });
 
     const sortKey = zonaRankSort.key;
     rows.sort((a,b) => typeof a[sortKey]==="string" ?
@@ -2167,6 +2295,14 @@ function renderZona() {
         <td class="num">${fN(r.clientes)}</td>
         <td class="num">${fM(r.venta_total)}</td>
         <td class="num ${r.contrib<0?"dto-high":""}">${fM(r.contrib)}</td>
+        <td class="num">${(() => {
+          if (r.tend === null) return '<span class="tend-flat">—</span>';
+          if (r.tend_alerta) return '<span class="tend-up">▲ +'+r.tend.toFixed(1)+'%</span>';
+          if (r.tend_baja)   return '<span class="tend-down">▼ '+r.tend.toFixed(1)+'%</span>';
+          if (r.tend >  0.1) return '<span class="tend-up" style="opacity:0.6">↑ +'+r.tend.toFixed(1)+'%</span>';
+          if (r.tend < -0.1) return '<span class="tend-down" style="opacity:0.6">↓ '+r.tend.toFixed(1)+'%</span>';
+          return '<span class="tend-flat">→</span>';
+        })()}</td>
       </tr>`;
     });
   } catch(e) { console.error("renderZona:", e); }

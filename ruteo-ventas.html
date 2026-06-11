@@ -312,15 +312,32 @@ let tipoSeleccionado = null;
 const solicitudes = {};
 const DAYS_ORDER = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO'];
 
+// ── SEMANA ACTUAL ─────────────────────────────────────────────────────────────
+// Devuelve un string "YYYY-Wnn" donde la semana empieza el lunes
+function currentWeekKey() {
+  var now = new Date();
+  // Ajustar al lunes de la semana actual
+  var day = now.getDay(); // 0=dom, 1=lun ... 6=sab
+  var diff = (day === 0) ? -6 : 1 - day; // días hasta el lunes
+  var monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  var year = monday.getFullYear();
+  // Número de semana ISO
+  var startOfYear = new Date(year, 0, 1);
+  var weekNum = Math.ceil(((monday - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+  return year + '-W' + String(weekNum).padStart(2, '0');
+}
+
 // ── STORAGE ───────────────────────────────────────────────────────────────────
-function storageKey(v, d, date) { return 'ruteo2_' + v + '_' + d + '_' + date; }
+function storageKey(v, d) { return 'ruteo2_' + v + '_' + d + '_' + currentWeekKey(); }
 function todayStr() { return new Date().toISOString().slice(0,10); }
 function getStateMap(v, d) {
-  try { return JSON.parse(localStorage.getItem(storageKey(v,d,todayStr())) || '{}'); }
+  try { return JSON.parse(localStorage.getItem(storageKey(v,d)) || '{}'); }
   catch { return {}; }
 }
 function saveStateMap(v, d, map) {
-  localStorage.setItem(storageKey(v,d,todayStr()), JSON.stringify(map));
+  localStorage.setItem(storageKey(v,d), JSON.stringify(map));
 }
 function setClientState(codigo, state) {
   const map = getStateMap(selectedVendedor, selectedDay);
@@ -690,7 +707,7 @@ function buildCard(c, stateMap, isSearch) {
   mapsLink.className = 'btn-maps';
   mapsLink.href = tieneCoords ? 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'] : mapsUrl(c['DIRECCION'], c['LOCALIDAD']);
   mapsLink.target = '_blank';
-  mapsLink.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>ABRIR EN MAPS';
+  mapsLink.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>Abrir en Maps';
   detail.appendChild(mapsLink);
 
   // Últimas 4 visitas — columna derecha del body
@@ -931,7 +948,7 @@ function renderDayTabs(days) {
 
 function resetDay() {
   if (!confirm('¿Borrar todos los registros de hoy?')) return;
-  localStorage.removeItem(storageKey(selectedVendedor, selectedDay, todayStr()));
+  localStorage.removeItem(storageKey(selectedVendedor, selectedDay));
   render();
 }
 

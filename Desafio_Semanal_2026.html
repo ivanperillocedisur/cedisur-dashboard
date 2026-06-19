@@ -281,8 +281,8 @@ const PRODUCTS = [
   {code:"A0360000028",name:"Bites De Frambuesas Bañadas En Chocolate Blanco Y Negro Biomac",size:"5 x 150 Gr.",prov:"BIOMAC S.R.L.",vence:"13/05/2027",dias:330,total:81,pts:1,pct:20,precio:24853.25,img:"https://tienda.cedisur.com.ar/media/catalog/product/cache/82d22b118787e464092f6d3f3b85657b/A/0/A0360000028-132703.jpg"}
 ]
 const PTS_POR_SKU = Object.fromEntries(PRODUCTS.map(p => [p.code, p.pts]));
-const SHEETS_CSV_URL  = "REEMPLAZAR_CON_URL_RANKING";
-const SHEETS_ACUM_URL = "REEMPLAZAR_CON_URL_VENTA_ACUMULADA";
+const SHEETS_CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pub?gid=271106574&single=true&output=csv";
+const SHEETS_ACUM_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pub?gid=1572019193&single=true&output=csv";
 
 const CAL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
 

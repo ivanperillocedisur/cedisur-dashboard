@@ -1497,13 +1497,14 @@ function renderResumen() {
     const zonasHist = [...new Set(HISTORICO_DATA.map(r=>r["Zona"]).filter(Boolean))];
     const zonasAlerta = zonasHist
       .map(z => ({ z, t: tendenciaZona(z) }))
-      .filter(({t}) => t && t.alerta);
+      .filter(({t}) => t && t.delta > 0)
+      .sort((a, b) => b.t.delta - a.t.delta);
 
     const panel = document.getElementById("panel-tendencias");
     if (zonasAlerta.length > 0) {
       panel.style.display = "flex";
       panel.innerHTML =
-        `<span class="alerta-tend-title">⚠ Tendencia al alza sostenida</span>` +
+        `<span class="alerta-tend-title">▲ Tendencia al alza</span>` +
         zonasAlerta.map(({z, t}) =>
           `<span class="alerta-tend-item">▲ ${z} &nbsp;+${t.delta.toFixed(1)}% en 4 sem.</span>`
         ).join("");

@@ -264,9 +264,9 @@ let PTS_POR_SKU = {};
 const SHEETS_CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pub?gid=271106574&single=true&output=csv";
 const SHEETS_ACUM_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pub?gid=1572019193&single=true&output=csv";
 // SHEETS_STOCK_URL: apuntá a PRODUCTOS_DESAFIO (misma URL que SHEETS_PRODUCTOS_URL, pestaña publicada como CSV)
-const SHEETS_STOCK_URL = "REEMPLAZAR_CON_URL_PRODUCTOS_DESAFIO";
-const SHEETS_PRODUCTOS_URL = "REEMPLAZAR_CON_URL_PRODUCTOS_DESAFIO";
-const SHEETS_CONFIG_URL    = "REEMPLAZAR_CON_URL_CONFIG_DESAFIO";
+const SHEETS_STOCK_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pubhtml?gid=325901860&single=true";
+const SHEETS_PRODUCTOS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pubhtml?gid=325901860&single=true";
+const SHEETS_CONFIG_URL    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pubhtml?gid=48067084&single=true";
 
 const CAL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
 
@@ -280,8 +280,8 @@ function fmt(n){ return "$"+Math.round(n).toLocaleString("es-AR") }
 
 async function initApp(){
   try {
-    const tieneProds   = SHEETS_PRODUCTOS_URL && SHEETS_PRODUCTOS_URL !== "REEMPLAZAR_CON_URL_PRODUCTOS_DESAFIO";
-    const tieneConfig  = SHEETS_CONFIG_URL    && SHEETS_CONFIG_URL    !== "REEMPLAZAR_CON_URL_CONFIG_DESAFIO";
+    const tieneProds   = SHEETS_PRODUCTOS_URL && SHEETS_PRODUCTOS_URL !== "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pubhtml?gid=325901860&single=true";
+    const tieneConfig  = SHEETS_CONFIG_URL    && SHEETS_CONFIG_URL    !== "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pubhtml?gid=48067084&single=true";
 
     const [resProds, resConfig] = await Promise.all([
       tieneProds  ? fetch(SHEETS_PRODUCTOS_URL) : Promise.resolve(null),
@@ -507,14 +507,14 @@ async function fetchRanking(){
   const lbBody=document.getElementById("lb-body");
   const lastUpd=document.getElementById("last-updated");
   lbBody.innerHTML='<div class="lb-empty">Cargando datos...</div>';
-  if(!SHEETS_CSV_URL||SHEETS_CSV_URL==="REEMPLAZAR_CON_URL_RANKING"){
+  if(!SHEETS_CSV_URL||SHEETS_CSV_URL==="https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pubhtml?gid=271106574&single=true"){
     lbBody.innerHTML='<div class="lb-empty">⚠ Configurá las URLs de Google Sheets en el HTML.</div>';
     return;
   }
   try{
     // Traer RANKING, VENTA ACUMULADA y STOCK en paralelo
-    const tieneAcum  = SHEETS_ACUM_URL  && SHEETS_ACUM_URL  !== "REEMPLAZAR_CON_URL_VENTA_ACUMULADA";
-    const tieneStock = SHEETS_STOCK_URL && SHEETS_STOCK_URL !== "REEMPLAZAR_CON_URL_PRODUCTOS_DESAFIO";
+    const tieneAcum  = SHEETS_ACUM_URL  && SHEETS_ACUM_URL  !== "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pubhtml?gid=1572019193&single=true";
+    const tieneStock = SHEETS_STOCK_URL && SHEETS_STOCK_URL !== "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pubhtml?gid=325901860&single=true";
     const [resRanking, resAcum, resStock] = await Promise.all([
       fetch(SHEETS_CSV_URL),
       tieneAcum  ? fetch(SHEETS_ACUM_URL)  : Promise.resolve(null),

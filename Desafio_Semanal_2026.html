@@ -263,9 +263,10 @@ let PRODUCTS = [];
 let PTS_POR_SKU = {};
 const SHEETS_CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pub?gid=271106574&single=true&output=csv";
 const SHEETS_ACUM_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pub?gid=1572019193&single=true&output=csv";
-const SHEETS_STOCK_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pub?gid=1864129900&single=true&output=csv";
-const SHEETS_PRODUCTOS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pub?gid=325901860&single=true&output=csv";
-const SHEETS_CONFIG_URL    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQe71p7NFpbPbY8iLlXORfOfTiob-9LseSWtMphhBOVL1vDhuEQjX69fZORIUwPo13N4E79CdanZtS/pub?gid=48067084&single=true&output=csv";
+// SHEETS_STOCK_URL: apuntá a PRODUCTOS_DESAFIO (misma URL que SHEETS_PRODUCTOS_URL, pestaña publicada como CSV)
+const SHEETS_STOCK_URL = "REEMPLAZAR_CON_URL_PRODUCTOS_DESAFIO";
+const SHEETS_PRODUCTOS_URL = "REEMPLAZAR_CON_URL_PRODUCTOS_DESAFIO";
+const SHEETS_CONFIG_URL    = "REEMPLAZAR_CON_URL_CONFIG_DESAFIO";
 
 const CAL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
 
@@ -303,7 +304,7 @@ async function initApp(){
         const precio= parseFloat((c[6]||"0").trim().replace(",","."))||0;
         const pts   = parseInt((c[7]||"1").trim())||1;
         const total = parseFloat((c[8]||"0").trim().replace(",","."))||0;
-        const img   = (c[9]||"").trim();
+        const img   = ""; // IMG_URL eliminada
         // Días hasta vencimiento
         let dias = 0;
         if(vence){
@@ -513,7 +514,7 @@ async function fetchRanking(){
   try{
     // Traer RANKING, VENTA ACUMULADA y STOCK en paralelo
     const tieneAcum  = SHEETS_ACUM_URL  && SHEETS_ACUM_URL  !== "REEMPLAZAR_CON_URL_VENTA_ACUMULADA";
-    const tieneStock = SHEETS_STOCK_URL && SHEETS_STOCK_URL !== "REEMPLAZAR_CON_URL_STOCK_DESAFIO";
+    const tieneStock = SHEETS_STOCK_URL && SHEETS_STOCK_URL !== "REEMPLAZAR_CON_URL_PRODUCTOS_DESAFIO";
     const [resRanking, resAcum, resStock] = await Promise.all([
       fetch(SHEETS_CSV_URL),
       tieneAcum  ? fetch(SHEETS_ACUM_URL)  : Promise.resolve(null),
@@ -557,7 +558,7 @@ async function fetchRanking(){
       textStock.trim().split("\n").slice(1).filter(r=>r.trim()).forEach(r=>{
         const cols=parseCSVRow(r);
         const sku=(cols[0]||"").trim();
-        const restante=parseFloat((cols[4]||"0").trim())||0; // col E = STOCK_RESTANTE
+        const restante=parseFloat((cols[10]||"0").trim())||0; // col K = STOCK_RESTANTE en PRODUCTOS_DESAFIO
         if(sku)stockMap[sku]=restante;
       });
     }

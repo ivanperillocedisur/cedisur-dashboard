@@ -556,13 +556,27 @@ function cumGoles(seller, upTo){
   return res;
 }
 
+function weekOnlyGoles(seller, w){
+  // Goles solo de la semana w (no acumulado)
+  const res={};
+  let tot=0;
+  for(const p of DATA.products){
+    const g=wkGoles(seller,p.id,w);
+    res[p.id]=g; tot+=g;
+  }
+  res.total=tot;
+  return res;
+}
+
 function weekScore(seller, w){
   return DATA.products.reduce((s,p)=>s+wkGoles(seller,p.id,w),0);
 }
 
-function buildRanking(upTo, filt){
+function buildRanking(w, filt){
+  // Usa goles de la semana w solamente (no acumulado)
+  // Así S2 sin datos muestra 0, no hereda S1
   return DATA.sellers.map((s,i)=>{
-    const g=cumGoles(s,upTo);
+    const g=weekOnlyGoles(s,w);
     return {seller:s,zone:ZONES[i],goles:g,idx:i};
   }).sort((a,b)=>b.goles[filt]-a.goles[filt]);
 }
@@ -601,7 +615,7 @@ function updatePremios(w,pct,obj,sold){
   const note=document.getElementById("premNote");
   if(pct>=100){note.textContent="✅ CeDiSur superó el objetivo. Premios ACTIVADOS.";note.style.color="var(--fg)";}
   else{note.textContent="Faltan "+(obj-sold).toLocaleString("es-AR")+" unidades para activar.";note.style.color="#7B1010";}
-  const rk=buildRanking(w+1,"total");
+  const rk=buildRanking(w,"total");
   
   
 }
@@ -637,8 +651,8 @@ function renderWeekBars(seller){
 
 function renderDetail(seller,g){
   const dprods=DATA.products.map(p=>{
-    const sold=DATA.sales[seller][p.id].slice(0,curW+1).reduce((a,b)=>a+b,0);
-    const obj=DATA.objectives[seller][p.id].slice(0,curW+1).reduce((a,b)=>a+b,0);
+    const sold=DATA.sales[seller][p.id][curW];
+    const obj=DATA.objectives[seller][p.id][curW];
     const pct=Math.min(Math.round(sold/obj*100),100);
     return `<div class="dprod">
       <div class="dn" style="color:${p.color}">${p.name}</div>
@@ -652,7 +666,7 @@ function renderDetail(seller,g){
 }
 
 function render(){
-  const rk=buildRanking(curW+1,curF);
+  const rk=buildRanking(curW,curF);
   updateStats(curW);
   updateWinner(curW);
   document.getElementById("scLider").textContent=rk[0].seller.split(" ").slice(0,2).join(" ");

@@ -659,7 +659,7 @@ function render(){
 
   document.getElementById("rankList").innerHTML=rk.map((r,i)=>{
     const pos=i+1;
-    const medals=["1","2","3"];
+    const medals=["🥇","🥈","🥉"];
     const badge=pos<=3
       ?`<div class="pbadge" style="font-size:20px">${medals[pos-1]}</div>`
       :`<div class="pbadge pn">${pos}</div>`;

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>CEDISUR — Portal de Tableros</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
+
+:root {
+  --navy: #2B3A8A;
+  --navy-dark: #1e2a6a;
+  --navy-light: #3d50b5;
+  --accent: #4FC3F7;
+  --accent2: #FFB300;
+  --bg: #F0F2F8;
+  --card: #FFFFFF;
+  --border: #D8DCF0;
+  --text: #1A1F3A;
+  --muted: #6B74A0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Barlow', sans-serif; background: var(--bg); color: var(--text);
+  min-height: 100vh; min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* HEADER */
+.top {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+  padding: 22px 20px 20px; color: #fff;
+  box-shadow: 0 3px 14px rgba(43,58,138,.25);
+  position: sticky; top: 0; z-index: 10;
+}
+.top h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px; font-weight: 800; letter-spacing: 2px; line-height: 1;
+}
+.top p {
+  font-size: 11px; color: rgba(255,255,255,.65);
+  margin-top: 4px; letter-spacing: .5px; text-transform: uppercase; font-weight: 500;
+}
+
+/* CONTENEDOR */
+.wrap { max-width: 560px; margin: 0 auto; padding: 16px 14px 32px; }
+
+/* ESTADO CARGA */
+.status { text-align: center; color: var(--muted); font-size: 12px; padding: 24px 0; }
+
+/* TARJETA */
+.cards { display: flex; flex-direction: column; gap: 12px; }
+.card {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--card); border: 1px solid var(--border);
+  border-left: 4px solid var(--navy);
+  border-radius: 12px; padding: 16px 16px;
+  text-decoration: none; color: inherit;
+  box-shadow: 0 1px 3px rgba(43,58,138,.06);
+  transition: transform .12s, box-shadow .12s;
+  min-height: 76px;
+}
+.card:active { transform: scale(.98); box-shadow: 0 4px 16px rgba(43,58,138,.18); }
+.card-body { flex: 1; min-width: 0; }
+.card-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px; font-weight: 700; color: var(--navy);
+  letter-spacing: .4px; line-height: 1.05;
+}
+.card-desc { font-size: 12.5px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+.card-vig {
+  display: inline-block; margin-top: 7px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: .5px;
+  background: #FFF3E0; color: var(--accent2);
+  padding: 2px 9px; border-radius: 5px;
+}
+.chev {
+  flex-shrink: 0; width: 26px; height: 26px; color: var(--accent);
+}
+
+/* PIE */
+.foot { text-align: center; color: var(--muted); font-size: 10px; margin-top: 26px; letter-spacing: .5px; }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>CEDISUR</h1>
+  <p>Portal de Tableros · Fuerza de Ventas</p>
+</div>
+
+<div class="wrap">
+  <div id="status" class="status">Cargando tableros…</div>
+  <div id="cards" class="cards"></div>
+  <div class="foot">Inteligencia Comercial · Cedisur</div>
+</div>
+
+<script>
+/* ============================================================
+   FUENTE DE DATOS
+   ------------------------------------------------------------
+   Cuando tengas la planilla de Google Sheets publicada como CSV
+   (Archivo > Compartir > Publicar en la web > formato CSV),
+   pega su URL aca abajo. Debe terminar en "output=csv".
+   La planilla debe tener estas columnas (en la fila 1):
+      nombre , descripcion , vigencia , url , orden
+   Mientras SHEET_URL este vacio, se usan los datos DEMO de abajo.
+   ============================================================ */
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSKlbXi7eQwkHWuqU9ynjSBZjYNm4PwNs6VtknRXOS-6Eboa1lJf0fNmXaduzr2u6oWaXcXD9cUDLFY/pub?gid=0&single=true&output=csv";
+
+/* Datos de ejemplo (imitan lo que vendria de la planilla) */
+const DEMO = [
+  { nombre: "Desafío Semanal 2026", descripcion: "Seguimiento semanal de objetivos por vendedor y zona.", vigencia: "Ejercicio 26-27", url: "https://ivanperillocedisur.github.io/cedisur-dashboard/Desafio_Semanal_2026.html", orden: 1 },
+  { nombre: "Mundial Ferrero", descripcion: "Concurso de ventas Ferrero. Ranking por vendedor y marca.", vigencia: "29 jun – 28 ago 2026", url: "https://ivanperillocedisur.github.io/cedisur-dashboard/mundial_ferrero_integrado.html", orden: 2 },
+  { nombre: "Presupuesto 26-27", descripcion: "Seguimiento de presupuesto MC/SC por zona y vendedor.", vigencia: "Ejercicio 26-27", url: "#", orden: 3 },
+  { nombre: "Tablero de Gaps", descripcion: "Análisis de brechas de venta y alertas tempranas.", vigencia: "Ejercicio 26-27", url: "#", orden: 4 },
+];
+
+const chevSVG = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+
+function render(items) {
+  items.sort((a,b) => (parseInt(a.orden)||99) - (parseInt(b.orden)||99));
+  const cont = document.getElementById("cards");
+  cont.innerHTML = "";
+  items.forEach(it => {
+    if (!it.nombre) return;
+    const a = document.createElement("a");
+    a.className = "card";
+    a.href = it.url || "#";
+    if ((it.url||"").startsWith("http")) a.target = "_blank";
+    a.innerHTML =
+      '<div class="card-body">' +
+        '<div class="card-title">' + it.nombre + '</div>' +
+        (it.descripcion ? '<div class="card-desc">' + it.descripcion + '</div>' : '') +
+        (it.vigencia ? '<span class="card-vig">' + it.vigencia + '</span>' : '') +
+      '</div>' + chevSVG;
+    cont.appendChild(a);
+  });
+  document.getElementById("status").style.display = "none";
+}
+
+/* Lector simple de CSV (soporta comas dentro de comillas) */
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.replace(/\r/g,"").split("\n").filter(l => l.trim() !== "");
+  const headers = splitLine(lines[0]).map(h =>
+    h.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  );
+  for (let i = 1; i < lines.length; i++) {
+    const cells = splitLine(lines[i]);
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = (cells[idx]||"").trim());
+    rows.push(obj);
+  }
+  return rows;
+}
+function splitLine(line) {
+  const out = []; let cur = ""; let q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { q = !q; }
+    else if (c === "," && !q) { out.push(cur); cur = ""; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+async function load() {
+  if (!SHEET_URL) { render(DEMO); return; }
+  try {
+    const r = await fetch(SHEET_URL);
+    const txt = await r.text();
+    render(parseCSV(txt));
+  } catch (e) {
+    document.getElementById("status").textContent = "No se pudo leer la planilla. Mostrando datos de ejemplo.";
+    render(DEMO);
+  }
+}
+load();
+</script>
+</body>
+</html>

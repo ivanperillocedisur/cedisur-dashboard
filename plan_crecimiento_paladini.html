@@ -513,9 +513,11 @@ function getWeekWinner(w){
 }
 
 // Objetivo de kilos (sin clientes) para el "Progreso CeDiSur" de cada mes.
-// Si el valor es null, se calcula automáticamente sumando los objetivos de
-// kilos de todos los vendedores para ese mes.
-const MONTH_KG_OBJ = [32900, null, null, null]; // Julio=32900 (fijado manualmente)
+// Todos los meses se calculan automáticamente sumando los objetivos de kilos
+// de los 17 vendedores desde la hoja OBJETIVOS. Si en algún momento necesitás
+// fijar un total manual para un mes puntual, reemplazá el null correspondiente
+// por el número (ej: [31268, null, null, null]).
+const MONTH_KG_OBJ = [null, null, null, null];
 
 function getCeDiSurMonth(w){
   let obj=0,sold=0;

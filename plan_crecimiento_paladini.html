@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<title>Plan Crecimiento Paladini — Cedisur</title>
+<style>
+:root{
+  --fg:#C1121F;--fg2:#780000;--fg3:#FDE8E8;
+  --cel:#E8B84B;--cel2:#B8860B;--cel3:#FFF8E1;
+  --brown:#780000;--brown2:#9B1B1B;--brown3:#FDE8E8;
+  --gold:#C8960C;--gold2:#FFF8DC;--gold3:#7A5500;
+  --silver:#9E9E9E;--silver2:#F5F5F5;
+  --bronze:#8D4E00;--bronze2:#FFF3E0;
+  --score:#1A0505;
+  --red:#C62828;--red2:#FFEBEE;
+  --bg:#F5F0EC;--card:#fff;
+  --text:#1A1A1A;--muted:#6B7280;--border:#E8DDD5;
+  --r:10px;--rs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ---- FLAG STRIPE ---- */
+.flag{height:7px;background:linear-gradient(90deg,var(--fg) 0,var(--fg2) 50%,var(--fg) 100%)}
+
+/* ---- HEADER FIELD ---- */
+header{
+  background:linear-gradient(135deg,#E63329 0%,#C1121F 100%);
+  position:sticky;top:0;z-index:200;box-shadow:0 3px 16px rgba(150,10,10,.35);
+  overflow:hidden;
+}
+.hdr-inner{position:relative;z-index:2;display:flex;align-items:center;gap:14px;max-width:1300px;margin:0 auto;padding:12px 18px;flex-wrap:wrap}
+.logo-img{height:52px;background:#fff;padding:7px 12px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.18);flex-shrink:0}
+.hdr-mid{flex:1;min-width:160px}
+.hdr-mid h1{font-size:20px;font-weight:900;color:#fff;letter-spacing:3px;text-shadow:0 2px 6px #0009;line-height:1}
+.hdr-mid p{font-size:10px;color:var(--cel);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+.week-sel{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.week-sel>span{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;margin-right:2px}
+.wbtn{border:none;border-radius:var(--rs);padding:5px 9px;font-size:12px;font-weight:800;cursor:pointer;
+  background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);transition:all .15s;font-family:inherit;letter-spacing:.5px}
+.wbtn:hover{background:rgba(255,255,255,.25);color:#fff}
+.wbtn.active{background:var(--gold);color:#fff;box-shadow:0 0 0 2px rgba(200,150,12,.5)}
+.wbtn.spec{border:1px solid rgba(200,150,12,.4)}
+.wbtn.spec.active{box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(200,150,12,.4)}
+
+/* ---- SCOREBOARD BAR ---- */
+.score-bar{background:var(--score);border-bottom:2px solid var(--fg)}
+.score-inner{max-width:1300px;margin:0 auto;padding:0 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.score-cell{padding:10px 14px;border-right:1px solid #ffffff10;text-align:center}
+.score-cell:last-child{border-right:none}
+.sc-label{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
+.sc-value{font-size:20px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+.sc-sub{font-size:10px;color:rgba(255,255,255,.4);margin-top:2px}
+.prog-track{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:6px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;background:var(--fg);transition:width .5s}
+.prog-fill.warn{background:var(--gold)}
+.prog-fill.danger{background:var(--red)}
+
+/* ---- BANNER ESPECIAL ---- */
+.spec-banner{max-width:1300px;margin:12px auto 0;padding:0 18px;display:none}
+.spec-banner.show{display:block}
+.spec-inner{background:var(--gold2);border:2px solid var(--gold);border-radius:var(--r);
+  padding:10px 16px;display:flex;align-items:center;gap:10px}
+.spec-inner p{font-size:13px;color:var(--gold3);font-weight:700}
+
+/* ---- MAIN WRAP ---- */
+.main{max-width:1300px;margin:16px auto 32px;padding:0 18px}
+
+/* ---- TABS ---- */
+.tabs-nav{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:0;overflow-x:auto}
+.tbtn{padding:10px 18px;font-size:13px;font-weight:700;background:none;border:none;cursor:pointer;
+  color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;
+  font-family:inherit;white-space:nowrap;border-radius:var(--rs) var(--rs) 0 0}
+.tbtn:hover{color:var(--brown);background:var(--brown3)}
+.tbtn.active{color:var(--fg2);border-bottom-color:var(--fg);background:var(--fg3)}
+.tab-panel{display:none;padding-top:18px}
+.tab-panel.active{display:block}
+
+/* ---- RANKING ---- */
+.rk-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.rk-header h2{font-size:15px;font-weight:800;color:var(--fg2);display:flex;align-items:center;gap:6px}
+.filter-row{display:flex;gap:5px;flex-wrap:wrap}
+.fbtn{border:1.5px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;
+  background:#fff;cursor:pointer;color:var(--muted);transition:all .15s;font-family:inherit}
+.fbtn:hover{border-color:var(--fg);color:var(--fg2)}
+.fbtn.active{background:var(--fg);border-color:var(--fg);color:#fff}
+
+/* ---- WEEK WINNER BANNER ---- */
+.winner-banner{background:linear-gradient(135deg,var(--gold2),#fff);border:2px solid var(--gold);
+  border-radius:var(--r);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.winner-banner .wlabel{font-size:10px;font-weight:800;color:var(--gold3);text-transform:uppercase;letter-spacing:1px}
+.winner-banner .wname{font-size:16px;font-weight:900;color:var(--brown)}
+.winner-banner .wgoles{font-size:13px;color:var(--gold3);font-weight:600}
+.winner-banner .wpremio{margin-left:auto;background:var(--gold);color:#fff;border-radius:var(--rs);
+  padding:6px 12px;font-size:12px;font-weight:800}
+
+/* ---- SELLER CARD ---- */
+.sc{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);
+  margin-bottom:7px;overflow:hidden;cursor:pointer;transition:box-shadow .15s}
+.sc:hover{box-shadow:0 4px 16px #00000012}
+.sc.p1{border-color:var(--gold);background:linear-gradient(135deg,var(--gold2),#fff)}
+.sc.p2{border-color:var(--silver)}
+.sc.p3{border-color:var(--bronze);background:var(--bronze2)}
+.sc-row{display:grid;grid-template-columns:50px 1fr auto 86px 30px;align-items:center;gap:10px;padding:10px 13px}
+.pbadge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.pbadge.pn{background:var(--bg);font-size:12px;font-weight:800;color:var(--muted)}
+.sname{font-weight:700;font-size:14px}
+.szone{font-size:10px;color:var(--muted);margin-top:1px}
+
+.pills{display:flex;gap:4px;flex-wrap:wrap}
+.pill{font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px;color:#fff;white-space:nowrap}
+.gtotal{text-align:right}
+.gnum{font-size:21px;font-weight:900;color:var(--fg2);line-height:1}
+.glabel{font-size:9px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.chev{font-size:16px;color:var(--muted);transition:transform .2s}
+.sc.open .chev{transform:rotate(180deg)}
+.detail{display:none;padding:0 13px 13px;border-top:1px solid var(--border)}
+.sc.open .detail{display:block}
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.dprod{background:var(--bg);border-radius:var(--rs);padding:10px 12px;border:1px solid var(--border)}
+.dprod .dn{font-size:12px;font-weight:700;margin-bottom:5px}
+.dprod .ds{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
+.dprod .dt{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.dprod .df{height:100%;border-radius:3px}
+.dprod .dg{font-size:16px;font-weight:800;margin-top:4px}
+.wkrow{margin-top:12px}
+.wkrow h4{font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
+.wkbars{display:flex;gap:4px;align-items:flex-end;height:44px}
+.wkbar-w{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.wkbar{width:100%;border-radius:2px 2px 0 0;min-height:2px}
+.wklbl{font-size:8px;color:var(--muted);white-space:nowrap}
+.wklbl.sp{color:var(--gold3);font-weight:800}
+
+/* ---- COMO SE JUEGA ---- */
+.rsec{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);overflow:hidden;margin-bottom:14px}
+.rh{padding:13px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.ricon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.rh h3{font-size:14px;font-weight:800;color:var(--fg2)}
+.rb{padding:13px 16px}
+.rb p{font-size:13px;line-height:1.6;margin-bottom:8px}
+.rb p:last-child{margin-bottom:0}
+.cond-box{background:var(--red2);border:2px solid var(--red);border-radius:var(--rs);padding:12px 14px}
+.cond-box .ct{font-size:12px;font-weight:800;color:var(--red);margin-bottom:5px}
+.cond-box p{font-size:13px;color:#7B1010;line-height:1.5}
+.ex-box{background:var(--fg3);border:1.5px solid var(--fg);border-radius:var(--rs);padding:12px 14px;margin-top:10px}
+.ex-box .et{font-size:10px;font-weight:800;color:var(--fg2);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+.exrow{display:flex;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap;margin-bottom:5px}
+.exrow .en{font-size:17px;font-weight:900;color:var(--fg2)}
+.exrow .er{font-size:17px;font-weight:900;color:var(--red2);color:#1B5E20}
+.spec-box{background:var(--gold2);border:2px solid var(--gold);border-radius:var(--rs);padding:12px 14px;margin-top:10px}
+.spec-box .st{font-size:12px;font-weight:800;color:var(--gold3);margin-bottom:5px}
+.spec-box p{font-size:13px;color:var(--gold3);line-height:1.5}
+.rlist{list-style:none;padding:0}
+.rlist li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5;align-items:flex-start}
+.rlist li:last-child{border-bottom:none}
+.rnum{width:21px;height:21px;border-radius:50%;background:var(--fg);color:#fff;font-size:10px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.ptbl{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
+.ptbl th{text-align:left;padding:6px 10px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+.ptbl td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.ptbl tr:last-child td{border-bottom:none}
+.ptbl tr:nth-child(even) td{background:var(--bg)}
+.pdot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+
+/* ---- PREMIOS ---- */
+.prize-hero{background:linear-gradient(160deg,var(--fg2) 0%,var(--fg) 60%,#2E7D32 100%);border-radius:var(--r);
+  padding:24px 20px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden}
+.prize-hero::before{content:"⚽";position:absolute;font-size:120px;opacity:.06;right:-20px;bottom:-20px;line-height:1}
+.prize-hero .ph-label{font-size:11px;color:rgba(255,255,255,.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.prize-hero .ph-total{font-size:42px;font-weight:900;color:var(--gold)}
+.prize-hero .ph-note{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px}
+
+.weekly-prize{background:var(--card);border-radius:var(--r);border:2px solid var(--gold);padding:16px;margin-bottom:14px}
+.weekly-prize h3{font-size:13px;font-weight:800;color:var(--gold3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.wp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.wp-card{background:var(--gold2);border-radius:var(--rs);padding:12px;text-align:center}
+.wp-card .wpc-lbl{font-size:10px;color:var(--gold3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px}
+.wp-card .wpc-val{font-size:22px;font-weight:900;color:var(--gold3)}
+.wp-card .wpc-sub{font-size:11px;color:var(--gold3);margin-top:2px}
+
+.condicion-p{border:2px solid var(--red);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.cp-h{background:var(--red);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:8px}
+.cp-h h3{font-size:13px;font-weight:800}
+.cp-body{padding:14px 16px;background:var(--red2)}
+.cp-body p{font-size:13px;color:#7B1010;line-height:1.6}
+.cp-prog{margin-top:12px}
+.cp-prog .cpl{display:flex;justify-content:space-between;font-size:12px;color:#7B1010;margin-bottom:5px;font-weight:700}
+.cp-prog .cpt{height:12px;background:#FFCDD2;border-radius:6px;overflow:hidden}
+.cp-prog .cpf{height:100%;border-radius:6px;transition:width .5s}
+.cp-prog .cpn{font-size:10px;color:#7B1010;margin-top:4px;font-style:italic}
+
+.podium-sec{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);padding:18px;margin-bottom:14px}
+.podium-sec h3{font-size:13px;font-weight:800;color:var(--fg2);text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.podium-grid{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:10px;align-items:end}
+.pc{border-radius:var(--r);padding:14px 10px;text-align:center}
+.pc.gold{background:linear-gradient(160deg,var(--gold2),#FFE082);border:2px solid var(--gold)}
+.pc.silver{background:linear-gradient(160deg,#F5F5F5,#E0E0E0);border:2px solid var(--silver)}
+.pc.bronze{background:linear-gradient(160deg,var(--bronze2),#FFCC80);border:2px solid var(--bronze)}
+.pc-medal{font-size:34px;margin-bottom:4px}
+.pc-pos{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.pc-amt{font-size:26px;font-weight:900;color:var(--brown);line-height:1}
+.pc-amt.gt{color:var(--gold3)}
+.pc-amt.bt{color:var(--bronze)}
+.pc-pct{font-size:10px;color:var(--muted);margin-top:3px}
+.pc-who{margin-top:8px;border-top:1px dashed var(--border);padding-top:8px;min-height:36px}
+.pc-who .wn{font-size:13px;font-weight:800;color:var(--brown)}
+.pc-who .wg{font-size:10px;color:var(--muted)}
+.acum-note{background:var(--cel3);border:1.5px solid var(--cel);border-radius:var(--rs);padding:12px 14px;margin-top:12px}
+.acum-note p{font-size:13px;color:var(--cel2);font-weight:600;text-align:center}
+
+/* ---- BONUS TRACK ---- */
+.bt-hero{background:linear-gradient(135deg,var(--score) 0%,#1A237E 100%);border-radius:var(--r);
+  padding:20px;margin-bottom:16px;position:relative;overflow:hidden;text-align:center}
+.bt-hero::before{content:"⚡";position:absolute;font-size:100px;opacity:.08;right:10px;top:-10px;line-height:1}
+.bt-badge{display:inline-block;background:var(--gold);color:#fff;font-size:10px;font-weight:800;
+  letter-spacing:1.5px;padding:4px 12px;border-radius:12px;margin-bottom:10px;text-transform:uppercase}
+.bt-hero h2{font-size:24px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px}
+.bt-hero p{font-size:13px;color:rgba(255,255,255,.6);line-height:1.5}
+.bt-active{background:var(--gold2);border:2px solid var(--gold);border-radius:var(--rs);
+  padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.bt-active p{font-size:13px;color:var(--gold3);font-weight:700}
+.bt-cats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.btcat{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);padding:16px;
+  position:relative;text-align:center;opacity:.7}
+.btcat.unlocked{opacity:1;border-color:var(--fg)}
+.bt-lock{position:absolute;top:10px;right:10px;font-size:14px}
+.btcat-icon{font-size:32px;margin-bottom:8px}
+.btcat h3{font-size:13px;font-weight:800;color:var(--text);margin-bottom:6px}
+.btcat p{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px}
+.btcat .bt-pts{font-size:11px;font-weight:700;color:var(--fg2);background:var(--fg3);
+  border-radius:8px;padding:3px 10px;display:inline-block}
+.bt-how{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);padding:14px 16px}
+.bt-how h3{font-size:13px;font-weight:800;color:var(--fg2);margin-bottom:10px}
+.bt-how p{font-size:13px;color:var(--muted);line-height:1.6}
+
+@media(max-width:720px){
+  .sc-row{grid-template-columns:42px 1fr auto 70px 24px;gap:7px;padding:8px 10px}
+  .gnum{font-size:17px}.dgrid{grid-template-columns:1fr 1fr}
+  .hdr-mid h1{font-size:16px}.wbtn{padding:4px 7px;font-size:11px}
+  .score-inner{grid-template-columns:1fr 1fr}
+  .score-cell:last-child{display:none}
+  .podium-grid{grid-template-columns:1fr}
+  .bt-cats{grid-template-columns:1fr}
+  .wp-grid{grid-template-columns:1fr}
+  .tbtn{padding:8px 12px;font-size:12px}
+}
+</style>
+</head>
+<body>
+<div class="flag"></div>
+<header>
+
+<div class="hdr-inner">
+<img alt="Paladini" class="logo-img" src="data:image/png;base64,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"/>
+<div class="hdr-mid">
+<h1>PLAN CRECIMIENTO PALADINI</h1>
+<p>Cedisur × Paladini — Julio a Octubre 2026</p>
+</div>
+<div class="week-sel">
+<span>Mes</span>
+<button class="wbtn active" onclick="setW(0,this)">Julio</button>
+<button class="wbtn" onclick="setW(1,this)">Agosto</button>
+<button class="wbtn" onclick="setW(2,this)">Septiembre</button>
+<button class="wbtn" onclick="setW(3,this)">Octubre</button>
+</div>
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0">
+  <span id="last-updated" style="font-size:10px;color:rgba(255,255,255,.4);white-space:nowrap"></span>
+  <button onclick="fetchSheets()" title="Actualizar datos" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.12)'">🔄 Actualizar</button>
+</div>
+</div>
+</header>
+<div class="score-bar">
+<div class="score-inner">
+<div class="score-cell">
+<div class="sc-label">Progreso CeDiSur</div>
+<div class="sc-value" id="scPct">—</div>
+<div class="sc-sub" id="scSub">cargando...</div>
+<div class="prog-track"><div class="prog-fill danger" id="scBar" style="width:0%"></div></div>
+</div>
+<div class="score-cell">
+<div class="sc-label">Mes activo</div>
+<div class="sc-value" id="scWk">Julio</div>
+<div class="sc-sub" id="scDate">Julio 2026</div>
+</div>
+<div class="score-cell">
+<div class="sc-label">Líder actual</div>
+<div class="sc-value" id="scLider" style="font-size:15px">—</div>
+<div class="sc-sub" id="scLiderG">—</div>
+</div>
+</div>
+</div>
+
+<div class="main">
+<div class="tabs-nav">
+<button class="tbtn active" onclick="showTab('ranking',this)">📊 Ranking</button>
+<button class="tbtn" onclick="showTab('reglas',this)">📖 Cómo funciona</button>
+<button class="tbtn" onclick="showTab('premios',this)">🏆 Premios</button>
+</div>
+<!-- ===== RANKING ===== -->
+<div class="tab-panel active" id="tab-ranking">
+<div class="winner-banner" id="winnerBanner">
+<div>
+<div class="wlabel">🥇 1° del mes</div>
+<div class="wname" id="wName">—</div>
+<div class="wgoles" id="wGoles">—</div>
+</div>
+<div class="wpremio">$250.000</div>
+</div>
+<div class="rk-header">
+<h2>📊 Tabla de posiciones</h2>
+<div class="filter-row">
+<button class="fbtn active" onclick="setF('total',this)">Total</button>
+<button class="fbtn" onclick="setF('otr',this)">Otros Paladini</button>
+<button class="fbtn" onclick="setF('lab',this)">L'Bratto</button>
+<button class="fbtn" onclick="setF('con',this)">Congelados</button>
+<button class="fbtn" onclick="setF('que',this)">Quesos</button>
+<button class="fbtn" onclick="setF('tap',this)">Pastas y Tapas</button>
+<button class="fbtn" onclick="setF('cli',this)">Clientes</button>
+</div>
+</div>
+<div id="rankList"></div>
+</div>
+<!-- ===== COMO SE JUEGA ===== -->
+<div class="tab-panel" id="tab-reglas">
+<div class="rsec">
+<div class="rh"><div class="ricon" style="background:var(--fg3)">🚩</div><h3>Condición de activación</h3></div>
+<div class="rb">
+<div class="cond-box">
+<div class="ct">⚠️ REQUISITO PARA COBRAR EL PREMIO</div>
+<p>Los premios de cada mes se entregan <strong>únicamente si se alcanza el objetivo del mes</strong>. Si en un mes no se llega al objetivo, ese mes no se entregan premios. Cada mes se evalúa por separado.</p>
+</div>
+</div>
+</div>
+<div class="rsec">
+<div class="rh"><div class="ricon" style="background:var(--fg3)">📊</div><h3>Cómo se suman los puntos</h3></div>
+<div class="rb">
+<ul class="rlist">
+<li><div class="rnum">1</div><div>Cada vendedor tiene un <strong>objetivo individual en kilos por categoría y por mes</strong>.</div></li>
+<li><div class="rnum">2</div><div>Cada <strong>kilo vendido por encima del objetivo</strong> del mes suma <strong>1 punto</strong>. Los kilos hasta el objetivo no suman ni restan.</div></li>
+<li><div class="rnum">3</div><div>En la categoría <strong>Clientes con compra Paladini</strong>, cada vendedor tiene un objetivo de clientes. Cada <strong>cliente por encima del objetivo</strong> suma <strong>10 puntos</strong>.</div></li>
+<li><div class="rnum">4</div><div>Los puntos se calculan <strong>mes a mes</strong>. Cada mes define su propio ranking y sus 3 ganadores.</div></li>
+<li><div class="rnum">5</div><div>Los 3 vendedores con más puntos en el mes ganan: <strong>1° $250.000</strong>, <strong>2° $150.000</strong> y <strong>3° $100.000</strong>.</div></li>
+</ul>
+<div class="ex-box">
+<div class="et">Ejemplo — Fiambres, un mes cualquiera</div>
+<div class="exrow">Objetivo: 800 kg — vendido: <span class="en">960 kg</span></div>
+<div class="exrow"><span class="en">960</span> <span style="color:var(--muted)">−</span> <span class="en">800</span> <span style="color:var(--muted)">=</span> <span class="er">+160 puntos</span></div>
+<div class="exrow" style="margin-top:4px">Quesos — objetivo: 500 kg — vendido: <span class="en">470 kg</span></div>
+<div class="exrow"><span style="color:var(--muted)">470 &lt; 500 → <strong>0 puntos</strong> (no resta)</span></div>
+</div>
+</div>
+</div>
+<div class="rsec">
+<div class="rh"><div class="ricon" style="background:var(--fg3)">🧀</div><h3>Categorías evaluadas</h3></div>
+<div class="rb">
+<p>Se evalúan 6 categorías. Las primeras cinco se miden en <strong>kilos vendidos</strong>; la sexta por <strong>cantidad de clientes con compra</strong>.</p>
+<table class="ptbl">
+<thead><tr><th>Categoría</th><th>Se mide en</th></tr></thead>
+<tbody>
+<tr><td><span class="pdot" style="background:#E63329"></span><strong>Otros Paladini</strong></td><td>Kilos por encima del objetivo</td></tr>
+<tr><td><span class="pdot" style="background:#00695C"></span><strong>L'Bratto</strong></td><td>Kilos por encima del objetivo</td></tr>
+<tr><td><span class="pdot" style="background:#1565C0"></span><strong>Congelados</strong></td><td>Kilos por encima del objetivo</td></tr>
+<tr><td><span class="pdot" style="background:#F9A825"></span><strong>Quesos</strong></td><td>Kilos por encima del objetivo</td></tr>
+<tr><td><span class="pdot" style="background:#6A1B9A"></span><strong>Pastas y Tapas</strong></td><td>Kilos por encima del objetivo</td></tr>
+<tr><td><span class="pdot" style="background:#455A64"></span><strong>Clientes con compra Paladini</strong></td><td>Clientes por encima del objetivo</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="rsec">
+<div class="rh"><div class="ricon" style="background:var(--fg3)">🔗</div><h3>Reglas adicionales</h3></div>
+<div class="rb">
+<ul class="rlist">
+<li><div class="rnum">✓</div><div>Ranking publicado <strong>mensualmente</strong> con posición, nombre y puntos.</div></li>
+<li><div class="rnum">✓</div><div><strong>Sin puntos negativos</strong>: por debajo del objetivo se suman 0 puntos esa categoría.</div></li>
+<li><div class="rnum">✓</div><div>En caso de empate en el mes, gana quien tenga mayor sobrecumplimiento en Fiambres.</div></li>
+<li><div class="rnum">✓</div><div>Participan los <strong>17 vendedores</strong> de Cedisur activos durante el período.</div></li>
+<li><div class="rnum">✓</div><div>Plan: <strong>Julio a Octubre de 2026</strong> (4 meses).</div></li>
+</ul>
+</div>
+</div>
+</div>
+<!-- ===== PREMIOS ===== -->
+<div class="tab-panel" id="tab-premios">
+<div class="condicion-p">
+<div class="cp-h"><span style="font-size:18px">⚠️</span><h3>Condición de activación</h3></div>
+<div class="cp-body">
+<p>Los premios de cada mes se entregan <strong>solo si se alcanza el objetivo del mes</strong>. Cada mes se evalúa por separado.</p>
+<div class="cp-prog">
+<div class="cpl"><span>Avance del mes</span><span id="premPct">—</span></div>
+<div class="cpt"><div class="cpf danger" id="premBar" style="width:0%"></div></div>
+<div class="cpn" id="premNote">Seleccioná un mes para ver el avance.</div>
+</div>
+</div>
+</div>
+<div class="weekly-prize">
+<h3>🏆 Premios por mes</h3>
+<div class="wp-grid">
+<div class="wp-card">
+<div class="wpc-lbl">🥇 1° del mes</div>
+<div class="wpc-val">$250.000</div>
+<div class="wpc-sub">Al que más sobrecumple</div>
+</div>
+<div class="wp-card">
+<div class="wpc-lbl">🥈 2° del mes</div>
+<div class="wpc-val">$150.000</div>
+<div class="wpc-sub">Segundo con más puntos</div>
+</div>
+<div class="wp-card">
+<div class="wpc-lbl">🥉 3° del mes</div>
+<div class="wpc-val">$100.000</div>
+<div class="wpc-sub">Tercero con más puntos</div>
+</div>
+
+</div>
+</div>
+<div class="podium-sec">
+<h3>🏆 Podio de cada mes</h3>
+<div class="podium-grid">
+<div class="pc silver">
+<div class="pc-medal">🥈</div>
+<div class="pc-pos">2° Lugar</div>
+<div class="pc-amt" style="font-size:22px">$150.000</div>
+<div class="pc-pct">Al 2° con más puntos del mes</div>
+</div>
+<div class="pc gold">
+<div class="pc-medal">🥇</div>
+<div class="pc-pos">1° Lugar</div>
+<div class="pc-amt gt">$250.000</div>
+<div class="pc-pct">Al que más sobrecumple el mes</div>
+</div>
+<div class="pc bronze">
+<div class="pc-medal">🥉</div>
+<div class="pc-pos">3° Lugar</div>
+<div class="pc-amt bt" style="font-size:22px">$100.000</div>
+<div class="pc-pct">Al 3° con más puntos del mes</div>
+</div>
+</div>
+<div class="acum-note">
+<p>📅 Cada mes se premia a los 3 primeros del ranking (🥇$250.000 · 🥈$150.000 · 🥉$100.000), durante los 4 meses del plan (Julio a Octubre).</p>
+</div>
+</div>
+</div>
+</div>
+<script>
+// ── URLs Google Sheets (CSV publicado) ──────────────────────────────────────
+// ── Google Sheets (CSV publicado) — PENDIENTE: pegar URLs cuando estén los datos ──
+// Dejá estas vacías para que el tablero arranque en 0.
+const URL_VENTAS  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRea86dwHnRgmeT6-DAliIK_4WIR-APb5zQWuA0Lm9-ba1HXXV2VLEzwlpR9AAgMrVfWYZnfj_bDBEu/pub?gid=660740369&single=true&output=csv";  // ventas mensuales por vendedor/categoría (kg y clientes)
+const URL_OBJETIVOS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRea86dwHnRgmeT6-DAliIK_4WIR-APb5zQWuA0Lm9-ba1HXXV2VLEzwlpR9AAgMrVfWYZnfj_bDBEu/pub?gid=2028280800&single=true&output=csv";  // objetivos mensuales por vendedor/categoría
+
+const DATA = {"sellers": ["Leonardo Chiesa", "Guillermo Madrid", "Luis Velazquez", "Guillermo Alderete", "Hugo Lezana", "Horacio Ulloa", "Julian Jensen", "Alberto Castillo", "Dario Macaya", "Samuel Arenas", "Jonatan Lozano", "Jose Martinez", "David Bertran", "Miguel Escales", "Pablo Figueroa", "Alejandro Fragnul", "Pablo Zangari"], "products": [{"id": "otr", "name": "Otros Paladini", "color": "#E63329", "short": "Otros Pal."}, {"id": "lab", "name": "L'Bratto", "color": "#00695C", "short": "L'Bratto"}, {"id": "con", "name": "Congelados", "color": "#1565C0", "short": "Congel."}, {"id": "que", "name": "Quesos", "color": "#F9A825", "short": "Quesos"}, {"id": "tap", "name": "Pastas y Tapas", "color": "#6A1B9A", "short": "Pastas/Tapas"}, {"id": "cli", "name": "Clientes con compra Paladini", "color": "#455A64", "short": "Clientes"}], "objectives": {"Leonardo Chiesa": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [26, 26, 26, 26]}, "Guillermo Madrid": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [35, 35, 35, 35]}, "Luis Velazquez": {"otr": [2541, 2541, 2541, 2541], "lab": [22, 22, 22, 22], "con": [60, 60, 60, 60], "que": [45, 45, 45, 45], "tap": [30, 30, 30, 30], "cli": [51, 51, 51, 51]}, "Guillermo Alderete": {"otr": [1138, 1138, 1138, 1138], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [60, 60, 60, 60]}, "Hugo Lezana": {"otr": [1709, 1709, 1709, 1709], "lab": [15, 15, 15, 15], "con": [45, 45, 45, 45], "que": [30, 30, 30, 30], "tap": [24, 24, 24, 24], "cli": [68, 68, 68, 68]}, "Horacio Ulloa": {"otr": [2708, 2708, 2708, 2708], "lab": [24, 24, 24, 24], "con": [59, 59, 59, 59], "que": [37, 37, 37, 37], "tap": [35, 35, 35, 35], "cli": [75, 75, 75, 75]}, "Julian Jensen": {"otr": [1265, 1265, 1265, 1265], "lab": [15, 15, 15, 15], "con": [30, 30, 30, 30], "que": [22, 22, 22, 22], "tap": [20, 20, 20, 20], "cli": [59, 59, 59, 59]}, "Alberto Castillo": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [45, 45, 45, 45]}, "Dario Macaya": {"otr": [2053, 2053, 2053, 2053], "lab": [18, 18, 18, 18], "con": [54, 54, 54, 54], "que": [36, 36, 36, 36], "tap": [29, 29, 29, 29], "cli": [51, 51, 51, 51]}, "Samuel Arenas": {"otr": [1245, 1245, 1245, 1245], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [22, 22, 22, 22], "tap": [20, 20, 20, 20], "cli": [48, 48, 48, 48]}, "Jonatan Lozano": {"otr": [3696, 3696, 3696, 3696], "lab": [32, 32, 32, 32], "con": [85, 85, 85, 85], "que": [60, 60, 60, 60], "tap": [46, 46, 46, 46], "cli": [67, 67, 67, 67]}, "Jose Martinez": {"otr": [2657, 2657, 2657, 2657], "lab": [23, 23, 23, 23], "con": [60, 60, 60, 60], "que": [45, 45, 45, 45], "tap": [33, 33, 33, 33], "cli": [70, 70, 70, 70]}, "David Bertran": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [25, 25, 25, 25]}, "Miguel Escales": {"otr": [2372, 2372, 2372, 2372], "lab": [21, 21, 21, 21], "con": [62, 62, 62, 62], "que": [42, 42, 42, 42], "tap": [33, 33, 33, 33], "cli": [64, 64, 64, 64]}, "Pablo Figueroa": {"otr": [1196, 1196, 1196, 1196], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [21, 21, 21, 21], "tap": [20, 20, 20, 20], "cli": [56, 56, 56, 56]}, "Alejandro Fragnul": {"otr": [3170, 3170, 3170, 3170], "lab": [28, 28, 28, 28], "con": [75, 75, 75, 75], "que": [50, 50, 50, 50], "tap": [40, 40, 40, 40], "cli": [45, 45, 45, 45]}, "Pablo Zangari": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [55, 55, 55, 55]}}, "sales": {"Leonardo Chiesa": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Guillermo Madrid": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Luis Velazquez": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Guillermo Alderete": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Hugo Lezana": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Horacio Ulloa": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Julian Jensen": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Alberto Castillo": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Dario Macaya": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Samuel Arenas": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Jonatan Lozano": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Jose Martinez": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "David Bertran": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Miguel Escales": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Pablo Figueroa": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Alejandro Fragnul": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Pablo Zangari": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}}};
+
+const WEEKS = [
+  {n:1, label:"Julio", dates:"Julio 2026"},
+  {n:2, label:"Agosto", dates:"Agosto 2026"},
+  {n:3, label:"Septiembre", dates:"Septiembre 2026"},
+  {n:4, label:"Octubre", dates:"Octubre 2026"},
+];
+
+const ZONES=["ATLANTICA", "ATLANTICA", "ATLANTICA", "CORDILLERA NORTE", "CORDILLERA NORTE", "CORDILLERA NORTE", "CORDILLERA SUR", "NEUQUEN", "NEUQUEN", "NEUQUEN", "NEUQUEN", "NEUQUEN", "RIO NEGRO", "RIO NEGRO", "RIO NEGRO", "RIO NEGRO", "RIO NEGRO"];
+
+let curW=0, curF="total", openIdx=null;
+
+function wkGoles(seller, pid, w){
+  const sold=DATA.sales[seller][pid][w];
+  const obj=DATA.objectives[seller][pid][w];
+  const sobrecump=Math.max(0, sold-obj);
+  return pid==="cli" ? sobrecump*10 : sobrecump;
+}
+
+function cumGoles(seller, upTo){
+  const res={};
+  let tot=0;
+  for(const p of DATA.products){
+    let g=0;
+    for(let w=0;w<upTo;w++) g+=wkGoles(seller,p.id,w);
+    res[p.id]=g; tot+=g;
+  }
+  res.total=tot;
+  return res;
+}
+
+function weekOnlyGoles(seller, w){
+  // Goles solo de la semana w (no acumulado)
+  const res={};
+  let tot=0;
+  for(const p of DATA.products){
+    const g=wkGoles(seller,p.id,w);
+    res[p.id]=g; tot+=g;
+  }
+  res.total=tot;
+  return res;
+}
+
+function weekScore(seller, w){
+  return DATA.products.reduce((s,p)=>s+wkGoles(seller,p.id,w),0);
+}
+
+function buildRanking(w, filt){
+  // Usa goles de la semana w solamente (no acumulado)
+  // Así S2 sin datos muestra 0, no hereda S1
+  return DATA.sellers.map((s,i)=>{
+    const g=weekOnlyGoles(s,w);
+    return {seller:s,zone:ZONES[i],goles:g,idx:i};
+  }).sort((a,b)=>b.goles[filt]-a.goles[filt]);
+}
+
+function getWeekWinner(w){
+  return DATA.sellers.map((s,i)=>({seller:s,idx:i,g:weekScore(s,w)})).sort((a,b)=>b.g-a.g)[0];
+}
+
+// Objetivo de kilos (sin clientes) para el "Progreso CeDiSur" de cada mes.
+// Si el valor es null, se calcula automáticamente sumando los objetivos de
+// kilos de todos los vendedores para ese mes.
+const MONTH_KG_OBJ = [32900, null, null, null]; // Julio=32900 (fijado manualmente)
+
+function getCeDiSurMonth(w){
+  let obj=0,sold=0;
+  const kgProducts=DATA.products.filter(p=>p.id!=="cli"); // excluye Clientes
+  for(const s of DATA.sellers)
+    for(const p of kgProducts){
+      obj+=DATA.objectives[s][p.id][w];
+      sold+=DATA.sales[s][p.id][w];
+    }
+  if(MONTH_KG_OBJ[w]!=null) obj=MONTH_KG_OBJ[w];
+  return {obj,sold,pct:Math.round(sold/obj*100)};
+}
+
+function updateStats(w){
+  const {obj,sold,pct}=getCeDiSurMonth(w);
+  document.getElementById("scPct").textContent=pct+"%";
+  document.getElementById("scSub").textContent=Math.round(sold).toLocaleString("es-AR")+" / "+Math.round(obj).toLocaleString("es-AR");
+  const bar=document.getElementById("scBar");
+  bar.style.width=Math.min(pct,100)+"%";
+  bar.className="prog-fill"+(pct>=100?"":(pct>=75?" warn":" danger"));
+  document.getElementById("scWk").textContent=WEEKS[w].label;
+  document.getElementById("scDate").innerHTML=WEEKS[w].dates;
+  updatePremios(w,pct,obj,sold);
+}
+
+function updatePremios(w,pct,obj,sold){
+  document.getElementById("premPct").textContent=pct+"%";
+  const fill=document.getElementById("premBar");
+  fill.style.width=Math.min(pct,100)+"%";
+  fill.className="cpf "+(pct>=100?"":(pct>=75?"warn ":"danger "));
+  const note=document.getElementById("premNote");
+  if(pct>=100){note.textContent="✅ Objetivo del mes alcanzado. Premios ACTIVADOS.";note.style.color="var(--fg)";}
+  else{note.textContent="Faltan "+Math.round(obj-sold).toLocaleString("es-AR")+" (kg + clientes) para activar.";note.style.color="#7B1010";}
+  const rk=buildRanking(w,"total");
+  
+  
+}
+
+function updateWinner(w){
+  const win=getWeekWinner(w);
+  document.getElementById("wName").textContent="Vendedor 1";
+  document.getElementById("wGoles").textContent="+"+win.g+" puntos este mes";
+}
+
+function pClass(pos){return pos===1?"p1":pos===2?"p2":pos===3?"p3":"";}
+function renderPills(g){
+  return DATA.products.map(p=>{
+    const v=g[p.id];
+    return v>0?`<span class="pill" style="background:${p.color}">${p.short}:+${v}</span>`:"";
+  }).join("");
+}
+
+function renderWeekBars(seller){
+  let max=0;
+  const ws=WEEKS.map((_,w)=>weekScore(seller,w));
+  ws.forEach(v=>{if(v>max)max=v;});
+  if(!max)max=1;
+  return ws.map((v,w)=>{
+    const h=Math.round(v/max*38);
+    return `<div class="wkbar-w">
+      <div class="wkbar" style="height:${h}px;background:#C1121F33;border-top:3px solid var(--fg);width:100%"></div>
+      <div class="wklbl">${WEEKS[w].label}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderDetail(seller,g){
+  const dprods=DATA.products.map(p=>{
+    const sold=DATA.sales[seller][p.id][curW];
+    const obj=DATA.objectives[seller][p.id][curW];
+    const pct=obj>0?Math.min(Math.round(sold/obj*100),100):0;
+    const u=p.id==="cli"?"clientes":"kg";
+    return `<div class="dprod">
+      <div class="dn" style="color:${p.color}">${p.name}</div>
+      <div class="ds"><span>Obj: ${obj} ${u}</span><span>${p.id==="cli"?"Con compra":"Vendido"}: ${sold} ${u}</span></div>
+      <div class="dt"><div class="df" style="width:${pct}%;background:${p.color}"></div></div>
+      <div class="dg" style="color:${p.color}">+${g[p.id]} pts</div>
+    </div>`;
+  }).join("");
+  return `<div class="dgrid">${dprods}</div>
+    <div class="wkrow"><h4>Puntos por mes</h4><div class="wkbars">${renderWeekBars(seller)}</div></div>`;
+}
+
+function render(){
+  const rk=buildRanking(curW,curF);
+  updateStats(curW);
+  updateWinner(curW);
+  document.getElementById("scLider").textContent=rk[0].seller.split(" ").slice(0,2).join(" ");
+  document.getElementById("scLiderG").textContent=rk[0].goles.total+" puntos";
+
+  document.getElementById("rankList").innerHTML=rk.map((r,i)=>{
+    const pos=i+1;
+    const medals=["🥇","🥈","🥉"];
+    const badge=pos<=3
+      ?`<div class="pbadge" style="font-size:20px">${medals[pos-1]}</div>`
+      :`<div class="pbadge pn">${pos}</div>`;
+    const dg=r.goles[curF];
+    const lbl=curF==="total"?"puntos":DATA.products.find(p=>p.id===curF).short;
+    return `<div class="sc ${pClass(pos)}" id="card${r.idx}" onclick="toggle(${r.idx})">
+      <div class="sc-row">
+        ${badge}
+        <div><div class="sname">${r.seller}</div><div class="szone">${r.zone}</div></div>
+        <div class="pills">${renderPills(r.goles)}</div>
+        <div class="gtotal"><div class="gnum">${dg}</div><div class="glabel">${lbl}</div></div>
+        <div class="chev">&#8964;</div>
+      </div>
+      <div class="detail" id="det${r.idx}">${renderDetail(r.seller,r.goles)}</div>
+    </div>`;
+  }).join("");
+
+  if(openIdx!==null){
+    const c=document.getElementById("card"+openIdx);
+    if(c)c.classList.add("open");
+  }
+}
+
+function toggle(idx){
+  const c=document.getElementById("card"+idx);
+  if(openIdx===idx){c.classList.remove("open");openIdx=null;}
+  else{
+    if(openIdx!==null){const p=document.getElementById("card"+openIdx);if(p)p.classList.remove("open");}
+    c.classList.add("open");openIdx=idx;
+  }
+}
+
+function setW(w,btn){
+  curW=w;openIdx=null;
+  document.querySelectorAll(".wbtn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  render();
+}
+
+function setF(f,btn){
+  curF=f;
+  document.querySelectorAll(".fbtn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  render();
+}
+
+function showTab(name,btn){
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tbtn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("tab-"+name).classList.add("active");
+  btn.classList.add("active");
+}
+
+// ── Helpers CSV ───────────────────────────────────────────────────────────────
+function csvRow(row){
+  const res=[];let cur='';let inQ=false;
+  for(let i=0;i<row.length;i++){
+    const c=row[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){res.push(cur);cur='';}
+    else{cur+=c;}
+  }
+  res.push(cur);return res;
+}
+
+// ── Actualizar datos desde Google Sheets ──
+async function fetchSheets(){
+  const btn=document.querySelector('[onclick="fetchSheets()"]');
+  if(btn){btn.disabled=true;btn.textContent='Cargando...';}
+  try{
+    // Si no hay URLs configuradas, se muestra el tablero en 0.
+    if(!URL_VENTAS && !URL_OBJETIVOS){
+      const lu=document.getElementById('last-updated');
+      if(lu)lu.textContent='Sin datos cargados (tablero en 0)';
+      render();
+      return;
+    }
+    // Formato esperado (ambas hojas): VENDEDOR | CATEGORIA_ID | (nombre) | JULIO | AGOSTO | SEPTIEMBRE | OCTUBRE
+    if(URL_VENTAS){
+      const rV=await fetch(URL_VENTAS);
+      if(rV.ok){
+        const text=await rV.text();
+        DATA.sellers.forEach(s=>{
+          if(!DATA.sales[s])DATA.sales[s]={};
+          DATA.products.forEach(p=>{ DATA.sales[s][p.id]=[0,0,0,0]; });
+        });
+        text.trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
+          const c=csvRow(r);
+          const seller=(c[0]||'').trim();
+          const pid   =(c[1]||'').trim();
+          if(!seller||!pid||!DATA.sales[seller])return;
+          DATA.sales[seller][pid]=[0,1,2,3].map(i=>parseFloat(c[3+i])||0);
+        });
+      }
+    }
+    if(URL_OBJETIVOS){
+      const rO=await fetch(URL_OBJETIVOS);
+      if(rO.ok){
+        const text=await rO.text();
+        text.trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
+          const c=csvRow(r);
+          const seller=(c[0]||'').trim();
+          const pid   =(c[1]||'').trim();
+          if(!seller||!pid||!DATA.objectives[seller])return;
+          DATA.objectives[seller][pid]=[0,1,2,3].map(i=>parseFloat(c[3+i])||0);
+        });
+      }
+    }
+    const ts=new Date().toLocaleString('es-AR');
+    const lu=document.getElementById('last-updated');
+    if(lu)lu.textContent='Actualizado: '+ts;
+    render();
+  }catch(e){
+    console.error('Error al cargar datos:',e);
+    render();
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='🔄 Actualizar';}
+  }
+}
+
+
+fetchSheets();
+</script>
+</body>
+</html>

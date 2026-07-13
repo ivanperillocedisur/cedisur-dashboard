@@ -51,8 +51,8 @@ header{
 .score-cell{padding:10px 14px;border-right:1px solid #ffffff10;text-align:center}
 .score-cell:last-child{border-right:none}
 .sc-label{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
-.sc-value{font-size:20px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
-.sc-sub{font-size:10px;color:rgba(255,255,255,.4);margin-top:2px}
+.sc-value{font-size:24px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+.sc-sub{font-size:14px;color:rgba(255,255,255,.65);margin-top:3px;font-weight:600}
 .prog-track{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:6px;overflow:hidden}
 .prog-fill{height:100%;border-radius:2px;background:var(--fg);transition:width .5s}
 .prog-fill.warn{background:var(--gold)}
@@ -108,6 +108,13 @@ header{
 .pbadge.pn{background:var(--bg);font-size:12px;font-weight:800;color:var(--muted)}
 .sname{font-weight:700;font-size:14px}
 .szone{font-size:10px;color:var(--muted);margin-top:1px}
+/* ---- ZONA: bloque real vs objetivo ---- */
+.zrvo{display:flex;gap:14px;justify-content:flex-end}
+.zrvo .zblk{text-align:right;min-width:96px}
+.zrvo .zbl{font-size:9px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.zrvo .zval{font-size:15px;font-weight:900;line-height:1.15}
+.zrvo .zpct{font-size:10px;font-weight:700}
+.zrvo .zpct.ok{color:#1B5E20}.zrvo .zpct.mid{color:var(--gold2)}.zrvo .zpct.low{color:var(--red)}
 
 .pills{display:flex;gap:4px;flex-wrap:wrap}
 .pill{font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px;color:#fff;white-space:nowrap}
@@ -125,6 +132,12 @@ header{
 .dprod .dt{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
 .dprod .df{height:100%;border-radius:3px}
 .dprod .dg{font-size:16px;font-weight:800;margin-top:4px}
+/* Tarjeta CCC destacada en rojo dentro del detalle */
+.dprod.ccc{background:var(--red);border-color:var(--brown);grid-column:1 / -1}
+.dprod.ccc .dn{color:#fff !important}
+.dprod.ccc .ds{color:#FFD9D9}
+.dprod.ccc .dt{background:rgba(255,255,255,.25)}
+.dprod.ccc .dg{color:#fff !important}
 .wkrow{margin-top:12px}
 .wkrow h4{font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
 .wkbars{display:flex;gap:4px;align-items:flex-end;height:44px}
@@ -294,7 +307,8 @@ header{
 
 <div class="main">
 <div class="tabs-nav">
-<button class="tbtn active" onclick="showTab('ranking',this)">📊 Ranking</button>
+<button class="tbtn active" onclick="showTab('ranking',this)">📊 Ranking Vendedores</button>
+<button class="tbtn" onclick="showTab('rankingzona',this)">🏢 Ranking Zona</button>
 <button class="tbtn" onclick="showTab('reglas',this)">📖 Cómo funciona</button>
 <button class="tbtn" onclick="showTab('premios',this)">🏆 Premios</button>
 </div>
@@ -321,6 +335,22 @@ header{
 </div>
 </div>
 <div id="rankList"></div>
+</div>
+<!-- ===== RANKING ZONA ===== -->
+<div class="tab-panel" id="tab-rankingzona">
+<div class="rk-header">
+<h2>🏢 Posiciones por zona</h2>
+<div class="filter-row">
+<button class="fbtn active" onclick="setFZ('total',this)">Total</button>
+<button class="fbtn" onclick="setFZ('otr',this)">Otros Paladini</button>
+<button class="fbtn" onclick="setFZ('lab',this)">L'Bratto</button>
+<button class="fbtn" onclick="setFZ('con',this)">Congelados</button>
+<button class="fbtn" onclick="setFZ('que',this)">Quesos</button>
+<button class="fbtn" onclick="setFZ('tap',this)">Pastas y Tapas</button>
+<button class="fbtn" onclick="setFZ('cli',this)">Clientes</button>
+</div>
+</div>
+<div id="rankListZona"></div>
 </div>
 <!-- ===== COMO SE JUEGA ===== -->
 <div class="tab-panel" id="tab-reglas">
@@ -364,7 +394,7 @@ header{
 <tr><td><span class="pdot" style="background:#1565C0"></span><strong>Congelados</strong></td><td>Kilos por encima del objetivo</td></tr>
 <tr><td><span class="pdot" style="background:#F9A825"></span><strong>Quesos</strong></td><td>Kilos por encima del objetivo</td></tr>
 <tr><td><span class="pdot" style="background:#6A1B9A"></span><strong>Pastas y Tapas</strong></td><td>Kilos por encima del objetivo</td></tr>
-<tr><td><span class="pdot" style="background:#455A64"></span><strong>Clientes con compra Paladini</strong></td><td>Clientes por encima del objetivo</td></tr>
+<tr><td><span class="pdot" style="background:#455A64"></span><strong>Clientes con compra Paladini</strong></td><td>Para considerar un CCC debe comprar al menos 4 SKUs Paladini distintos</td></tr>
 </tbody>
 </table>
 </div>
@@ -375,7 +405,7 @@ header{
 <ul class="rlist">
 <li><div class="rnum">✓</div><div>Ranking publicado <strong>mensualmente</strong> con posición, nombre y puntos.</div></li>
 <li><div class="rnum">✓</div><div><strong>Sin puntos negativos</strong>: por debajo del objetivo se suman 0 puntos esa categoría.</div></li>
-<li><div class="rnum">✓</div><div>En caso de empate en el mes, gana quien tenga mayor sobrecumplimiento en Fiambres.</div></li>
+<li><div class="rnum">✓</div><div>En caso de empate en el mes, gana quien tenga mayor sobrecumplimiento en CCC.</div></li>
 <li><div class="rnum">✓</div><div>Participan los <strong>17 vendedores</strong> de Cedisur activos durante el período.</div></li>
 <li><div class="rnum">✓</div><div>Plan: <strong>Julio a Octubre de 2026</strong> (4 meses).</div></li>
 </ul>
@@ -450,6 +480,8 @@ header{
 // Dejá estas vacías para que el tablero arranque en 0.
 const URL_VENTAS  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRea86dwHnRgmeT6-DAliIK_4WIR-APb5zQWuA0Lm9-ba1HXXV2VLEzwlpR9AAgMrVfWYZnfj_bDBEu/pub?gid=660740369&single=true&output=csv";  // ventas mensuales por vendedor/categoría (kg y clientes)
 const URL_OBJETIVOS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRea86dwHnRgmeT6-DAliIK_4WIR-APb5zQWuA0Lm9-ba1HXXV2VLEzwlpR9AAgMrVfWYZnfj_bDBEu/pub?gid=2028280800&single=true&output=csv";  // objetivos mensuales por vendedor/categoría
+const URL_VENTAS_ZONA   = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRea86dwHnRgmeT6-DAliIK_4WIR-APb5zQWuA0Lm9-ba1HXXV2VLEzwlpR9AAgMrVfWYZnfj_bDBEu/pub?gid=1551317641&single=true&output=csv";  // ventas mensuales por zona/categoría
+const URL_OBJETIVOS_ZONA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRea86dwHnRgmeT6-DAliIK_4WIR-APb5zQWuA0Lm9-ba1HXXV2VLEzwlpR9AAgMrVfWYZnfj_bDBEu/pub?gid=1456618578&single=true&output=csv";  // objetivos mensuales por zona/categoría
 
 const DATA = {"sellers": ["Leonardo Chiesa", "Guillermo Madrid", "Luis Velazquez", "Guillermo Alderete", "Hugo Lezana", "Horacio Ulloa", "Julian Jensen", "Alberto Castillo", "Dario Macaya", "Samuel Arenas", "Jonatan Lozano", "Jose Martinez", "David Bertran", "Miguel Escales", "Pablo Figueroa", "Alejandro Fragnul", "Pablo Zangari"], "products": [{"id": "otr", "name": "Otros Paladini", "color": "#E63329", "short": "Otros Pal."}, {"id": "lab", "name": "L'Bratto", "color": "#00695C", "short": "L'Bratto"}, {"id": "con", "name": "Congelados", "color": "#1565C0", "short": "Congel."}, {"id": "que", "name": "Quesos", "color": "#F9A825", "short": "Quesos"}, {"id": "tap", "name": "Pastas y Tapas", "color": "#6A1B9A", "short": "Pastas/Tapas"}, {"id": "cli", "name": "Clientes con compra Paladini", "color": "#455A64", "short": "Clientes"}], "objectives": {"Leonardo Chiesa": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [26, 26, 26, 26]}, "Guillermo Madrid": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [35, 35, 35, 35]}, "Luis Velazquez": {"otr": [2541, 2541, 2541, 2541], "lab": [22, 22, 22, 22], "con": [60, 60, 60, 60], "que": [45, 45, 45, 45], "tap": [30, 30, 30, 30], "cli": [51, 51, 51, 51]}, "Guillermo Alderete": {"otr": [1138, 1138, 1138, 1138], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [60, 60, 60, 60]}, "Hugo Lezana": {"otr": [1709, 1709, 1709, 1709], "lab": [15, 15, 15, 15], "con": [45, 45, 45, 45], "que": [30, 30, 30, 30], "tap": [24, 24, 24, 24], "cli": [68, 68, 68, 68]}, "Horacio Ulloa": {"otr": [2708, 2708, 2708, 2708], "lab": [24, 24, 24, 24], "con": [59, 59, 59, 59], "que": [37, 37, 37, 37], "tap": [35, 35, 35, 35], "cli": [75, 75, 75, 75]}, "Julian Jensen": {"otr": [1265, 1265, 1265, 1265], "lab": [15, 15, 15, 15], "con": [30, 30, 30, 30], "que": [22, 22, 22, 22], "tap": [20, 20, 20, 20], "cli": [59, 59, 59, 59]}, "Alberto Castillo": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [45, 45, 45, 45]}, "Dario Macaya": {"otr": [2053, 2053, 2053, 2053], "lab": [18, 18, 18, 18], "con": [54, 54, 54, 54], "que": [36, 36, 36, 36], "tap": [29, 29, 29, 29], "cli": [51, 51, 51, 51]}, "Samuel Arenas": {"otr": [1245, 1245, 1245, 1245], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [22, 22, 22, 22], "tap": [20, 20, 20, 20], "cli": [48, 48, 48, 48]}, "Jonatan Lozano": {"otr": [3696, 3696, 3696, 3696], "lab": [32, 32, 32, 32], "con": [85, 85, 85, 85], "que": [60, 60, 60, 60], "tap": [46, 46, 46, 46], "cli": [67, 67, 67, 67]}, "Jose Martinez": {"otr": [2657, 2657, 2657, 2657], "lab": [23, 23, 23, 23], "con": [60, 60, 60, 60], "que": [45, 45, 45, 45], "tap": [33, 33, 33, 33], "cli": [70, 70, 70, 70]}, "David Bertran": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [25, 25, 25, 25]}, "Miguel Escales": {"otr": [2372, 2372, 2372, 2372], "lab": [21, 21, 21, 21], "con": [62, 62, 62, 62], "que": [42, 42, 42, 42], "tap": [33, 33, 33, 33], "cli": [64, 64, 64, 64]}, "Pablo Figueroa": {"otr": [1196, 1196, 1196, 1196], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [21, 21, 21, 21], "tap": [20, 20, 20, 20], "cli": [56, 56, 56, 56]}, "Alejandro Fragnul": {"otr": [3170, 3170, 3170, 3170], "lab": [28, 28, 28, 28], "con": [75, 75, 75, 75], "que": [50, 50, 50, 50], "tap": [40, 40, 40, 40], "cli": [45, 45, 45, 45]}, "Pablo Zangari": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [55, 55, 55, 55]}}, "sales": {"Leonardo Chiesa": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Guillermo Madrid": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Luis Velazquez": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Guillermo Alderete": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Hugo Lezana": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Horacio Ulloa": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Julian Jensen": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Alberto Castillo": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Dario Macaya": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Samuel Arenas": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Jonatan Lozano": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Jose Martinez": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "David Bertran": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Miguel Escales": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Pablo Figueroa": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Alejandro Fragnul": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Pablo Zangari": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}}};
 
@@ -461,6 +493,14 @@ const WEEKS = [
 ];
 
 const ZONES=["ATLANTICA", "ATLANTICA", "ATLANTICA", "CORDILLERA NORTE", "CORDILLERA NORTE", "CORDILLERA NORTE", "CORDILLERA SUR", "NEUQUEN", "NEUQUEN", "NEUQUEN", "NEUQUEN", "NEUQUEN", "RIO NEGRO", "RIO NEGRO", "RIO NEGRO", "RIO NEGRO", "RIO NEGRO"];
+
+// ── Estructura paralela por ZONA (misma forma que DATA pero con zonas como "sellers") ──
+const ZONE_LIST=["ATLANTICA","CORDILLERA NORTE","CORDILLERA SUR","NEUQUEN","RIO NEGRO"];
+function emptyCatMap(){const o={};DATA.products.forEach(p=>{o[p.id]=[0,0,0,0];});return o;}
+const DATAZONA={sellers:ZONE_LIST, products:DATA.products,
+  objectives:Object.fromEntries(ZONE_LIST.map(z=>[z,emptyCatMap()])),
+  sales:Object.fromEntries(ZONE_LIST.map(z=>[z,emptyCatMap()]))};
+let curFZ="total", openZ=null;
 
 let curW=0, curF="total", openIdx=null;
 
@@ -584,21 +624,29 @@ function renderWeekBars(seller){
   }).join("");
 }
 
-function renderDetail(seller,g){
-  const dprods=DATA.products.map(p=>{
-    const sold=DATA.sales[seller][p.id][curW];
-    const obj=DATA.objectives[seller][p.id][curW];
+function renderDetail(seller,g,opts){
+  opts=opts||{};
+  const showPts=opts.showPts!==false;   // en zona: false
+  const showBars=opts.showBars!==false; // en zona: false
+  const src=opts.src||DATA;
+  // CCC primero, luego las 5 categorías de kilos
+  const ordered=[...DATA.products].sort((a,b)=>(a.id==="cli"?-1:0)-(b.id==="cli"?-1:0));
+  const dprods=ordered.map(p=>{
+    const sold=src.sales[seller][p.id][curW];
+    const obj=src.objectives[seller][p.id][curW];
     const pct=obj>0?Math.min(Math.round(sold/obj*100),100):0;
     const u=p.id==="cli"?"clientes":"kg";
-    return `<div class="dprod">
+    const cls="dprod"+(p.id==="cli"?" ccc":"");
+    const ptsLine=showPts?`<div class="dg" style="color:${p.color}">+${g[p.id]} pts</div>`:"";
+    return `<div class="${cls}">
       <div class="dn" style="color:${p.color}">${p.name}</div>
       <div class="ds"><span>Obj: ${obj} ${u}</span><span>${p.id==="cli"?"Con compra":"Vendido"}: ${sold} ${u}</span></div>
       <div class="dt"><div class="df" style="width:${pct}%;background:${p.color}"></div></div>
-      <div class="dg" style="color:${p.color}">+${g[p.id]} pts</div>
+      ${ptsLine}
     </div>`;
   }).join("");
-  return `<div class="dgrid">${dprods}</div>
-    <div class="wkrow"><h4>Puntos por mes</h4><div class="wkbars">${renderWeekBars(seller)}</div></div>`;
+  const barsBlock=showBars?`<div class="wkrow"><h4>Puntos por mes</h4><div class="wkbars">${renderWeekBars(seller)}</div></div>`:"";
+  return `<div class="dgrid">${dprods}</div>${barsBlock}`;
 }
 
 function render(){
@@ -632,6 +680,7 @@ function render(){
     const c=document.getElementById("card"+openIdx);
     if(c)c.classList.add("open");
   }
+  renderZona();
 }
 
 function toggle(idx){
@@ -643,8 +692,77 @@ function toggle(idx){
   }
 }
 
+// ── RANKING ZONA (sin puntos: Real vs Objetivo de kg totales y de CCC) ──
+function zoneKgTotals(zone,w){
+  let obj=0,sold=0;
+  DATA.products.filter(p=>p.id!=="cli").forEach(p=>{
+    obj+=DATAZONA.objectives[zone][p.id][w];
+    sold+=DATAZONA.sales[zone][p.id][w];
+  });
+  return {obj,sold};
+}
+function zoneCatRvO(zone,w,filt){
+  // Real vs Objetivo del filtro elegido; "total" = kg totales
+  if(filt==="cli"){
+    return {obj:DATAZONA.objectives[zone].cli[w], sold:DATAZONA.sales[zone].cli[w], unit:"clientes"};
+  }
+  if(filt==="total"){
+    const t=zoneKgTotals(zone,w); return {...t, unit:"kg"};
+  }
+  return {obj:DATAZONA.objectives[zone][filt][w], sold:DATAZONA.sales[zone][filt][w], unit:"kg"};
+}
+function pctClass(p){return p>=100?"ok":(p>=75?"mid":"low");}
+
+function renderZona(){
+  const w=curW;
+  // orden alfabético fijo
+  const zonas=[...ZONE_LIST].sort((a,b)=>a.localeCompare(b));
+  document.getElementById("rankListZona").innerHTML=zonas.map((z,i)=>{
+    const cli={obj:DATAZONA.objectives[z].cli[w], sold:DATAZONA.sales[z].cli[w]};
+    const cliPct=cli.obj>0?Math.round(cli.sold/cli.obj*100):0;
+    const fmt=n=>Math.round(n).toLocaleString("es-AR");
+    // Primer bloque: depende del filtro (Total=kg totales; categoría=esa categoría)
+    const primary=zoneCatRvO(z,w,curFZ==="cli"?"total":curFZ);
+    const pName=curFZ==="total"?"Kilos (Real/Obj)":(DATA.products.find(p=>p.id===(curFZ==="cli"?"total":curFZ))?.short||"Kilos")+" (Real/Obj)";
+    const pPct=primary.obj>0?Math.round(primary.sold/primary.obj*100):0;
+    return `<div class="sc" id="zcard${i}" onclick="toggleZona(${i})">
+      <div class="sc-row" style="grid-template-columns:50px 1fr auto 30px">
+        <div class="pbadge pn">${i+1}</div>
+        <div><div class="sname">${z}</div><div class="szone">Zona comercial</div></div>
+        <div class="zrvo">
+          <div class="zblk"><div class="zbl">${pName}</div>
+            <div class="zval" style="color:var(--fg2)">${fmt(primary.sold)} / ${fmt(primary.obj)}</div>
+            <div class="zpct ${pctClass(pPct)}">${pPct}%</div></div>
+          <div class="zblk"><div class="zbl">CCC (Real/Obj)</div>
+            <div class="zval" style="color:#455A64">${fmt(cli.sold)} / ${fmt(cli.obj)}</div>
+            <div class="zpct ${pctClass(cliPct)}">${cliPct}%</div></div>
+        </div>
+        <div class="chev">&#8964;</div>
+      </div>
+      <div class="detail" id="zdet${i}">${renderDetail(z,{},{showPts:false,showBars:false,src:DATAZONA})}</div>
+    </div>`;
+  }).join("");
+  if(openZ!==null){const c=document.getElementById("zcard"+openZ);if(c)c.classList.add("open");}
+}
+
+function toggleZona(idx){
+  const c=document.getElementById("zcard"+idx);
+  if(openZ===idx){c.classList.remove("open");openZ=null;}
+  else{
+    if(openZ!==null){const p=document.getElementById("zcard"+openZ);if(p)p.classList.remove("open");}
+    c.classList.add("open");openZ=idx;
+  }
+}
+
+function setFZ(f,btn){
+  curFZ=f;
+  document.querySelectorAll("#tab-rankingzona .fbtn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  renderZona();
+}
+
 function setW(w,btn){
-  curW=w;openIdx=null;
+  curW=w;openIdx=null;openZ=null;
   document.querySelectorAll(".wbtn").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
   render();
@@ -682,7 +800,7 @@ async function fetchSheets(){
   if(btn){btn.disabled=true;btn.textContent='Cargando...';}
   try{
     // Si no hay URLs configuradas, se muestra el tablero en 0.
-    if(!URL_VENTAS && !URL_OBJETIVOS){
+    if(!URL_VENTAS && !URL_OBJETIVOS && !URL_VENTAS_ZONA && !URL_OBJETIVOS_ZONA){
       const lu=document.getElementById('last-updated');
       if(lu)lu.textContent='Sin datos cargados (tablero en 0)';
       render();
@@ -716,6 +834,34 @@ async function fetchSheets(){
           const pid   =(c[1]||'').trim();
           if(!seller||!pid||!DATA.objectives[seller])return;
           DATA.objectives[seller][pid]=[0,1,2,3].map(i=>parseFloat(c[3+i])||0);
+        });
+      }
+    }
+    // ── Datos por ZONA (mismo formato, primera col = ZONA) ──
+    if(URL_VENTAS_ZONA){
+      const rVZ=await fetch(URL_VENTAS_ZONA);
+      if(rVZ.ok){
+        const text=await rVZ.text();
+        ZONE_LIST.forEach(z=>{ DATA.products.forEach(p=>{ DATAZONA.sales[z][p.id]=[0,0,0,0]; }); });
+        text.trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
+          const c=csvRow(r);
+          const zona=(c[0]||'').trim();
+          const pid =(c[1]||'').trim();
+          if(!zona||!pid||!DATAZONA.sales[zona])return;
+          DATAZONA.sales[zona][pid]=[0,1,2,3].map(i=>parseFloat(c[3+i])||0);
+        });
+      }
+    }
+    if(URL_OBJETIVOS_ZONA){
+      const rOZ=await fetch(URL_OBJETIVOS_ZONA);
+      if(rOZ.ok){
+        const text=await rOZ.text();
+        text.trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
+          const c=csvRow(r);
+          const zona=(c[0]||'').trim();
+          const pid =(c[1]||'').trim();
+          if(!zona||!pid||!DATAZONA.objectives[zona])return;
+          DATAZONA.objectives[zona][pid]=[0,1,2,3].map(i=>parseFloat(c[3+i])||0);
         });
       }
     }

@@ -47,7 +47,7 @@ header{
 
 /* ---- SCOREBOARD BAR ---- */
 .score-bar{background:var(--score);border-bottom:2px solid var(--fg)}
-.score-inner{max-width:1300px;margin:0 auto;padding:0 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.score-inner{max-width:1300px;margin:0 auto;padding:0 18px;display:grid;grid-template-columns:repeat(4,1fr);gap:0}
 .score-cell{padding:10px 14px;border-right:1px solid #ffffff10;text-align:center;display:flex;flex-direction:column;justify-content:center}
 .score-cell:last-child{border-right:none}
 .sc-label{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
@@ -295,7 +295,7 @@ header{
   .gnum{font-size:17px}.dgrid{grid-template-columns:1fr 1fr}
   .hdr-mid h1{font-size:16px}.wbtn{padding:4px 7px;font-size:11px}
   .score-inner{grid-template-columns:1fr 1fr}
-  .score-cell:last-child{display:none}
+  .score-cell:nth-child(3),.score-cell:nth-child(4){display:none}
   .podium-grid{grid-template-columns:1fr}
   .bt-cats{grid-template-columns:1fr}
   .wp-grid{grid-template-columns:1fr}
@@ -336,7 +336,13 @@ header{
 <div class="score-bar">
 <div class="score-inner">
 <div class="score-cell">
-<div class="sc-label">Progreso CeDiSur</div>
+<div class="sc-label">Progreso CCC</div>
+<div class="sc-value" id="scCliPct">—</div>
+<div class="sc-sub" id="scCliSub">cargando...</div>
+<div class="prog-track"><div class="prog-fill danger" id="scCliBar" style="width:0%"></div></div>
+</div>
+<div class="score-cell">
+<div class="sc-label">Progreso Kilos</div>
 <div class="sc-value" id="scPct">—</div>
 <div class="sc-sub" id="scSub">cargando...</div>
 <div class="prog-track"><div class="prog-fill danger" id="scBar" style="width:0%"></div></div>
@@ -605,7 +611,7 @@ function getWeekWinner(w){
   return DATA.sellers.map((s,i)=>({seller:s,idx:i,g:weekScore(s,w)})).sort((a,b)=>b.g-a.g)[0];
 }
 
-// Objetivo de kilos (sin clientes) para el "Progreso CeDiSur" de cada mes.
+// Objetivo de kilos (sin clientes) para el "Progreso Kilos" de cada mes.
 // Todos los meses se calculan automáticamente sumando los objetivos de kilos
 // de los 17 vendedores desde la hoja OBJETIVOS. Si en algún momento necesitás
 // fijar un total manual para un mes puntual, reemplazá el null correspondiente
@@ -624,6 +630,16 @@ function getCeDiSurMonth(w){
   return {obj,sold,pct:Math.round(sold/obj*100)};
 }
 
+// Progreso de Clientes con compra (CCC) a nivel CeDiSur para el mes w.
+function getCeDiSurCCC(w){
+  let obj=0,sold=0;
+  for(const s of DATA.sellers){
+    obj+=DATA.objectives[s].cli[w];
+    sold+=DATA.sales[s].cli[w];
+  }
+  return {obj,sold,pct:obj>0?Math.round(sold/obj*100):0};
+}
+
 function updateStats(w){
   const {obj,sold,pct}=getCeDiSurMonth(w);
   document.getElementById("scPct").textContent=pct+"%";
@@ -631,6 +647,13 @@ function updateStats(w){
   const bar=document.getElementById("scBar");
   bar.style.width=Math.min(pct,100)+"%";
   bar.className="prog-fill"+(pct>=100?"":(pct>=75?" warn":" danger"));
+  // Progreso CCC
+  const c=getCeDiSurCCC(w);
+  document.getElementById("scCliPct").textContent=c.pct+"%";
+  document.getElementById("scCliSub").textContent=Math.round(c.sold).toLocaleString("es-AR")+" / "+Math.round(c.obj).toLocaleString("es-AR")+" clientes";
+  const cbar=document.getElementById("scCliBar");
+  cbar.style.width=Math.min(c.pct,100)+"%";
+  cbar.className="prog-fill"+(c.pct>=100?"":(c.pct>=75?" warn":" danger"));
   document.getElementById("scWk").textContent=WEEKS[w].label;
   document.getElementById("scDate").innerHTML=WEEKS[w].dates;
   updatePremios(w,pct,obj,sold);
@@ -710,18 +733,24 @@ function render(){
   const rk=buildRanking(curW,curF);
   updateStats(curW);
   updateWinner(curW);
-  document.getElementById("scLider").textContent=rk[0].seller.split(" ").slice(0,2).join(" ");
-  document.getElementById("scLiderG").textContent=rk[0].goles.total+" puntos";
+  // Líder actual: solo si el primero tiene puntos > 0
+  const liderTienePuntos=rk[0] && rk[0].goles.total>0;
+  document.getElementById("scLider").textContent=liderTienePuntos?rk[0].seller.split(" ").slice(0,2).join(" "):"—";
+  document.getElementById("scLiderG").textContent=liderTienePuntos?rk[0].goles.total+" puntos":"Sin puntos aún";
 
   document.getElementById("rankList").innerHTML=rk.map((r,i)=>{
     const pos=i+1;
+    const tienePuntos=r.goles.total>0;
     const medals=["🥇","🥈","🥉"];
-    const badge=pos<=3
+    // Medalla solo si está en el podio Y tiene puntos; si no, número de posición
+    const badge=(pos<=3 && tienePuntos)
       ?`<div class="pbadge" style="font-size:20px">${medals[pos-1]}</div>`
       :`<div class="pbadge pn">${pos}</div>`;
+    // Color de tarjeta (p1/p2/p3) solo si tiene puntos
+    const cardClass=tienePuntos?pClass(pos):"";
     const dg=r.goles[curF];
     const lbl=curF==="total"?"puntos":DATA.products.find(p=>p.id===curF).short;
-    return `<div class="sc ${pClass(pos)}" id="card${r.idx}" onclick="toggle(${r.idx})">
+    return `<div class="sc ${cardClass}" id="card${r.idx}" onclick="toggle(${r.idx})">
       <div class="sc-row">
         ${badge}
         <div><div class="sname">${r.seller}</div><div class="szone">${r.zone}</div></div>

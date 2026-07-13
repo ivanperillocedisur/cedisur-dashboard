@@ -672,7 +672,7 @@ function render(){
         <div class="gtotal"><div class="gnum">${dg}</div><div class="glabel">${lbl}</div></div>
         <div class="chev">&#8964;</div>
       </div>
-      <div class="detail" id="det${r.idx}">${renderDetail(r.seller,r.goles)}</div>
+      <div class="detail" id="det${r.idx}">${renderDetail(r.seller,r.goles,{showBars:false})}</div>
     </div>`;
   }).join("");
 
@@ -794,6 +794,32 @@ function csvRow(row){
   res.push(cur);return res;
 }
 
+// Convierte un valor de celda a número, tolerando separadores de miles.
+// Ejemplos: "841.559"->841559 · "1,234.5"->1234.5 · "1.234,5"->1234.5 · "844"->844
+function numCol(v){
+  let s=(v==null?'':String(v)).trim();
+  if(!s)return 0;
+  s=s.replace(/\s/g,'');
+  const hasDot=s.indexOf('.')>=0, hasComma=s.indexOf(',')>=0;
+  if(hasDot&&hasComma){
+    // el último separador que aparece es el decimal
+    if(s.lastIndexOf(',')>s.lastIndexOf('.')){ s=s.replace(/\./g,'').replace(',', '.'); }
+    else { s=s.replace(/,/g,''); }
+  } else if(hasComma){
+    // solo coma: si hay una sola y deja 1-2 decimales, es decimal; si no, es miles
+    const parts=s.split(',');
+    if(parts.length===2 && parts[1].length<=2){ s=s.replace(',', '.'); }
+    else { s=s.replace(/,/g,''); }
+  } else if(hasDot){
+    // solo punto: si hay más de uno, son miles; si el bloque final tiene 3 dígitos, es miles
+    const parts=s.split('.');
+    if(parts.length>2){ s=s.replace(/\./g,''); }
+    else if(parts.length===2 && parts[1].length===3){ s=s.replace(/\./g,''); }
+  }
+  const n=parseFloat(s);
+  return isNaN(n)?0:n;
+}
+
 // ── Actualizar datos desde Google Sheets ──
 async function fetchSheets(){
   const btn=document.querySelector('[onclick="fetchSheets()"]');
@@ -820,7 +846,7 @@ async function fetchSheets(){
           const seller=(c[0]||'').trim();
           const pid   =(c[1]||'').trim();
           if(!seller||!pid||!DATA.sales[seller])return;
-          DATA.sales[seller][pid]=[0,1,2,3].map(i=>parseFloat(c[3+i])||0);
+          DATA.sales[seller][pid]=[0,1,2,3].map(i=>numCol(c[3+i]));
         });
       }
     }
@@ -833,7 +859,7 @@ async function fetchSheets(){
           const seller=(c[0]||'').trim();
           const pid   =(c[1]||'').trim();
           if(!seller||!pid||!DATA.objectives[seller])return;
-          DATA.objectives[seller][pid]=[0,1,2,3].map(i=>parseFloat(c[3+i])||0);
+          DATA.objectives[seller][pid]=[0,1,2,3].map(i=>numCol(c[3+i]));
         });
       }
     }
@@ -848,7 +874,7 @@ async function fetchSheets(){
           const zona=(c[0]||'').trim();
           const pid =(c[1]||'').trim();
           if(!zona||!pid||!DATAZONA.sales[zona])return;
-          DATAZONA.sales[zona][pid]=[0,1,2,3].map(i=>parseFloat(c[3+i])||0);
+          DATAZONA.sales[zona][pid]=[0,1,2,3].map(i=>numCol(c[3+i]));
         });
       }
     }
@@ -861,7 +887,7 @@ async function fetchSheets(){
           const zona=(c[0]||'').trim();
           const pid =(c[1]||'').trim();
           if(!zona||!pid||!DATAZONA.objectives[zona])return;
-          DATAZONA.objectives[zona][pid]=[0,1,2,3].map(i=>parseFloat(c[3+i])||0);
+          DATAZONA.objectives[zona][pid]=[0,1,2,3].map(i=>numCol(c[3+i]));
         });
       }
     }

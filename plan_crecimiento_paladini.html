@@ -410,7 +410,7 @@ header{
 <ul class="rlist">
 <li><div class="rnum">1</div><div>Cada vendedor tiene un <strong>objetivo individual en kilos por categoría y por mes</strong>.</div></li>
 <li><div class="rnum">2</div><div>Cada <strong>kilo vendido por encima del objetivo</strong> del mes suma <strong>1 punto</strong>. Los kilos hasta el objetivo no suman ni restan.</div></li>
-<li><div class="rnum">3</div><div>En la categoría <strong>Clientes con compra Paladini</strong>, cada vendedor tiene un objetivo de clientes. Cada <strong>cliente por encima del objetivo</strong> suma <strong>10 puntos</strong>.</div></li>
+<li><div class="rnum">3</div><div>En la categoría <strong>Clientes con compra Paladini</strong>, cada vendedor tiene un objetivo de clientes. Cada <strong>cliente por encima del objetivo</strong> suma <strong>2 puntos</strong>.</div></li>
 <li><div class="rnum">4</div><div>Los puntos se calculan <strong>mes a mes</strong>. Cada mes define su propio ranking y sus 3 ganadores.</div></li>
 <li><div class="rnum">5</div><div>Los 3 vendedores con más puntos en el mes ganan: <strong>1° $250.000</strong>, <strong>2° $150.000</strong> y <strong>3° $100.000</strong>.</div></li>
 </ul>
@@ -553,11 +553,15 @@ let curFZ="total", openZ=null;
 
 let curW=0, curF="total", openIdx=null;
 
+// Puntos que suma cada cliente con compra (CCC) por encima del objetivo.
+// ⇩ CONFIGURABLE: cambiar este número (ej: 2 o 10) para ajustar el peso de CCC.
+const CCC_PUNTOS_POR_CLIENTE = 2;
+
 function wkGoles(seller, pid, w){
   const sold=DATA.sales[seller][pid][w];
   const obj=DATA.objectives[seller][pid][w];
   const sobrecump=Math.max(0, sold-obj);
-  return pid==="cli" ? sobrecump*10 : sobrecump;
+  return pid==="cli" ? sobrecump*CCC_PUNTOS_POR_CLIENTE : sobrecump;
 }
 
 function cumGoles(seller, upTo){

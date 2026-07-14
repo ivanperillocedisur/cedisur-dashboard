@@ -4,35 +4,37 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1.0" name="viewport"/>
-<title>Plan Crecimiento Paladini — Cedisur</title>
+<title>Mundial Ferrero 2026 — Cedisur</title>
 <style>
 :root{
-  --fg:#C1121F;--fg2:#780000;--fg3:#FDE8E8;
-  --cel:#E8B84B;--cel2:#B8860B;--cel3:#FFF8E1;
-  --brown:#780000;--brown2:#9B1B1B;--brown3:#FDE8E8;
+  --fg:#1A6B35;--fg2:#0D4422;--fg3:#E8F5E9;
+  --cel:#74ACDF;--cel2:#4A7FAB;--cel3:#E3F2FD;
+  --brown:#3D1C02;--brown2:#6B3410;--brown3:#FFF3E0;
   --gold:#C8960C;--gold2:#FFF8DC;--gold3:#7A5500;
   --silver:#9E9E9E;--silver2:#F5F5F5;
   --bronze:#8D4E00;--bronze2:#FFF3E0;
-  --score:#1A0505;
+  --score:#0D1117;
   --red:#C62828;--red2:#FFEBEE;
-  --bg:#F5F0EC;--card:#fff;
-  --text:#1A1A1A;--muted:#6B7280;--border:#E8DDD5;
+  --bg:#F0F4F8;--card:#fff;
+  --text:#1A1A1A;--muted:#6B7280;--border:#DDE3EC;
   --r:10px;--rs:6px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
 /* ---- FLAG STRIPE ---- */
-.flag{height:7px;background:linear-gradient(90deg,var(--fg) 0,var(--fg2) 50%,var(--fg) 100%)}
+.flag{height:7px;background:linear-gradient(90deg,var(--cel) 33.3%,#fff 33.3% 66.6%,var(--cel) 66.6%)}
 
 /* ---- HEADER FIELD ---- */
 header{
-  background:linear-gradient(135deg,#E63329 0%,#C1121F 100%);
-  position:sticky;top:0;z-index:200;box-shadow:0 3px 16px rgba(150,10,10,.35);
+  background:var(--fg2);
+  background-image:repeating-linear-gradient(90deg,transparent 0,transparent 90px,rgba(255,255,255,.04) 90px,rgba(255,255,255,.04) 180px);
+  position:sticky;top:0;z-index:200;box-shadow:0 3px 16px #0007;
   overflow:hidden;
 }
+.field-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.18}
 .hdr-inner{position:relative;z-index:2;display:flex;align-items:center;gap:14px;max-width:1300px;margin:0 auto;padding:12px 18px;flex-wrap:wrap}
-.logo-img{height:52px;background:#fff;padding:7px 12px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.18);flex-shrink:0}
+.logo-img{height:44px;filter:brightness(0) invert(1) drop-shadow(0 0 1px rgba(255,255,255,0.3));flex-shrink:0}
 .hdr-mid{flex:1;min-width:160px}
 .hdr-mid h1{font-size:20px;font-weight:900;color:#fff;letter-spacing:3px;text-shadow:0 2px 6px #0009;line-height:1}
 .hdr-mid p{font-size:10px;color:var(--cel);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
@@ -51,8 +53,8 @@ header{
 .score-cell{padding:10px 14px;border-right:1px solid #ffffff10;text-align:center}
 .score-cell:last-child{border-right:none}
 .sc-label{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
-.sc-value{font-size:24px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
-.sc-sub{font-size:14px;color:rgba(255,255,255,.65);margin-top:3px;font-weight:600}
+.sc-value{font-size:20px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+.sc-sub{font-size:10px;color:rgba(255,255,255,.4);margin-top:2px}
 .prog-track{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:6px;overflow:hidden}
 .prog-fill{height:100%;border-radius:2px;background:var(--fg);transition:width .5s}
 .prog-fill.warn{background:var(--gold)}
@@ -108,13 +110,6 @@ header{
 .pbadge.pn{background:var(--bg);font-size:12px;font-weight:800;color:var(--muted)}
 .sname{font-weight:700;font-size:14px}
 .szone{font-size:10px;color:var(--muted);margin-top:1px}
-/* ---- ZONA: bloque real vs objetivo ---- */
-.zrvo{display:flex;gap:14px;justify-content:flex-end}
-.zrvo .zblk{text-align:right;min-width:96px}
-.zrvo .zbl{font-size:9px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
-.zrvo .zval{font-size:15px;font-weight:900;line-height:1.15}
-.zrvo .zpct{font-size:10px;font-weight:700}
-.zrvo .zpct.ok{color:#1B5E20}.zrvo .zpct.mid{color:var(--gold2)}.zrvo .zpct.low{color:var(--red)}
 
 .pills{display:flex;gap:4px;flex-wrap:wrap}
 .pill{font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px;color:#fff;white-space:nowrap}
@@ -132,12 +127,6 @@ header{
 .dprod .dt{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
 .dprod .df{height:100%;border-radius:3px}
 .dprod .dg{font-size:16px;font-weight:800;margin-top:4px}
-/* Tarjeta CCC destacada en rojo dentro del detalle */
-.dprod.ccc{background:var(--red);border-color:var(--brown);grid-column:1 / -1}
-.dprod.ccc .dn{color:#fff !important}
-.dprod.ccc .ds{color:#FFD9D9}
-.dprod.ccc .dt{background:rgba(255,255,255,.25)}
-.dprod.ccc .dg{color:#fff !important}
 .wkrow{margin-top:12px}
 .wkrow h4{font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
 .wkbars{display:flex;gap:4px;align-items:flex-end;height:44px}
@@ -264,19 +253,36 @@ header{
 <body>
 <div class="flag"></div>
 <header>
-
+<svg class="field-svg" preserveaspectratio="xMidYMid slice" viewbox="0 0 1200 80">
+<rect fill="#1A6B35" height="80" width="1200"></rect>
+<rect fill="rgba(255,255,255,.04)" height="80" width="133" x="0"></rect>
+<rect fill="rgba(255,255,255,.04)" height="80" width="133" x="266"></rect>
+<rect fill="rgba(255,255,255,.04)" height="80" width="133" x="532"></rect>
+<rect fill="rgba(255,255,255,.04)" height="80" width="133" x="798"></rect>
+<rect fill="rgba(255,255,255,.04)" height="80" width="133" x="1064"></rect>
+<line opacity=".18" stroke="white" stroke-width="1.5" x1="600" x2="600" y1="0" y2="80"></line>
+<circle cx="600" cy="40" fill="none" opacity=".18" r="30" stroke="white" stroke-width="1.5"></circle>
+<circle cx="600" cy="40" fill="white" opacity=".25" r="2.5"></circle>
+<rect fill="none" height="60" opacity=".18" rx="2" stroke="white" stroke-width="1.2" width="55" x="0" y="10"></rect>
+<rect fill="none" height="60" opacity=".18" rx="2" stroke="white" stroke-width="1.2" width="55" x="1145" y="10"></rect>
+</svg>
 <div class="hdr-inner">
-<img alt="Paladini" class="logo-img" src="data:image/png;base64,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"/>
+<img alt="Ferrero" class="logo-img" src="data:image/png;base64,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"/>
 <div class="hdr-mid">
-<h1>PLAN CRECIMIENTO PALADINI</h1>
-<p>Cedisur × Paladini — Julio a Octubre 2026</p>
+<h1>MUNDIAL FERRERO</h1>
+<p>CeDiSur — Julio / Agosto 2026</p>
 </div>
 <div class="week-sel">
-<span>Mes</span>
-<button class="wbtn active" onclick="setW(0,this)">Julio</button>
-<button class="wbtn" onclick="setW(1,this)">Agosto</button>
-<button class="wbtn" onclick="setW(2,this)">Septiembre</button>
-<button class="wbtn" onclick="setW(3,this)">Octubre</button>
+<span>Semana</span>
+<button class="wbtn active" onclick="setW(0,this)">S1</button>
+<button class="wbtn" onclick="setW(1,this)">S2</button>
+<button class="wbtn" onclick="setW(2,this)">S3</button>
+<button class="wbtn" onclick="setW(3,this)">S4</button>
+<button class="wbtn spec" onclick="setW(4,this)">S5⚡</button>
+<button class="wbtn" onclick="setW(5,this)">S6</button>
+<button class="wbtn" onclick="setW(6,this)">S7</button>
+<button class="wbtn" onclick="setW(7,this)">S8</button>
+<button class="wbtn spec" onclick="setW(8,this)">S9&#9889;</button>
 </div>
 <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0">
   <span id="last-updated" style="font-size:10px;color:rgba(255,255,255,.4);white-space:nowrap"></span>
@@ -293,9 +299,9 @@ header{
 <div class="prog-track"><div class="prog-fill danger" id="scBar" style="width:0%"></div></div>
 </div>
 <div class="score-cell">
-<div class="sc-label">Mes activo</div>
-<div class="sc-value" id="scWk">Julio</div>
-<div class="sc-sub" id="scDate">Julio 2026</div>
+<div class="sc-label">Semana activa</div>
+<div class="sc-value" id="scWk">S1</div>
+<div class="sc-sub" id="scDate">29 Jun – 5 Jul</div>
 </div>
 <div class="score-cell">
 <div class="sc-label">Líder actual</div>
@@ -304,97 +310,95 @@ header{
 </div>
 </div>
 </div>
-
+<div class="spec-banner" id="specBanner">
+<div class="spec-inner">
+<span style="font-size:18px">⚡</span>
+<p>SEMANA ESPECIAL: comienzan a sumar puntos los bonus track.</p>
+</div>
+</div>
 <div class="main">
 <div class="tabs-nav">
-<button class="tbtn active" onclick="showTab('ranking',this)">📊 Ranking Vendedores</button>
-<button class="tbtn" onclick="showTab('rankingzona',this)">🏢 Ranking Zona</button>
-<button class="tbtn" onclick="showTab('reglas',this)">📖 Cómo funciona</button>
+<button class="tbtn active" onclick="showTab('ranking',this)">📊 Ranking</button>
+<button class="tbtn" onclick="showTab('reglas',this)">⚽ Cómo se juega</button>
 <button class="tbtn" onclick="showTab('premios',this)">🏆 Premios</button>
+<button class="tbtn" onclick="showTab('bonus',this)">⚡ Bonus Track</button>
 </div>
 <!-- ===== RANKING ===== -->
 <div class="tab-panel active" id="tab-ranking">
 <div class="winner-banner" id="winnerBanner">
 <div>
-<div class="wlabel">🥇 1° del mes</div>
+<div class="wlabel">🏆 Ganador de la semana</div>
 <div class="wname" id="wName">—</div>
 <div class="wgoles" id="wGoles">—</div>
 </div>
-<div class="wpremio">$250.000</div>
+<div class="wpremio">+ $100.000</div>
 </div>
 <div class="rk-header">
 <h2>📊 Tabla de posiciones</h2>
 <div class="filter-row">
 <button class="fbtn active" onclick="setF('total',this)">Total</button>
-<button class="fbtn" onclick="setF('otr',this)">Otros Paladini</button>
-<button class="fbtn" onclick="setF('lab',this)">L'Bratto</button>
-<button class="fbtn" onclick="setF('con',this)">Congelados</button>
-<button class="fbtn" onclick="setF('que',this)">Quesos</button>
-<button class="fbtn" onclick="setF('tap',this)">Pastas y Tapas</button>
-<button class="fbtn" onclick="setF('cli',this)">Clientes</button>
+<button class="fbtn" onclick="setF('nut',this)">Nutella</button>
+<button class="fbtn" onclick="setF('raf',this)">Raffaello</button>
+<button class="fbtn" onclick="setF('roc',this)">Rocher</button>
+<button class="fbtn" onclick="setF('kcm',this)">K.Choco</button>
+<button class="fbtn" onclick="setF('kbw',this)">K.Bueno</button>
+<button class="fbtn" onclick="setF('tt',this)">Tic Tac</button>
 </div>
 </div>
 <div id="rankList"></div>
 </div>
-<!-- ===== RANKING ZONA ===== -->
-<div class="tab-panel" id="tab-rankingzona">
-<div class="rk-header">
-<h2>🏢 Posiciones por zona</h2>
-<div class="filter-row">
-<button class="fbtn active" onclick="setFZ('total',this)">Total</button>
-<button class="fbtn" onclick="setFZ('otr',this)">Otros Paladini</button>
-<button class="fbtn" onclick="setFZ('lab',this)">L'Bratto</button>
-<button class="fbtn" onclick="setFZ('con',this)">Congelados</button>
-<button class="fbtn" onclick="setFZ('que',this)">Quesos</button>
-<button class="fbtn" onclick="setFZ('tap',this)">Pastas y Tapas</button>
-<button class="fbtn" onclick="setFZ('cli',this)">Clientes</button>
-</div>
-</div>
-<div id="rankListZona"></div>
-</div>
 <!-- ===== COMO SE JUEGA ===== -->
 <div class="tab-panel" id="tab-reglas">
 <div class="rsec">
-<div class="rh"><div class="ricon" style="background:var(--fg3)">🚩</div><h3>Condición de activación</h3></div>
+<div class="rh"><div class="ricon" style="background:#FFEBEE">🚩</div><h3>Condición general</h3></div>
 <div class="rb">
 <div class="cond-box">
 <div class="ct">⚠️ REQUISITO PARA COBRAR EL PREMIO</div>
-<p>Los premios de cada mes se entregan <strong>únicamente si se alcanza el objetivo del mes</strong>. Si en un mes no se llega al objetivo, ese mes no se entregan premios. Cada mes se evalúa por separado.</p>
+<p>Los premios finales se activan únicamente si <strong>Cedisur alcanza su objetivo general durante las 9 semanas</strong>. Si el objetivo no se cumple, no se entregan premios finales. Los premios semanales sí se entregan más allá de esa condición.</p>
 </div>
 </div>
 </div>
 <div class="rsec">
-<div class="rh"><div class="ricon" style="background:var(--fg3)">📊</div><h3>Cómo se suman los puntos</h3></div>
+<div class="rh"><div class="ricon" style="background:var(--fg3)">⚽</div><h3>Cómo se suman los goles</h3></div>
 <div class="rb">
 <ul class="rlist">
-<li><div class="rnum">1</div><div>Cada vendedor tiene un <strong>objetivo individual en kilos por categoría y por mes</strong>.</div></li>
-<li><div class="rnum">2</div><div>Cada <strong>kilo vendido por encima del objetivo</strong> del mes suma <strong>1 punto</strong>. Los kilos hasta el objetivo no suman ni restan.</div></li>
-<li><div class="rnum">3</div><div>En la categoría <strong>Clientes con compra Paladini</strong>, cada vendedor tiene un objetivo de clientes. Cada <strong>cliente por encima del objetivo</strong> suma <strong>10 puntos</strong>.</div></li>
-<li><div class="rnum">4</div><div>Los puntos se calculan <strong>mes a mes</strong>. Cada mes define su propio ranking y sus 3 ganadores.</div></li>
-<li><div class="rnum">5</div><div>Los 3 vendedores con más puntos en el mes ganan: <strong>1° $250.000</strong>, <strong>2° $150.000</strong> y <strong>3° $100.000</strong>.</div></li>
+<li><div class="rnum">1</div><div>Cada vendedor tiene un <strong>objetivo individual por producto por semana</strong>. El objetivo puede variar semana a semana según el plan comercial.</div></li>
+<li><div class="rnum">2</div><div>Cada unidad vendida <strong>por encima del objetivo semanal</strong> equivale a <strong>1 gol</strong>. Las unidades hasta el objetivo no suman ni restan.</div></li>
+<li><div class="rnum">3</div><div>Los goles se <strong>acumulan durante las 9 semanas</strong> y determinan el ranking final.</div></li>
+<li><div class="rnum">4</div><div>El vendedor con más goles <strong>en esa semana específica</strong> gana el premio semanal de <strong>$100.000</strong>.</div></li>
+<li><div class="rnum">5</div><div>Al cierre de la <strong>Semana 9</strong>, los 3 con más goles acumulados ganan el premio final. Los premios son <strong>acumulativos</strong> con los semanales.</div></li>
 </ul>
 <div class="ex-box">
-<div class="et">Ejemplo — Fiambres, un mes cualquiera</div>
-<div class="exrow">Objetivo: 800 kg — vendido: <span class="en">960 kg</span></div>
-<div class="exrow"><span class="en">960</span> <span style="color:var(--muted)">−</span> <span class="en">800</span> <span style="color:var(--muted)">=</span> <span class="er">+160 puntos</span></div>
-<div class="exrow" style="margin-top:4px">Quesos — objetivo: 500 kg — vendido: <span class="en">470 kg</span></div>
-<div class="exrow"><span style="color:var(--muted)">470 &lt; 500 → <strong>0 puntos</strong> (no resta)</span></div>
+<div class="et">Ejemplo — Semana 3, María González</div>
+<div class="exrow">Rocher — objetivo: 28 u. — vendido: <span class="en">41 u.</span></div>
+<div class="exrow"><span class="en">41</span> <span style="color:var(--muted)">−</span> <span class="en">28</span> <span style="color:var(--muted)">=</span> <span class="er">+13 goles</span></div>
+<div class="exrow" style="margin-top:4px">Nutella — objetivo: 26 u. — vendido: <span class="en">22 u.</span></div>
+<div class="exrow"><span style="color:var(--muted)">22 &lt; 26 → <strong>0 goles</strong> (no resta)</span></div>
 </div>
 </div>
 </div>
 <div class="rsec">
-<div class="rh"><div class="ricon" style="background:var(--fg3)">🧀</div><h3>Categorías evaluadas</h3></div>
+<div class="rh"><div class="ricon" style="background:var(--gold2)">⚡</div><h3>Semana Especial 5 y 9</h3></div>
 <div class="rb">
-<p>Se evalúan 6 categorías. Las primeras cinco se miden en <strong>kilos vendidos</strong>; la sexta por <strong>cantidad de clientes con compra</strong>.</p>
+<div class="spec-box">
+<div class="st">⚡ DESDE LA SEMANA 5: COMIENZAN LOS BONUS TRACK</div>
+<p>A partir de la Semana 5 se activan los <strong>Bonus Track</strong>: acciones comerciales especiales que suman goles adicionales al ranking. Ver la pestaña <strong>Bonus Track</strong> para el detalle.</p>
+</div>
+</div>
+</div>
+<div class="rsec">
+<div class="rh"><div class="ricon" style="background:var(--fg3)">📊</div><h3>Productos y objetivos por semana</h3></div>
+<div class="rb">
+<p>Los objetivos varían cada semana según el plan comercial. Cada vendedor tiene objetivos individuales dentro de los siguientes rangos:</p>
 <table class="ptbl">
-<thead><tr><th>Categoría</th><th>Se mide en</th></tr></thead>
+<thead><tr><th>Producto</th><th>Rango objetivo sem. 1–4</th><th>Rango objetivo sem. 5–9</th></tr></thead>
 <tbody>
-<tr><td><span class="pdot" style="background:#E63329"></span><strong>Otros Paladini</strong></td><td>Kilos por encima del objetivo</td></tr>
-<tr><td><span class="pdot" style="background:#00695C"></span><strong>L'Bratto</strong></td><td>Kilos por encima del objetivo</td></tr>
-<tr><td><span class="pdot" style="background:#1565C0"></span><strong>Congelados</strong></td><td>Kilos por encima del objetivo</td></tr>
-<tr><td><span class="pdot" style="background:#F9A825"></span><strong>Quesos</strong></td><td>Kilos por encima del objetivo</td></tr>
-<tr><td><span class="pdot" style="background:#6A1B9A"></span><strong>Pastas y Tapas</strong></td><td>Kilos por encima del objetivo</td></tr>
-<tr><td><span class="pdot" style="background:#455A64"></span><strong>Clientes con compra Paladini</strong></td><td>Para considerar un CCC debe comprar al menos 4 SKUs Paladini distintos</td></tr>
+<tr><td><span class="pdot" style="background:#4E342E"></span><strong>Nutella</strong></td><td>20–30 u./semana</td><td>24–36 u./semana</td></tr>
+<tr><td><span class="pdot" style="background:#8D6E63"></span><strong>Raffaello</strong></td><td>15–24 u./semana</td><td>18–30 u./semana</td></tr>
+<tr><td><span class="pdot" style="background:#C8960C"></span><strong>Rocher</strong></td><td>22–34 u./semana</td><td>27–40 u./semana</td></tr>
+<tr><td><span class="pdot" style="background:#C62828"></span><strong>Kinder Choco + Maxi</strong></td><td>30–46 u./semana</td><td>34–52 u./semana</td></tr>
+<tr><td><span class="pdot" style="background:#2E7D32"></span><strong>Kinder Bueno + White</strong></td><td>32–50 u./semana</td><td>36–56 u./semana</td></tr>
+<tr><td><span class="pdot" style="background:#1565C0"></span><strong>Tic Tac</strong></td><td>80–115 u./semana</td><td>88–122 u./semana</td></tr>
 </tbody>
 </table>
 </div>
@@ -403,11 +407,11 @@ header{
 <div class="rh"><div class="ricon" style="background:var(--fg3)">🔗</div><h3>Reglas adicionales</h3></div>
 <div class="rb">
 <ul class="rlist">
-<li><div class="rnum">✓</div><div>Ranking publicado <strong>mensualmente</strong> con posición, nombre y puntos.</div></li>
-<li><div class="rnum">✓</div><div><strong>Sin puntos negativos</strong>: por debajo del objetivo se suman 0 puntos esa categoría.</div></li>
-<li><div class="rnum">✓</div><div>En caso de empate en el mes, gana quien tenga mayor sobrecumplimiento en CCC.</div></li>
-<li><div class="rnum">✓</div><div>Participan los <strong>17 vendedores</strong> de Cedisur activos durante el período.</div></li>
-<li><div class="rnum">✓</div><div>Plan: <strong>Julio a Octubre de 2026</strong> (4 meses).</div></li>
+<li><div class="rnum">✓</div><div>Ranking publicado cada <strong>viernes</strong> por WhatsApp con posición, nombre y goles.</div></li>
+<li><div class="rnum">✓</div><div><strong>Sin goles negativos</strong>: por debajo del objetivo se suman 0 goles ese período.</div></li>
+<li><div class="rnum">✓</div><div>En caso de empate al final de la Semana 9, gana quien llegó antes a esa cantidad.</div></li>
+<li><div class="rnum">✓</div><div>Participan los <strong>21 vendedores</strong> de CeDiSur activos durante el período.</div></li>
+<li><div class="rnum">✓</div><div>Concurso: <strong>29 de 🥇 al 30 de agosto de 2026</strong>.</div></li>
 </ul>
 </div>
 </div>
@@ -417,98 +421,127 @@ header{
 <div class="condicion-p">
 <div class="cp-h"><span style="font-size:18px">⚠️</span><h3>Condición de activación</h3></div>
 <div class="cp-body">
-<p>Los premios de cada mes se entregan <strong>solo si se alcanza el objetivo del mes</strong>. Cada mes se evalúa por separado.</p>
+<p>Los premios finales se entregan <strong>solo si Cedisur alcanza el objetivo general de unidades en las 9 semanas</strong>. Los premios semanales sí se entregan más allá de esa condición.</p>
 <div class="cp-prog">
-<div class="cpl"><span>Avance del mes</span><span id="premPct">—</span></div>
+<div class="cpl"><span>Avance CeDiSur</span><span id="premPct">—</span></div>
 <div class="cpt"><div class="cpf danger" id="premBar" style="width:0%"></div></div>
-<div class="cpn" id="premNote">Seleccioná un mes para ver el avance.</div>
+<div class="cpn" id="premNote">Seleccioná una semana para ver el avance.</div>
 </div>
 </div>
 </div>
 <div class="weekly-prize">
-<h3>🏆 Premios por mes</h3>
+<h3>🏆 Premio semanal</h3>
 <div class="wp-grid">
 <div class="wp-card">
-<div class="wpc-lbl">🥇 1° del mes</div>
-<div class="wpc-val">$250.000</div>
-<div class="wpc-sub">Al que más sobrecumple</div>
-</div>
-<div class="wp-card">
-<div class="wpc-lbl">🥈 2° del mes</div>
-<div class="wpc-val">$150.000</div>
-<div class="wpc-sub">Segundo con más puntos</div>
-</div>
-<div class="wp-card">
-<div class="wpc-lbl">🥉 3° del mes</div>
+<div class="wpc-lbl">Premio por semana</div>
 <div class="wpc-val">$100.000</div>
-<div class="wpc-sub">Tercero con más puntos</div>
+<div class="wpc-sub">Al que más sobrecumpla esa semana</div>
 </div>
-
+<div class="wp-card">
+<div class="wpc-lbl">Total disponible (9 sem.)</div>
+<div class="wpc-val">$900.000</div>
+<div class="wpc-sub">Un ganador por semana</div>
+</div>
 </div>
 </div>
 <div class="podium-sec">
-<h3>🏆 Podio de cada mes</h3>
+<h3>🏆 Premio final (Semana 9)</h3>
 <div class="podium-grid">
 <div class="pc silver">
 <div class="pc-medal">🥈</div>
 <div class="pc-pos">2° Lugar</div>
-<div class="pc-amt" style="font-size:22px">$150.000</div>
-<div class="pc-pct">Al 2° con más puntos del mes</div>
+<div class="pc-amt" style="font-size:22px">$400.000</div>
+<div class="pc-pct">Acumulable con premios semanales</div>
+
 </div>
 <div class="pc gold">
 <div class="pc-medal">🥇</div>
 <div class="pc-pos">1° Lugar</div>
-<div class="pc-amt gt">$250.000</div>
-<div class="pc-pct">Al que más sobrecumple el mes</div>
+<div class="pc-amt gt">$750.000</div>
+<div class="pc-pct">Acumulable con premios semanales</div>
+
 </div>
 <div class="pc bronze">
 <div class="pc-medal">🥉</div>
 <div class="pc-pos">3° Lugar</div>
-<div class="pc-amt bt" style="font-size:22px">$100.000</div>
-<div class="pc-pct">Al 3° con más puntos del mes</div>
+<div class="pc-amt bt" style="font-size:22px">$150.000</div>
+<div class="pc-pct">Acumulable con premios semanales</div>
+
 </div>
 </div>
 <div class="acum-note">
-<p>📅 Cada mes se premia a los 3 primeros del ranking (🥇$250.000 · 🥈$150.000 · 🥉$100.000), durante los 4 meses del plan (Julio a Octubre).</p>
+<p>🆕 Los premios son acumulativos. Si ganas 3 semanas ($300.000) y llegás 1° ($1.000.000), cobrás $1.300.000 en total.</p>
 </div>
+</div>
+</div>
+<!-- ===== BONUS TRACK ===== -->
+<div class="tab-panel" id="tab-bonus">
+<div class="bt-hero">
+<div class="bt-badge">En desarrollo</div>
+<h2>⚡ BONUS TRACK</h2>
+<p>Acciones comerciales especiales que suman goles adicionales al ranking.<br/>Se activan en la <strong>Semana 5</strong> y en la <strong>Semana 9</strong> del concurso.</p>
+</div>
+<div class="bt-active">
+<span style="font-size:18px">⚡</span>
+<p>Activo en: <strong>Semana 5 (27 de julio)</strong> y <strong>Semana 9 (24 de agosto)</strong> — Las categorías y puntos exactos se anunciarán al inicio de cada semana especial.</p>
+</div>
+<div class="bt-cats">
+<div class="btcat">
+<div class="bt-lock">🔒</div>
+<div class="btcat-icon">🏭</div>
+<h3>Venta de Acciones</h3>
+<p>Punteras, packs promocionales, exhibidores y materiales de impulso en el canal.</p>
+<div class="bt-pts">Puntos: por definir</div>
+</div>
+<div class="btcat">
+<div class="bt-lock">🔒</div>
+<div class="btcat-icon">🎯</div>
+<h3>Material POP</h3>
+<p>Implementación de material de punto de venta: cenefas, display, backing, stoppers y más.</p>
+<div class="bt-pts">Puntos: por definir</div>
+</div>
+<div class="btcat">
+<div class="bt-lock">🔒</div>
+<div class="btcat-icon">⭐</div>
+<h3>Ventas Especiales</h3>
+<p>Ventas de productos Ferrero sin rotación. Ampliá el mix y sumá goles extra.</p>
+<div class="bt-pts">Puntos: por definir</div>
+</div>
+</div>
+<div class="bt-how">
+<h3>📝 Cómo funcionará</h3>
+<p>Los puntos bonus se suman a los goles regulares en las Semanas 5 y 9, contribuyendo al ranking final y a los premios semanales de esas semanas. Las categorías y valores se informarán con anticipación.</p>
 </div>
 </div>
 </div>
 <script>
 // ── URLs Google Sheets (CSV publicado) ──────────────────────────────────────
-// ── Google Sheets (CSV publicado) — PENDIENTE: pegar URLs cuando estén los datos ──
-// Dejá estas vacías para que el tablero arranque en 0.
-const URL_VENTAS  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRea86dwHnRgmeT6-DAliIK_4WIR-APb5zQWuA0Lm9-ba1HXXV2VLEzwlpR9AAgMrVfWYZnfj_bDBEu/pub?gid=660740369&single=true&output=csv";  // ventas mensuales por vendedor/categoría (kg y clientes)
-const URL_OBJETIVOS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRea86dwHnRgmeT6-DAliIK_4WIR-APb5zQWuA0Lm9-ba1HXXV2VLEzwlpR9AAgMrVfWYZnfj_bDBEu/pub?gid=2028280800&single=true&output=csv";  // objetivos mensuales por vendedor/categoría
-const URL_VENTAS_ZONA   = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRea86dwHnRgmeT6-DAliIK_4WIR-APb5zQWuA0Lm9-ba1HXXV2VLEzwlpR9AAgMrVfWYZnfj_bDBEu/pub?gid=1551317641&single=true&output=csv";  // ventas mensuales por zona/categoría
-const URL_OBJETIVOS_ZONA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRea86dwHnRgmeT6-DAliIK_4WIR-APb5zQWuA0Lm9-ba1HXXV2VLEzwlpR9AAgMrVfWYZnfj_bDBEu/pub?gid=1456618578&single=true&output=csv";  // objetivos mensuales por zona/categoría
+const URL_VENTAS_MUNDIAL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=507180271&single=true&output=csv";
+const URL_FERRERO_KG      = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=529194266&single=true&output=csv";
+const URL_DIAS_PROCESADOS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=1868345261&single=true&output=csv";
 
-const DATA = {"sellers": ["Leonardo Chiesa", "Guillermo Madrid", "Luis Velazquez", "Guillermo Alderete", "Hugo Lezana", "Horacio Ulloa", "Julian Jensen", "Alberto Castillo", "Dario Macaya", "Samuel Arenas", "Jonatan Lozano", "Jose Martinez", "David Bertran", "Miguel Escales", "Pablo Figueroa", "Alejandro Fragnul", "Pablo Zangari"], "products": [{"id": "otr", "name": "Otros Paladini", "color": "#E63329", "short": "Otros Pal."}, {"id": "lab", "name": "L'Bratto", "color": "#00695C", "short": "L'Bratto"}, {"id": "con", "name": "Congelados", "color": "#1565C0", "short": "Congel."}, {"id": "que", "name": "Quesos", "color": "#F9A825", "short": "Quesos"}, {"id": "tap", "name": "Pastas y Tapas", "color": "#6A1B9A", "short": "Pastas/Tapas"}, {"id": "cli", "name": "Clientes con compra Paladini", "color": "#455A64", "short": "Clientes"}], "objectives": {"Leonardo Chiesa": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [26, 26, 26, 26]}, "Guillermo Madrid": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [35, 35, 35, 35]}, "Luis Velazquez": {"otr": [2541, 2541, 2541, 2541], "lab": [22, 22, 22, 22], "con": [60, 60, 60, 60], "que": [45, 45, 45, 45], "tap": [30, 30, 30, 30], "cli": [51, 51, 51, 51]}, "Guillermo Alderete": {"otr": [1138, 1138, 1138, 1138], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [60, 60, 60, 60]}, "Hugo Lezana": {"otr": [1709, 1709, 1709, 1709], "lab": [15, 15, 15, 15], "con": [45, 45, 45, 45], "que": [30, 30, 30, 30], "tap": [24, 24, 24, 24], "cli": [68, 68, 68, 68]}, "Horacio Ulloa": {"otr": [2708, 2708, 2708, 2708], "lab": [24, 24, 24, 24], "con": [59, 59, 59, 59], "que": [37, 37, 37, 37], "tap": [35, 35, 35, 35], "cli": [75, 75, 75, 75]}, "Julian Jensen": {"otr": [1265, 1265, 1265, 1265], "lab": [15, 15, 15, 15], "con": [30, 30, 30, 30], "que": [22, 22, 22, 22], "tap": [20, 20, 20, 20], "cli": [59, 59, 59, 59]}, "Alberto Castillo": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [45, 45, 45, 45]}, "Dario Macaya": {"otr": [2053, 2053, 2053, 2053], "lab": [18, 18, 18, 18], "con": [54, 54, 54, 54], "que": [36, 36, 36, 36], "tap": [29, 29, 29, 29], "cli": [51, 51, 51, 51]}, "Samuel Arenas": {"otr": [1245, 1245, 1245, 1245], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [22, 22, 22, 22], "tap": [20, 20, 20, 20], "cli": [48, 48, 48, 48]}, "Jonatan Lozano": {"otr": [3696, 3696, 3696, 3696], "lab": [32, 32, 32, 32], "con": [85, 85, 85, 85], "que": [60, 60, 60, 60], "tap": [46, 46, 46, 46], "cli": [67, 67, 67, 67]}, "Jose Martinez": {"otr": [2657, 2657, 2657, 2657], "lab": [23, 23, 23, 23], "con": [60, 60, 60, 60], "que": [45, 45, 45, 45], "tap": [33, 33, 33, 33], "cli": [70, 70, 70, 70]}, "David Bertran": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [25, 25, 25, 25]}, "Miguel Escales": {"otr": [2372, 2372, 2372, 2372], "lab": [21, 21, 21, 21], "con": [62, 62, 62, 62], "que": [42, 42, 42, 42], "tap": [33, 33, 33, 33], "cli": [64, 64, 64, 64]}, "Pablo Figueroa": {"otr": [1196, 1196, 1196, 1196], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [21, 21, 21, 21], "tap": [20, 20, 20, 20], "cli": [56, 56, 56, 56]}, "Alejandro Fragnul": {"otr": [3170, 3170, 3170, 3170], "lab": [28, 28, 28, 28], "con": [75, 75, 75, 75], "que": [50, 50, 50, 50], "tap": [40, 40, 40, 40], "cli": [45, 45, 45, 45]}, "Pablo Zangari": {"otr": [1000, 1000, 1000, 1000], "lab": [15, 15, 15, 15], "con": [40, 40, 40, 40], "que": [20, 20, 20, 20], "tap": [20, 20, 20, 20], "cli": [55, 55, 55, 55]}}, "sales": {"Leonardo Chiesa": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Guillermo Madrid": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Luis Velazquez": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Guillermo Alderete": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Hugo Lezana": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Horacio Ulloa": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Julian Jensen": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Alberto Castillo": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Dario Macaya": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Samuel Arenas": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Jonatan Lozano": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Jose Martinez": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "David Bertran": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Miguel Escales": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Pablo Figueroa": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Alejandro Fragnul": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}, "Pablo Zangari": {"otr": [0, 0, 0, 0], "lab": [0, 0, 0, 0], "con": [0, 0, 0, 0], "que": [0, 0, 0, 0], "tap": [0, 0, 0, 0], "cli": [0, 0, 0, 0]}}};
+const DATA = {"sellers": ["Guillermo Alderete", "David Bertran", "Alberto Castillo", "Leonardo Chiesa", "Dario Macaya", "Miguel Escales", "Pablo Figueroa", "Alejandro Fragnul", "Samuel Arenas", "Julian Jensen", "Hugo Lezana", "Jonatan Lozano", "Guillermo Madrid", "Jose Martinez", "Sebastian Ponce de Leon", "Horacio Ulloa", "Luis Velazquez", "Pablo Zangari"], "products": [{"id": "kbw", "name": "Kinder Bueno + White", "color": "#2E7D32", "short": "K.Bueno"}, {"id": "kcm", "name": "Kinder Choco + Maxi", "color": "#C62828", "short": "K.Choco"}, {"id": "nut", "name": "Nutella", "color": "#4E342E", "short": "Nutella"}, {"id": "raf", "name": "Raffaello", "color": "#8D6E63", "short": "Raffaello"}, {"id": "roc", "name": "Rocher", "color": "#C8960C", "short": "Rocher"}, {"id": "tt", "name": "Tic Tac", "color": "#1565C0", "short": "Tic Tac"}], "objectives": {"Guillermo Alderete": {"kbw": [18, 18, 18, 18, 18, 15, 15, 15, 15], "kcm": [18, 18, 18, 18, 18, 15, 15, 15, 15], "nut": [15, 15, 15, 15, 15, 13, 13, 13, 13], "raf": [11, 11, 11, 11, 11, 9, 9, 9, 9], "roc": [52, 52, 52, 52, 52, 43, 43, 43, 43], "tt": [41, 41, 41, 41, 41, 35, 35, 35, 35]}, "David Bertran": {"kbw": [12, 12, 12, 12, 12, 10, 10, 10, 10], "kcm": [17, 17, 17, 17, 17, 14, 14, 14, 14], "nut": [20, 20, 20, 20, 20, 17, 17, 17, 17], "raf": [6, 6, 6, 6, 6, 5, 5, 5, 5], "roc": [49, 49, 49, 49, 49, 41, 41, 41, 41], "tt": [57, 57, 57, 57, 57, 48, 48, 48, 48]}, "Alberto Castillo": {"kbw": [21, 21, 21, 21, 21, 17, 17, 17, 17], "kcm": [17, 17, 17, 17, 17, 14, 14, 14, 14], "nut": [31, 31, 31, 31, 31, 26, 26, 26, 26], "raf": [9, 9, 9, 9, 9, 8, 8, 8, 8], "roc": [107, 107, 107, 107, 107, 89, 89, 89, 89], "tt": [40, 40, 40, 40, 40, 33, 33, 33, 33]}, "Leonardo Chiesa": {"kbw": [13, 13, 13, 13, 13, 11, 11, 11, 11], "kcm": [17, 17, 17, 17, 17, 14, 14, 14, 14], "nut": [37, 37, 37, 37, 37, 31, 31, 31, 31], "raf": [6, 6, 6, 6, 6, 5, 5, 5, 5], "roc": [56, 56, 56, 56, 56, 46, 46, 46, 46], "tt": [18, 18, 18, 18, 18, 15, 15, 15, 15]}, "Dario Macaya": {"kbw": [29, 29, 29, 29, 29, 24, 24, 24, 24], "kcm": [19, 19, 19, 19, 19, 16, 16, 16, 16], "nut": [32, 32, 32, 32, 32, 26, 26, 26, 26], "raf": [11, 11, 11, 11, 11, 9, 9, 9, 9], "roc": [90, 90, 90, 90, 90, 75, 75, 75, 75], "tt": [23, 23, 23, 23, 23, 20, 20, 20, 20]}, "Miguel Escales": {"kbw": [21, 21, 21, 21, 21, 17, 17, 17, 17], "kcm": [23, 23, 23, 23, 23, 19, 19, 19, 19], "nut": [14, 14, 14, 14, 14, 12, 12, 12, 12], "raf": [14, 14, 14, 14, 14, 12, 12, 12, 12], "roc": [90, 90, 90, 90, 90, 75, 75, 75, 75], "tt": [18, 18, 18, 18, 18, 15, 15, 15, 15]}, "Pablo Figueroa": {"kbw": [35, 35, 35, 35, 35, 29, 29, 29, 29], "kcm": [88, 88, 88, 88, 88, 73, 73, 73, 73], "nut": [46, 46, 46, 46, 46, 38, 38, 38, 38], "raf": [15, 15, 15, 15, 15, 13, 13, 13, 13], "roc": [137, 137, 137, 137, 137, 114, 114, 114, 114], "tt": [81, 81, 81, 81, 81, 67, 67, 67, 67]}, "Alejandro Fragnul": {"kbw": [12, 12, 12, 12, 12, 10, 10, 10, 10], "kcm": [15, 15, 15, 15, 15, 13, 13, 13, 13], "nut": [40, 40, 40, 40, 40, 33, 33, 33, 33], "raf": [8, 8, 8, 8, 8, 7, 7, 7, 7], "roc": [62, 62, 62, 62, 62, 52, 52, 52, 52], "tt": [18, 18, 18, 18, 18, 15, 15, 15, 15]}, "Samuel Arenas": {"kbw": [52, 52, 52, 52, 52, 43, 43, 43, 43], "kcm": [48, 48, 48, 48, 48, 40, 40, 40, 40], "nut": [118, 118, 118, 118, 118, 99, 99, 99, 99], "raf": [14, 14, 14, 14, 14, 12, 12, 12, 12], "roc": [189, 189, 189, 189, 189, 157, 157, 157, 157], "tt": [32, 32, 32, 32, 32, 27, 27, 27, 27]}, "Julian Jensen": {"kbw": [12, 12, 12, 12, 12, 10, 10, 10, 10], "kcm": [17, 17, 17, 17, 17, 14, 14, 14, 14], "nut": [43, 43, 43, 43, 43, 36, 36, 36, 36], "raf": [6, 6, 6, 6, 6, 5, 5, 5, 5], "roc": [42, 42, 42, 42, 42, 35, 35, 35, 35], "tt": [19, 19, 19, 19, 19, 16, 16, 16, 16]}, "Hugo Lezana": {"kbw": [18, 18, 18, 18, 18, 15, 15, 15, 15], "kcm": [26, 26, 26, 26, 26, 22, 22, 22, 22], "nut": [44, 44, 44, 44, 44, 36, 36, 36, 36], "raf": [14, 14, 14, 14, 14, 12, 12, 12, 12], "roc": [53, 53, 53, 53, 53, 44, 44, 44, 44], "tt": [18, 18, 18, 18, 18, 15, 15, 15, 15]}, "Jonatan Lozano": {"kbw": [32, 32, 32, 32, 32, 27, 27, 27, 27], "kcm": [27, 27, 27, 27, 27, 23, 23, 23, 23], "nut": [52, 52, 52, 52, 52, 43, 43, 43, 43], "raf": [10, 10, 10, 10, 10, 8, 8, 8, 8], "roc": [102, 102, 102, 102, 102, 85, 85, 85, 85], "tt": [25, 25, 25, 25, 25, 21, 21, 21, 21]}, "Guillermo Madrid": {"kbw": [16, 16, 16, 16, 16, 14, 14, 14, 14], "kcm": [17, 17, 17, 17, 17, 14, 14, 14, 14], "nut": [14, 14, 14, 14, 14, 12, 12, 12, 12], "raf": [11, 11, 11, 11, 11, 9, 9, 9, 9], "roc": [42, 42, 42, 42, 42, 35, 35, 35, 35], "tt": [18, 18, 18, 18, 18, 15, 15, 15, 15]}, "Jose Martinez": {"kbw": [28, 28, 28, 28, 28, 23, 23, 23, 23], "kcm": [122, 122, 122, 122, 122, 101, 101, 101, 101], "nut": [77, 77, 77, 77, 77, 64, 64, 64, 64], "raf": [18, 18, 18, 18, 18, 15, 15, 15, 15], "roc": [178, 178, 178, 178, 178, 149, 149, 149, 149], "tt": [145, 145, 145, 145, 145, 121, 121, 121, 121]}, "Sebastian Ponce de Leon": {"kbw": [59, 59, 59, 59, 59, 49, 49, 49, 49], "kcm": [54, 54, 54, 54, 54, 45, 45, 45, 45], "nut": [133, 133, 133, 133, 133, 111, 111, 111, 111], "raf": [6, 6, 6, 6, 6, 5, 5, 5, 5], "roc": [106, 106, 106, 106, 106, 89, 89, 89, 89], "tt": [90, 90, 90, 90, 90, 75, 75, 75, 75]}, "Horacio Ulloa": {"kbw": [19, 19, 19, 19, 19, 16, 16, 16, 16], "kcm": [21, 21, 21, 21, 21, 17, 17, 17, 17], "nut": [14, 14, 14, 14, 14, 12, 12, 12, 12], "raf": [12, 12, 12, 12, 12, 10, 10, 10, 10], "roc": [67, 67, 67, 67, 67, 56, 56, 56, 56], "tt": [46, 46, 46, 46, 46, 38, 38, 38, 38]}, "Luis Velazquez": {"kbw": [14, 14, 14, 14, 14, 12, 12, 12, 12], "kcm": [17, 17, 17, 17, 17, 14, 14, 14, 14], "nut": [14, 14, 14, 14, 14, 12, 12, 12, 12], "raf": [6, 6, 6, 6, 6, 5, 5, 5, 5], "roc": [42, 42, 42, 42, 42, 35, 35, 35, 35], "tt": [18, 18, 18, 18, 18, 15, 15, 15, 15]}, "Pablo Zangari": {"kbw": [13, 13, 13, 13, 13, 11, 11, 11, 11], "kcm": [27, 27, 27, 27, 27, 22, 22, 22, 22], "nut": [24, 24, 24, 24, 24, 20, 20, 20, 20], "raf": [6, 6, 6, 6, 6, 5, 5, 5, 5], "roc": [65, 65, 65, 65, 65, 54, 54, 54, 54], "tt": [18, 18, 18, 18, 18, 15, 15, 15, 15]}}, "sales": {"Guillermo Alderete": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "David Bertran": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Alberto Castillo": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Leonardo Chiesa": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Dario Macaya": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Miguel Escales": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Pablo Figueroa": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Alejandro Fragnul": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Samuel Arenas": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Julian Jensen": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Hugo Lezana": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Jonatan Lozano": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Guillermo Madrid": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Jose Martinez": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Sebastian Ponce de Leon": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Horacio Ulloa": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Luis Velazquez": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}, "Pablo Zangari": {"kbw": [0, 0, 0, 0, 0, 0, 0, 0, 0], "kcm": [0, 0, 0, 0, 0, 0, 0, 0, 0], "nut": [0, 0, 0, 0, 0, 0, 0, 0, 0], "raf": [0, 0, 0, 0, 0, 0, 0, 0, 0], "roc": [0, 0, 0, 0, 0, 0, 0, 0, 0], "tt": [0, 0, 0, 0, 0, 0, 0, 0, 0]}}};
 
 const WEEKS = [
-  {n:1, label:"Julio", dates:"Julio 2026"},
-  {n:2, label:"Agosto", dates:"Agosto 2026"},
-  {n:3, label:"Septiembre", dates:"Septiembre 2026"},
-  {n:4, label:"Octubre", dates:"Octubre 2026"},
+  {n:1, label:"S1", dates:"29 Jun &#8211; 5 Jul"},
+  {n:2, label:"S2", dates:"6 &#8211; 12 Jul"},
+  {n:3, label:"S3", dates:"13 &#8211; 19 Jul"},
+  {n:4, label:"S4", dates:"20 &#8211; 26 Jul"},
+  {n:5, label:"S5", dates:"27 Jul &#8211; 2 Ago", spec:true},
+  {n:6, label:"S6", dates:"3 &#8211; 9 Ago"},
+  {n:7, label:"S7", dates:"10 &#8211; 16 Ago"},
+  {n:8, label:"S8", dates:"17 &#8211; 23 Ago"},
+  {n:9, label:"S9", dates:"24 &#8211; 30 Ago"},
 ];
 
-const ZONES=["ATLANTICA", "ATLANTICA", "ATLANTICA", "CORDILLERA NORTE", "CORDILLERA NORTE", "CORDILLERA NORTE", "CORDILLERA SUR", "NEUQUEN", "NEUQUEN", "NEUQUEN", "NEUQUEN", "NEUQUEN", "RIO NEGRO", "RIO NEGRO", "RIO NEGRO", "RIO NEGRO", "RIO NEGRO"];
-
-// ── Estructura paralela por ZONA (misma forma que DATA pero con zonas como "sellers") ──
-const ZONE_LIST=["ATLANTICA","CORDILLERA NORTE","CORDILLERA SUR","NEUQUEN","RIO NEGRO"];
-function emptyCatMap(){const o={};DATA.products.forEach(p=>{o[p.id]=[0,0,0,0];});return o;}
-const DATAZONA={sellers:ZONE_LIST, products:DATA.products,
-  objectives:Object.fromEntries(ZONE_LIST.map(z=>[z,emptyCatMap()])),
-  sales:Object.fromEntries(ZONE_LIST.map(z=>[z,emptyCatMap()]))};
-let curFZ="total", openZ=null;
+const ZONES=["CORDILLERA NORTE","RIO NEGRO","NEUQUEN","ATLANTICA","NEUQUEN","RIO NEGRO","RIO NEGRO","RIO NEGRO","NEUQUEN","CORDILLERA SUR","CORDILLERA NORTE","NEUQUEN","ATLANTICA","NEUQUEN","CORDILLERA SUR","CORDILLERA NORTE","ATLANTICA","RIO NEGRO"];
 
 let curW=0, curF="total", openIdx=null;
 
 function wkGoles(seller, pid, w){
   const sold=DATA.sales[seller][pid][w];
   const obj=DATA.objectives[seller][pid][w];
-  const sobrecump=Math.max(0, sold-obj);
-  return pid==="cli" ? sobrecump*10 : sobrecump;
+  return Math.max(0, sold-obj);
 }
 
 function cumGoles(seller, upTo){
@@ -552,34 +585,25 @@ function getWeekWinner(w){
   return DATA.sellers.map((s,i)=>({seller:s,idx:i,g:weekScore(s,w)})).sort((a,b)=>b.g-a.g)[0];
 }
 
-// Objetivo de kilos (sin clientes) para el "Progreso CeDiSur" de cada mes.
-// Todos los meses se calculan automáticamente sumando los objetivos de kilos
-// de los 17 vendedores desde la hoja OBJETIVOS. Si en algún momento necesitás
-// fijar un total manual para un mes puntual, reemplazá el null correspondiente
-// por el número (ej: [31268, null, null, null]).
-const MONTH_KG_OBJ = [null, null, null, null];
-
-function getCeDiSurMonth(w){
+function getCeDiSur(upTo){
   let obj=0,sold=0;
-  const kgProducts=DATA.products.filter(p=>p.id!=="cli"); // excluye Clientes
   for(const s of DATA.sellers)
-    for(const p of kgProducts){
-      obj+=DATA.objectives[s][p.id][w];
-      sold+=DATA.sales[s][p.id][w];
+    for(const p of DATA.products){
+      for(let w=0;w<upTo;w++){obj+=DATA.objectives[s][p.id][w];sold+=DATA.sales[s][p.id][w];}
     }
-  if(MONTH_KG_OBJ[w]!=null) obj=MONTH_KG_OBJ[w];
   return {obj,sold,pct:Math.round(sold/obj*100)};
 }
 
 function updateStats(w){
-  const {obj,sold,pct}=getCeDiSurMonth(w);
+  const {obj,sold,pct}=getCeDiSur(w+1);
   document.getElementById("scPct").textContent=pct+"%";
-  document.getElementById("scSub").textContent=Math.round(sold).toLocaleString("es-AR")+" / "+Math.round(obj).toLocaleString("es-AR");
+  document.getElementById("scSub").textContent=sold.toLocaleString("es-AR")+" / "+obj.toLocaleString("es-AR")+" u.";
   const bar=document.getElementById("scBar");
   bar.style.width=Math.min(pct,100)+"%";
   bar.className="prog-fill"+(pct>=100?"":(pct>=75?" warn":" danger"));
   document.getElementById("scWk").textContent=WEEKS[w].label;
   document.getElementById("scDate").innerHTML=WEEKS[w].dates;
+  document.getElementById("specBanner").className="spec-banner"+(w>=4?" show":"");
   updatePremios(w,pct,obj,sold);
 }
 
@@ -589,8 +613,8 @@ function updatePremios(w,pct,obj,sold){
   fill.style.width=Math.min(pct,100)+"%";
   fill.className="cpf "+(pct>=100?"":(pct>=75?"warn ":"danger "));
   const note=document.getElementById("premNote");
-  if(pct>=100){note.textContent="✅ Objetivo del mes alcanzado. Premios ACTIVADOS.";note.style.color="var(--fg)";}
-  else{note.textContent="Faltan "+Math.round(obj-sold).toLocaleString("es-AR")+" (kg + clientes) para activar.";note.style.color="#7B1010";}
+  if(pct>=100){note.textContent="✅ CeDiSur superó el objetivo. Premios ACTIVADOS.";note.style.color="var(--fg)";}
+  else{note.textContent="Faltan "+(obj-sold).toLocaleString("es-AR")+" unidades para activar.";note.style.color="#7B1010";}
   const rk=buildRanking(w,"total");
   
   
@@ -599,7 +623,7 @@ function updatePremios(w,pct,obj,sold){
 function updateWinner(w){
   const win=getWeekWinner(w);
   document.getElementById("wName").textContent="Vendedor 1";
-  document.getElementById("wGoles").textContent="+"+win.g+" puntos este mes";
+  document.getElementById("wGoles").textContent="+"+win.g+" goles esta semana";
 }
 
 function pClass(pos){return pos===1?"p1":pos===2?"p2":pos===3?"p3":"";}
@@ -617,36 +641,28 @@ function renderWeekBars(seller){
   if(!max)max=1;
   return ws.map((v,w)=>{
     const h=Math.round(v/max*38);
+    const sp=w>=4;
     return `<div class="wkbar-w">
-      <div class="wkbar" style="height:${h}px;background:#C1121F33;border-top:3px solid var(--fg);width:100%"></div>
-      <div class="wklbl">${WEEKS[w].label}</div>
+      <div class="wkbar" style="height:${h}px;background:${sp?"#C8960C":"#1A6B35"}33;border-top:3px solid ${sp?"var(--gold)":"var(--fg)"};width:100%"></div>
+      <div class="wklbl${sp?" sp":""}">${sp?WEEKS[w].label+"⚡":WEEKS[w].label}</div>
     </div>`;
   }).join("");
 }
 
-function renderDetail(seller,g,opts){
-  opts=opts||{};
-  const showPts=opts.showPts!==false;   // en zona: false
-  const showBars=opts.showBars!==false; // en zona: false
-  const src=opts.src||DATA;
-  // CCC primero, luego las 5 categorías de kilos
-  const ordered=[...DATA.products].sort((a,b)=>(a.id==="cli"?-1:0)-(b.id==="cli"?-1:0));
-  const dprods=ordered.map(p=>{
-    const sold=src.sales[seller][p.id][curW];
-    const obj=src.objectives[seller][p.id][curW];
-    const pct=obj>0?Math.min(Math.round(sold/obj*100),100):0;
-    const u=p.id==="cli"?"clientes":"kg";
-    const cls="dprod"+(p.id==="cli"?" ccc":"");
-    const ptsLine=showPts?`<div class="dg" style="color:${p.color}">+${g[p.id]} pts</div>`:"";
-    return `<div class="${cls}">
+function renderDetail(seller,g){
+  const dprods=DATA.products.map(p=>{
+    const sold=DATA.sales[seller][p.id][curW];
+    const obj=DATA.objectives[seller][p.id][curW];
+    const pct=Math.min(Math.round(sold/obj*100),100);
+    return `<div class="dprod">
       <div class="dn" style="color:${p.color}">${p.name}</div>
-      <div class="ds"><span>Obj: ${obj} ${u}</span><span>${p.id==="cli"?"Con compra":"Vendido"}: ${sold} ${u}</span></div>
+      <div class="ds"><span>Obj: ${obj} u.</span><span>Vendido: ${sold} u.</span></div>
       <div class="dt"><div class="df" style="width:${pct}%;background:${p.color}"></div></div>
-      ${ptsLine}
+      <div class="dg" style="color:${p.color}">+${g[p.id]} goles</div>
     </div>`;
   }).join("");
-  const barsBlock=showBars?`<div class="wkrow"><h4>Puntos por mes</h4><div class="wkbars">${renderWeekBars(seller)}</div></div>`:"";
-  return `<div class="dgrid">${dprods}</div>${barsBlock}`;
+  return `<div class="dgrid">${dprods}</div>
+    <div class="wkrow"><h4>Goles por semana</h4><div class="wkbars">${renderWeekBars(seller)}</div></div>`;
 }
 
 function render(){
@@ -654,7 +670,7 @@ function render(){
   updateStats(curW);
   updateWinner(curW);
   document.getElementById("scLider").textContent=rk[0].seller.split(" ").slice(0,2).join(" ");
-  document.getElementById("scLiderG").textContent=rk[0].goles.total+" puntos";
+  document.getElementById("scLiderG").textContent=rk[0].goles.total+" goles";
 
   document.getElementById("rankList").innerHTML=rk.map((r,i)=>{
     const pos=i+1;
@@ -663,7 +679,7 @@ function render(){
       ?`<div class="pbadge" style="font-size:20px">${medals[pos-1]}</div>`
       :`<div class="pbadge pn">${pos}</div>`;
     const dg=r.goles[curF];
-    const lbl=curF==="total"?"puntos":DATA.products.find(p=>p.id===curF).short;
+    const lbl=curF==="total"?"goles":DATA.products.find(p=>p.id===curF).short;
     return `<div class="sc ${pClass(pos)}" id="card${r.idx}" onclick="toggle(${r.idx})">
       <div class="sc-row">
         ${badge}
@@ -672,7 +688,7 @@ function render(){
         <div class="gtotal"><div class="gnum">${dg}</div><div class="glabel">${lbl}</div></div>
         <div class="chev">&#8964;</div>
       </div>
-      <div class="detail" id="det${r.idx}">${renderDetail(r.seller,r.goles,{showBars:false})}</div>
+      <div class="detail" id="det${r.idx}">${renderDetail(r.seller,r.goles)}</div>
     </div>`;
   }).join("");
 
@@ -680,7 +696,6 @@ function render(){
     const c=document.getElementById("card"+openIdx);
     if(c)c.classList.add("open");
   }
-  renderZona();
 }
 
 function toggle(idx){
@@ -692,77 +707,8 @@ function toggle(idx){
   }
 }
 
-// ── RANKING ZONA (sin puntos: Real vs Objetivo de kg totales y de CCC) ──
-function zoneKgTotals(zone,w){
-  let obj=0,sold=0;
-  DATA.products.filter(p=>p.id!=="cli").forEach(p=>{
-    obj+=DATAZONA.objectives[zone][p.id][w];
-    sold+=DATAZONA.sales[zone][p.id][w];
-  });
-  return {obj,sold};
-}
-function zoneCatRvO(zone,w,filt){
-  // Real vs Objetivo del filtro elegido; "total" = kg totales
-  if(filt==="cli"){
-    return {obj:DATAZONA.objectives[zone].cli[w], sold:DATAZONA.sales[zone].cli[w], unit:"clientes"};
-  }
-  if(filt==="total"){
-    const t=zoneKgTotals(zone,w); return {...t, unit:"kg"};
-  }
-  return {obj:DATAZONA.objectives[zone][filt][w], sold:DATAZONA.sales[zone][filt][w], unit:"kg"};
-}
-function pctClass(p){return p>=100?"ok":(p>=75?"mid":"low");}
-
-function renderZona(){
-  const w=curW;
-  // orden alfabético fijo
-  const zonas=[...ZONE_LIST].sort((a,b)=>a.localeCompare(b));
-  document.getElementById("rankListZona").innerHTML=zonas.map((z,i)=>{
-    const cli={obj:DATAZONA.objectives[z].cli[w], sold:DATAZONA.sales[z].cli[w]};
-    const cliPct=cli.obj>0?Math.round(cli.sold/cli.obj*100):0;
-    const fmt=n=>Math.round(n).toLocaleString("es-AR");
-    // Primer bloque: depende del filtro (Total=kg totales; categoría=esa categoría)
-    const primary=zoneCatRvO(z,w,curFZ==="cli"?"total":curFZ);
-    const pName=curFZ==="total"?"Kilos (Real/Obj)":(DATA.products.find(p=>p.id===(curFZ==="cli"?"total":curFZ))?.short||"Kilos")+" (Real/Obj)";
-    const pPct=primary.obj>0?Math.round(primary.sold/primary.obj*100):0;
-    return `<div class="sc" id="zcard${i}" onclick="toggleZona(${i})">
-      <div class="sc-row" style="grid-template-columns:50px 1fr auto 30px">
-        <div class="pbadge pn">${i+1}</div>
-        <div><div class="sname">${z}</div><div class="szone">Zona comercial</div></div>
-        <div class="zrvo">
-          <div class="zblk"><div class="zbl">${pName}</div>
-            <div class="zval" style="color:var(--fg2)">${fmt(primary.sold)} / ${fmt(primary.obj)}</div>
-            <div class="zpct ${pctClass(pPct)}">${pPct}%</div></div>
-          <div class="zblk"><div class="zbl">CCC (Real/Obj)</div>
-            <div class="zval" style="color:#455A64">${fmt(cli.sold)} / ${fmt(cli.obj)}</div>
-            <div class="zpct ${pctClass(cliPct)}">${cliPct}%</div></div>
-        </div>
-        <div class="chev">&#8964;</div>
-      </div>
-      <div class="detail" id="zdet${i}">${renderDetail(z,{},{showPts:false,showBars:false,src:DATAZONA})}</div>
-    </div>`;
-  }).join("");
-  if(openZ!==null){const c=document.getElementById("zcard"+openZ);if(c)c.classList.add("open");}
-}
-
-function toggleZona(idx){
-  const c=document.getElementById("zcard"+idx);
-  if(openZ===idx){c.classList.remove("open");openZ=null;}
-  else{
-    if(openZ!==null){const p=document.getElementById("zcard"+openZ);if(p)p.classList.remove("open");}
-    c.classList.add("open");openZ=idx;
-  }
-}
-
-function setFZ(f,btn){
-  curFZ=f;
-  document.querySelectorAll("#tab-rankingzona .fbtn").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
-  renderZona();
-}
-
 function setW(w,btn){
-  curW=w;openIdx=null;openZ=null;
+  curW=w;openIdx=null;
   document.querySelectorAll(".wbtn").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
   render();
@@ -794,110 +740,48 @@ function csvRow(row){
   res.push(cur);return res;
 }
 
-// Convierte un valor de celda a número, tolerando separadores de miles.
-// Ejemplos: "841.559"->841559 · "1,234.5"->1234.5 · "1.234,5"->1234.5 · "844"->844
-function numCol(v){
-  let s=(v==null?'':String(v)).trim();
-  if(!s)return 0;
-  s=s.replace(/\s/g,'');
-  const hasDot=s.indexOf('.')>=0, hasComma=s.indexOf(',')>=0;
-  if(hasDot&&hasComma){
-    // el último separador que aparece es el decimal
-    if(s.lastIndexOf(',')>s.lastIndexOf('.')){ s=s.replace(/\./g,'').replace(',', '.'); }
-    else { s=s.replace(/,/g,''); }
-  } else if(hasComma){
-    // solo coma: si hay una sola y deja 1-2 decimales, es decimal; si no, es miles
-    const parts=s.split(',');
-    if(parts.length===2 && parts[1].length<=2){ s=s.replace(',', '.'); }
-    else { s=s.replace(/,/g,''); }
-  } else if(hasDot){
-    // solo punto: si hay más de uno, son miles; si el bloque final tiene 3 dígitos, es miles
-    const parts=s.split('.');
-    if(parts.length>2){ s=s.replace(/\./g,''); }
-    else if(parts.length===2 && parts[1].length===3){ s=s.replace(/\./g,''); }
-  }
-  const n=parseFloat(s);
-  return isNaN(n)?0:n;
-}
-
-// ── Actualizar datos desde Google Sheets ──
+// ── Actualizar datos desde Google Sheets ─────────────────────────────────────
+// VENTAS_MUNDIAL: VENDEDOR | MARCA_ID | MARCA_NOMBRE | SEM_1 … SEM_9
+// Los nombres de vendedor en la hoja coinciden con DATA.sellers (display format)
 async function fetchSheets(){
   const btn=document.querySelector('[onclick="fetchSheets()"]');
   if(btn){btn.disabled=true;btn.textContent='Cargando...';}
   try{
-    // Si no hay URLs configuradas, se muestra el tablero en 0.
-    if(!URL_VENTAS && !URL_OBJETIVOS && !URL_VENTAS_ZONA && !URL_OBJETIVOS_ZONA){
-      const lu=document.getElementById('last-updated');
-      if(lu)lu.textContent='Sin datos cargados (tablero en 0)';
-      render();
-      return;
+    const [rV,rK]=await Promise.all([
+      fetch(URL_VENTAS_MUNDIAL),
+      fetch(URL_FERRERO_KG),
+    ]);
+
+    // ── Reconstruir DATA.sales desde VENTAS_MUNDIAL ──────────────────────────
+    if(rV.ok){
+      const text=await rV.text();
+      // Inicializar con ceros para todos los vendedores y marcas
+      DATA.sellers.forEach(s=>{
+        if(!DATA.sales[s])DATA.sales[s]={};
+        DATA.products.forEach(p=>{ DATA.sales[s][p.id]=[0,0,0,0,0,0,0,0,0]; });
+      });
+      // Poblar con los valores del sheet
+      text.trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
+        const c=csvRow(r);
+        const seller=(c[0]||'').trim();
+        const pid   =(c[1]||'').trim();
+        if(!seller||!pid||!DATA.sales[seller])return;
+        DATA.sales[seller][pid]=[0,1,2,3,4,5,6,7,8].map(i=>parseFloat(c[3+i])||0);
+      });
     }
-    // Formato esperado (ambas hojas): VENDEDOR | CATEGORIA_ID | (nombre) | JULIO | AGOSTO | SEPTIEMBRE | OCTUBRE
-    if(URL_VENTAS){
-      const rV=await fetch(URL_VENTAS);
-      if(rV.ok){
-        const text=await rV.text();
-        DATA.sellers.forEach(s=>{
-          if(!DATA.sales[s])DATA.sales[s]={};
-          DATA.products.forEach(p=>{ DATA.sales[s][p.id]=[0,0,0,0]; });
-        });
-        text.trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
-          const c=csvRow(r);
-          const seller=(c[0]||'').trim();
-          const pid   =(c[1]||'').trim();
-          if(!seller||!pid||!DATA.sales[seller])return;
-          DATA.sales[seller][pid]=[0,1,2,3].map(i=>numCol(c[3+i]));
-        });
-      }
-    }
-    if(URL_OBJETIVOS){
-      const rO=await fetch(URL_OBJETIVOS);
-      if(rO.ok){
-        const text=await rO.text();
-        text.trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
-          const c=csvRow(r);
-          const seller=(c[0]||'').trim();
-          const pid   =(c[1]||'').trim();
-          if(!seller||!pid||!DATA.objectives[seller])return;
-          DATA.objectives[seller][pid]=[0,1,2,3].map(i=>numCol(c[3+i]));
-        });
-      }
-    }
-    // ── Datos por ZONA (mismo formato, primera col = ZONA) ──
-    if(URL_VENTAS_ZONA){
-      const rVZ=await fetch(URL_VENTAS_ZONA);
-      if(rVZ.ok){
-        const text=await rVZ.text();
-        ZONE_LIST.forEach(z=>{ DATA.products.forEach(p=>{ DATAZONA.sales[z][p.id]=[0,0,0,0]; }); });
-        text.trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
-          const c=csvRow(r);
-          const zona=(c[0]||'').trim();
-          const pid =(c[1]||'').trim();
-          if(!zona||!pid||!DATAZONA.sales[zona])return;
-          DATAZONA.sales[zona][pid]=[0,1,2,3].map(i=>numCol(c[3+i]));
-        });
-      }
-    }
-    if(URL_OBJETIVOS_ZONA){
-      const rOZ=await fetch(URL_OBJETIVOS_ZONA);
-      if(rOZ.ok){
-        const text=await rOZ.text();
-        text.trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
-          const c=csvRow(r);
-          const zona=(c[0]||'').trim();
-          const pid =(c[1]||'').trim();
-          if(!zona||!pid||!DATAZONA.objectives[zona])return;
-          DATAZONA.objectives[zona][pid]=[0,1,2,3].map(i=>numCol(c[3+i]));
-        });
-      }
-    }
+
+    // ── Actualizar scoreboard con datos de FERRERO_KG (opcional) ─────────────
+    // (Los KPIs de progreso se calculan desde DATA.sales; FERRERO_KG se usa en tableros internos)
+
+    // Actualizar timestamp
     const ts=new Date().toLocaleString('es-AR');
     const lu=document.getElementById('last-updated');
     if(lu)lu.textContent='Actualizado: '+ts;
+
     render();
   }catch(e){
-    console.error('Error al cargar datos:',e);
-    render();
+    console.error('Error al cargar datos de Sheets:',e);
+    render(); // renderizar con los datos que haya
   }finally{
     if(btn){btn.disabled=false;btn.textContent='🔄 Actualizar';}
   }

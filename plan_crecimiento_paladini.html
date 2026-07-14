@@ -47,8 +47,8 @@ header{
 
 /* ---- SCOREBOARD BAR ---- */
 .score-bar{background:var(--score);border-bottom:2px solid var(--fg)}
-.score-inner{max-width:1300px;margin:0 auto;padding:0 18px;display:grid;grid-template-columns:repeat(4,1fr);gap:0}
-.score-cell{padding:10px 14px;border-right:1px solid #ffffff10;text-align:center;display:flex;flex-direction:column;justify-content:center}
+.score-inner{max-width:1300px;margin:0 auto;padding:0 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.score-cell{padding:10px 14px;border-right:1px solid #ffffff10;text-align:center}
 .score-cell:last-child{border-right:none}
 .sc-label{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
 .sc-value{font-size:24px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
@@ -108,22 +108,12 @@ header{
 .pbadge.pn{background:var(--bg);font-size:12px;font-weight:800;color:var(--muted)}
 .sname{font-weight:700;font-size:14px}
 .szone{font-size:10px;color:var(--muted);margin-top:1px}
-/* ---- ZONA: layout de fila ---- */
-.zona-row{grid-template-columns:1fr auto auto 30px !important}
-.zname{font-size:22px;font-weight:900;color:var(--brown);letter-spacing:.5px;align-self:center;line-height:1.1}
-/* índice ponderado de zona */
-.zidx{text-align:center;padding:0 22px;border-left:1px dashed var(--border);border-right:1px dashed var(--border)}
-.zidx .zival{font-size:26px;font-weight:900;line-height:1.1}
-.zidx .zival.ok{color:#1B5E20}.zidx .zival.mid{color:var(--gold3)}.zidx .zival.low{color:var(--red)}
-.zidx .zbl2{font-size:9px;color:var(--muted);letter-spacing:.3px;margin-top:2px}
-/* zona ganadora */
-.sc.zwin{border-color:var(--gold);background:linear-gradient(135deg,var(--gold2),#fff);box-shadow:0 0 0 2px rgba(200,150,12,.35)}
-/* ---- ZONA: bloque real vs objetivo (ampliado) ---- */
-.zrvo{display:flex;gap:28px;justify-content:flex-end;align-items:center}
-.zrvo .zblk{text-align:right;min-width:128px}
-.zrvo .zbl{font-size:11px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-bottom:2px}
-.zrvo .zval{font-size:22px;font-weight:900;line-height:1.15}
-.zrvo .zpct{font-size:13px;font-weight:800;margin-top:1px}
+/* ---- ZONA: bloque real vs objetivo ---- */
+.zrvo{display:flex;gap:14px;justify-content:flex-end}
+.zrvo .zblk{text-align:right;min-width:96px}
+.zrvo .zbl{font-size:9px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.zrvo .zval{font-size:15px;font-weight:900;line-height:1.15}
+.zrvo .zpct{font-size:10px;font-weight:700}
 .zrvo .zpct.ok{color:#1B5E20}.zrvo .zpct.mid{color:var(--gold2)}.zrvo .zpct.low{color:var(--red)}
 
 .pills{display:flex;gap:4px;flex-wrap:wrap}
@@ -232,38 +222,6 @@ header{
 .pc-who .wg{font-size:10px;color:var(--muted)}
 .acum-note{background:var(--cel3);border:1.5px solid var(--cel);border-radius:var(--rs);padding:12px 14px;margin-top:12px}
 .acum-note p{font-size:13px;color:var(--cel2);font-weight:600;text-align:center}
-/* ---- DIVISORES DE SECCIÓN EN PREMIOS ---- */
-.prize-divider{display:flex;align-items:center;gap:10px;margin:22px 0 4px;padding:10px 14px;border-radius:var(--r);
-  background:linear-gradient(135deg,var(--fg2),var(--fg));color:#fff}
-.prize-divider.zone{background:linear-gradient(135deg,var(--score),#1A237E)}
-.prize-divider .pd-icon{font-size:20px}
-.prize-divider .pd-txt{font-size:15px;font-weight:800;letter-spacing:.5px}
-.prize-sub{font-size:12.5px;color:var(--muted);line-height:1.55;margin:6px 2px 12px}
-/* hero premio zona */
-.zone-hero{background:linear-gradient(160deg,var(--score) 0%,#1A237E 100%);border-radius:var(--r);
-  padding:22px 20px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden}
-.zone-hero::before{content:"🏢";position:absolute;font-size:120px;opacity:.06;right:-15px;bottom:-25px;line-height:1}
-.zone-hero .zh-label{font-size:11px;color:rgba(255,255,255,.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
-.zone-hero .zh-amount{font-size:44px;font-weight:900;color:var(--gold)}
-.zone-hero .zh-note{font-size:12px;color:rgba(255,255,255,.6);margin-top:4px}
-/* ---- PREMIO MEJOR ZONA ---- */
-.zoneprize{background:var(--card);border:2px solid var(--gold);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
-.zp-h{background:linear-gradient(135deg,var(--gold),var(--cel2));color:#fff;padding:11px 16px;display:flex;align-items:center;gap:9px}
-.zp-h h3{font-size:14px;font-weight:800}
-.zp-body{padding:15px 16px}
-.zp-desc{font-size:13px;line-height:1.6;margin-bottom:10px}
-.zp-formula{background:var(--score);color:var(--gold);font-weight:800;font-size:14px;text-align:center;padding:10px;border-radius:var(--rs);margin-bottom:14px;letter-spacing:.5px}
-.zp-winner{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,var(--gold2),#fff);border:1.5px solid var(--gold);border-radius:var(--r);padding:14px 16px;flex-wrap:wrap}
-.zpw-crown{font-size:44px;line-height:1}
-.zpw-info{flex:1;min-width:140px}
-.zpw-lbl{font-size:10px;font-weight:800;color:var(--gold3);text-transform:uppercase;letter-spacing:1px}
-.zpw-name{font-size:24px;font-weight:900;color:var(--brown);line-height:1.1;margin-top:2px}
-.zpw-idx{font-size:15px;font-weight:800;color:var(--cel2);margin-top:3px}
-.zpw-break{display:flex;gap:18px;flex-wrap:wrap}
-.zpw-break .zpb{text-align:center;min-width:78px}
-.zpw-break .zpb-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
-.zpw-break .zpb-v{font-size:19px;font-weight:900;color:var(--fg2)}
-.zpw-break .zpb-w{font-size:9px;color:var(--muted)}
 
 /* ---- BONUS TRACK ---- */
 .bt-hero{background:linear-gradient(135deg,var(--score) 0%,#1A237E 100%);border-radius:var(--r);
@@ -295,18 +253,11 @@ header{
   .gnum{font-size:17px}.dgrid{grid-template-columns:1fr 1fr}
   .hdr-mid h1{font-size:16px}.wbtn{padding:4px 7px;font-size:11px}
   .score-inner{grid-template-columns:1fr 1fr}
-  .score-cell:nth-child(3),.score-cell:nth-child(4){display:none}
+  .score-cell:last-child{display:none}
   .podium-grid{grid-template-columns:1fr}
   .bt-cats{grid-template-columns:1fr}
   .wp-grid{grid-template-columns:1fr}
   .tbtn{padding:8px 12px;font-size:12px}
-  .zona-row{grid-template-columns:1fr auto 24px !important;row-gap:8px}
-  .zname{font-size:16px;grid-column:1 / -1}
-  .zidx{padding:0 12px}
-  .zidx .zival{font-size:20px}
-  .zrvo{gap:12px}
-  .zrvo .zblk{min-width:88px}
-  .zrvo .zval{font-size:15px}
 }
 </style>
 </head>
@@ -336,13 +287,7 @@ header{
 <div class="score-bar">
 <div class="score-inner">
 <div class="score-cell">
-<div class="sc-label">Progreso CCC</div>
-<div class="sc-value" id="scCliPct">—</div>
-<div class="sc-sub" id="scCliSub">cargando...</div>
-<div class="prog-track"><div class="prog-fill danger" id="scCliBar" style="width:0%"></div></div>
-</div>
-<div class="score-cell">
-<div class="sc-label">Progreso Kilos</div>
+<div class="sc-label">Progreso CeDiSur</div>
 <div class="sc-value" id="scPct">—</div>
 <div class="sc-sub" id="scSub">cargando...</div>
 <div class="prog-track"><div class="prog-fill danger" id="scBar" style="width:0%"></div></div>
@@ -369,16 +314,24 @@ header{
 </div>
 <!-- ===== RANKING ===== -->
 <div class="tab-panel active" id="tab-ranking">
+<div class="winner-banner" id="winnerBanner">
+<div>
+<div class="wlabel">🥇 1° del mes</div>
+<div class="wname" id="wName">—</div>
+<div class="wgoles" id="wGoles">—</div>
+</div>
+<div class="wpremio">$250.000</div>
+</div>
 <div class="rk-header">
 <h2>📊 Tabla de posiciones</h2>
 <div class="filter-row">
 <button class="fbtn active" onclick="setF('total',this)">Total</button>
-<button class="fbtn" onclick="setF('cli',this)">Clientes</button>
 <button class="fbtn" onclick="setF('otr',this)">Otros Paladini</button>
 <button class="fbtn" onclick="setF('lab',this)">L'Bratto</button>
 <button class="fbtn" onclick="setF('con',this)">Congelados</button>
 <button class="fbtn" onclick="setF('que',this)">Quesos</button>
 <button class="fbtn" onclick="setF('tap',this)">Pastas y Tapas</button>
+<button class="fbtn" onclick="setF('cli',this)">Clientes</button>
 </div>
 </div>
 <div id="rankList"></div>
@@ -386,15 +339,15 @@ header{
 <!-- ===== RANKING ZONA ===== -->
 <div class="tab-panel" id="tab-rankingzona">
 <div class="rk-header">
-<h2>🏢 Seguimiento por zona</h2>
+<h2>🏢 Posiciones por zona</h2>
 <div class="filter-row">
 <button class="fbtn active" onclick="setFZ('total',this)">Total</button>
-<button class="fbtn" onclick="setFZ('cli',this)">Clientes</button>
 <button class="fbtn" onclick="setFZ('otr',this)">Otros Paladini</button>
 <button class="fbtn" onclick="setFZ('lab',this)">L'Bratto</button>
 <button class="fbtn" onclick="setFZ('con',this)">Congelados</button>
 <button class="fbtn" onclick="setFZ('que',this)">Quesos</button>
 <button class="fbtn" onclick="setFZ('tap',this)">Pastas y Tapas</button>
+<button class="fbtn" onclick="setFZ('cli',this)">Clientes</button>
 </div>
 </div>
 <div id="rankListZona"></div>
@@ -416,7 +369,7 @@ header{
 <ul class="rlist">
 <li><div class="rnum">1</div><div>Cada vendedor tiene un <strong>objetivo individual en kilos por categoría y por mes</strong>.</div></li>
 <li><div class="rnum">2</div><div>Cada <strong>kilo vendido por encima del objetivo</strong> del mes suma <strong>1 punto</strong>. Los kilos hasta el objetivo no suman ni restan.</div></li>
-<li><div class="rnum">3</div><div>En la categoría <strong>Clientes con compra Paladini</strong>, cada vendedor tiene un objetivo de clientes. Cada <strong>cliente por encima del objetivo</strong> suma <strong>2 puntos</strong>.</div></li>
+<li><div class="rnum">3</div><div>En la categoría <strong>Clientes con compra Paladini</strong>, cada vendedor tiene un objetivo de clientes. Cada <strong>cliente por encima del objetivo</strong> suma <strong>10 puntos</strong>.</div></li>
 <li><div class="rnum">4</div><div>Los puntos se calculan <strong>mes a mes</strong>. Cada mes define su propio ranking y sus 3 ganadores.</div></li>
 <li><div class="rnum">5</div><div>Los 3 vendedores con más puntos en el mes ganan: <strong>1° $250.000</strong>, <strong>2° $150.000</strong> y <strong>3° $100.000</strong>.</div></li>
 </ul>
@@ -436,12 +389,12 @@ header{
 <table class="ptbl">
 <thead><tr><th>Categoría</th><th>Se mide en</th></tr></thead>
 <tbody>
-<tr><td><span class="pdot" style="background:#455A64"></span><strong>Clientes con compra Paladini</strong></td><td>Para considerar un CCC debe comprar al menos 2 SKUs Paladini distintos</td></tr>
 <tr><td><span class="pdot" style="background:#E63329"></span><strong>Otros Paladini</strong></td><td>Kilos por encima del objetivo</td></tr>
 <tr><td><span class="pdot" style="background:#00695C"></span><strong>L'Bratto</strong></td><td>Kilos por encima del objetivo</td></tr>
 <tr><td><span class="pdot" style="background:#1565C0"></span><strong>Congelados</strong></td><td>Kilos por encima del objetivo</td></tr>
 <tr><td><span class="pdot" style="background:#F9A825"></span><strong>Quesos</strong></td><td>Kilos por encima del objetivo</td></tr>
 <tr><td><span class="pdot" style="background:#6A1B9A"></span><strong>Pastas y Tapas</strong></td><td>Kilos por encima del objetivo</td></tr>
+<tr><td><span class="pdot" style="background:#455A64"></span><strong>Clientes con compra Paladini</strong></td><td>Para considerar un CCC debe comprar al menos 4 SKUs Paladini distintos</td></tr>
 </tbody>
 </table>
 </div>
@@ -472,10 +425,27 @@ header{
 </div>
 </div>
 </div>
+<div class="weekly-prize">
+<h3>🏆 Premios por mes</h3>
+<div class="wp-grid">
+<div class="wp-card">
+<div class="wpc-lbl">🥇 1° del mes</div>
+<div class="wpc-val">$250.000</div>
+<div class="wpc-sub">Al que más sobrecumple</div>
+</div>
+<div class="wp-card">
+<div class="wpc-lbl">🥈 2° del mes</div>
+<div class="wpc-val">$150.000</div>
+<div class="wpc-sub">Segundo con más puntos</div>
+</div>
+<div class="wp-card">
+<div class="wpc-lbl">🥉 3° del mes</div>
+<div class="wpc-val">$100.000</div>
+<div class="wpc-sub">Tercero con más puntos</div>
+</div>
 
-<!-- ── BLOQUE 1: PREMIOS INDIVIDUALES (VENDEDORES) ── -->
-<div class="prize-divider"><span class="pd-icon">👤</span><span class="pd-txt">Premios individuales — Vendedores</span></div>
-<p class="prize-sub">Se premia a los <strong>3 vendedores con más puntos</strong> en el ranking individual de cada mes.</p>
+</div>
+</div>
 <div class="podium-sec">
 <h3>🏆 Podio de cada mes</h3>
 <div class="podium-grid">
@@ -499,32 +469,7 @@ header{
 </div>
 </div>
 <div class="acum-note">
-<p>📅 Cada mes se premia a los 3 primeros del ranking individual (🥇$250.000 · 🥈$150.000 · 🥉$100.000), durante los 4 meses del plan (Julio a Octubre).</p>
-</div>
-</div>
-
-<!-- ── BLOQUE 2: PREMIO POR ZONA ── -->
-<div class="prize-divider zone"><span class="pd-icon">🏢</span><span class="pd-txt">Premio por zona — Toda la zona</span></div>
-<p class="prize-sub">Un único premio mensual de <strong>$500.000 para toda la zona ganadora</strong>. No depende del ranking de puntos individuales, sino del índice de cumplimiento de la zona.</p>
-<div class="zone-hero">
-<div class="zh-label">Premio mensual por zona</div>
-<div class="zh-amount">$500.000</div>
-<div class="zh-note">Para toda la zona con mayor índice de cumplimiento del mes</div>
-</div>
-<div class="zoneprize">
-<div class="zp-h"><span style="font-size:20px">🏆</span><h3>Cómo se define la Mejor Zona del Mes</h3></div>
-<div class="zp-body">
-<p class="zp-desc">Gana la <strong>zona con mayor índice de cumplimiento</strong> en el mes. El índice pondera dos variables por % de cumplimiento contra el objetivo mensual: <strong>Kilos Paladini (40%)</strong> y <strong>Clientes con compra — CCC (60%)</strong>.</p>
-<div class="zp-formula">Índice zona = (0,4 × %Kilos) + (0,6 × %CCC)</div>
-<div class="zp-winner" id="zpWinner">
-<div class="zpw-crown">🥇</div>
-<div class="zpw-info">
-<div class="zpw-lbl">Zona líder del mes</div>
-<div class="zpw-name" id="zpName">—</div>
-<div class="zpw-idx" id="zpIdx">—</div>
-</div>
-<div class="zpw-break" id="zpBreak"></div>
-</div>
+<p>📅 Cada mes se premia a los 3 primeros del ranking (🥇$250.000 · 🥈$150.000 · 🥉$100.000), durante los 4 meses del plan (Julio a Octubre).</p>
 </div>
 </div>
 </div>
@@ -559,15 +504,11 @@ let curFZ="total", openZ=null;
 
 let curW=0, curF="total", openIdx=null;
 
-// Puntos que suma cada cliente con compra (CCC) por encima del objetivo.
-// ⇩ CONFIGURABLE: cambiar este número (ej: 2 o 10) para ajustar el peso de CCC.
-const CCC_PUNTOS_POR_CLIENTE = 2;
-
 function wkGoles(seller, pid, w){
   const sold=DATA.sales[seller][pid][w];
   const obj=DATA.objectives[seller][pid][w];
   const sobrecump=Math.max(0, sold-obj);
-  return pid==="cli" ? sobrecump*CCC_PUNTOS_POR_CLIENTE : sobrecump;
+  return pid==="cli" ? sobrecump*10 : sobrecump;
 }
 
 function cumGoles(seller, upTo){
@@ -611,7 +552,7 @@ function getWeekWinner(w){
   return DATA.sellers.map((s,i)=>({seller:s,idx:i,g:weekScore(s,w)})).sort((a,b)=>b.g-a.g)[0];
 }
 
-// Objetivo de kilos (sin clientes) para el "Progreso Kilos" de cada mes.
+// Objetivo de kilos (sin clientes) para el "Progreso CeDiSur" de cada mes.
 // Todos los meses se calculan automáticamente sumando los objetivos de kilos
 // de los 17 vendedores desde la hoja OBJETIVOS. Si en algún momento necesitás
 // fijar un total manual para un mes puntual, reemplazá el null correspondiente
@@ -630,16 +571,6 @@ function getCeDiSurMonth(w){
   return {obj,sold,pct:Math.round(sold/obj*100)};
 }
 
-// Progreso de Clientes con compra (CCC) a nivel CeDiSur para el mes w.
-function getCeDiSurCCC(w){
-  let obj=0,sold=0;
-  for(const s of DATA.sellers){
-    obj+=DATA.objectives[s].cli[w];
-    sold+=DATA.sales[s].cli[w];
-  }
-  return {obj,sold,pct:obj>0?Math.round(sold/obj*100):0};
-}
-
 function updateStats(w){
   const {obj,sold,pct}=getCeDiSurMonth(w);
   document.getElementById("scPct").textContent=pct+"%";
@@ -647,13 +578,6 @@ function updateStats(w){
   const bar=document.getElementById("scBar");
   bar.style.width=Math.min(pct,100)+"%";
   bar.className="prog-fill"+(pct>=100?"":(pct>=75?" warn":" danger"));
-  // Progreso CCC
-  const c=getCeDiSurCCC(w);
-  document.getElementById("scCliPct").textContent=c.pct+"%";
-  document.getElementById("scCliSub").textContent=Math.round(c.sold).toLocaleString("es-AR")+" / "+Math.round(c.obj).toLocaleString("es-AR")+" clientes";
-  const cbar=document.getElementById("scCliBar");
-  cbar.style.width=Math.min(c.pct,100)+"%";
-  cbar.className="prog-fill"+(c.pct>=100?"":(c.pct>=75?" warn":" danger"));
   document.getElementById("scWk").textContent=WEEKS[w].label;
   document.getElementById("scDate").innerHTML=WEEKS[w].dates;
   updatePremios(w,pct,obj,sold);
@@ -673,13 +597,9 @@ function updatePremios(w,pct,obj,sold){
 }
 
 function updateWinner(w){
-  // El banner de "1° del mes" fue removido; se conserva la función vacía por compatibilidad.
-  const n=document.getElementById("wName");
-  if(!n)return;
   const win=getWeekWinner(w);
-  n.textContent=DATA.sellers[win.idx];
-  const g=document.getElementById("wGoles");
-  if(g)g.textContent="+"+win.g+" puntos este mes";
+  document.getElementById("wName").textContent="Vendedor 1";
+  document.getElementById("wGoles").textContent="+"+win.g+" puntos este mes";
 }
 
 function pClass(pos){return pos===1?"p1":pos===2?"p2":pos===3?"p3":"";}
@@ -733,24 +653,18 @@ function render(){
   const rk=buildRanking(curW,curF);
   updateStats(curW);
   updateWinner(curW);
-  // Líder actual: solo si el primero tiene puntos > 0
-  const liderTienePuntos=rk[0] && rk[0].goles.total>0;
-  document.getElementById("scLider").textContent=liderTienePuntos?rk[0].seller.split(" ").slice(0,2).join(" "):"—";
-  document.getElementById("scLiderG").textContent=liderTienePuntos?rk[0].goles.total+" puntos":"Sin puntos aún";
+  document.getElementById("scLider").textContent=rk[0].seller.split(" ").slice(0,2).join(" ");
+  document.getElementById("scLiderG").textContent=rk[0].goles.total+" puntos";
 
   document.getElementById("rankList").innerHTML=rk.map((r,i)=>{
     const pos=i+1;
-    const tienePuntos=r.goles.total>0;
     const medals=["🥇","🥈","🥉"];
-    // Medalla solo si está en el podio Y tiene puntos; si no, número de posición
-    const badge=(pos<=3 && tienePuntos)
+    const badge=pos<=3
       ?`<div class="pbadge" style="font-size:20px">${medals[pos-1]}</div>`
       :`<div class="pbadge pn">${pos}</div>`;
-    // Color de tarjeta (p1/p2/p3) solo si tiene puntos
-    const cardClass=tienePuntos?pClass(pos):"";
     const dg=r.goles[curF];
     const lbl=curF==="total"?"puntos":DATA.products.find(p=>p.id===curF).short;
-    return `<div class="sc ${cardClass}" id="card${r.idx}" onclick="toggle(${r.idx})">
+    return `<div class="sc ${pClass(pos)}" id="card${r.idx}" onclick="toggle(${r.idx})">
       <div class="sc-row">
         ${badge}
         <div><div class="sname">${r.seller}</div><div class="szone">${r.zone}</div></div>
@@ -799,30 +713,11 @@ function zoneCatRvO(zone,w,filt){
 }
 function pctClass(p){return p>=100?"ok":(p>=75?"mid":"low");}
 
-// Índice ponderado de zona: 40% cumplimiento kilos + 60% cumplimiento CCC.
-// % cumplimiento contra objetivo mensual completo.
-const PESO_KG=0.4, PESO_CCC=0.6;
-function zoneIndex(zone,w){
-  const kg=zoneKgTotals(zone,w);
-  const cliObj=DATAZONA.objectives[zone].cli[w], cliSold=DATAZONA.sales[zone].cli[w];
-  const kgPct = kg.obj>0 ? kg.sold/kg.obj*100 : 0;
-  const cliPct= cliObj>0 ? cliSold/cliObj*100 : 0;
-  const total = PESO_KG*kgPct + PESO_CCC*cliPct;
-  return {kgPct, cliPct, total};
-}
-function rankedZones(w){
-  return [...ZONE_LIST]
-    .map(z=>({z, ...zoneIndex(z,w)}))
-    .sort((a,b)=>b.total-a.total);
-}
-
 function renderZona(){
   const w=curW;
-  // orden por índice ponderado (mejor arriba)
-  const ranked=rankedZones(w);
-  const algunObj=ranked.some(r=>r.total>0);
-  document.getElementById("rankListZona").innerHTML=ranked.map((r,i)=>{
-    const z=r.z;
+  // orden alfabético fijo
+  const zonas=[...ZONE_LIST].sort((a,b)=>a.localeCompare(b));
+  document.getElementById("rankListZona").innerHTML=zonas.map((z,i)=>{
     const cli={obj:DATAZONA.objectives[z].cli[w], sold:DATAZONA.sales[z].cli[w]};
     const cliPct=cli.obj>0?Math.round(cli.sold/cli.obj*100):0;
     const fmt=n=>Math.round(n).toLocaleString("es-AR");
@@ -830,21 +725,17 @@ function renderZona(){
     const primary=zoneCatRvO(z,w,curFZ==="cli"?"total":curFZ);
     const pName=curFZ==="total"?"Kilos (Real/Obj)":(DATA.products.find(p=>p.id===(curFZ==="cli"?"total":curFZ))?.short||"Kilos")+" (Real/Obj)";
     const pPct=primary.obj>0?Math.round(primary.sold/primary.obj*100):0;
-    const idxTotal=Math.round(r.total);
-    const isWinner=(i===0 && algunObj);
-    return `<div class="sc ${isWinner?'zwin':''}" id="zcard${i}" onclick="toggleZona(${i})">
-      <div class="sc-row zona-row">
-        <div class="zname">${isWinner?'🏆 ':''}${z}</div>
-        <div class="zidx"><div class="zbl">Índice zona</div>
-          <div class="zival ${pctClass(idxTotal)}">${idxTotal}%</div>
-          <div class="zbl2">40% kg · 60% CCC</div></div>
+    return `<div class="sc" id="zcard${i}" onclick="toggleZona(${i})">
+      <div class="sc-row" style="grid-template-columns:50px 1fr auto 30px">
+        <div class="pbadge pn">${i+1}</div>
+        <div><div class="sname">${z}</div><div class="szone">Zona comercial</div></div>
         <div class="zrvo">
-          <div class="zblk"><div class="zbl">CCC (Real/Obj)</div>
-            <div class="zval" style="color:#455A64">${fmt(cli.sold)} / ${fmt(cli.obj)}</div>
-            <div class="zpct ${pctClass(cliPct)}">${cliPct}%</div></div>
           <div class="zblk"><div class="zbl">${pName}</div>
             <div class="zval" style="color:var(--fg2)">${fmt(primary.sold)} / ${fmt(primary.obj)}</div>
             <div class="zpct ${pctClass(pPct)}">${pPct}%</div></div>
+          <div class="zblk"><div class="zbl">CCC (Real/Obj)</div>
+            <div class="zval" style="color:#455A64">${fmt(cli.sold)} / ${fmt(cli.obj)}</div>
+            <div class="zpct ${pctClass(cliPct)}">${cliPct}%</div></div>
         </div>
         <div class="chev">&#8964;</div>
       </div>
@@ -852,28 +743,6 @@ function renderZona(){
     </div>`;
   }).join("");
   if(openZ!==null){const c=document.getElementById("zcard"+openZ);if(c)c.classList.add("open");}
-  updateZonePrize(w);
-}
-
-function updateZonePrize(w){
-  const ranked=rankedZones(w);
-  const win=ranked[0];
-  const algunObj=ranked.some(r=>r.total>0);
-  const nameEl=document.getElementById("zpName");
-  const idxEl=document.getElementById("zpIdx");
-  const brkEl=document.getElementById("zpBreak");
-  if(!nameEl)return;
-  if(!win || !algunObj){
-    nameEl.textContent="—";
-    idxEl.textContent="Sin datos cargados todavía";
-    brkEl.innerHTML="";
-    return;
-  }
-  nameEl.textContent=win.z;
-  idxEl.textContent="Índice de zona: "+Math.round(win.total)+"%";
-  brkEl.innerHTML=`
-    <div class="zpb"><div class="zpb-l">Kilos</div><div class="zpb-v">${Math.round(win.kgPct)}%</div><div class="zpb-w">peso 40%</div></div>
-    <div class="zpb"><div class="zpb-l">CCC</div><div class="zpb-v">${Math.round(win.cliPct)}%</div><div class="zpb-w">peso 60%</div></div>`;
 }
 
 function toggleZona(idx){

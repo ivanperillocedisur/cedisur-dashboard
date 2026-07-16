@@ -29,76 +29,48 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--te
 .panel-inner{max-width:960px;margin:0 auto}
 
 /* GRID */
-.grid-wrap{height:460px;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
-.grid-wrap::-webkit-scrollbar{width:5px}
-.grid-wrap::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px}
+.grid-wrap{padding-right:0}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 
-/* CARD — diseño tipo ficha (sin foto) */
+/* CARD */
 .card{
-  background:#fff;
-  border-radius:14px;
-  border:1px solid #E8EDF3;
-  border-left:5px solid #F5A623;
+  background:#fff;border-radius:14px;border:1px solid #E8EDF3;
   box-shadow:0 2px 8px rgba(0,0,0,.05);
   transition:box-shadow .2s,transform .2s;
-  display:flex;flex-direction:column;
-  padding:16px 18px 14px;
-  gap:6px;
-  height:auto;
-  min-height:170px;
-  position:relative;overflow:hidden;
+  display:flex;overflow:hidden;
+  position:relative;
 }
 .card:hover{box-shadow:0 6px 18px rgba(0,0,0,.1);transform:translateY(-2px)}
 
-/* Top: code + discount badge */
-.card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
-.c-code{font-size:11px;font-weight:600;color:#94A3B8;letter-spacing:.4px}
-.disc-badge{
-  background:#F5A623;color:#fff;
-  font-size:12px;font-weight:800;letter-spacing:.2px;
-  padding:5px 14px;border-radius:20px;white-space:nowrap;
-  box-shadow:0 2px 6px rgba(245,166,35,.35);
-}
-.c-name{font-size:14px;font-weight:700;color:#1A2338;line-height:1.35;
-  padding-right:8px}
-.c-sub{font-size:12px;color:#94A3B8;margin-top:1px}
-.c-div{height:1px;background:#EEF2F7;margin:4px 0}
+/* Etiqueta lateral */
+.card-label{width:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:13px 0 0 13px}
+.card-label span{font-size:8px;font-weight:800;color:#fff;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;transform:rotate(-90deg);display:block}
 
-/* Vence row */
-.c-row{display:flex;align-items:center;justify-content:space-between;font-size:12px}
-.c-row-label{display:flex;align-items:center;gap:5px;color:#94A3B8}
-.c-row-label svg{width:13px;height:13px;flex-shrink:0}
-.c-row-val{font-weight:700;color:#1A2338;font-size:13px}
+/* Cuerpo */
+.card-body{flex:1;padding:13px 14px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
 
-/* Days + stock row */
-.c-bottom{display:flex;align-items:center;justify-content:space-between}
-.days-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:4px}
+.card-top{display:flex;align-items:center;justify-content:space-between}
+.c-code{font-size:10px;font-weight:600;color:#94A3B8;letter-spacing:.4px}
+.disc-badge{font-size:11px;font-weight:800;color:#fff;padding:4px 11px;border-radius:20px;white-space:nowrap}
+.c-name{font-size:13px;font-weight:700;color:#1A2338;line-height:1.3}
+.c-div{height:1px;background:#EEF2F7}
+
+/* Fila compacta: fecha izq, badges der */
+.c-compact{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.c-date-block{display:flex;align-items:center;gap:4px;font-size:11px;color:#94A3B8;min-width:0}
+.c-date-block svg{width:12px;height:12px;flex-shrink:0}
+.c-date-val{font-weight:700;color:#1A2338;font-size:11px;white-space:nowrap}
+.c-badges{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.days-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:3px}
 .du{background:#FEE2E2;color:#991B1B}
 .dw{background:#FEF3C7;color:#92400E}
 .dok{background:#DCFCE7;color:#166534}
-.c-stock{font-size:12px;color:#94A3B8}
-.c-stock strong{color:#1A2338;font-weight:600}
+.pts-badge{background:#FEF3C7;color:#92400E;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;display:flex;align-items:center;gap:3px}
 
-/* Price footer */
-.c-price-footer{
-  display:flex;align-items:center;justify-content:space-between;
-  border-top:1px solid #EEF2F7;padding-top:8px;margin-top:auto;
-}
-.pts-badge{
-  background:#FEF3C7;color:#92400E;
-  font-size:11px;font-weight:700;
-  padding:4px 10px;border-radius:20px;
-  display:flex;align-items:center;gap:4px;
-}
-.price-block{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
-.price-label{font-size:9px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px}
-.price-row{display:flex;align-items:baseline;gap:8px}
-.price-old{font-size:12px;color:#94A3B8;text-decoration:line-through}
-.price-new{font-size:17px;font-weight:800;color:#16A34A}
-
-/* scroll hint */
-.scroll-hint{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:8px;font-size:11px;color:var(--muted);opacity:.65}
+/* Precio */
+.c-price-section{display:flex;align-items:baseline;justify-content:flex-end;gap:8px}
+.price-old{font-size:11px;color:#94A3B8;text-decoration:line-through}
+.price-new{font-size:20px;font-weight:800;color:#1A2338;line-height:1}
 
 /* RANKING */
 .rk-panel{display:none;padding:1.4rem 2rem 3rem}
@@ -167,7 +139,7 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--te
   .rk-inner{gap:1rem}
   /* Artículos */
   .grid{grid-template-columns:1fr}
-  .grid-wrap{height:auto;max-height:70vh}
+  .grid-wrap{}
   /* Premios */
   .prizes{grid-template-columns:1fr;gap:8px}
   /* Leyenda de puntos */
@@ -230,10 +202,6 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--te
   <div class="panel-inner">
     <div class="grid-wrap">
       <div class="grid" id="grid-art"></div>
-    </div>
-    <div class="scroll-hint">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-      Deslizá para ver todos los artículos
     </div>
   </div>
 </div>
@@ -304,7 +272,8 @@ async function initApp(){
         const precio= parseFloat((c[6]||"0").trim().replace(",","."))||0;
         const pts   = parseInt((c[7]||"1").trim())||1;
         const total = parseFloat((c[8]||"0").trim().replace(",","."))||0;
-        const img   = ""; // IMG_URL eliminada
+        const img      = ""; // IMG_URL eliminada
+        const etiqueta = (c[11]||"").trim();
         // Días hasta vencimiento
         let dias = 0;
         if(vence){
@@ -314,7 +283,7 @@ async function initApp(){
             dias = Math.round((vDate - today)/(1000*60*60*24));
           }
         }
-        return {code:sku,name,size,prov,vence,dias,total,pts,pct,precio,img};
+        return {code:sku,name,size,prov,vence,dias,total,pts,pct,precio,img,etiqueta};
       }).filter(p=>p.code);
       PTS_POR_SKU = Object.fromEntries(PRODUCTS.map(p=>[p.code,p.pts]));
     }
@@ -390,6 +359,17 @@ async function initApp(){
   }
 }
 
+
+// Colores de etiqueta de estado (sincronizados con PRODUCTOS_DESAFIO col ETIQUETA)
+const LABEL_COLORS = {
+  'SOBRESTOCK'   : '#1565C0',
+  'CORTA FECHA'  : '#C62828',
+  'DISCONTINUADO': '#546E7A',
+};
+function labelColor(etiqueta){
+  return LABEL_COLORS[(etiqueta||'').toUpperCase().trim()] || '#E8A020';
+}
+
 function renderGrid(stockMap){
   stockMap = stockMap || {};
   const grid = document.getElementById("grid-art");
@@ -398,35 +378,29 @@ function renderGrid(stockMap){
     const vendido  = restante <= 0;
     const pFinal   = p.precio * (1 - p.pct/100);
     const overlay  = vendido ? '<div class="vendido-overlay"><span>VENDIDO</span></div>' : '';
-    const priceBlock = p.precio > 0
-      ? `<div class="price-block">
-           <div class="price-label">Con descuento</div>
-           <div class="price-row">
-             <span class="price-old">${fmt(p.precio)}</span>
-             <span class="price-new">${fmt(pFinal)}</span>
-           </div>
-         </div>`
-      : `<div class="price-block"><span style="font-size:11px;color:var(--muted)">sin precio</span></div>`;
+    const color    = labelColor(p.etiqueta);
+    const labelTxt = p.etiqueta || '';
+    const precio   = p.precio > 0
+      ? `<span class="price-old">${fmt(p.precio)}</span><span class="price-new">${fmt(pFinal)}</span>`
+      : `<span style="font-size:11px;color:var(--muted)">sin precio</span>`;
     return `<div class="card${vendido?' vendido-card':''}">
       ${overlay}
-      <div class="card-top">
-        <span class="c-code">${p.code}</span>
-        <span class="disc-badge">−${p.pct}% OFF</span>
-      </div>
-      <div class="c-name">${p.name}</div>
-      <div class="c-sub">${p.prov} · ${p.size}</div>
-      <div class="c-div"></div>
-      <div class="c-row">
-        <span class="c-row-label">${CAL} Vence</span>
-        <span class="c-row-val">${p.vence}</span>
-      </div>
-      <div class="c-bottom">
-        ${daysBadge(p.dias)}
-        <span class="c-stock">Stock: <strong>${restante}</strong></span>
-      </div>
-      <div class="c-price-footer">
-        <span class="pts-badge">⭐ ${p.pts} pt${p.pts>1?"s":""}/u</span>
-        ${priceBlock}
+      <div class="card-label" style="background:${color}"><span>${labelTxt}</span></div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="c-code">${p.code}</span>
+          <span class="disc-badge" style="background:${color}">−${p.pct}% OFF</span>
+        </div>
+        <div class="c-name">${p.name}</div>
+        <div class="c-div"></div>
+        <div class="c-compact">
+          <div class="c-date-block">${CAL} Vence <span class="c-date-val">${p.vence}</span></div>
+          <div class="c-badges">
+            ${daysBadge(p.dias)}
+            <span class="pts-badge">⭐ ${p.pts} pt${p.pts>1?"s":""}/u</span>
+          </div>
+        </div>
+        <div class="c-price-section">${precio}</div>
       </div>
     </div>`;
   }).join("");

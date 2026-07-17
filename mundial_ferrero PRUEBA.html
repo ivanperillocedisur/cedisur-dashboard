@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<title>Mundial Ferrero 2026 — Cedisur</title>
+<style>
+:root{
+  --fg:#1A6B35;--fg2:#0D4422;--fg3:#E8F5E9;
+  --cel:#74ACDF;--cel2:#4A7FAB;--cel3:#E3F2FD;
+  --brown:#3D1C02;--brown2:#6B3410;--brown3:#FFF3E0;
+  --gold:#C8960C;--gold2:#FFF8DC;--gold3:#7A5500;
+  --silver:#9E9E9E;--silver2:#F5F5F5;
+  --bronze:#8D4E00;--bronze2:#FFF3E0;
+  --score:#0D1117;
+  --red:#C62828;--red2:#FFEBEE;
+  --bg:#F0F4F8;--card:#fff;
+  --text:#1A1A1A;--muted:#6B7280;--border:#DDE3EC;
+  --r:10px;--rs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ---- FLAG STRIPE ---- */
+.flag{height:7px;background:linear-gradient(90deg,var(--cel) 33.3%,#fff 33.3% 66.6%,var(--cel) 66.6%)}
+
+/* ---- HEADER FIELD ---- */
+header{
+  background:var(--fg2);
+  background-image:repeating-linear-gradient(90deg,transparent 0,transparent 90px,rgba(255,255,255,.04) 90px,rgba(255,255,255,.04) 180px);
+  position:sticky;top:0;z-index:200;box-shadow:0 3px 16px #0007;
+  overflow:hidden;
+}
+.field-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.18}
+.hdr-inner{position:relative;z-index:2;display:flex;align-items:center;gap:14px;max-width:1300px;margin:0 auto;padding:12px 18px;flex-wrap:wrap}
+.logo-img{height:44px;filter:brightness(0) invert(1) drop-shadow(0 0 1px rgba(255,255,255,0.3));flex-shrink:0}
+.hdr-mid{flex:1;min-width:160px}
+.hdr-mid h1{font-size:20px;font-weight:900;color:#fff;letter-spacing:3px;text-shadow:0 2px 6px #0009;line-height:1}
+.hdr-mid p{font-size:10px;color:var(--cel);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+.week-sel{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.week-sel>span{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;margin-right:2px}
+.wbtn{border:none;border-radius:var(--rs);padding:5px 9px;font-size:12px;font-weight:800;cursor:pointer;
+  background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);transition:all .15s;font-family:inherit;letter-spacing:.5px}
+.wbtn:hover{background:rgba(255,255,255,.25);color:#fff}
+.wbtn.active{background:var(--gold);color:#fff;box-shadow:0 0 0 2px rgba(200,150,12,.5)}
+.wbtn.spec{border:1px solid rgba(200,150,12,.4)}
+.wbtn.spec.active{box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(200,150,12,.4)}
+
+/* ---- SCOREBOARD BAR ---- */
+.score-bar{background:var(--score);border-bottom:2px solid var(--fg)}
+.score-inner{max-width:1300px;margin:0 auto;padding:0 18px;display:grid;grid-template-columns:1.7fr 0.8fr 1.9fr;gap:0}
+.score-cell{padding:12px 20px;border-right:1px solid #ffffff10;display:flex;flex-direction:column;justify-content:center}
+.score-cell:last-child{border-right:none}
+.sc-head{font-size:9px;color:rgba(255,255,255,.42);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.sc-head .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dcol .dlbl{font-size:8.5px;letter-spacing:1px;text-transform:uppercase;font-weight:800;margin-bottom:3px}
+.dcol.week .dlbl{color:var(--gold)}
+.dcol.mundial .dlbl{color:var(--cel)}
+.dcol .dval{font-size:24px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+.dcol .dsub{font-size:9.5px;color:rgba(255,255,255,.45);margin-top:3px}
+.dcol .prog-track{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:7px;overflow:hidden}
+.dcol .prog-fill{height:100%;border-radius:2px;transition:width .5s}
+.dcol.week .prog-fill{background:var(--gold)}
+.dcol.mundial .prog-fill{background:var(--cel)}
+.wkcell{align-items:stretch}
+.sc-wk-inner{display:flex;align-items:center;justify-content:center;gap:12px}
+.sc-wk-big{font-size:22px;font-weight:900;color:#fff;line-height:1}
+.sc-wk-date{font-size:12px;color:rgba(255,255,255,.55);white-space:nowrap}
+.sc-wk-badge{font-size:9px;background:var(--gold);color:#fff;padding:3px 10px;border-radius:20px;font-weight:800;letter-spacing:.5px;white-space:nowrap}
+/* líderes en 2 columnas lado a lado -> llenan todo el ancho, sin hueco */
+.lead-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.lead{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px}
+.lead .lmed{font-size:24px;flex-shrink:0}
+.lead .linfo{min-width:0}
+.lead .llbl{font-size:8.5px;letter-spacing:.5px;text-transform:uppercase;font-weight:800;margin-bottom:2px}
+.lead.week .llbl{color:var(--gold)}
+.lead.mundial .llbl{color:var(--cel)}
+.lead .lname{font-size:16px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
+.lead .lg{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+.prog-fill.warn{background:var(--gold)}
+.prog-fill.danger{background:var(--red)}
+
+/* ---- BANNER ESPECIAL ---- */
+.spec-banner{max-width:1300px;margin:12px auto 0;padding:0 18px;display:none}
+.spec-banner.show{display:block}
+.spec-inner{background:var(--gold2);border:2px solid var(--gold);border-radius:var(--r);
+  padding:10px 16px;display:flex;align-items:center;gap:10px}
+.spec-inner p{font-size:13px;color:var(--gold3);font-weight:700}
+
+/* ---- MAIN WRAP ---- */
+.main{max-width:1300px;margin:16px auto 32px;padding:0 18px}
+
+/* ---- TABS ---- */
+.tabs-nav{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:0;overflow-x:auto}
+.tab-abbr{display:none}
+.tbtn{padding:10px 18px;font-size:13px;font-weight:700;background:none;border:none;cursor:pointer;
+  color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;
+  font-family:inherit;white-space:nowrap;border-radius:var(--rs) var(--rs) 0 0}
+.tbtn:hover{color:var(--brown);background:var(--brown3)}
+.tbtn.active{color:var(--fg2);border-bottom-color:var(--fg);background:var(--fg3)}
+.tab-panel{display:none;padding-top:18px}
+.tab-panel.active{display:block}
+
+/* ---- RANKING ---- */
+.rk-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.rk-header h2{font-size:15px;font-weight:800;color:var(--fg2);display:flex;align-items:center;gap:6px}
+.filter-row{display:flex;gap:5px;flex-wrap:wrap}
+.fbtn{border:1.5px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;
+  background:#fff;cursor:pointer;color:var(--muted);transition:all .15s;font-family:inherit}
+.fbtn:hover{border-color:var(--fg);color:var(--fg2)}
+.fbtn.active{background:var(--fg);border-color:var(--fg);color:#fff}
+
+/* ---- WEEK WINNER BANNER ---- */
+.winner-banner{background:linear-gradient(135deg,var(--gold2),#fff);border:2px solid var(--gold);
+  border-radius:var(--r);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.winner-banner .wlabel{font-size:10px;font-weight:800;color:var(--gold3);text-transform:uppercase;letter-spacing:1px}
+.winner-banner .wname{font-size:16px;font-weight:900;color:var(--brown)}
+.winner-banner .wgoles{font-size:13px;color:var(--gold3);font-weight:600}
+.winner-banner .wpremio{margin-left:auto;background:var(--gold);color:#fff;border-radius:var(--rs);
+  padding:6px 12px;font-size:12px;font-weight:800}
+
+/* ---- SELLER CARD ---- */
+.sc{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);
+  margin-bottom:7px;overflow:hidden;cursor:pointer;transition:box-shadow .15s}
+.sc:hover{box-shadow:0 4px 16px #00000012}
+.sc.p1{border-color:var(--gold);background:linear-gradient(135deg,var(--gold2),#fff)}
+.sc.p2{border-color:var(--silver)}
+.sc.p3{border-color:var(--bronze);background:var(--bronze2)}
+.sc-row{display:grid;grid-template-columns:50px 1fr auto 86px 30px;align-items:center;gap:10px;padding:10px 13px}
+.pbadge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.pbadge.pn{background:var(--bg);font-size:12px;font-weight:800;color:var(--muted)}
+.sname{font-weight:700;font-size:14px}
+.szone{font-size:10px;color:var(--muted);margin-top:1px}
+
+.pills{display:flex;gap:4px;flex-wrap:wrap}
+.pill{font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px;color:#fff;white-space:nowrap}
+.gtotal{text-align:right}
+.gnum{font-size:21px;font-weight:900;color:var(--fg2);line-height:1}
+.glabel{font-size:9px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.chev{font-size:16px;color:var(--muted);transition:transform .2s}
+.sc.open .chev{transform:rotate(180deg)}
+.detail{display:none;padding:0 13px 13px;border-top:1px solid var(--border)}
+.sc.open .detail{display:block}
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.dprod{background:var(--bg);border-radius:var(--rs);padding:10px 12px;border:1px solid var(--border)}
+.dprod .dn{font-size:12px;font-weight:700;margin-bottom:5px}
+.dprod .ds{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
+.dprod .dt{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.dprod .df{height:100%;border-radius:3px}
+.dprod .dg{font-size:16px;font-weight:800;margin-top:4px}
+.wkrow{margin-top:12px}
+.wkrow h4{font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
+.wkbars{display:flex;gap:4px;align-items:flex-end;height:62px}
+.wkbar-w{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;justify-content:flex-end;height:100%}
+.wkval{font-size:10px;font-weight:800;color:var(--fg2);line-height:1;margin-bottom:1px;min-height:11px}
+.wkbar{width:100%;border-radius:2px 2px 0 0;min-height:2px}
+.wklbl{font-size:8px;color:var(--muted);white-space:nowrap}
+.wklbl.sp{color:var(--gold3);font-weight:800}
+
+/* ---- COMO SE JUEGA ---- */
+.rsec{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);overflow:hidden;margin-bottom:14px}
+.rh{padding:13px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.ricon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.rh h3{font-size:14px;font-weight:800;color:var(--fg2)}
+.rb{padding:13px 16px}
+.rb p{font-size:13px;line-height:1.6;margin-bottom:8px}
+.rb p:last-child{margin-bottom:0}
+.cond-box{background:var(--red2);border:2px solid var(--red);border-radius:var(--rs);padding:12px 14px}
+.cond-box .ct{font-size:12px;font-weight:800;color:var(--red);margin-bottom:5px}
+.cond-box p{font-size:13px;color:#7B1010;line-height:1.5}
+.ex-box{background:var(--fg3);border:1.5px solid var(--fg);border-radius:var(--rs);padding:12px 14px;margin-top:10px}
+.ex-box .et{font-size:10px;font-weight:800;color:var(--fg2);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+.exrow{display:flex;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap;margin-bottom:5px}
+.exrow .en{font-size:17px;font-weight:900;color:var(--fg2)}
+.exrow .er{font-size:17px;font-weight:900;color:var(--red2);color:#1B5E20}
+.spec-box{background:var(--gold2);border:2px solid var(--gold);border-radius:var(--rs);padding:12px 14px;margin-top:10px}
+.spec-box .st{font-size:12px;font-weight:800;color:var(--gold3);margin-bottom:5px}
+.spec-box p{font-size:13px;color:var(--gold3);line-height:1.5}
+.rlist{list-style:none;padding:0}
+.rlist li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5;align-items:flex-start}
+.rlist li:last-child{border-bottom:none}
+.rnum{width:21px;height:21px;border-radius:50%;background:var(--fg);color:#fff;font-size:10px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.ptbl{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
+.ptbl th{text-align:left;padding:6px 10px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+.ptbl td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.ptbl tr:last-child td{border-bottom:none}
+.ptbl tr:nth-child(even) td{background:var(--bg)}
+.pdot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+
+/* ---- PREMIOS ---- */
+.prize-hero{background:linear-gradient(160deg,var(--fg2) 0%,var(--fg) 60%,#2E7D32 100%);border-radius:var(--r);
+  padding:24px 20px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden}
+.prize-hero::before{content:"⚽";position:absolute;font-size:120px;opacity:.06;right:-20px;bottom:-20px;line-height:1}
+.prize-hero .ph-label{font-size:11px;color:rgba(255,255,255,.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.prize-hero .ph-total{font-size:42px;font-weight:900;color:var(--gold)}
+.prize-hero .ph-note{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px}
+
+.weekly-prize{background:var(--card);border-radius:var(--r);border:2px solid var(--gold);padding:16px;margin-bottom:14px}
+.weekly-prize h3{font-size:13px;font-weight:800;color:var(--gold3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.wp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.wp-card{background:var(--gold2);border-radius:var(--rs);padding:12px;text-align:center}
+.wp-card .wpc-lbl{font-size:10px;color:var(--gold3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px}
+.wp-card .wpc-val{font-size:22px;font-weight:900;color:var(--gold3)}
+.wp-card .wpc-sub{font-size:11px;color:var(--gold3);margin-top:2px}
+
+.condicion-p{border:2px solid var(--red);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.cp-h{background:var(--red);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:8px}
+.cp-h h3{font-size:13px;font-weight:800}
+.cp-body{padding:14px 16px;background:var(--red2)}
+.cp-body p{font-size:13px;color:#7B1010;line-height:1.6}
+.cp-prog{margin-top:12px}
+.cp-prog .cpl{display:flex;justify-content:space-between;font-size:12px;color:#7B1010;margin-bottom:5px;font-weight:700}
+.cp-prog .cpt{height:12px;background:#FFCDD2;border-radius:6px;overflow:hidden}
+.cp-prog .cpf{height:100%;border-radius:6px;transition:width .5s}
+.cp-prog .cpn{font-size:10px;color:#7B1010;margin-top:4px;font-style:italic}
+
+.podium-sec{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);padding:18px;margin-bottom:14px}
+.podium-sec h3{font-size:13px;font-weight:800;color:var(--fg2);text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.podium-grid{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:10px;align-items:end}
+.pc{border-radius:var(--r);padding:14px 10px;text-align:center}
+.pc.gold{background:linear-gradient(160deg,var(--gold2),#FFE082);border:2px solid var(--gold)}
+.pc.silver{background:linear-gradient(160deg,#F5F5F5,#E0E0E0);border:2px solid var(--silver)}
+.pc.bronze{background:linear-gradient(160deg,var(--bronze2),#FFCC80);border:2px solid var(--bronze)}
+.pc-medal{font-size:34px;margin-bottom:4px}
+.pc-pos{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.pc-amt{font-size:26px;font-weight:900;color:var(--brown);line-height:1}
+.pc-amt.gt{color:var(--gold3)}
+.pc-amt.bt{color:var(--bronze)}
+.pc-pct{font-size:10px;color:var(--muted);margin-top:3px}
+.pc-who{margin-top:8px;border-top:1px dashed var(--border);padding-top:8px;min-height:36px}
+.pc-who .wn{font-size:13px;font-weight:800;color:var(--brown)}
+.pc-who .wg{font-size:10px;color:var(--muted)}
+.acum-note{background:var(--cel3);border:1.5px solid var(--cel);border-radius:var(--rs);padding:12px 14px;margin-top:12px}
+.acum-note p{font-size:13px;color:var(--cel2);font-weight:600;text-align:center}
+
+/* ---- BONUS TRACK ---- */
+.bt-hero{background:linear-gradient(135deg,var(--score) 0%,#1A237E 100%);border-radius:var(--r);
+  padding:20px;margin-bottom:16px;position:relative;overflow:hidden;text-align:center}
+.bt-hero::before{content:"⚡";position:absolute;font-size:100px;opacity:.08;right:10px;top:-10px;line-height:1}
+.bt-badge{display:inline-block;background:var(--gold);color:#fff;font-size:10px;font-weight:800;
+  letter-spacing:1.5px;padding:4px 12px;border-radius:12px;margin-bottom:10px;text-transform:uppercase}
+.bt-hero h2{font-size:24px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px}
+.bt-hero p{font-size:13px;color:rgba(255,255,255,.6);line-height:1.5}
+.bt-active{background:var(--gold2);border:2px solid var(--gold);border-radius:var(--rs);
+  padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.bt-active p{font-size:13px;color:var(--gold3);font-weight:700}
+.bt-cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:16px}
+.btcat{background:var(--card);border-radius:10px;border:1.5px solid var(--gold);padding:11px 13px;display:flex;flex-direction:column;gap:7px}
+.btcat-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.btcat-name{font-size:13px;font-weight:800;color:var(--brown);line-height:1.15}
+.btcat-g{font-size:18px;font-weight:900;color:var(--gold3);white-space:nowrap;display:flex;align-items:baseline;gap:2px}
+.btcat-g small{font-size:9px;font-weight:700;color:var(--muted)}
+.btcat-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btcat-sem{font-size:10.5px;font-weight:800;color:var(--fg2);background:var(--fg3);border-radius:20px;padding:3px 9px;white-space:nowrap}
+.btcat-desc{font-size:11px;color:var(--muted);line-height:1.3}
+.bt-how{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);padding:14px 16px}
+.bt-how h3{font-size:13px;font-weight:800;color:var(--fg2);margin-bottom:10px}
+.bt-how p{font-size:13px;color:var(--muted);line-height:1.6}
+
+@media(max-width:720px){
+  .sc-row{grid-template-columns:42px 1fr auto 70px 24px;gap:7px;padding:8px 10px}
+  .gnum{font-size:17px}.dgrid{grid-template-columns:1fr 1fr}
+  .hdr-mid h1{font-size:16px}.wbtn{padding:4px 7px;font-size:11px}
+  .podium-grid{grid-template-columns:1fr}
+  .bt-cats{grid-template-columns:1fr}
+  .wp-grid{grid-template-columns:1fr}
+  .tbtn{padding:8px 12px;font-size:12px}
+}
+/* ---- BONUS CARD (7ma subtarjeta) ---- */
+.dprod.btcard{background:linear-gradient(135deg,var(--gold2),#fff);border:1.5px solid var(--gold)}
+.bt-lines{margin:6px 0}
+.bt-line{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--brown);padding:3px 0;border-bottom:1px dotted rgba(200,150,12,.3)}
+.bt-line:last-child{border-bottom:none}
+.bt-line .bt-g{font-weight:800;color:var(--gold3)}
+.bt-empty{font-size:10.5px;color:var(--muted);font-style:italic;margin:6px 0}
+/* ---- SEGUIMIENTO heatmap ---- */
+.seg-controls{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.seg-grp{display:flex;flex-direction:column;gap:6px}
+.seg-grp .sgl{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.seg-btns{display:flex;gap:5px;flex-wrap:wrap}
+.hlegend{display:flex;gap:14px;align-items:center;margin-left:auto;font-size:11px;color:var(--muted)}
+.hleg-item{display:flex;align-items:center;gap:5px}
+.hleg-sw{width:14px;height:14px;border-radius:3px}
+.heat-wrap{overflow-x:auto;border:1.5px solid var(--border);border-radius:var(--r);background:var(--card)}
+table.heat{border-collapse:collapse;width:100%;min-width:760px}
+table.heat th,table.heat td{text-align:center}
+table.heat thead th{background:var(--fg2);color:#fff;font-size:11px;font-weight:700;padding:11px 6px;position:sticky;top:0;letter-spacing:.3px}
+table.heat thead th.rowhead{text-align:left;padding-left:14px;min-width:210px}
+.hrow-total td{padding:14px 6px;font-weight:900;border-bottom:2px solid var(--fg)}
+.hrow-total td.tname{text-align:left;padding-left:14px;background:var(--score);color:var(--gold);font-size:13px;letter-spacing:.5px}
+.hrow-zone{background:var(--fg3);cursor:pointer}
+.hrow-zone td{padding:14px 6px;font-weight:800;color:var(--fg2);border-bottom:1px solid var(--border)}
+.hrow-zone td.zname{text-align:left;padding-left:14px;font-size:13px}
+.hrow-zone .zchev{font-size:10px;color:var(--fg);margin-right:7px;display:inline-block;transition:transform .2s}
+.hrow-zone.col .zchev{transform:rotate(-90deg)}
+.hrow-seller td{border-bottom:1px solid var(--border)}
+.hrow-seller td.sname-c{text-align:left;padding:13px 6px 13px 32px;font-size:12.5px;font-weight:600;color:var(--text)}
+.hcell{padding:14px 6px;font-weight:800;color:#fff !important;position:relative;font-size:13px;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.hcell.z{font-weight:900}
+.hcell .rvo{visibility:hidden;opacity:0;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--score);color:#fff;font-size:10px;font-weight:600;padding:5px 9px;border-radius:6px;white-space:nowrap;z-index:20;margin-bottom:5px;transition:opacity .15s;pointer-events:none;box-shadow:0 3px 10px #0005}
+.hcell .rvo::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--score)}
+.hcell:hover .rvo{visibility:visible;opacity:1}
+.hrow-seller{display:none}
+.hrow-seller.show{display:table-row}
+.seg-tip{font-size:11.5px;color:var(--muted);margin-top:10px;font-style:italic}
+/* ---- SEGUIMIENTO cards mobile ---- */
+.heat-mobile{display:none}
+.hcard{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.hcard-total{border-color:var(--fg);border-width:2px}
+.hc-head{padding:12px 14px;font-weight:800;font-size:14px;color:var(--fg2);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hcard-total .hc-head{background:var(--score);color:var(--gold)}
+.hc-head.zonehead{cursor:pointer;background:var(--fg3)}
+.hc-head.zonehead::after{content:"▾";font-size:12px;color:var(--fg);margin-left:auto;transition:transform .2s}
+.hcard.open .hc-head.zonehead::after{transform:rotate(180deg)}
+.hc-rows{padding:8px 14px 12px}
+.hc-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.hc-row:last-child{border-bottom:none}
+.hc-mk{font-size:12.5px;font-weight:600;color:var(--text)}
+.hc-tot-row .hc-mk{font-weight:800}
+.hc-pct{font-size:12px;font-weight:800;color:#fff !important;padding:3px 9px;border-radius:20px;min-width:48px;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.hc-rvo{font-size:11px;color:var(--muted);min-width:76px;text-align:right}
+.hc-sellers{display:none;margin-top:4px;padding-top:6px;border-top:2px dashed var(--border)}
+.hcard.open .hc-sellers{display:block}
+.hc-seller .hc-mk{font-size:11.5px;color:var(--muted);font-weight:500}
+.hc-vermas{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:9px;background:var(--fg3);border-radius:8px;cursor:pointer;font-size:12px;font-weight:800;color:var(--fg2)}
+.hc-vermas .vm-chv{transition:transform .2s}
+.hcard.open .hc-vermas .vm-chv{transform:rotate(180deg)}
+.hcard.open .hc-vermas .vm-txt::before{content:"Ocultar "}
+.hcard.open .hc-vermas .vm-txt{font-size:0}
+.hcard.open .hc-vermas .vm-txt::before{font-size:12px}
+
+/* ============ MOBILE-FIRST (<=760px) ============ */
+@media(max-width:760px){
+  .hdr-inner{padding:8px 12px;gap:6px}
+  .hdr-mid h1{font-size:15px;letter-spacing:1px}
+  .hdr-mid p{font-size:8px}
+  .btn-actualizar{display:none}
+  .week-sel{width:100%;justify-content:flex-start;overflow-x:auto;padding-bottom:2px}
+  .week-sel>span{display:none}
+  .wbtn{padding:5px 9px;font-size:11px;flex-shrink:0}
+
+  /* barra superior compacta */
+  .score-inner{grid-template-columns:1fr;padding:10px 12px;gap:8px}
+  .score-cell{border:none;background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px}
+  .score-cell:last-child{border:none}
+  .sc-head{margin-bottom:9px;font-size:9.5px}
+
+  /* progreso: 2 stat cards internas */
+  .dual{gap:10px}
+  .dcol{background:rgba(255,255,255,.04);border-radius:10px;padding:10px}
+  .dcol .dval{font-size:23px}
+  .dcol .dsub{font-size:10px}
+
+  /* SEMANA ACTIVA: ya es tira horizontal en el base, solo ajusto tamaños */
+  .sc-wk-big{font-size:20px}
+  .sc-wk-date{font-size:11px}
+
+  /* líderes apilados compactos */
+  .lead-row{grid-template-columns:1fr;gap:8px}
+  .lead{padding:10px 12px;gap:9px}
+  .lead .lmed{font-size:20px}
+  .lead .lname{font-size:15px}
+  .lead .lg{font-size:10px}
+
+  /* pestañas en 2 filas, todas visibles + abreviaturas */
+  .tabs-nav{flex-wrap:wrap;border-bottom:none;gap:6px;overflow:visible}
+  .tbtn{flex:1 1 30%;min-width:0;padding:9px 6px;font-size:11.5px;border:1.5px solid var(--border);border-radius:8px;text-align:center;margin-bottom:0}
+  .tbtn.active{border-color:var(--fg);background:var(--fg3);border-bottom-width:1.5px}
+  .tab-full{display:none}
+  .tab-abbr{display:inline}
+
+  /* ranking compacto */
+  .pills{display:none}
+  .sc-row{grid-template-columns:38px 1fr auto 22px;gap:8px;padding:10px 12px}
+  .gnum{font-size:19px}
+  .dgrid{grid-template-columns:1fr 1fr}
+
+  /* heatmap: cards */
+  .heat-desktop{display:none}
+  .heat-mobile{display:block}
+  .seg-controls{gap:12px}
+  .hlegend{margin-left:0;width:100%;justify-content:flex-start}
+  .rk-header h2{font-size:14px}
+  .filter-row{width:100%;overflow-x:auto;padding-bottom:2px}
+  .fbtn{flex-shrink:0}
+}
+</style>
+</head>
+<body>
+<div class="flag"></div>
+<header>
+<svg class="field-svg" preserveaspectratio="xMidYMid slice" viewbox="0 0 1200 80">
+<rect fill="#1A6B35" height="80" width="1200"></rect>
+<rect fill="rgba(255,255,255,.04)" height="80" width="133" x="0"></rect>
+<rect fill="rgba(255,255,255,.04)" height="80" width="133" x="266"></rect>
+<rect fill="rgba(255,255,255,.04)" height="80" width="133" x="532"></rect>
+<rect fill="rgba(255,255,255,.04)" height="80" width="133" x="798"></rect>
+<rect fill="rgba(255,255,255,.04)" height="80" width="133" x="1064"></rect>
+<line opacity=".18" stroke="white" stroke-width="1.5" x1="600" x2="600" y1="0" y2="80"></line>
+<circle cx="600" cy="40" fill="none" opacity=".18" r="30" stroke="white" stroke-width="1.5"></circle>
+<circle cx="600" cy="40" fill="white" opacity=".25" r="2.5"></circle>
+<rect fill="none" height="60" opacity=".18" rx="2" stroke="white" stroke-width="1.2" width="55" x="0" y="10"></rect>
+<rect fill="none" height="60" opacity=".18" rx="2" stroke="white" stroke-width="1.2" width="55" x="1145" y="10"></rect>
+</svg>
+<div class="hdr-inner">
+<img alt="Ferrero" class="logo-img" src="data:image/png;base64,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"/>
+<div class="hdr-mid">
+<h1>MUNDIAL FERRERO</h1>
+<p>CeDiSur — Julio / Agosto 2026</p>
+</div>
+<div class="week-sel">
+<span>Semana</span>
+<button class="wbtn active" onclick="setW(0,this)">S1</button>
+<button class="wbtn" onclick="setW(1,this)">S2</button>
+<button class="wbtn" onclick="setW(2,this)">S3</button>
+<button class="wbtn" onclick="setW(3,this)">S4</button>
+<button class="wbtn spec" onclick="setW(4,this)">S5⚡</button>
+<button class="wbtn" onclick="setW(5,this)">S6</button>
+<button class="wbtn" onclick="setW(6,this)">S7</button>
+<button class="wbtn" onclick="setW(7,this)">S8</button>
+<button class="wbtn spec" onclick="setW(8,this)">S9&#9889;</button>
+</div>
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0">
+  <span id="last-updated" style="font-size:10px;color:rgba(255,255,255,.4);white-space:nowrap"></span>
+  <button class="btn-actualizar" onclick="fetchSheets()" title="Actualizar datos" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.12)'">🔄 Actualizar</button>
+</div>
+</div>
+</header>
+<div class="score-bar">
+<div class="score-inner">
+<div class="score-cell">
+  <div class="sc-head"><span class="dot"></span>Progreso CeDiSur</div>
+  <div class="dual">
+    <div class="dcol week"><div class="dlbl">Esta semana</div><div class="dval" id="pWk">—</div><div class="dsub" id="pWkSub">—</div><div class="prog-track"><div class="prog-fill" id="pWkBar" style="width:0%"></div></div></div>
+    <div class="dcol mundial"><div class="dlbl">Mundial (acum.)</div><div class="dval" id="pMun">—</div><div class="dsub" id="pMunSub">—</div><div class="prog-track"><div class="prog-fill" id="pMunBar" style="width:0%"></div></div></div>
+  </div>
+</div>
+<div class="score-cell wkcell">
+  <div class="sc-head"><span class="dot"></span>Semana activa</div>
+  <div class="sc-wk-inner">
+    <span class="sc-wk-big" id="scWk">S1</span>
+    <span class="sc-wk-date" id="scDate">29 Jun – 5 Jul</span>
+    <span class="sc-wk-badge" id="scBadge">Última con datos</span>
+  </div>
+</div>
+<div class="score-cell">
+  <div class="sc-head"><span class="dot"></span>Líderes</div>
+  <div class="lead-row">
+    <div class="lead week"><div class="lmed">🥇</div><div class="linfo"><div class="llbl">Líder de la semana</div><div class="lname" id="ldWk">—</div><div class="lg" id="ldWkG">—</div></div></div>
+    <div class="lead mundial"><div class="lmed">🌎</div><div class="linfo"><div class="llbl">Líder del mundial (acum.)</div><div class="lname" id="ldMun">—</div><div class="lg" id="ldMunG">—</div></div></div>
+  </div>
+</div>
+</div>
+</div>
+<div class="spec-banner" id="specBanner">
+<div class="spec-inner">
+<span style="font-size:18px">⚡</span>
+<p>SEMANA ESPECIAL: comienzan a sumar puntos los bonus track.</p>
+</div>
+</div>
+<div class="main">
+<div class="tabs-nav">
+<button class="tbtn active" onclick="showTab('ranking',this)">📊 Ranking <span class="tab-full">Semanal</span><span class="tab-abbr">Sem.</span></button>
+<button class="tbtn" onclick="showTab('acumulado',this)">🏆 Ranking <span class="tab-full">Acumulado</span><span class="tab-abbr">Acum.</span></button>
+<button class="tbtn" onclick="showTab('seguimiento',this)">🎯 Seguimiento</button>
+<button class="tbtn" onclick="showTab('reglas',this)">⚽ Cómo se juega</button>
+<button class="tbtn" onclick="showTab('premios',this)">🏆 Premios</button>
+<button class="tbtn" onclick="showTab('bonus',this)">⚡ Bonus Track</button>
+</div>
+<!-- ===== RANKING SEMANAL ===== -->
+<div class="tab-panel active" id="tab-ranking">
+<div class="rk-header">
+<h2>📊 Tabla de posiciones — <span id="semTitle" style="color:var(--gold3)"></span></h2>
+<div class="filter-row">
+<button class="fbtn active" onclick="setF('total',this)">Total</button>
+<button class="fbtn" onclick="setF('nut',this)">Nutella</button>
+<button class="fbtn" onclick="setF('raf',this)">Raffaello</button>
+<button class="fbtn" onclick="setF('roc',this)">Rocher</button>
+<button class="fbtn" onclick="setF('kcm',this)">K.Choco</button>
+<button class="fbtn" onclick="setF('kbw',this)">K.Bueno</button>
+<button class="fbtn" onclick="setF('tt',this)">Tic Tac</button>
+</div>
+</div>
+<div id="rankList"></div>
+</div>
+<!-- ===== RANKING ACUMULADO ===== -->
+<div class="tab-panel" id="tab-acumulado">
+<div class="rk-header">
+<h2>🏆 Quién va ganando el Mundial <span style="color:var(--muted);font-weight:600;font-size:12px">· goles acumulados</span></h2>
+<div class="filter-row" id="fAcu">
+<button class="fbtn active" onclick="setFA('total',this)">Total</button>
+<button class="fbtn" onclick="setFA('nut',this)">Nutella</button>
+<button class="fbtn" onclick="setFA('raf',this)">Raffaello</button>
+<button class="fbtn" onclick="setFA('roc',this)">Rocher</button>
+<button class="fbtn" onclick="setFA('kcm',this)">K.Choco</button>
+<button class="fbtn" onclick="setFA('kbw',this)">K.Bueno</button>
+<button class="fbtn" onclick="setFA('tt',this)">Tic Tac</button>
+</div>
+</div>
+<div id="rankAcu"></div>
+</div>
+<!-- ===== SEGUIMIENTO ===== -->
+<div class="tab-panel" id="tab-seguimiento">
+<div class="seg-controls">
+  <div class="seg-grp"><span class="sgl">Período</span><div class="seg-btns" id="segPer"></div></div>
+  <div class="seg-grp"><span class="sgl">Apertura</span><div class="seg-btns" id="segAp">
+    <button class="fbtn active" onclick="setSegAp('zona',this)">Por zona</button>
+    <button class="fbtn" onclick="setSegAp('vend',this)">Por vendedor</button>
+  </div></div>
+  <div class="hlegend">
+    <div class="hleg-item"><span class="hleg-sw" style="background:#C62828"></span>&lt;80%</div>
+    <div class="hleg-item"><span class="hleg-sw" style="background:#F9A825"></span>80–99%</div>
+    <div class="hleg-item"><span class="hleg-sw" style="background:#2E7D32"></span>≥100%</div>
+  </div>
+</div>
+<div class="heat-wrap heat-desktop"><table class="heat" id="heatTbl"></table></div>
+<div class="heat-mobile" id="heatCards"></div>
+<p class="seg-tip">💡 Pasá el mouse sobre cualquier celda para ver el detalle Real / Objetivo. Clic en una zona para desplegar sus vendedores.</p>
+</div>
+<!-- ===== COMO SE JUEGA ===== -->
+<div class="tab-panel" id="tab-reglas">
+<div class="rsec">
+<div class="rh"><div class="ricon" style="background:#FFEBEE">🚩</div><h3>Condición general</h3></div>
+<div class="rb">
+<div class="cond-box">
+<div class="ct">⚠️ REQUISITO PARA COBRAR EL PREMIO</div>
+<p>Los premios finales se activan únicamente si <strong>Cedisur alcanza su objetivo general durante las 9 semanas</strong>. Si el objetivo no se cumple, no se entregan premios finales. Los premios semanales sí se entregan más allá de esa condición.</p>
+</div>
+</div>
+</div>
+<div class="rsec">
+<div class="rh"><div class="ricon" style="background:var(--fg3)">⚽</div><h3>Cómo se suman los goles</h3></div>
+<div class="rb">
+<ul class="rlist">
+<li><div class="rnum">1</div><div>Cada vendedor tiene un <strong>objetivo individual por producto por semana</strong>. El objetivo puede variar semana a semana según el plan comercial.</div></li>
+<li><div class="rnum">2</div><div>Cada unidad vendida <strong>por encima del objetivo semanal</strong> equivale a <strong>1 gol</strong>. Las unidades hasta el objetivo no suman ni restan.</div></li>
+<li><div class="rnum">3</div><div>Los goles se <strong>acumulan durante las 9 semanas</strong> y determinan el ranking final.</div></li>
+<li><div class="rnum">4</div><div>El vendedor con más goles <strong>en esa semana específica</strong> gana el premio semanal de <strong>$100.000</strong>.</div></li>
+<li><div class="rnum">5</div><div>Al cierre de la <strong>Semana 9</strong>, los 3 con más goles acumulados ganan el premio final. Los premios son <strong>acumulativos</strong> con los semanales.</div></li>
+</ul>
+<div class="ex-box">
+<div class="et">Ejemplo — Semana 3, María González</div>
+<div class="exrow">Rocher — objetivo: 28 u. — vendido: <span class="en">41 u.</span></div>
+<div class="exrow"><span class="en">41</span> <span style="color:var(--muted)">−</span> <span class="en">28</span> <span style="color:var(--muted)">=</span> <span class="er">+13 goles</span></div>
+<div class="exrow" style="margin-top:4px">Nutella — objetivo: 26 u. — vendido: <span class="en">22 u.</span></div>
+<div class="exrow"><span style="color:var(--muted)">22 &lt; 26 → <strong>0 goles</strong> (no resta)</span></div>
+</div>
+</div>
+</div>
+<div class="rsec">
+<div class="rh"><div class="ricon" style="background:var(--gold2)">⚡</div><h3>Semana Especial 5 y 9</h3></div>
+<div class="rb">
+<div class="spec-box">
+<div class="st">⚡ DESDE LA SEMANA 5: COMIENZAN LOS BONUS TRACK</div>
+<p>Durante las <strong>Semanas 4 y 5</strong> se activan los <strong>Bonus Track</strong>: acciones comerciales especiales que suman goles adicionales al ranking. Ver la pestaña <strong>Bonus Track</strong> para el detalle.</p>
+</div>
+</div>
+</div>
+<div class="rsec">
+<div class="rh"><div class="ricon" style="background:var(--fg3)">📊</div><h3>Productos y objetivos por semana</h3></div>
+<div class="rb">
+<p>Los objetivos varían cada semana según el plan comercial. Cada vendedor tiene objetivos individuales dentro de los siguientes rangos:</p>
+<table class="ptbl">
+<thead><tr><th>Producto</th><th>Rango objetivo sem. 1–4</th><th>Rango objetivo sem. 5–9</th></tr></thead>
+<tbody>
+<tr><td><span class="pdot" style="background:#4E342E"></span><strong>Nutella</strong></td><td>20–30 u./semana</td><td>24–36 u./semana</td></tr>
+<tr><td><span class="pdot" style="background:#8D6E63"></span><strong>Raffaello</strong></td><td>15–24 u./semana</td><td>18–30 u./semana</td></tr>
+<tr><td><span class="pdot" style="background:#C8960C"></span><strong>Rocher</strong></td><td>22–34 u./semana</td><td>27–40 u./semana</td></tr>
+<tr><td><span class="pdot" style="background:#C62828"></span><strong>Kinder Choco + Maxi</strong></td><td>30–46 u./semana</td><td>34–52 u./semana</td></tr>
+<tr><td><span class="pdot" style="background:#2E7D32"></span><strong>Kinder Bueno + White</strong></td><td>32–50 u./semana</td><td>36–56 u./semana</td></tr>
+<tr><td><span class="pdot" style="background:#1565C0"></span><strong>Tic Tac</strong></td><td>80–115 u./semana</td><td>88–122 u./semana</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="rsec">
+<div class="rh"><div class="ricon" style="background:var(--fg3)">🔗</div><h3>Reglas adicionales</h3></div>
+<div class="rb">
+<ul class="rlist">
+<li><div class="rnum">✓</div><div>Ranking publicado cada <strong>viernes</strong> por WhatsApp con posición, nombre y goles.</div></li>
+<li><div class="rnum">✓</div><div><strong>Sin goles negativos</strong>: por debajo del objetivo se suman 0 goles ese período.</div></li>
+<li><div class="rnum">✓</div><div>En caso de empate al final de la Semana 9, gana quien llegó antes a esa cantidad.</div></li>
+<li><div class="rnum">✓</div><div>Participan los <strong>21 vendedores</strong> de CeDiSur activos durante el período.</div></li>
+<li><div class="rnum">✓</div><div>Concurso: <strong>29 de 🥇 al 30 de agosto de 2026</strong>.</div></li>
+</ul>
+</div>
+</div>
+</div>
+<!-- ===== PREMIOS ===== -->
+<div class="tab-panel" id="tab-premios">
+<div class="condicion-p">
+<div class="cp-h"><span style="font-size:18px">⚠️</span><h3>Condición de activación</h3></div>
+<div class="cp-body">
+<p>Los premios finales se entregan <strong>solo si Cedisur alcanza el objetivo general de unidades en las 9 semanas</strong>. Los premios semanales sí se entregan más allá de esa condición.</p>
+<div class="cp-prog">
+<div class="cpl"><span>Avance CeDiSur</span><span id="premPct">—</span></div>
+<div class="cpt"><div class="cpf danger" id="premBar" style="width:0%"></div></div>
+<div class="cpn" id="premNote">Seleccioná una semana para ver el avance.</div>
+</div>
+</div>
+</div>
+<div class="weekly-prize">
+<h3>🏆 Premio semanal</h3>
+<div class="wp-grid">
+<div class="wp-card">
+<div class="wpc-lbl">Premio por semana</div>
+<div class="wpc-val">$100.000</div>
+<div class="wpc-sub">Al que más sobrecumpla esa semana</div>
+</div>
+<div class="wp-card">
+<div class="wpc-lbl">Total disponible (9 sem.)</div>
+<div class="wpc-val">$900.000</div>
+<div class="wpc-sub">Un ganador por semana</div>
+</div>
+</div>
+</div>
+<div class="podium-sec">
+<h3>🏆 Premio final (Semana 9)</h3>
+<div class="podium-grid">
+<div class="pc silver">
+<div class="pc-medal">🥈</div>
+<div class="pc-pos">2° Lugar</div>
+<div class="pc-amt" style="font-size:22px">$400.000</div>
+<div class="pc-pct">Acumulable con premios semanales</div>
+
+</div>
+<div class="pc gold">
+<div class="pc-medal">🥇</div>
+<div class="pc-pos">1° Lugar</div>
+<div class="pc-amt gt">$750.000</div>
+<div class="pc-pct">Acumulable con premios semanales</div>
+
+</div>
+<div class="pc bronze">
+<div class="pc-medal">🥉</div>
+<div class="pc-pos">3° Lugar</div>
+<div class="pc-amt bt" style="font-size:22px">$150.000</div>
+<div class="pc-pct">Acumulable con premios semanales</div>
+
+</div>
+</div>
+<div class="acum-note">
+<p>🆕 Los premios son acumulativos. Si ganas 3 semanas ($300.000) y llegás 1° ($1.000.000), cobrás $1.300.000 en total.</p>
+</div>
+</div>
+</div>
+<!-- ===== BONUS TRACK ===== -->
+<div class="tab-panel" id="tab-bonus">
+<div class="bt-hero">
+<h2>⚡ BONUS TRACK</h2>
+<p>Acciones comerciales especiales que suman <strong>goles adicionales</strong> al ranking, tanto semanal como acumulado.</p>
+</div>
+<div class="bt-active">
+<span style="font-size:18px">⚡</span>
+<p id="btActiveTxt">Cargando acciones activas...</p>
+</div>
+<h3 class="bt-secttl">🎯 Acciones bonificables</h3>
+<div class="bt-cats" id="btCats"></div>
+<div class="bt-how">
+<h3>📝 Cómo funciona</h3>
+<p>Por cada acción cumplida (venta o implementación), el vendedor suma los goles indicados. Se cargan por cantidad y el sistema calcula los goles automáticamente. Los goles bonus impactan en el ranking semanal y en el acumulado del mundial.</p>
+</div>
+</div>
+</div>
+<script>
+// ── URLs Google Sheets (CSV publicado) ──────────────────────────────────────
+const URL_VENTAS_MUNDIAL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=507180271&single=true&output=csv";
+const URL_FERRERO_KG      = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=529194266&single=true&output=csv";
+const URL_BONUS_CONFIG    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=1522924197&single=true&output=csv";
+const URL_BONUS_TRACK     = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=850228986&single=true&output=csv";
+const URL_DIAS_PROCESADOS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=1868345261&single=true&output=csv";
+
+const DATA = {"sellers":["Guillermo Alderete","David Bertran","Alberto Castillo","Leonardo Chiesa","Dario Macaya","Miguel Escales","Pablo Figueroa","Alejandro Fragnul","Samuel Arenas","Julian Jensen","Hugo Lezana","Jonatan Lozano","Guillermo Madrid","Jose Martinez","Sebastian Ponce de Leon","Horacio Ulloa","Luis Velazquez","Pablo Zangari"],"products":[{"id":"kbw","name":"Kinder Bueno + White","color":"#2E7D32","short":"K.Bueno"},{"id":"kcm","name":"Kinder Choco + Maxi","color":"#C62828","short":"K.Choco"},{"id":"nut","name":"Nutella","color":"#4E342E","short":"Nutella"},{"id":"raf","name":"Raffaello","color":"#8D6E63","short":"Raffaello"},{"id":"roc","name":"Rocher","color":"#C8960C","short":"Rocher"},{"id":"tt","name":"Tic Tac","color":"#1565C0","short":"Tic Tac"}],"objectives":{"Guillermo Alderete":{"kbw":[18,18,18,18,18,15,15,15,15],"kcm":[18,18,18,18,18,15,15,15,15],"nut":[15,15,15,15,15,13,13,13,13],"raf":[11,11,11,11,11,9,9,9,9],"roc":[52,52,52,52,52,43,43,43,43],"tt":[41,41,41,41,41,35,35,35,35]},"David Bertran":{"kbw":[12,12,12,12,12,10,10,10,10],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[20,20,20,20,20,17,17,17,17],"raf":[6,6,6,6,6,5,5,5,5],"roc":[49,49,49,49,49,41,41,41,41],"tt":[57,57,57,57,57,48,48,48,48]},"Alberto Castillo":{"kbw":[21,21,21,21,21,17,17,17,17],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[31,31,31,31,31,26,26,26,26],"raf":[9,9,9,9,9,8,8,8,8],"roc":[107,107,107,107,107,89,89,89,89],"tt":[40,40,40,40,40,33,33,33,33]},"Leonardo Chiesa":{"kbw":[13,13,13,13,13,11,11,11,11],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[37,37,37,37,37,31,31,31,31],"raf":[6,6,6,6,6,5,5,5,5],"roc":[56,56,56,56,56,46,46,46,46],"tt":[18,18,18,18,18,15,15,15,15]},"Dario Macaya":{"kbw":[29,29,29,29,29,24,24,24,24],"kcm":[19,19,19,19,19,16,16,16,16],"nut":[32,32,32,32,32,26,26,26,26],"raf":[11,11,11,11,11,9,9,9,9],"roc":[90,90,90,90,90,75,75,75,75],"tt":[23,23,23,23,23,20,20,20,20]},"Miguel Escales":{"kbw":[21,21,21,21,21,17,17,17,17],"kcm":[23,23,23,23,23,19,19,19,19],"nut":[14,14,14,14,14,12,12,12,12],"raf":[14,14,14,14,14,12,12,12,12],"roc":[90,90,90,90,90,75,75,75,75],"tt":[18,18,18,18,18,15,15,15,15]},"Pablo Figueroa":{"kbw":[35,35,35,35,35,29,29,29,29],"kcm":[88,88,88,88,88,73,73,73,73],"nut":[46,46,46,46,46,38,38,38,38],"raf":[15,15,15,15,15,13,13,13,13],"roc":[137,137,137,137,137,114,114,114,114],"tt":[81,81,81,81,81,67,67,67,67]},"Alejandro Fragnul":{"kbw":[12,12,12,12,12,10,10,10,10],"kcm":[15,15,15,15,15,13,13,13,13],"nut":[40,40,40,40,40,33,33,33,33],"raf":[8,8,8,8,8,7,7,7,7],"roc":[62,62,62,62,62,52,52,52,52],"tt":[18,18,18,18,18,15,15,15,15]},"Samuel Arenas":{"kbw":[52,52,52,52,52,43,43,43,43],"kcm":[48,48,48,48,48,40,40,40,40],"nut":[118,118,118,118,118,99,99,99,99],"raf":[14,14,14,14,14,12,12,12,12],"roc":[189,189,189,189,189,157,157,157,157],"tt":[32,32,32,32,32,27,27,27,27]},"Julian Jensen":{"kbw":[12,12,12,12,12,10,10,10,10],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[43,43,43,43,43,36,36,36,36],"raf":[6,6,6,6,6,5,5,5,5],"roc":[42,42,42,42,42,35,35,35,35],"tt":[19,19,19,19,19,16,16,16,16]},"Hugo Lezana":{"kbw":[18,18,18,18,18,15,15,15,15],"kcm":[26,26,26,26,26,22,22,22,22],"nut":[44,44,44,44,44,36,36,36,36],"raf":[14,14,14,14,14,12,12,12,12],"roc":[53,53,53,53,53,44,44,44,44],"tt":[18,18,18,18,18,15,15,15,15]},"Jonatan Lozano":{"kbw":[32,32,32,32,32,27,27,27,27],"kcm":[27,27,27,27,27,23,23,23,23],"nut":[52,52,52,52,52,43,43,43,43],"raf":[10,10,10,10,10,8,8,8,8],"roc":[102,102,102,102,102,85,85,85,85],"tt":[25,25,25,25,25,21,21,21,21]},"Guillermo Madrid":{"kbw":[16,16,16,16,16,14,14,14,14],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[14,14,14,14,14,12,12,12,12],"raf":[11,11,11,11,11,9,9,9,9],"roc":[42,42,42,42,42,35,35,35,35],"tt":[18,18,18,18,18,15,15,15,15]},"Jose Martinez":{"kbw":[28,28,28,28,28,23,23,23,23],"kcm":[122,122,122,122,122,101,101,101,101],"nut":[77,77,77,77,77,64,64,64,64],"raf":[18,18,18,18,18,15,15,15,15],"roc":[178,178,178,178,178,149,149,149,149],"tt":[145,145,145,145,145,121,121,121,121]},"Sebastian Ponce de Leon":{"kbw":[59,59,59,59,59,49,49,49,49],"kcm":[54,54,54,54,54,45,45,45,45],"nut":[133,133,133,133,133,111,111,111,111],"raf":[6,6,6,6,6,5,5,5,5],"roc":[106,106,106,106,106,89,89,89,89],"tt":[90,90,90,90,90,75,75,75,75]},"Horacio Ulloa":{"kbw":[19,19,19,19,19,16,16,16,16],"kcm":[21,21,21,21,21,17,17,17,17],"nut":[14,14,14,14,14,12,12,12,12],"raf":[12,12,12,12,12,10,10,10,10],"roc":[67,67,67,67,67,56,56,56,56],"tt":[46,46,46,46,46,38,38,38,38]},"Luis Velazquez":{"kbw":[14,14,14,14,14,12,12,12,12],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[14,14,14,14,14,12,12,12,12],"raf":[6,6,6,6,6,5,5,5,5],"roc":[42,42,42,42,42,35,35,35,35],"tt":[18,18,18,18,18,15,15,15,15]},"Pablo Zangari":{"kbw":[13,13,13,13,13,11,11,11,11],"kcm":[27,27,27,27,27,22,22,22,22],"nut":[24,24,24,24,24,20,20,20,20],"raf":[6,6,6,6,6,5,5,5,5],"roc":[65,65,65,65,65,54,54,54,54],"tt":[18,18,18,18,18,15,15,15,15]}},"sales":{"Guillermo Alderete":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"David Bertran":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Alberto Castillo":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Leonardo Chiesa":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Dario Macaya":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Miguel Escales":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Pablo Figueroa":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Alejandro Fragnul":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Samuel Arenas":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Julian Jensen":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Hugo Lezana":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Jonatan Lozano":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Guillermo Madrid":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Jose Martinez":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Sebastian Ponce de Leon":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Horacio Ulloa":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Luis Velazquez":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Pablo Zangari":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]}},"_zonaByName":{"Guillermo Alderete":"CORDILLERA NORTE","Hugo Lezana":"CORDILLERA NORTE","Horacio Ulloa":"CORDILLERA NORTE","David Bertran":"RIO NEGRO","Miguel Escales":"RIO NEGRO","Pablo Figueroa":"RIO NEGRO","Alejandro Fragnul":"RIO NEGRO","Pablo Zangari":"RIO NEGRO","Alberto Castillo":"NEUQUEN","Dario Macaya":"NEUQUEN","Samuel Arenas":"NEUQUEN","Jonatan Lozano":"NEUQUEN","Jose Martinez":"NEUQUEN","Leonardo Chiesa":"ATLANTICA","Guillermo Madrid":"ATLANTICA","Luis Velazquez":"ATLANTICA","Julian Jensen":"CORDILLERA SUR","Sebastian Ponce de Leon":"NEUQUEN"},"_semDatos":1,"bonusConfig":[],"bonusCarga":[]};
+
+const WEEKS = [
+  {n:1, label:"S1", dates:"29 Jun &#8211; 5 Jul"},
+  {n:2, label:"S2", dates:"6 &#8211; 12 Jul"},
+  {n:3, label:"S3", dates:"13 &#8211; 19 Jul"},
+  {n:4, label:"S4", dates:"20 &#8211; 26 Jul"},
+  {n:5, label:"S5", dates:"27 Jul &#8211; 2 Ago", spec:true},
+  {n:6, label:"S6", dates:"3 &#8211; 9 Ago"},
+  {n:7, label:"S7", dates:"10 &#8211; 16 Ago"},
+  {n:8, label:"S8", dates:"17 &#8211; 23 Ago"},
+  {n:9, label:"S9", dates:"24 &#8211; 30 Ago"},
+];
+
+const ZONES=["CORDILLERA NORTE","RIO NEGRO","NEUQUEN","ATLANTICA","NEUQUEN","RIO NEGRO","RIO NEGRO","RIO NEGRO","NEUQUEN","CORDILLERA SUR","CORDILLERA NORTE","NEUQUEN","ATLANTICA","NEUQUEN","CORDILLERA SUR","CORDILLERA NORTE","ATLANTICA","RIO NEGRO"];
+
+let SEM_DATOS=DATA._semDatos;          // semanas con datos cargados (se recalcula tras fetch)
+let curW=SEM_DATOS-1, curF="total", openIdx=null;   // arranca en la última semana con datos
+let curWA="total", openIdxA=null;        // ranking acumulado
+let segPer="acu", openZonesSeg={};        // seguimiento
+const ZONE_LIST=["ATLANTICA","CORDILLERA NORTE","CORDILLERA SUR","NEUQUEN","RIO NEGRO"];
+
+// Mapa rápido de goles por unidad de cada acción
+const _accGoles={};
+(DATA.bonusConfig||[]).forEach(a=>{_accGoles[a.accion]=a.golesPorUnidad;});
+
+// Desglose de bonus por acción para un vendedor en una semana concreta.
+// Devuelve [{accion, cantidad, goles}]
+function bonusDesglose(seller,w){
+  const out={};
+  (DATA.bonusCarga||[]).forEach(a=>{
+    if(a.vendedor!==seller || (a.semana-1)!==w) return;
+    const g=(a.cantidad||0)*(_accGoles[a.accion]||0);
+    if(!out[a.accion]) out[a.accion]={accion:a.accion,cantidad:0,goles:0};
+    out[a.accion].cantidad+=a.cantidad||0;
+    out[a.accion].goles+=g;
+  });
+  return Object.values(out);
+}
+// Desglose acumulado hasta upTo
+function bonusDesgloseCum(seller,upTo){
+  const out={};
+  for(let w=0;w<=upTo;w++){
+    bonusDesglose(seller,w).forEach(d=>{
+      if(!out[d.accion]) out[d.accion]={accion:d.accion,cantidad:0,goles:0};
+      out[d.accion].cantidad+=d.cantidad;
+      out[d.accion].goles+=d.goles;
+    });
+  }
+  return Object.values(out);
+}
+function bonusW(seller,w){ return bonusDesglose(seller,w).reduce((s,d)=>s+d.goles,0); }
+function bonusCum(seller,upTo){ let b=0; for(let w=0;w<=upTo;w++) b+=bonusW(seller,w); return b; }
+
+function wkGoles(seller, pid, w){
+  const sold=DATA.sales[seller][pid][w];
+  const obj=DATA.objectives[seller][pid][w];
+  return Math.max(0, sold-obj);
+}
+
+// Goles acumulados hasta la semana upTo (inclusive). Incluye bonus en total.
+function cumGoles(seller, upTo){
+  const res={};
+  let tot=0;
+  for(const p of DATA.products){
+    let g=0;
+    for(let w=0;w<=upTo;w++) g+=wkGoles(seller,p.id,w);
+    res[p.id]=g; tot+=g;
+  }
+  const bt=bonusCum(seller,upTo);
+  res.bt=bt; tot+=bt;
+  res.total=tot;
+  return res;
+}
+
+// Goles solo de la semana w. Incluye bonus de esa semana en total.
+function weekOnlyGoles(seller, w){
+  const res={};
+  let tot=0;
+  for(const p of DATA.products){
+    const g=wkGoles(seller,p.id,w);
+    res[p.id]=g; tot+=g;
+  }
+  const bt=bonusW(seller,w);
+  res.bt=bt; tot+=bt;
+  res.total=tot;
+  return res;
+}
+
+function weekScore(seller, w){
+  return DATA.products.reduce((s,p)=>s+wkGoles(seller,p.id,w),0)+bonusW(seller,w);
+}
+
+function buildRanking(w, filt){
+  return DATA.sellers.map((s,i)=>{
+    const g=weekOnlyGoles(s,w);
+    return {seller:s,zone:ZONES[i],goles:g,idx:i};
+  }).sort((a,b)=>b.goles[filt]-a.goles[filt]);
+}
+
+function buildRankingAcu(upTo, filt){
+  return DATA.sellers.map((s,i)=>{
+    const g=cumGoles(s,upTo);
+    return {seller:s,zone:ZONES[i],goles:g,idx:i};
+  }).sort((a,b)=>b.goles[filt]-a.goles[filt]);
+}
+
+function getWeekWinner(w){
+  return DATA.sellers.map((s,i)=>({seller:s,idx:i,g:weekScore(s,w)})).sort((a,b)=>b.g-a.g)[0];
+}
+
+// ── Seguimiento: real vs objetivo por zona/vendedor/marca y período ──
+function segRVO(nameOrZone,pid,isZone){
+  let o=0,s=0;
+  const list=isZone?DATA.sellers.filter(x=>DATA._zonaByName[x]===nameOrZone):[nameOrZone];
+  const pids=pid==="total"?DATA.products.map(p=>p.id):[pid];
+  list.forEach(sl=>pids.forEach(pp=>{
+    if(segPer==="acu"){for(let w=0;w<SEM_DATOS;w++){o+=DATA.objectives[sl][pp][w];s+=DATA.sales[sl][pp][w];}}
+    else{const w=parseInt(segPer);o+=DATA.objectives[sl][pp][w];s+=DATA.sales[sl][pp][w];}
+  }));
+  return {s,o,p:o?Math.round(s/o*100):0};
+}
+function segTotalCedisur(pid){
+  let o=0,s=0;
+  DATA.sellers.forEach(sl=>{
+    const r=segRVO(sl,pid,false); o+=r.o; s+=r.s;
+  });
+  return {s,o,p:o?Math.round(s/o*100):0};
+}
+function heatColor(p){return p>=100?"#2E7D32":(p>=80?"#F9A825":"#C62828");}
+
+function getCeDiSurWeek(w){
+  let obj=0,sold=0;
+  for(const s of DATA.sellers)for(const p of DATA.products){obj+=DATA.objectives[s][p.id][w];sold+=DATA.sales[s][p.id][w];}
+  return {obj,sold,pct:obj?Math.round(sold/obj*100):0};
+}
+function getCeDiSurAcu(upTo){
+  let obj=0,sold=0;
+  for(const s of DATA.sellers)for(const p of DATA.products){for(let w=0;w<=upTo;w++){obj+=DATA.objectives[s][p.id][w];sold+=DATA.sales[s][p.id][w];}}
+  return {obj,sold,pct:obj?Math.round(sold/obj*100):0};
+}
+function fmtU(n){return Math.round(n).toLocaleString("es-AR");}
+
+function updateStats(w){
+  const cw=getCeDiSurWeek(w), ca=getCeDiSurAcu(w);
+  // progreso dual
+  document.getElementById("pWk").textContent=cw.pct+"%";
+  document.getElementById("pWkSub").textContent=fmtU(cw.sold)+" / "+fmtU(cw.obj)+" u.";
+  const bw=document.getElementById("pWkBar"); bw.style.width=Math.min(cw.pct,100)+"%";
+  document.getElementById("pMun").textContent=ca.pct+"%";
+  document.getElementById("pMunSub").textContent=fmtU(ca.sold)+" / "+fmtU(ca.obj)+" u.";
+  const bm=document.getElementById("pMunBar"); bm.style.width=Math.min(ca.pct,100)+"%";
+  // semana activa
+  document.getElementById("scWk").textContent=WEEKS[w].label;
+  document.getElementById("scDate").innerHTML=WEEKS[w].dates;
+  document.getElementById("scBadge").style.display=(w===SEM_DATOS-1)?"inline-block":"none";
+  // líderes duales
+  const lw=DATA.sellers.map(s=>({s,g:weekScore(s,w)})).sort((a,b)=>b.g-a.g)[0];
+  const la=DATA.sellers.map(s=>({s,g:cumGoles(s,w).total})).sort((a,b)=>b.g-a.g)[0];
+  document.getElementById("ldWk").textContent=lw.g>0?lw.s:"—";
+  document.getElementById("ldWkG").textContent=lw.g>0?lw.g+" goles":"Sin goles aún";
+  document.getElementById("ldMun").textContent=la.g>0?la.s:"—";
+  document.getElementById("ldMunG").textContent=la.g>0?la.g+" goles":"Sin goles aún";
+  document.getElementById("specBanner").className="spec-banner"+(w>=4?" show":"");
+  updatePremios(w,ca.pct,ca.obj,ca.sold);
+}
+
+function updatePremios(w,pct,obj,sold){
+  document.getElementById("premPct").textContent=pct+"%";
+  const fill=document.getElementById("premBar");
+  fill.style.width=Math.min(pct,100)+"%";
+  fill.className="cpf "+(pct>=100?"":(pct>=75?"warn ":"danger "));
+  const note=document.getElementById("premNote");
+  if(pct>=100){note.textContent="✅ CeDiSur superó el objetivo. Premios ACTIVADOS.";note.style.color="var(--fg)";}
+  else{note.textContent="Faltan "+fmtU(obj-sold)+" unidades para activar.";note.style.color="#7B1010";}
+}
+
+function pClass(pos){return pos===1?"p1":pos===2?"p2":pos===3?"p3":"";}
+function renderPills(g){
+  return DATA.products.map(p=>{
+    const v=g[p.id];
+    return v>0?`<span class="pill" style="background:${p.color}">${p.short}:+${v}</span>`:"";
+  }).join("");
+}
+
+function renderWeekBars(seller){
+  let max=0;
+  const ws=WEEKS.map((_,w)=>weekScore(seller,w));
+  ws.forEach(v=>{if(v>max)max=v;});
+  if(!max)max=1;
+  return ws.map((v,w)=>{
+    const h=Math.round(v/max*38);
+    const sp=SEM_ESPECIALES.includes(w);
+    return `<div class="wkbar-w">
+      <div class="wkval">${v>0?v:""}</div>
+      <div class="wkbar" style="height:${h}px;background:${sp?"#C8960C":"#1A6B35"}33;border-top:3px solid ${sp?"var(--gold)":"var(--fg)"};width:100%"></div>
+      <div class="wklbl${sp?" sp":""}">${sp?WEEKS[w].label+"⚡":WEEKS[w].label}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderDetail(seller,g,mode){
+  // mode: "week" usa curW; "acu" usa acumulado hasta SEM_DATOS-1
+  const acu=mode==="acu";
+  const dprods=DATA.products.map(p=>{
+    let sold,obj;
+    if(acu){sold=0;obj=0;for(let w=0;w<SEM_DATOS;w++){sold+=DATA.sales[seller][p.id][w];obj+=DATA.objectives[seller][p.id][w];}}
+    else{sold=DATA.sales[seller][p.id][curW];obj=DATA.objectives[seller][p.id][curW];}
+    const pct=obj?Math.min(Math.round(sold/obj*100),100):0;
+    return `<div class="dprod">
+      <div class="dn" style="color:${p.color}">${p.name}</div>
+      <div class="ds"><span>Obj: ${obj} u.</span><span>Vendido: ${sold} u.</span></div>
+      <div class="dt"><div class="df" style="width:${pct}%;background:${p.color}"></div></div>
+      <div class="dg" style="color:${p.color}">+${g[p.id]} goles</div>
+    </div>`;
+  }).join("");
+  // 7ma subtarjeta: Bonus Track con desglose por acción
+  const btVal=g.bt||0;
+  const desglose=acu?bonusDesgloseCum(seller,SEM_DATOS-1):bonusDesglose(seller,curW);
+  let btDetalle="";
+  if(desglose.length){
+    btDetalle=`<div class="bt-lines">`+desglose.map(d=>
+      `<div class="bt-line"><span>${d.accion} <b>×${d.cantidad}</b></span><span class="bt-g">+${d.goles}</span></div>`
+    ).join("")+`</div>`;
+  }else{
+    btDetalle=`<div class="bt-empty">Sin acciones bonus ${acu?"acumuladas":"esta semana"}</div>`;
+  }
+  const btCard=`<div class="dprod btcard">
+    <div class="dn" style="color:var(--gold3)">⚡ Bonus Track</div>
+    ${btDetalle}
+    <div class="dg" style="color:var(--gold3)">+${btVal} goles</div>
+  </div>`;
+  return `<div class="dgrid">${dprods}${btCard}</div>
+    <div class="wkrow"><h4>Goles por semana</h4><div class="wkbars">${renderWeekBars(seller)}</div></div>`;
+}
+
+function render(){
+  const rk=buildRanking(curW,curF);
+  updateStats(curW);
+  document.getElementById("semTitle").textContent=WEEKS[curW].label+" · "+WEEKS[curW].dates.replace(/&#8211;/g,"–");
+
+  document.getElementById("rankList").innerHTML=rk.map((r,i)=>{
+    const pos=i+1;
+    const tiene=r.goles.total>0;
+    const medals=["🥇","🥈","🥉"];
+    const badge=(pos<=3&&tiene)
+      ?`<div class="pbadge" style="font-size:20px">${medals[pos-1]}</div>`
+      :`<div class="pbadge pn">${pos}</div>`;
+    const cls=tiene?pClass(pos):"";
+    const dg=r.goles[curF];
+    const lbl=curF==="total"?"goles":DATA.products.find(p=>p.id===curF).short;
+    return `<div class="sc ${cls}" id="card${r.idx}" onclick="toggle(${r.idx})">
+      <div class="sc-row">
+        ${badge}
+        <div><div class="sname">${r.seller}</div><div class="szone">${r.zone}</div></div>
+        <div class="pills">${renderPills(r.goles)}</div>
+        <div class="gtotal"><div class="gnum">${dg}</div><div class="glabel">${lbl}</div></div>
+        <div class="chev">&#8964;</div>
+      </div>
+      <div class="detail" id="det${r.idx}">${renderDetail(r.seller,r.goles,"week")}</div>
+    </div>`;
+  }).join("");
+
+  if(openIdx!==null){
+    const c=document.getElementById("card"+openIdx);
+    if(c)c.classList.add("open");
+  }
+  renderAcu();
+  renderHeat();
+}
+
+// ── RANKING ACUMULADO ──
+function renderAcu(){
+  const rk=buildRankingAcu(SEM_DATOS-1,curWA);
+  document.getElementById("rankAcu").innerHTML=rk.map((r,i)=>{
+    const pos=i+1;
+    const tiene=r.goles.total>0;
+    const medals=["🥇","🥈","🥉"];
+    const badge=(pos<=3&&tiene)
+      ?`<div class="pbadge" style="font-size:20px">${medals[pos-1]}</div>`
+      :`<div class="pbadge pn">${pos}</div>`;
+    const cls=tiene?pClass(pos):"";
+    const dg=r.goles[curWA];
+    const lbl=curWA==="total"?"goles":DATA.products.find(p=>p.id===curWA).short;
+    return `<div class="sc ${cls}" id="acard${r.idx}" onclick="toggleA(${r.idx})">
+      <div class="sc-row">
+        ${badge}
+        <div><div class="sname">${r.seller}</div><div class="szone">${r.zone}</div></div>
+        <div class="pills">${renderPills(r.goles)}</div>
+        <div class="gtotal"><div class="gnum">${dg}</div><div class="glabel">${lbl}</div></div>
+        <div class="chev">&#8964;</div>
+      </div>
+      <div class="detail" id="adet${r.idx}">${renderDetail(r.seller,r.goles,"acu")}</div>
+    </div>`;
+  }).join("");
+  if(openIdxA!==null){const c=document.getElementById("acard"+openIdxA);if(c)c.classList.add("open");}
+}
+function toggleA(idx){
+  const c=document.getElementById("acard"+idx);
+  if(openIdxA===idx){c.classList.remove("open");openIdxA=null;}
+  else{if(openIdxA!==null){const p=document.getElementById("acard"+openIdxA);if(p)p.classList.remove("open");}c.classList.add("open");openIdxA=idx;}
+}
+function setFA(f,btn){curWA=f;document.querySelectorAll("#fAcu .fbtn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");renderAcu();}
+
+// ── SEGUIMIENTO heatmap ──
+function heatCell(d){
+  return `<td class="hcell" style="background:${heatColor(d.p)}">${d.p}%<span class="rvo">Real ${fmtU(d.s)} / Obj ${fmtU(d.o)}</span></td>`;
+}
+function renderHeat(){
+  const cols=["total",...DATA.products.map(p=>p.id)];
+  const colNames=["TOTAL",...DATA.products.map(p=>p.short)];
+  let html=`<thead><tr><th class="rowhead">Zona / Vendedor</th>`+colNames.map(n=>`<th>${n}</th>`).join("")+`</tr></thead><tbody>`;
+  // fila TOTAL CEDISUR
+  html+=`<tr class="hrow-total"><td class="tname">🏆 TOTAL CEDISUR</td>`+cols.map(c=>{const d=segTotalCedisur(c);return `<td class="hcell z" style="background:${heatColor(d.p)}">${d.p}%<span class="rvo">Real ${fmtU(d.s)} / Obj ${fmtU(d.o)}</span></td>`;}).join("")+`</tr>`;
+  ZONE_LIST.forEach(z=>{
+    const ab=openZonesSeg[z];
+    html+=`<tr class="hrow-zone ${ab?'':'col'}" onclick="tgZona('${z}')"><td class="zname"><span class="zchev">&#9660;</span>${z}</td>`+
+      cols.map(c=>{const d=segRVO(z,c,true);return `<td class="hcell z" style="background:${heatColor(d.p)}">${d.p}%<span class="rvo">Real ${fmtU(d.s)} / Obj ${fmtU(d.o)}</span></td>`;}).join("")+`</tr>`;
+    DATA.sellers.forEach(s=>{if(DATA._zonaByName[s]!==z)return;
+      html+=`<tr class="hrow-seller ${ab?'show':''}"><td class="sname-c">${s}</td>`+
+        cols.map(c=>{const d=segRVO(s,c,false);return heatCell(d);}).join("")+`</tr>`;
+    });
+  });
+  html+=`</tbody>`;
+  document.getElementById("heatTbl").innerHTML=html;
+  renderHeatCards();
+}
+// Vista mobile: cards apiladas por zona
+function renderHeatCards(){
+  const cont=document.getElementById("heatCards");
+  if(!cont)return;
+  const marcas=DATA.products;
+  let html=`<div class="hcard hcard-total"><div class="hc-head">🏆 TOTAL CEDISUR</div><div class="hc-rows">`;
+  const dt=segTotalCedisur("total");
+  html+=`<div class="hc-row hc-tot-row"><span class="hc-mk">Total</span><span class="hc-pct" style="background:${heatColor(dt.p)}">${dt.p}%</span><span class="hc-rvo">${fmtU(dt.s)} / ${fmtU(dt.o)}</span></div>`;
+  marcas.forEach(p=>{const d=segTotalCedisur(p.id);html+=`<div class="hc-row"><span class="hc-mk">${p.short}</span><span class="hc-pct" style="background:${heatColor(d.p)}">${d.p}%</span><span class="hc-rvo">${fmtU(d.s)} / ${fmtU(d.o)}</span></div>`;});
+  html+=`</div></div>`;
+  // una card por zona
+  ZONE_LIST.forEach(z=>{
+    const dz=segRVO(z,"total",true);
+    const nVend=DATA.sellers.filter(s=>DATA._zonaByName[s]===z).length;
+    html+=`<div class="hcard"><div class="hc-head zonehead" onclick="tgZonaCard(this)"><span>${z}</span><span class="hc-pct" style="background:${heatColor(dz.p)}">${dz.p}%</span></div><div class="hc-rows">`;
+    marcas.forEach(p=>{const d=segRVO(z,p.id,true);html+=`<div class="hc-row"><span class="hc-mk">${p.short}</span><span class="hc-pct" style="background:${heatColor(d.p)}">${d.p}%</span><span class="hc-rvo">${fmtU(d.s)} / ${fmtU(d.o)}</span></div>`;});
+    // botón ver vendedores
+    html+=`<div class="hc-vermas" onclick="tgZonaCard(this)"><span class="vm-txt">Ver ${nVend} vendedores</span><span class="vm-chv">&#9662;</span></div>`;
+    html+=`<div class="hc-sellers">`;
+    DATA.sellers.forEach(s=>{if(DATA._zonaByName[s]!==z)return;
+      const dsv=segRVO(s,"total",false);
+      html+=`<div class="hc-row hc-seller"><span class="hc-mk">${s}</span><span class="hc-pct" style="background:${heatColor(dsv.p)}">${dsv.p}%</span><span class="hc-rvo">${fmtU(dsv.s)} / ${fmtU(dsv.o)}</span></div>`;
+    });
+    html+=`</div></div></div>`;
+  });
+  cont.innerHTML=html;
+}
+function tgZonaCard(el){el.closest(".hcard").classList.toggle("open");}
+function tgZona(z){openZonesSeg[z]=!openZonesSeg[z];renderHeat();}
+function setSegPer(p,btn){segPer=p;document.querySelectorAll("#segPer .fbtn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");renderHeat();}
+function setSegAp(a,btn){document.querySelectorAll("#segAp .fbtn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");ZONE_LIST.forEach(z=>openZonesSeg[z]=(a==="vend"));renderHeat();}
+
+function toggle(idx){
+  const c=document.getElementById("card"+idx);
+  if(openIdx===idx){c.classList.remove("open");openIdx=null;}
+  else{
+    if(openIdx!==null){const p=document.getElementById("card"+openIdx);if(p)p.classList.remove("open");}
+    c.classList.add("open");openIdx=idx;
+  }
+}
+
+function setW(w,btn){
+  curW=w;openIdx=null;
+  document.querySelectorAll(".wbtn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  render();
+}
+
+function setF(f,btn){
+  curF=f;
+  document.querySelectorAll("#tab-ranking .fbtn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  render();
+}
+
+function showTab(name,btn){
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tbtn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("tab-"+name).classList.add("active");
+  btn.classList.add("active");
+}
+
+// ── DEMO: init con datos mock ya embebidos en DATA ──
+const SEM_ESPECIALES=[3,4,8]; // S4, S5 y S9 llevan ⚡
+function buildSelectors(){
+  const ws=document.getElementById("weekSel")||document.querySelector(".week-sel");
+  if(ws){
+    ws.innerHTML='<span>Semana</span>'+WEEKS.map((w,i)=>{
+      const esp=SEM_ESPECIALES.includes(i);
+      return `<button class="wbtn ${esp?"spec ":""}${i===curW?"active":""}" onclick="setW(${i},this)">${w.label}${esp?"⚡":""}</button>`;
+    }).join("");
+  }
+  const pers=[["acu","Acumulado"],...WEEKS.slice(0,SEM_DATOS).map((w,i)=>[String(i),w.label])];
+  document.getElementById("segPer").innerHTML=pers.map(([id,n])=>`<button class="fbtn ${id==="acu"?"active":""}" onclick="setSegPer('${id}',this)">${n}</button>`).join("");
+}
+buildSelectors();
+renderBonusTrack();
+
+// ══════════════════════════════════════════════════════════════════════════
+// CONEXIÓN A GOOGLE SHEETS (producción)
+// ══════════════════════════════════════════════════════════════════════════
+
+// Parser de una fila CSV que respeta comas dentro de comillas
+function csvRow(row){
+  const res=[];let cur='';let inQ=false;
+  for(let i=0;i<row.length;i++){
+    const c=row[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){res.push(cur);cur='';}
+    else{cur+=c;}
+  }
+  res.push(cur);return res;
+}
+// Limpia separadores de miles. En este tablero todos los valores (unidades
+// vendidas, goles por unidad, cantidades) son ENTEROS, así que tanto "." como
+// "," se tratan como separadores de miles: "1.200"→1200, "1,200"→1200.
+function numCol(v){
+  let s=String(v==null?'':v).trim().replace(/"/g,'');
+  if(s==='') return 0;
+  s=s.replace(/[.,]/g,'');           // quitar separadores de miles
+  const n=parseInt(s,10);
+  return isNaN(n)?0:n;
+}
+// Recalcula hasta qué semana hay ventas cargadas (última semana con alguna venta > 0)
+function recalcSemDatos(){
+  let ultima=1;
+  for(const s of DATA.sellers){
+    for(const p of DATA.products){
+      const arr=DATA.sales[s][p.id]||[];
+      for(let w=0;w<9;w++){ if((arr[w]||0)>0 && (w+1)>ultima) ultima=w+1; }
+    }
+  }
+  return ultima;
+}
+
+async function fetchSheets(){
+  const btn=document.querySelector('.btn-actualizar');
+  if(btn){btn.disabled=true;btn.textContent='Cargando...';}
+  try{
+    const [rV,rCfg,rBt]=await Promise.all([
+      fetch(URL_VENTAS_MUNDIAL),
+      fetch(URL_BONUS_CONFIG),
+      fetch(URL_BONUS_TRACK),
+    ]);
+
+    // ── VENTAS_MUNDIAL → DATA.sales ──────────────────────────────────────────
+    // Estructura: VENDEDOR | MARCA_ID | MARCA_NOMBRE | SEM_1 … SEM_9
+    if(rV.ok){
+      // reiniciar a ceros
+      DATA.sellers.forEach(s=>{
+        DATA.sales[s]={};
+        DATA.products.forEach(p=>{ DATA.sales[s][p.id]=[0,0,0,0,0,0,0,0,0]; });
+      });
+      (await rV.text()).trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
+        const c=csvRow(r);
+        const seller=(c[0]||'').trim();
+        const pid=(c[1]||'').trim();
+        if(!seller||!pid||!DATA.sales[seller])return;
+        DATA.sales[seller][pid]=[0,1,2,3,4,5,6,7,8].map(i=>numCol(c[3+i]));
+      });
+    }
+
+    // ── BONUS_TRACK_CONFIG → DATA.bonusConfig ────────────────────────────────
+    // Estructura: ACCION | GOLES_POR_UNIDAD | SEMANAS | DESCRIPCION
+    if(rCfg.ok){
+      const arr=[];
+      (await rCfg.text()).trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
+        const c=csvRow(r);
+        const accion=(c[0]||'').trim();
+        if(!accion)return;
+        const semanas=String(c[2]||'').replace(/"/g,'').split(/[,;]/).map(x=>parseInt(x.trim())).filter(x=>!isNaN(x));
+        arr.push({
+          accion,
+          golesPorUnidad:numCol(c[1]),
+          semanas,
+          desc:(c[3]||'').trim(),
+        });
+      });
+      DATA.bonusConfig=arr;
+    }
+
+    // ── BONUS_TRACK → DATA.bonusCarga ────────────────────────────────────────
+    // Estructura: VENDEDOR | ACCION | SEMANA | CANTIDAD
+    if(rBt.ok){
+      const arr=[];
+      (await rBt.text()).trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
+        const c=csvRow(r);
+        const vendedor=(c[0]||'').trim();
+        const accion=(c[1]||'').trim();
+        const semana=parseInt(String(c[2]||'').trim());
+        if(!vendedor||!accion||isNaN(semana))return;
+        arr.push({vendedor,accion,semana,cantidad:numCol(c[3])});
+      });
+      DATA.bonusCarga=arr;
+    }
+
+    // ── Reconstruir motor de bonus (goles por unidad de cada acción) ─────────
+    Object.keys(_accGoles).forEach(k=>delete _accGoles[k]);
+    (DATA.bonusConfig||[]).forEach(a=>{_accGoles[a.accion]=a.golesPorUnidad;});
+
+    // ── Recalcular semana con datos y reposicionar la vista ──────────────────
+    SEM_DATOS=recalcSemDatos();
+    curW=SEM_DATOS-1;
+    curWA="total";
+
+    // ── Repintar selectores (semanas del header + período de seguimiento) y tablero
+    buildSelectors();
+    renderBonusTrack();
+
+    const lu=document.getElementById('last-updated');
+    if(lu)lu.textContent='Actualizado: '+new Date().toLocaleString('es-AR');
+
+    render();
+  }catch(e){
+    console.error('Error al cargar datos de Sheets:',e);
+    render(); // render con lo que haya
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='🔄 Actualizar';}
+  }
+}
+
+fetchSheets();
+
+function renderBonusTrack(){
+  const acciones=DATA.bonusConfig||[];
+  // texto de semanas activas
+  const semanasSet=new Set();
+  acciones.forEach(a=>(a.semanas||[]).forEach(s=>semanasSet.add(s)));
+  const semanas=[...semanasSet].sort((x,y)=>x-y);
+  const txtEl=document.getElementById("btActiveTxt");
+  if(txtEl){
+    if(semanas.length){
+      const labels=semanas.map(s=>"S"+s).join(" y ");
+      txtEl.innerHTML=`Actualmente hay <strong>${acciones.length} ${acciones.length===1?"acción activa":"acciones activas"}</strong>, vigentes en las semanas <strong>${labels}</strong>.`;
+    }else{
+      txtEl.textContent="No hay acciones bonus configuradas por el momento.";
+    }
+  }
+  // tarjetas de acciones bonificables
+  const cont=document.getElementById("btCats");
+  if(cont){
+    if(!acciones.length){
+      cont.innerHTML=`<p style="color:var(--muted);font-size:13px">No hay acciones cargadas en la hoja BONUS_TRACK.</p>`;
+    }else{
+      cont.innerHTML=acciones.map(a=>{
+        const sem=(a.semanas||[]).map(s=>"S"+s).join(" · ");
+        return `<div class="btcat">
+          <div class="btcat-top">
+            <span class="btcat-name">${a.accion}</span>
+            <span class="btcat-g">+${a.golesPorUnidad}<small>c/u</small></span>
+          </div>
+          <div class="btcat-meta">
+            <span class="btcat-sem">⚡ ${sem||"—"}</span>
+            ${a.desc?`<span class="btcat-desc">${a.desc}</span>`:""}
+          </div>
+        </div>`;
+      }).join("");
+    }
+  }
+}
+</script>
+</body>
+</html>

@@ -47,6 +47,14 @@
   .pin-key.enter { background: var(--sup); }
   .pin-key.enter:active { background: #0d5f58; }
 
+  /* PANTALLA SELECCIÓN DE ZONA */
+  .zona-screen { position: fixed; inset: 0; background: var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; z-index: 510; }
+  .zona-screen.hidden { display: none; }
+  .zona-list { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; margin-top: 1.5rem; }
+  .zona-btn { padding: 1rem 1.25rem; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: background 0.12s; -webkit-tap-highlight-color: transparent; display: flex; align-items: center; justify-content: space-between; }
+  .zona-btn:active { background: rgba(255,255,255,0.22); }
+  .zona-btn svg { width: 16px; height: 16px; opacity: 0.6; }
+
   /* HEADER */
   .header { background: var(--accent); padding: 1.25rem 1.25rem 1rem; position: sticky; top: 0; z-index: 100; }
   .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
@@ -99,6 +107,16 @@
   .canal-tag.ecom { background: #CCE7F5; color: #075985; }
   .canal-tag.telefonico { background: #E9D8FB; color: #6D28D9; }
 
+  .client-card { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .card-detail { display: none; padding: 0 1rem 1rem 1rem; }
+  .client-card.expanded .card-detail { display: block; }
+  .detail-divider { height: 1px; background: rgba(0,0,0,0.08); margin-bottom: 0.75rem; }
+  .detail-row { margin-bottom: 0.5rem; }
+  .detail-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); margin-bottom: 2px; }
+  .detail-value { font-size: 13px; color: var(--text); line-height: 1.4; }
+  .btn-maps { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 0.75rem; font-size: 13px; font-weight: 600; color: var(--accent); background: var(--accent-light); border: none; padding: 9px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; font-family: 'DM Sans', sans-serif; }
+  .btn-maps svg { width: 13px; height: 13px; }
+
   .empty { text-align: center; padding: 3rem 1.5rem; color: var(--text3); }
   .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
   .empty-text { font-size: 15px; }
@@ -107,11 +125,19 @@
 </head>
 <body>
 
-<!-- PANTALLA DE PIN -->
-<div class="pin-screen" id="pin-screen">
+<!-- PANTALLA DE SELECCIÓN DE ZONA -->
+<div class="zona-screen" id="zona-screen">
   <div class="pin-logo">Cedisur</div>
   <div class="pin-title">Panel de Supervisor</div>
-  <div class="pin-sub">Ingresá tu PIN de acceso</div>
+  <div class="pin-sub">Seleccioná tu zona</div>
+  <div class="zona-list" id="zona-list"></div>
+</div>
+
+<!-- PANTALLA DE PIN -->
+<div class="pin-screen hidden" id="pin-screen">
+  <div class="pin-logo">Cedisur</div>
+  <div class="pin-title">Panel de Supervisor</div>
+  <div class="pin-sub" id="pin-sub">Ingresá tu PIN de acceso</div>
   <div class="pin-dots" id="pin-dots"></div>
   <div class="pin-error" id="pin-error"></div>
   <div class="pin-pad" id="pin-pad"></div>
@@ -152,6 +178,7 @@ let vendedoresZona = [];
 let selectedVendedor = '';
 let selectedDay = '';
 let pinActual = '';
+let zonaSeleccionada = '';
 
 // ── UTILIDADES ────────────────────────────────────────────────────────────────
 function norm(s) {
@@ -192,15 +219,54 @@ function canalLabel(clase) {
 function todayDayName() {
   return ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'][new Date().getDay()];
 }
+function mapsUrl(c) {
+  const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
+  if (tieneCoords) return 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'];
+  return 'https://maps.google.com/?q=' + encodeURIComponent((c['DIRECCION']||'') + ', ' + (c['LOCALIDAD']||'') + ', Argentina');
+}
+
+// ── SELECCIÓN DE ZONA ─────────────────────────────────────────────────────────
+function renderZonas() {
+  const cont = document.getElementById('zona-list');
+  cont.innerHTML = '';
+  ZONAS_VALIDAS.forEach(function(z) {
+    const btn = document.createElement('button');
+    btn.className = 'zona-btn';
+    btn.innerHTML = '<span>' + z + '</span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg>';
+    btn.onclick = function() { seleccionarZona(z); };
+    cont.appendChild(btn);
+  });
+}
+
+function seleccionarZona(z) {
+  zonaSeleccionada = z;
+  pinActual = '';
+  document.getElementById('pin-sub').textContent = 'Zona ' + z + ' · Ingresá tu PIN';
+  document.getElementById('zona-screen').classList.add('hidden');
+  document.getElementById('pin-screen').classList.remove('hidden');
+  renderPinPad();
+}
+
+function volverAZonas() {
+  pinActual = '';
+  document.getElementById('pin-error').textContent = '';
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('zona-screen').classList.remove('hidden');
+}
 
 // ── PIN ───────────────────────────────────────────────────────────────────────
 function renderPinPad() {
   const pad = document.getElementById('pin-pad');
   const keys = ['1','2','3','4','5','6','7','8','9','borrar','0','enter'];
+  // nota: 'volver' se accede con el botón Salir-a-zonas del encabezado de PIN
   pad.innerHTML = '';
   keys.forEach(function(k) {
     const btn = document.createElement('button');
-    if (k === 'borrar') {
+    if (k === 'volver') {
+      btn.className = 'pin-key action';
+      btn.innerHTML = '‹ Zona';
+      btn.onclick = volverAZonas;
+    } else if (k === 'borrar') {
       btn.className = 'pin-key action';
       btn.innerHTML = '⌫';
       btn.onclick = pinBorrar;
@@ -245,10 +311,10 @@ function pinConfirmar() {
     return;
   }
   const sup = supervisores.find(function(s) {
-    return String(s['PIN']).trim() === pinActual;
+    return String(s['PIN']).trim() === pinActual && norm(s['Zona']) === norm(zonaSeleccionada);
   });
   if (!sup) {
-    document.getElementById('pin-error').textContent = 'PIN incorrecto';
+    document.getElementById('pin-error').textContent = 'PIN incorrecto para esta zona';
     pinActual = '';
     renderPinDots();
     return;
@@ -262,10 +328,11 @@ function logout() {
   pinActual = '';
   selectedVendedor = '';
   selectedDay = '';
+  zonaSeleccionada = '';
   document.getElementById('header').style.display = 'none';
   document.getElementById('app-content').innerHTML = '';
-  document.getElementById('pin-screen').classList.remove('hidden');
-  renderPinDots();
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('zona-screen').classList.remove('hidden');
 }
 
 // ── SESIÓN ──────────────────────────────────────────────────────────────────────
@@ -366,15 +433,30 @@ function render() {
     const cc = canalClass(c['Canal actual (Presencial / Autogestión)']);
     const card = document.createElement('div');
     card.className = 'client-card ' + cc;
-    card.innerHTML =
-      '<div class="card-main">' +
-        '<div class="order-num">' + (c['ORDEN'] || '') + '</div>' +
-        '<div class="client-info">' +
-          '<div class="client-name">' + (c['NOMBRE COMERCIAL'] || '') + '</div>' +
-          '<div class="client-sub">' + (c['LOCALIDAD'] || '') + '</div>' +
-        '</div>' +
-        '<div class="canal-tag ' + cc + '">' + canalLabel(cc) + '</div>' +
-      '</div>';
+
+    const main = document.createElement('div');
+    main.className = 'card-main';
+    main.innerHTML =
+      '<div class="order-num">' + (c['ORDEN'] || '') + '</div>' +
+      '<div class="client-info">' +
+        '<div class="client-name">' + (c['NOMBRE COMERCIAL'] || '') + '</div>' +
+        '<div class="client-sub">' + (c['LOCALIDAD'] || '') + ' · ' + (c['CODIGO CLIENTE'] || '') + '</div>' +
+      '</div>' +
+      '<div class="canal-tag ' + cc + '">' + canalLabel(cc) + '</div>';
+
+    const detail = document.createElement('div');
+    detail.className = 'card-detail';
+    detail.innerHTML =
+      '<div class="detail-divider"></div>' +
+      '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + (c['DIRECCION'] || '—') + '</div></div>' +
+      '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + (c['CODIGO CLIENTE'] || '—') + '</div></div>' +
+      '<a class="btn-maps" href="' + mapsUrl(c) + '" target="_blank" onclick="event.stopPropagation()">' +
+      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
+      'Abrir en Maps</a>';
+
+    main.addEventListener('click', function() { card.classList.toggle('expanded'); });
+    card.appendChild(main);
+    card.appendChild(detail);
     list.appendChild(card);
   });
   content.appendChild(list);
@@ -405,10 +487,9 @@ async function cargarDatos() {
       return ZONAS_VALIDAS.indexOf(norm(c['Nombre Territorio'])) !== -1;
     });
     baseRuteo = parseCSV(rut).filter(function(r) { return r['NOMBRE COMERCIAL']; });
-    renderPinPad();
+    renderZonas();
   } catch (e) {
-    document.getElementById('pin-error').textContent = 'Error al cargar datos. Recargá la página.';
-    renderPinPad();
+    document.getElementById('zona-screen').innerHTML = '<div class="pin-title">Error al cargar datos</div><div class="pin-sub">Recargá la página</div>';
   }
 }
 

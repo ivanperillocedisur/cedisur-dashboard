@@ -1,694 +1,620 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel de Supervisor</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #F5F3EF;
-    --surface: #FFFFFF;
-    --border: #D8D4CC;
-    --text: #1A1814;
-    --text2: #6B6760;
-    --text3: #9E9B97;
-    --accent: #1d3a8f;
-    --accent-light: #E8EDFB;
-    --sup: #0F766E;
-    --sup-light: #F0FDFA;
-    --sup-border: #5EEAD4;
-    --card-presencial-bg: #FFF5ED;
-    --card-presencial-border: #F5C99A;
-    --card-ecom-bg: #EAF5FB;
-    --card-ecom-border: #90CDE8;
-    --card-tel-bg: #F3EEFB;
-    --card-tel-border: #C3A8E8;
-    --shadow: 0 1px 3px rgba(0,0,0,0.07);
-  }
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIGURACIÓN
+// ═══════════════════════════════════════════════════════════════════════════
+const SHEET_ID         = '1PhPlMnnFs8WVuFLmobbQBrUdsj-RCR4uY9oIlVZiZU0';
+const HOJA_SOLICITUDES = 'SOLICITUD DE MODIFICACIONES';
+const HOJA_BASE        = 'BASE RUTEO';
+const HOJA_CLIENTES    = 'BASE CLIENTES';
+const HOJA_SUPERVISORES = 'SUPERVISORES';
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 2rem; }
+const COL_BASE = {
+  CODIGO:    1,  // A
+  NOMBRE:    2,  // B — tiene fórmula
+  LOCALIDAD: 3,  // C — tiene fórmula
+  DIRECCION: 4,  // D — tiene fórmula
+  VENDEDOR:  5,  // E
+  ZONA:      6,  // F
+  ORDEN:     7,  // G
+  DIA:       8,  // H
+  LAT:       9,  // I
+  LON:       10, // J
+  CANAL:     11  // K
+};
 
-  /* PANTALLA PIN */
-  .pin-screen { position: fixed; inset: 0; background: var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; z-index: 500; }
-  .pin-screen.hidden { display: none; }
-  .pin-logo { font-size: 12px; font-weight: 700; letter-spacing: 0.15em; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-bottom: 0.5rem; }
-  .pin-title { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 0.5rem; text-align: center; }
-  .pin-sub { font-size: 14px; color: rgba(255,255,255,0.65); margin-bottom: 2.5rem; text-align: center; }
-  .pin-dots { display: flex; gap: 12px; margin-bottom: 2rem; }
-  .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); transition: all 0.15s; }
-  .pin-dot.filled { background: #fff; border-color: #fff; }
-  .pin-error { color: #FCA5A5; font-size: 13px; font-weight: 600; height: 20px; margin-bottom: 1rem; text-align: center; }
-  .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: 100%; max-width: 280px; }
-  .pin-key { aspect-ratio: 1.4; border: none; background: rgba(255,255,255,0.12); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 24px; font-weight: 500; border-radius: 14px; cursor: pointer; transition: background 0.12s; -webkit-tap-highlight-color: transparent; }
-  .pin-key:active { background: rgba(255,255,255,0.28); }
-  .pin-key.action { font-size: 14px; font-weight: 600; background: transparent; }
-  .pin-key.enter { background: var(--sup); }
-  .pin-key.enter:active { background: #0d5f58; }
+// Columnas que contienen fórmulas (índices 0-based)
+const COLS_CON_FORMULA = [1, 2, 3]; // B, C, D
 
-  /* PANTALLA SELECCIÓN DE ZONA */
-  .zona-screen { position: fixed; inset: 0; background: var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; z-index: 510; }
-  .zona-screen.hidden { display: none; }
-  .zona-list { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; margin-top: 1.5rem; }
-  .zona-btn { padding: 1rem 1.25rem; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: background 0.12s; -webkit-tap-highlight-color: transparent; display: flex; align-items: center; justify-content: space-between; }
-  .zona-btn:active { background: rgba(255,255,255,0.22); }
-  .zona-btn svg { width: 16px; height: 16px; opacity: 0.6; }
+const COL_SOL = {
+  FECHA:     1,  // A
+  HORA:      2,  // B
+  VENDEDOR:  3,  // C
+  CODIGO:    4,  // D
+  CLIENTE:   5,  // E
+  LOCALIDAD: 6,  // F
+  DIA_ACT:   7,  // G
+  TIPO:      8,  // H
+  DETALLE:   9,  // I
+  ESTADO:    10, // J
+  RESULTADO: 11  // K
+};
 
-  /* TAB SWITCHER */
-  .view-tabs { display: flex; gap: 6px; margin-top: 0.75rem; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 4px; }
-  .view-tab { flex: 1; text-align: center; padding: 7px 0; border-radius: 8px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.6); background: transparent; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-  .view-tab.active { background: #fff; color: var(--accent); }
-  .view-tab .badge-count { display: inline-block; margin-left: 5px; background: var(--sup); color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 6px; }
 
-  /* SOLICITUDES */
-  .sol-filter { padding: 0.75rem 1.25rem 0; }
-  .sol-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 8px; }
-  .sol-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
-  .sol-cliente { font-size: 14px; font-weight: 700; color: var(--text); }
-  .sol-vendedor { font-size: 11px; color: var(--text3); margin-top: 2px; }
-  .sol-tipo-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; background: #F5F0FF; color: #7C3AED; border: 1px solid #C4B5FD; padding: 3px 9px; border-radius: 20px; flex-shrink: 0; white-space: nowrap; }
-  .sol-detalle { font-size: 13px; color: var(--text2); margin-bottom: 0.75rem; line-height: 1.4; }
-  .sol-meta { font-size: 11px; color: var(--text3); margin-bottom: 0.75rem; }
-  .sol-actions { display: flex; gap: 8px; }
-  .btn-sol-aplicar { flex: 1; padding: 0.65rem; border-radius: 8px; border: none; background: var(--btn-check-color, #2D8A52); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
-  .btn-sol-rechazar { flex: 1; padding: 0.65rem; border-radius: 8px; border: 1.5px solid var(--border); background: transparent; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
-  .sol-status { font-size: 12px; font-weight: 700; text-align: center; padding: 0.6rem; border-radius: 8px; }
-  .sol-status.ok { background: #E6F7ED; color: #1F7A42; }
-  .sol-status.err { background: #FDEAEA; color: #A02020; }
-
-  /* HEADER */
-  .header { background: var(--accent); padding: 1.25rem 1.25rem 1rem; position: sticky; top: 0; z-index: 100; }
-  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-  .app-name { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: rgba(255,255,255,0.6); text-transform: uppercase; }
-  .sup-badge { font-size: 10px; font-weight: 700; color: var(--accent); background: var(--sup-border); padding: 2px 8px; border-radius: 20px; letter-spacing: 0.05em; }
-  .btn-logout { background: none; border: none; cursor: pointer; padding: 4px; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 4px; font-family: 'DM Sans', sans-serif; font-size: 12px; -webkit-tap-highlight-color: transparent; }
-  .btn-logout svg { width: 15px; height: 15px; }
-
-  .sup-info { color: #fff; }
-  .sup-nombre { font-size: 17px; font-weight: 700; }
-  .sup-zona { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 2px; }
-
-  /* SELECTOR VENDEDOR */
-  select {
-    width: 100%; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
-    color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
-    padding: 0.6rem 0.75rem; border-radius: 8px; appearance: none; -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.6)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; margin-top: 0.75rem;
-  }
-  select option { background: #1d3a8f; color: #fff; }
-  select:focus { outline: none; border-color: rgba(255,255,255,0.5); }
-
-  .days-strip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-top: 0.75rem; }
-  .days-strip::-webkit-scrollbar { display: none; }
-  .day-tab { flex-shrink: 0; padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); background: transparent; font-family: 'DM Sans', sans-serif; }
-  .day-tab.active { background: #fff; color: var(--accent); border-color: transparent; font-weight: 600; }
-
-  /* STATS */
-  .stats-bar { display: flex; gap: 8px; padding: 1rem 1.25rem 0.5rem; }
-  .stat { flex: 1; background: var(--surface); border-radius: 10px; padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: center; }
-  .stat-num { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; color: var(--text); line-height: 1.1; }
-  .stat-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
-
-  /* LISTA */
-  .list { padding: 0.5rem 1.25rem; display: flex; flex-direction: column; gap: 8px; }
-
-  .client-card { border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
-  .client-card.presencial { background: var(--card-presencial-bg); border: 1px solid var(--card-presencial-border); }
-  .client-card.ecom { background: var(--card-ecom-bg); border: 1px solid var(--card-ecom-border); }
-  .client-card.telefonico { background: var(--card-tel-bg); border: 1px solid var(--card-tel-border); }
-
-  .card-main { padding: 0.875rem 1rem; display: flex; align-items: center; gap: 10px; }
-  .order-num { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text3); min-width: 22px; }
-  .client-info { flex: 1; min-width: 0; }
-  .client-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.35; }
-  .client-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
-  .canal-tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.03em; flex-shrink: 0; }
-  .canal-tag.presencial { background: #FCE4CC; color: #B45309; }
-  .canal-tag.ecom { background: #CCE7F5; color: #075985; }
-  .canal-tag.telefonico { background: #E9D8FB; color: #6D28D9; }
-
-  .client-card { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  .card-detail { display: none; padding: 0 1rem 1rem 1rem; }
-  .client-card.expanded .card-detail { display: block; }
-  .detail-divider { height: 1px; background: rgba(0,0,0,0.08); margin-bottom: 0.75rem; }
-  .detail-row { margin-bottom: 0.5rem; }
-  .detail-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); margin-bottom: 2px; }
-  .detail-value { font-size: 13px; color: var(--text); line-height: 1.4; }
-  .btn-maps { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 0.75rem; font-size: 13px; font-weight: 600; color: var(--accent); background: var(--accent-light); border: none; padding: 9px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; font-family: 'DM Sans', sans-serif; }
-  .btn-maps svg { width: 13px; height: 13px; }
-
-  .empty { text-align: center; padding: 3rem 1.5rem; color: var(--text3); }
-  .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
-  .empty-text { font-size: 15px; }
-  .loader { text-align: center; padding: 3rem; color: var(--text3); font-size: 14px; }
-</style>
-</head>
-<body>
-
-<!-- PANTALLA DE SELECCIÓN DE ZONA -->
-<div class="zona-screen" id="zona-screen">
-  <div class="pin-logo">Cedisur</div>
-  <div class="pin-title">Panel de Supervisor</div>
-  <div class="pin-sub">Seleccioná tu zona</div>
-  <div class="zona-list" id="zona-list"></div>
-</div>
-
-<!-- PANTALLA DE PIN -->
-<div class="pin-screen hidden" id="pin-screen">
-  <div class="pin-logo">Cedisur</div>
-  <div class="pin-title">Panel de Supervisor</div>
-  <div class="pin-sub" id="pin-sub">Ingresá tu PIN de acceso</div>
-  <div class="pin-dots" id="pin-dots"></div>
-  <div class="pin-error" id="pin-error"></div>
-  <div class="pin-pad" id="pin-pad"></div>
-</div>
-
-<!-- HEADER (oculto hasta login) -->
-<div class="header" id="header" style="display:none">
-  <div class="header-top">
-    <span class="app-name">Ruteo · <span class="sup-badge">Supervisor</span></span>
-    <button class="btn-logout" onclick="logout()">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2H3v12h3M10 11l3-3-3-3M13 8H6"/></svg>
-      Salir
-    </button>
-  </div>
-  <div class="sup-info">
-    <div class="sup-nombre" id="sup-nombre">—</div>
-    <div class="sup-zona" id="sup-zona">—</div>
-  </div>
-  <div class="view-tabs">
-    <button class="view-tab active" id="tab-ruteo" onclick="cambiarVista('ruteo')">Ruteo</button>
-    <button class="view-tab" id="tab-solicitudes" onclick="cambiarVista('solicitudes')">Solicitudes<span class="badge-count" id="sol-badge" style="display:none">0</span></button>
-  </div>
-  <div id="ruteo-controls">
-    <select id="vendedor-select"></select>
-    <div class="days-strip" id="days-strip"></div>
-  </div>
-  <div id="sol-controls" style="display:none">
-    <select id="sol-vendedor-filter"></select>
-  </div>
-</div>
-
-<div id="app-content"></div>
-
-<script>
-const URL_SUPERVISORES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1122468659&single=true&output=csv';
-const URL_BASE_CLIENTES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1835040316&single=true&output=csv';
-const URL_BASE_RUTEO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1071989663&single=true&output=csv';
-const URL_SOLICITUDES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=431847994&single=true&output=csv';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNwnkqjWtkwVFZQMtqGCmKIgofMC0VUor35pllpNogNzU4wDTOesxA3H57qkmwDg3n7A/exec';
-
-const ZONAS_VALIDAS = ['RIO NEGRO','NEUQUEN','CORDILLERA SUR','CORDILLERA NORTE','ATLANTICA'];
-const DAYS_ORDER = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO'];
-
-let supervisores = [];
-let baseClientes = [];
-let baseRuteo = [];
-let supActual = null;
-let vendedoresZona = [];
-let selectedVendedor = '';
-let selectedDay = '';
-let pinActual = '';
-let zonaSeleccionada = '';
-let viewMode = 'ruteo';
-let solicitudes = [];
-let solVendedorFiltro = '';
-let solProcesadas = {}; // clave -> 'aplicada' | 'rechazada' (para no depender del refresco del CSV)
-
-// ── UTILIDADES ────────────────────────────────────────────────────────────────
-function norm(s) {
-  return String(s || '').trim().toUpperCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+// ═══════════════════════════════════════════════════════════════════════════
+// MENÚ
+// ═══════════════════════════════════════════════════════════════════════════
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('🛠 Ruteo')
+    .addItem('▶ Completar / Corregir ORDEN', 'completarOrden')
+    .addSeparator()
+    .addItem('▶ Aplicar solicitudes pendientes', 'aplicarSolicitudesPendientes')
+    .addToUi();
 }
 
-function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(function(h) { return h.trim().replace(/"/g,''); });
-  return lines.slice(1).map(function(line) {
-    const vals = [];
-    let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') { inQ = !inQ; continue; }
-      if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; continue; }
-      cur += c;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FUNCIÓN 1 — Completar / Corregir ORDEN (original sin cambios)
+// ═══════════════════════════════════════════════════════════════════════════
+function completarOrden() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('BASE RUTEO');
+
+  if (!sheet) {
+    SpreadsheetApp.getUi().alert('No se encontró la hoja "BASE RUTEO".');
+    return;
+  }
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    SpreadsheetApp.getUi().alert('No hay datos en la hoja.');
+    return;
+  }
+
+  var totalRows = lastRow - 1;
+  var colG = sheet.getRange(2, 7, totalRows, 1).getValues();
+  var colH = sheet.getRange(2, 8, totalRows, 1).getValues();
+
+  var newG = [];
+  var counter = 0;
+  var prevH = null;
+  var cambiadas = 0;
+
+  for (var i = 0; i < totalRows; i++) {
+    var hVal = colH[i][0];
+    var gActual = colG[i][0];
+
+    if (hVal === '' || hVal === null || hVal === undefined) {
+      newG.push([gActual]);
+      continue;
     }
-    vals.push(cur.trim());
-    const obj = {};
-    headers.forEach(function(h, i) { obj[h] = vals[i] || ''; });
-    return obj;
-  });
-}
 
-function canalClass(canal) {
-  const c = norm(canal).toLowerCase();
-  if (c.includes('ecom') || c.includes('auto')) return 'ecom';
-  if (c.includes('telef')) return 'telefonico';
-  return 'presencial';
-}
-function canalLabel(clase) {
-  if (clase === 'ecom') return 'Ecommerce';
-  if (clase === 'telefonico') return 'Telefónico';
-  return 'Presencial';
-}
-function todayDayName() {
-  return ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'][new Date().getDay()];
-}
-function normTokens(s) {
-  return norm(s).split(' ').filter(Boolean).sort().join(' ');
-}
-function solicitudKey(s) {
-  return [s['FECHA'], s['HORA'], s['COD. CLIENTE'], normTokens(s['VENDEDOR'])].join('|');
-}
-function mapsUrl(c) {
-  const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
-  if (tieneCoords) return 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'];
-  return 'https://maps.google.com/?q=' + encodeURIComponent((c['DIRECCION']||'') + ', ' + (c['LOCALIDAD']||'') + ', Argentina');
-}
-
-// ── SELECCIÓN DE ZONA ─────────────────────────────────────────────────────────
-function renderZonas() {
-  const cont = document.getElementById('zona-list');
-  cont.innerHTML = '';
-  ZONAS_VALIDAS.forEach(function(z) {
-    const btn = document.createElement('button');
-    btn.className = 'zona-btn';
-    btn.innerHTML = '<span>' + z + '</span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg>';
-    btn.onclick = function() { seleccionarZona(z); };
-    cont.appendChild(btn);
-  });
-}
-
-function seleccionarZona(z) {
-  zonaSeleccionada = z;
-  pinActual = '';
-  document.getElementById('pin-sub').textContent = 'Zona ' + z + ' · Ingresá tu PIN';
-  document.getElementById('zona-screen').classList.add('hidden');
-  document.getElementById('pin-screen').classList.remove('hidden');
-  renderPinPad();
-}
-
-function volverAZonas() {
-  pinActual = '';
-  document.getElementById('pin-error').textContent = '';
-  document.getElementById('pin-screen').classList.add('hidden');
-  document.getElementById('zona-screen').classList.remove('hidden');
-}
-
-// ── PIN ───────────────────────────────────────────────────────────────────────
-function renderPinPad() {
-  const pad = document.getElementById('pin-pad');
-  const keys = ['1','2','3','4','5','6','7','8','9','borrar','0','enter'];
-  // nota: 'volver' se accede con el botón Salir-a-zonas del encabezado de PIN
-  pad.innerHTML = '';
-  keys.forEach(function(k) {
-    const btn = document.createElement('button');
-    if (k === 'volver') {
-      btn.className = 'pin-key action';
-      btn.innerHTML = '‹ Zona';
-      btn.onclick = volverAZonas;
-    } else if (k === 'borrar') {
-      btn.className = 'pin-key action';
-      btn.innerHTML = '⌫';
-      btn.onclick = pinBorrar;
-    } else if (k === 'enter') {
-      btn.className = 'pin-key enter';
-      btn.innerHTML = '<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M4 10l4 4 8-8"/></svg>';
-      btn.onclick = pinConfirmar;
+    if (hVal !== prevH) {
+      counter = 1;
     } else {
-      btn.className = 'pin-key';
-      btn.textContent = k;
-      btn.onclick = function() { pinAgregar(k); };
+      counter++;
     }
-    pad.appendChild(btn);
-  });
-  renderPinDots();
-}
 
-function renderPinDots() {
-  const dots = document.getElementById('pin-dots');
-  dots.innerHTML = '';
-  const len = Math.max(pinActual.length, 4);
-  for (let i = 0; i < len; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'pin-dot' + (i < pinActual.length ? ' filled' : '');
-    dots.appendChild(dot);
-  }
-}
-
-function pinAgregar(n) {
-  if (pinActual.length >= 6) return;
-  pinActual += n;
-  document.getElementById('pin-error').textContent = '';
-  renderPinDots();
-}
-function pinBorrar() {
-  pinActual = pinActual.slice(0, -1);
-  renderPinDots();
-}
-function pinConfirmar() {
-  if (pinActual.length < 4) {
-    document.getElementById('pin-error').textContent = 'El PIN debe tener al menos 4 dígitos';
-    return;
-  }
-  const sup = supervisores.find(function(s) {
-    return String(s['PIN']).trim() === pinActual && norm(s['Zona']) === norm(zonaSeleccionada);
-  });
-  if (!sup) {
-    document.getElementById('pin-error').textContent = 'PIN incorrecto para esta zona';
-    pinActual = '';
-    renderPinDots();
-    return;
-  }
-  supActual = sup;
-  iniciarSesion();
-}
-
-function logout() {
-  supActual = null;
-  pinActual = '';
-  selectedVendedor = '';
-  selectedDay = '';
-  zonaSeleccionada = '';
-  viewMode = 'ruteo';
-  solVendedorFiltro = '';
-  document.getElementById('header').style.display = 'none';
-  document.getElementById('app-content').innerHTML = '';
-  document.getElementById('pin-screen').classList.add('hidden');
-  document.getElementById('zona-screen').classList.remove('hidden');
-}
-
-// ── SESIÓN ──────────────────────────────────────────────────────────────────────
-function iniciarSesion() {
-  const zona = norm(supActual['Zona']);
-  document.getElementById('sup-nombre').textContent = supActual['Nombre'] || 'Supervisor';
-  document.getElementById('sup-zona').textContent = 'Zona: ' + (supActual['Zona'] || '—');
-
-  // Vendedores de la zona desde BASE CLIENTES
-  const set = {};
-  vendedoresZona = [];
-  baseClientes.forEach(function(c) {
-    if (norm(c['Nombre Territorio']) === zona) {
-      const v = (c['Vendedor'] || '').trim();
-      if (v && !set[v]) { set[v] = true; vendedoresZona.push(v); }
-    }
-  });
-  vendedoresZona.sort();
-
-  const sel = document.getElementById('vendedor-select');
-  sel.innerHTML = '<option value="">— Seleccioná un vendedor —</option>';
-  vendedoresZona.forEach(function(v) {
-    const opt = document.createElement('option');
-    opt.value = v; opt.textContent = v;
-    sel.appendChild(opt);
-  });
-  sel.onchange = function() { selectedVendedor = sel.value; selectedDay = ''; render(); };
-
-  renderSolFiltro();
-  actualizarBadgeSolicitudes();
-
-  document.getElementById('pin-screen').classList.add('hidden');
-  document.getElementById('header').style.display = 'block';
-  cambiarVista('ruteo');
-}
-
-// ── VISTAS (Ruteo / Solicitudes) ───────────────────────────────────────────────
-function cambiarVista(v) {
-  viewMode = v;
-  document.getElementById('tab-ruteo').classList.toggle('active', v === 'ruteo');
-  document.getElementById('tab-solicitudes').classList.toggle('active', v === 'solicitudes');
-  document.getElementById('ruteo-controls').style.display = v === 'ruteo' ? 'block' : 'none';
-  document.getElementById('sol-controls').style.display = v === 'solicitudes' ? 'block' : 'none';
-  document.getElementById('days-strip').style.display = v === 'ruteo' ? 'flex' : 'none';
-  if (v === 'ruteo') render();
-  else renderSolicitudesView();
-}
-
-function solicitudesDeLaZona() {
-  return solicitudes.filter(function(s) {
-    if (norm(s['ESTADO']) !== 'PENDIENTE') return false;
-    if (solProcesadas[solicitudKey(s)]) return false; // ya procesada en esta sesión
-    return vendedoresZona.some(function(v) { return normTokens(v) === normTokens(s['VENDEDOR']); });
-  });
-}
-
-function renderSolFiltro() {
-  const sel = document.getElementById('sol-vendedor-filter');
-  sel.innerHTML = '<option value="">Todos los vendedores</option>';
-  vendedoresZona.forEach(function(v) {
-    const opt = document.createElement('option');
-    opt.value = v; opt.textContent = v;
-    sel.appendChild(opt);
-  });
-  sel.onchange = function() { solVendedorFiltro = sel.value; renderSolicitudesView(); };
-}
-
-function actualizarBadgeSolicitudes() {
-  const badge = document.getElementById('sol-badge');
-  const n = solicitudesDeLaZona().length;
-  if (n > 0) { badge.style.display = 'inline-block'; badge.textContent = n; }
-  else { badge.style.display = 'none'; }
-}
-
-function tipoLabelPanel(tipo) {
-  const t = norm(tipo);
-  if (t.indexOf('ORDEN') !== -1) return '📋 Cambio de orden';
-  if (t.indexOf('DIA') !== -1 || t.indexOf('DÍA') !== -1) return '📅 Cambio de día';
-  return '🗑️ Eliminar del ruteo';
-}
-
-function renderSolicitudesView() {
-  const content = document.getElementById('app-content');
-  let lista = solicitudesDeLaZona();
-  if (solVendedorFiltro) {
-    lista = lista.filter(function(s) { return normTokens(s['VENDEDOR']) === normTokens(solVendedorFiltro); });
-  }
-  actualizarBadgeSolicitudes();
-
-  content.innerHTML = '';
-  if (!lista.length) {
-    content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay solicitudes pendientes' + (solVendedorFiltro ? ' de ' + solVendedorFiltro : ' en tu zona') + '.</div></div>';
-    return;
+    if (gActual !== counter) cambiadas++;
+    newG.push([counter]);
+    prevH = hVal;
   }
 
-  const list = document.createElement('div');
-  list.className = 'list';
-  list.style.padding = '0.75rem 1.25rem';
+  sheet.getRange(2, 7, newG.length, 1).setValues(newG);
 
-  lista.forEach(function(s) {
-    const key = solicitudKey(s);
-    const card = document.createElement('div');
-    card.className = 'sol-card';
-    card.id = 'sol-' + key.replace(/[^a-zA-Z0-9]/g, '');
-
-    card.innerHTML =
-      '<div class="sol-top">' +
-        '<div><div class="sol-cliente">' + (s['CLIENTE']||'') + '</div>' +
-        '<div class="sol-vendedor">' + (s['VENDEDOR']||'') + ' · ' + (s['LOCALIDAD']||'') + '</div></div>' +
-        '<div class="sol-tipo-tag">' + tipoLabelPanel(s['TIPO DE CAMBIO']) + '</div>' +
-      '</div>' +
-      '<div class="sol-detalle">' + (s['DETALLE']||'') + '</div>' +
-      '<div class="sol-meta">Día actual: ' + (s['DÍA ACTUAL']||'—') + ' · ' + (s['FECHA']||'') + ' ' + (s['HORA']||'') + '</div>' +
-      '<div class="sol-actions" id="acciones-' + card.id + '">' +
-        '<button class="btn-sol-aplicar">Aplicar</button>' +
-        '<button class="btn-sol-rechazar">Rechazar</button>' +
-      '</div>';
-
-    card.querySelector('.btn-sol-aplicar').addEventListener('click', function() { aplicarSolicitud(s, card); });
-    card.querySelector('.btn-sol-rechazar').addEventListener('click', function() { rechazarSolicitudUI(s, card); });
-
-    list.appendChild(card);
-  });
-
-  content.appendChild(list);
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    'Celdas corregidas o completadas: ' + cambiadas,
+    '✅ Columna ORDEN actualizada',
+    8
+  );
 }
 
-function mostrarResultadoSolicitud(card, ok, mensaje) {
-  const acciones = card.querySelector('.sol-actions');
-  const status = document.createElement('div');
-  status.className = 'sol-status ' + (ok ? 'ok' : 'err');
-  status.textContent = mensaje;
-  acciones.replaceWith(status);
-}
 
-function aplicarSolicitud(s, card) {
-  const btn = card.querySelector('.btn-sol-aplicar');
-  btn.disabled = true;
-  btn.textContent = 'Aplicando...';
-
-  const payload = {
-    accion: 'ejecutarSolicitud',
-    fecha: s['FECHA'], hora: s['HORA'], codigo: s['COD. CLIENTE'], vendedor: s['VENDEDOR'],
-    zonaSupervisor: supActual['Zona']
-  };
-
-  fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-    .then(function() {
-      solProcesadas[solicitudKey(s)] = 'aplicada';
-      mostrarResultadoSolicitud(card, true, '✅ Solicitud aplicada');
-      actualizarBadgeSolicitudes();
-    })
-    .catch(function() {
-      // no-cors no permite leer error real; asumimos que puede haber fallado
-      mostrarResultadoSolicitud(card, false, '❌ Error al aplicar. Reintentá.');
-    });
-}
-
-function rechazarSolicitudUI(s, card) {
-  const motivo = prompt('Motivo del rechazo (opcional):', '') || '';
-  const btn = card.querySelector('.btn-sol-rechazar');
-  btn.disabled = true;
-  btn.textContent = 'Rechazando...';
-
-  const payload = {
-    accion: 'rechazarSolicitud',
-    fecha: s['FECHA'], hora: s['HORA'], codigo: s['COD. CLIENTE'], vendedor: s['VENDEDOR'],
-    zonaSupervisor: supActual['Zona'], motivo: motivo
-  };
-
-  fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-    .then(function() {
-      solProcesadas[solicitudKey(s)] = 'rechazada';
-      mostrarResultadoSolicitud(card, true, '🚫 Solicitud rechazada' + (motivo ? ': ' + motivo : ''));
-      actualizarBadgeSolicitudes();
-    })
-    .catch(function() {
-      mostrarResultadoSolicitud(card, false, '❌ Error al rechazar. Reintentá.');
-    });
-}
-
-// ── RENDER ──────────────────────────────────────────────────────────────────────
-function vendedorDisplayToRuteo(nombreBaseClientes) {
-  // En BASE CLIENTES el vendedor viene como "APELLIDO NOMBRE".
-  // En BASE RUTEO puede venir como "Nombre Apellido". Comparamos por norm de tokens.
-  return norm(nombreBaseClientes);
-}
-
-function ruteoDelVendedor(vendedor) {
-  const objetivo = norm(vendedor).split(' ').filter(Boolean).sort().join(' ');
-  return baseRuteo.filter(function(r) {
-    const rv = norm(r['VENDEDOR']).split(' ').filter(Boolean).sort().join(' ');
-    return rv === objetivo;
-  });
-}
-
-function render() {
-  const content = document.getElementById('app-content');
-  if (!selectedVendedor) {
-    document.getElementById('days-strip').innerHTML = '';
-    content.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Seleccioná un vendedor de tu equipo para ver su ruteo</div></div>';
-    return;
-  }
-
-  const rows = ruteoDelVendedor(selectedVendedor);
-  if (!rows.length) {
-    document.getElementById('days-strip').innerHTML = '';
-    content.innerHTML = '<div class="empty"><div class="empty-text">Este vendedor no tiene clientes ruteados.</div></div>';
-    return;
-  }
-
-  // Días disponibles
-  const days = [];
-  const seen = {};
-  rows.forEach(function(r) {
-    const d = norm(r['DIA CARGA DE PEDIDO']);
-    if (d && !seen[d]) { seen[d] = true; days.push(d); }
-  });
-  days.sort(function(a,b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
-  if (!selectedDay || days.indexOf(selectedDay) === -1) {
-    const today = todayDayName();
-    selectedDay = days.indexOf(today) !== -1 ? today : days[0];
-  }
-  renderDayTabs(days);
-
-  const clientesDia = rows.filter(function(r) { return norm(r['DIA CARGA DE PEDIDO']) === selectedDay; });
-  clientesDia.sort(function(a,b) { return (parseInt(a['ORDEN'])||0) - (parseInt(b['ORDEN'])||0); });
-
-  content.innerHTML = '';
-
-  // Stats
-  const canales = { presencial: 0, ecom: 0, telefonico: 0 };
-  clientesDia.forEach(function(c) { canales[canalClass(c['Canal actual (Presencial / Autogestión)'])]++; });
-  const stats = document.createElement('div');
-  stats.className = 'stats-bar';
-  stats.innerHTML =
-    '<div class="stat"><div class="stat-num">' + clientesDia.length + '</div><div class="stat-label">Clientes</div></div>' +
-    '<div class="stat"><div class="stat-num">' + canales.presencial + '</div><div class="stat-label">Presencial</div></div>' +
-    '<div class="stat"><div class="stat-num">' + (canales.ecom + canales.telefonico) + '</div><div class="stat-label">No presencial</div></div>';
-  content.appendChild(stats);
-
-  // Lista
-  const list = document.createElement('div');
-  list.className = 'list';
-  clientesDia.forEach(function(c) {
-    const cc = canalClass(c['Canal actual (Presencial / Autogestión)']);
-    const card = document.createElement('div');
-    card.className = 'client-card ' + cc;
-
-    const main = document.createElement('div');
-    main.className = 'card-main';
-    main.innerHTML =
-      '<div class="order-num">' + (c['ORDEN'] || '') + '</div>' +
-      '<div class="client-info">' +
-        '<div class="client-name">' + (c['NOMBRE COMERCIAL'] || '') + '</div>' +
-        '<div class="client-sub">' + (c['LOCALIDAD'] || '') + ' · ' + (c['CODIGO CLIENTE'] || '') + '</div>' +
-      '</div>' +
-      '<div class="canal-tag ' + cc + '">' + canalLabel(cc) + '</div>';
-
-    const detail = document.createElement('div');
-    detail.className = 'card-detail';
-    detail.innerHTML =
-      '<div class="detail-divider"></div>' +
-      '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + (c['DIRECCION'] || '—') + '</div></div>' +
-      '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + (c['CODIGO CLIENTE'] || '—') + '</div></div>' +
-      '<a class="btn-maps" href="' + mapsUrl(c) + '" target="_blank" onclick="event.stopPropagation()">' +
-      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
-      'Abrir en Maps</a>';
-
-    main.addEventListener('click', function() { card.classList.toggle('expanded'); });
-    card.appendChild(main);
-    card.appendChild(detail);
-    list.appendChild(card);
-  });
-  content.appendChild(list);
-}
-
-function renderDayTabs(days) {
-  const strip = document.getElementById('days-strip');
-  strip.innerHTML = '';
-  days.forEach(function(day) {
-    const btn = document.createElement('button');
-    btn.className = 'day-tab' + (day === selectedDay ? ' active' : '');
-    btn.textContent = day.charAt(0) + day.slice(1).toLowerCase();
-    btn.onclick = function() { selectedDay = day; render(); };
-    strip.appendChild(btn);
-  });
-}
-
-// ── CARGA INICIAL ─────────────────────────────────────────────────────────────
-async function cargarDatos() {
+// ═══════════════════════════════════════════════════════════════════════════
+// FUNCIÓN 2 — Receptor de solicitudes desde el HTML (doPost)
+// ═══════════════════════════════════════════════════════════════════════════
+function doPost(e) {
   try {
-    const [sup, cli, rut, sol] = await Promise.all([
-      fetch(URL_SUPERVISORES).then(function(r) { return r.text(); }),
-      fetch(URL_BASE_CLIENTES).then(function(r) { return r.text(); }),
-      fetch(URL_BASE_RUTEO).then(function(r) { return r.text(); }),
-      fetch(URL_SOLICITUDES).then(function(r) { return r.text(); })
+    const data = JSON.parse(e.postData.contents);
+    const ss   = SpreadsheetApp.openById(SHEET_ID);
+
+    // ── Acción: geolocalizar ──────────────────────────────────────────────
+    if (data.accion === 'geolocalizar') {
+      return guardarCoordenadas(ss, data);
+    }
+
+    // ── Acción: panel supervisor ejecuta una solicitud puntual ────────────
+    if (data.accion === 'ejecutarSolicitud') {
+      return ejecutarSolicitudPanel(ss, data);
+    }
+
+    // ── Acción: panel supervisor rechaza una solicitud puntual ────────────
+    if (data.accion === 'rechazarSolicitud') {
+      return rechazarSolicitudPanel(ss, data);
+    }
+
+    // ── Acción: solicitud de cambio (comportamiento original) ─────────────
+    const sheet = ss.getSheetByName(HOJA_SOLICITUDES);
+
+    if (sheet.getLastRow() === 0) {
+      const headers = ['FECHA','HORA','VENDEDOR','COD. CLIENTE','CLIENTE',
+                       'LOCALIDAD','DÍA ACTUAL','TIPO DE CAMBIO','DETALLE','ESTADO'];
+      sheet.appendRow(headers);
+      sheet.getRange(1, 1, 1, headers.length)
+           .setFontWeight('bold')
+           .setBackground('#1d3a8f')
+           .setFontColor('#ffffff');
+      sheet.setFrozenRows(1);
+    }
+
+    const now   = new Date();
+    const fecha = Utilities.formatDate(now, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+    const hora  = Utilities.formatDate(now, Session.getScriptTimeZone(), 'HH:mm');
+
+    sheet.appendRow([
+      fecha, hora,
+      data.vendedor  || '',
+      data.codigo    || '',
+      data.cliente   || '',
+      data.localidad || '',
+      data.diaActual || '',
+      data.tipo      || '',
+      data.detalle   || '',
+      'Pendiente'
     ]);
-    supervisores = parseCSV(sup);
-    baseClientes = parseCSV(cli).filter(function(c) {
-      return ZONAS_VALIDAS.indexOf(norm(c['Nombre Territorio'])) !== -1;
-    });
-    baseRuteo = parseCSV(rut).filter(function(r) { return r['NOMBRE COMERCIAL']; });
-    solicitudes = parseCSV(sol).filter(function(s) { return s['COD. CLIENTE']; });
-    renderZonas();
-  } catch (e) {
-    document.getElementById('zona-screen').innerHTML = '<div class="pin-title">Error al cargar datos</div><div class="pin-sub">Recargá la página</div>';
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-cargarDatos();
-</script>
-</body>
-</html>
+/**
+ * Devuelve la zona (Nombre Territorio) de un vendedor consultando BASE CLIENTES.
+ * Normaliza nombres (mayúsculas, sin acentos, orden de palabras) para matchear
+ * "APELLIDO NOMBRE" contra "Nombre Apellido".
+ */
+function norm_(s) {
+  return String(s || '').trim().toUpperCase()
+    .replace(/[ÁÀÂ]/g,'A').replace(/[ÉÈÊ]/g,'E').replace(/[ÍÌÎ]/g,'I')
+    .replace(/[ÓÒÔ]/g,'O').replace(/[ÚÙÛ]/g,'U').replace(/Ñ/g,'N');
+}
+function normTokens_(s) {
+  return norm_(s).split(' ').filter(Boolean).sort().join(' ');
+}
+function zonaDeVendedor(ss, vendedor) {
+  const sheet = ss.getSheetByName(HOJA_CLIENTES);
+  if (!sheet) return null;
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const colVendedor = headers.indexOf('Vendedor');
+  const colZona     = headers.indexOf('Nombre Territorio');
+  const objetivo = normTokens_(vendedor);
+  for (var i = 1; i < data.length; i++) {
+    if (normTokens_(data[i][colVendedor]) === objetivo) {
+      return norm_(data[i][colZona]);
+    }
+  }
+  return null;
+}
+
+/**
+ * Busca en SOLICITUD DE MODIFICACIONES la fila que matchea código + vendedor + detalle
+ * exacto y está en estado Pendiente. No usa fecha/hora porque Google Sheets las
+ * autoconvierte a objetos Date al guardarlas, rompiendo la comparación de texto.
+ */
+function buscarFilaSolicitud(sheet, data) {
+  const valores = sheet.getDataRange().getValues();
+  for (var i = 1; i < valores.length; i++) {
+    var row = valores[i];
+    var estado = String(row[COL_SOL.ESTADO - 1]).trim().toUpperCase();
+    if (estado !== 'PENDIENTE') continue;
+    if (String(row[COL_SOL.CODIGO - 1]).trim() === String(data.codigo||'').trim() &&
+        normTokens_(row[COL_SOL.VENDEDOR - 1]) === normTokens_(data.vendedor||'') &&
+        String(row[COL_SOL.DETALLE - 1]).trim() === String(data.detalle||'').trim()) {
+      return i + 1; // fila real (1-based)
+    }
+  }
+  return -1;
+}
+
+/**
+ * El panel de supervisor ejecuta UNA solicitud puntual.
+ * Valida que el vendedor de la solicitud pertenezca a la zona del supervisor
+ * antes de aplicar ningún cambio en BASE RUTEO.
+ */
+function ejecutarSolicitudPanel(ss, data) {
+  const sheetSol  = ss.getSheetByName(HOJA_SOLICITUDES);
+  const sheetBase = ss.getSheetByName(HOJA_BASE);
+
+  const zonaVendedor = zonaDeVendedor(ss, data.vendedor);
+  if (!zonaVendedor || zonaVendedor !== norm_(data.zonaSupervisor)) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: 'El vendedor no pertenece a tu zona' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const fila = buscarFilaSolicitud(sheetSol, data);
+  if (fila === -1) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: 'Solicitud no encontrada o ya procesada' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const row       = sheetSol.getRange(fila, 1, 1, sheetSol.getLastColumn()).getValues()[0];
+  const vendedor  = String(row[COL_SOL.VENDEDOR - 1]).trim();
+  const codigo    = String(row[COL_SOL.CODIGO   - 1]).trim();
+  const diaActual = String(row[COL_SOL.DIA_ACT  - 1]).trim().toUpperCase();
+  const tipo      = String(row[COL_SOL.TIPO     - 1]).trim().toLowerCase();
+  const detalle   = String(row[COL_SOL.DETALLE  - 1]).trim();
+
+  try {
+    if (tipo.includes('orden')) {
+      const nuevoOrden = parseInt(detalle.replace(/[^\d]/g, ''));
+      if (isNaN(nuevoOrden) || nuevoOrden < 1) throw new Error('Orden inválido: ' + detalle);
+      moverFilaOrden(sheetBase, vendedor, diaActual, codigo, nuevoOrden);
+
+    } else if (tipo.includes('día') || tipo.includes('dia')) {
+      const matchDia   = detalle.match(/Nuevo d[íi]a solicitado:\s*([A-ZÁÉÍÓÚÑ]+)/i);
+      const matchOrden = detalle.match(/Nuevo orden:\s*(\d+)/i);
+      if (!matchDia || !matchOrden) throw new Error('Formato inválido: ' + detalle);
+      moverFilaDia(sheetBase, vendedor, diaActual, codigo, matchDia[1].trim().toUpperCase(), parseInt(matchOrden[1]));
+
+    } else if (tipo.includes('eliminar')) {
+      eliminarFila(sheetBase, vendedor, diaActual, codigo);
+
+    } else {
+      throw new Error('Tipo no reconocido: ' + tipo);
+    }
+
+    sheetSol.getRange(fila, COL_SOL.ESTADO).setValue('Aprobado');
+    marcarAplicado(sheetSol, fila);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    marcarError(sheetSol, fila, err.message);
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * El panel de supervisor rechaza UNA solicitud puntual, con motivo opcional.
+ */
+function rechazarSolicitudPanel(ss, data) {
+  const sheetSol = ss.getSheetByName(HOJA_SOLICITUDES);
+
+  const zonaVendedor = zonaDeVendedor(ss, data.vendedor);
+  if (!zonaVendedor || zonaVendedor !== norm_(data.zonaSupervisor)) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: 'El vendedor no pertenece a tu zona' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const fila = buscarFilaSolicitud(sheetSol, data);
+  if (fila === -1) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: 'Solicitud no encontrada o ya procesada' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  sheetSol.getRange(fila, COL_SOL.ESTADO).setValue('Rechazada');
+  const motivo = String(data.motivo || '').trim();
+  sheetSol.getRange(fila, COL_SOL.RESULTADO)
+          .setValue('🚫 RECHAZADA' + (motivo ? ': ' + motivo : ''))
+          .setBackground('#F1F1F1')
+          .setFontColor('#6B6760')
+          .setFontWeight('bold');
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: true }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Busca el cliente en BASE RUTEO por código y escribe Latitud/Longitud en col I y J.
+ * Si hay múltiples filas con el mismo código (cliente en varios días), actualiza todas.
+ */
+function guardarCoordenadas(ss, data) {
+  const sheet   = ss.getSheetByName(HOJA_BASE);
+  const valores = sheet.getDataRange().getValues();
+  const codigo  = String(data.codigo || '').trim();
+  const lat     = data.lat;
+  const lon     = data.lon;
+
+  if (!codigo || !lat || !lon) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: 'Datos incompletos' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var filasActualizadas = 0;
+  for (var i = 1; i < valores.length; i++) {
+    var c = String(valores[i][COL_BASE.CODIGO - 1]).trim();
+    if (c === codigo) {
+      sheet.getRange(i + 1, COL_BASE.LAT).setValue(parseFloat(lat));
+      sheet.getRange(i + 1, COL_BASE.LON).setValue(parseFloat(lon));
+      filasActualizadas++;
+    }
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: true, filasActualizadas: filasActualizadas }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FUNCIÓN 3 — Aplicar solicitudes pendientes (a demanda)
+// ═══════════════════════════════════════════════════════════════════════════
+function aplicarSolicitudesPendientes() {
+  const ss        = SpreadsheetApp.openById(SHEET_ID);
+  const sheetSol  = ss.getSheetByName(HOJA_SOLICITUDES);
+  const sheetBase = ss.getSheetByName(HOJA_BASE);
+
+  if (!sheetSol || !sheetBase) {
+    SpreadsheetApp.getUi().alert('Error: no se encontraron las hojas necesarias.');
+    return;
+  }
+
+  const solData  = sheetSol.getDataRange().getValues();
+  let procesadas = 0;
+  let errores    = 0;
+
+  for (let i = 1; i < solData.length; i++) {
+    const row       = solData[i];
+    const estado    = String(row[COL_SOL.ESTADO    - 1]).trim().toUpperCase();
+    const resultado = String(row[COL_SOL.RESULTADO - 1] || '').trim();
+
+    if (estado !== 'PENDIENTE' || resultado.includes('APLICADO')) continue;
+
+    const fila      = i + 1;
+    const vendedor  = String(row[COL_SOL.VENDEDOR - 1]).trim();
+    const codigo    = String(row[COL_SOL.CODIGO   - 1]).trim();
+    const diaActual = String(row[COL_SOL.DIA_ACT  - 1]).trim().toUpperCase();
+    const tipo      = String(row[COL_SOL.TIPO     - 1]).trim().toLowerCase();
+    const detalle   = String(row[COL_SOL.DETALLE  - 1]).trim();
+
+    try {
+      if (tipo.includes('orden')) {
+        const nuevoOrden = parseInt(detalle.replace(/[^\d]/g, ''));
+        if (isNaN(nuevoOrden) || nuevoOrden < 1) throw new Error('Orden inválido: ' + detalle);
+        moverFilaOrden(sheetBase, vendedor, diaActual, codigo, nuevoOrden);
+
+      } else if (tipo.includes('día') || tipo.includes('dia')) {
+        const matchDia   = detalle.match(/Nuevo d[íi]a solicitado:\s*([A-ZÁÉÍÓÚÑ]+)/i);
+        const matchOrden = detalle.match(/Nuevo orden:\s*(\d+)/i);
+        if (!matchDia)   throw new Error('No se encontró nuevo día en: '   + detalle);
+        if (!matchOrden) throw new Error('No se encontró nuevo orden en: ' + detalle);
+        const nuevoDia   = matchDia[1].trim().toUpperCase();
+        const nuevoOrden = parseInt(matchOrden[1]);
+        moverFilaDia(sheetBase, vendedor, diaActual, codigo, nuevoDia, nuevoOrden);
+
+      } else if (tipo.includes('eliminar')) {
+        eliminarFila(sheetBase, vendedor, diaActual, codigo);
+
+      } else {
+        throw new Error('Tipo no reconocido: ' + tipo);
+      }
+
+      sheetSol.getRange(fila, COL_SOL.ESTADO).setValue('Aprobado');
+      marcarAplicado(sheetSol, fila);
+      procesadas++;
+
+    } catch (err) {
+      marcarError(sheetSol, fila, err.message);
+      errores++;
+      Logger.log('Error en fila ' + fila + ': ' + err.message);
+    }
+  }
+
+  SpreadsheetApp.getUi().alert(
+    '✅ Proceso finalizado\n\n' +
+    'Solicitudes aplicadas: ' + procesadas + '\n' +
+    'Errores: ' + errores
+  );
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LECTURA DE BLOQUE CON FÓRMULAS
+// Lee valores Y fórmulas de cada fila del bloque para preservarlas
+// ═══════════════════════════════════════════════════════════════════════════
+function leerBloque(sheet, vendedor, dia) {
+  const numCols  = sheet.getLastColumn();
+  const lastRow  = sheet.getLastRow();
+  const valores  = sheet.getRange(1, 1, lastRow, numCols).getValues();
+  const formulas = sheet.getRange(1, 1, lastRow, numCols).getFormulas();
+
+  var bloque = [];
+  for (var i = 1; i < valores.length; i++) {
+    var v = String(valores[i][COL_BASE.VENDEDOR - 1]).trim();
+    var d = String(valores[i][COL_BASE.DIA - 1]).trim().toUpperCase();
+    if (v === vendedor && d === dia) {
+      bloque.push({
+        rowIndex:  i + 1,
+        codigo:    String(valores[i][COL_BASE.CODIGO - 1]).trim(),
+        orden:     parseInt(valores[i][COL_BASE.ORDEN - 1]) || 0,
+        valores:   valores[i].slice(),
+        formulas:  formulas[i].slice()
+      });
+    }
+  }
+  return bloque;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ESCRITURA DE BLOQUE PRESERVANDO FÓRMULAS EN B, C, D
+// ═══════════════════════════════════════════════════════════════════════════
+function escribirBloque(sheet, bloque, primeraFila) {
+  const numCols = sheet.getLastColumn();
+
+  for (var j = 0; j < bloque.length; j++) {
+    var filaDestino = primeraFila + j;
+    var vals = bloque[j].valores.slice();
+    var fmls = bloque[j].formulas.slice();
+
+    // Actualizar número de orden
+    vals[COL_BASE.ORDEN - 1] = j + 1;
+
+    // Escribir columna por columna: fórmula si existe, valor si no
+    for (var col = 0; col < numCols; col++) {
+      var celda = sheet.getRange(filaDestino, col + 1);
+      if (COLS_CON_FORMULA.indexOf(col) !== -1 && fmls[col] !== '') {
+        // Ajustar la referencia de fila en la fórmula
+        var formulaAjustada = ajustarFilaEnFormula(fmls[col], bloque[j].rowIndex, filaDestino);
+        celda.setFormula(formulaAjustada);
+      } else {
+        celda.setValue(vals[col]);
+      }
+    }
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AJUSTE DE REFERENCIAS DE FILA EN FÓRMULAS
+// Reemplaza referencias absolutas a la fila original por la fila destino
+// ═══════════════════════════════════════════════════════════════════════════
+function ajustarFilaEnFormula(formula, filaOrigen, filaDestino) {
+  if (filaOrigen === filaDestino) return formula;
+  // Reemplaza referencias del tipo A2, B2, $A2, A$2, $A$2, etc.
+  var regex = new RegExp('(\\$?[A-Z]+\\$?)' + filaOrigen + '(?![0-9])', 'g');
+  return formula.replace(regex, '$1' + filaDestino);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OPERACIONES FÍSICAS SOBRE BASE RUTEO
+// ═══════════════════════════════════════════════════════════════════════════
+
+function moverFilaOrden(sheet, vendedor, dia, codigo, nuevoOrden) {
+  var bloque = leerBloque(sheet, vendedor, dia);
+
+  if (!bloque.length) throw new Error('Sin clientes para ' + vendedor + ' el ' + dia);
+
+  var objetivo = bloque.find(function(f) { return f.codigo === codigo; });
+  if (!objetivo) throw new Error('Cliente ' + codigo + ' no encontrado en ' + dia + ' (' + vendedor + ')');
+
+  // Reordenar: sacar al cliente y reinsertarlo en la posición solicitada
+  bloque.sort(function(a, b) { return a.orden - b.orden; });
+  var sinObjetivo = bloque.filter(function(f) { return f.codigo !== codigo; });
+  var pos = Math.min(nuevoOrden - 1, sinObjetivo.length);
+  sinObjetivo.splice(pos, 0, objetivo);
+
+  var primeraFila = bloque.reduce(function(min, f) {
+    return f.rowIndex < min ? f.rowIndex : min;
+  }, bloque[0].rowIndex);
+
+  // Borrar filas del bloque de abajo a arriba
+  bloque.slice()
+        .sort(function(a, b) { return b.rowIndex - a.rowIndex; })
+        .forEach(function(f) { sheet.deleteRow(f.rowIndex); });
+
+  // Insertar filas vacías y escribir con fórmulas preservadas
+  sheet.insertRowsBefore(primeraFila, sinObjetivo.length);
+  escribirBloque(sheet, sinObjetivo, primeraFila);
+}
+
+
+function moverFilaDia(sheet, vendedor, diaAntiguo, codigo, diaNuevo, nuevoOrden) {
+  const numCols = sheet.getLastColumn();
+  const lastRow = sheet.getLastRow();
+  const valores = sheet.getRange(1, 1, lastRow, numCols).getValues();
+
+  var filaCliente = -1;
+  for (var i = 1; i < valores.length; i++) {
+    var v = String(valores[i][COL_BASE.VENDEDOR - 1]).trim();
+    var d = String(valores[i][COL_BASE.DIA     - 1]).trim().toUpperCase();
+    var c = String(valores[i][COL_BASE.CODIGO  - 1]).trim();
+    if (v === vendedor && d === diaAntiguo && c === codigo) {
+      filaCliente = i + 1;
+      break;
+    }
+  }
+
+  if (filaCliente === -1) throw new Error('Cliente ' + codigo + ' no encontrado en ' + diaAntiguo);
+
+  // Actualizar DIA y poner orden temporal alto
+  sheet.getRange(filaCliente, COL_BASE.DIA).setValue(diaNuevo);
+  sheet.getRange(filaCliente, COL_BASE.ORDEN).setValue(9999);
+
+  // Reordenar físicamente el día antiguo
+  reordenarBloqueF(sheet, vendedor, diaAntiguo);
+
+  // Insertar en la posición correcta del día nuevo
+  moverFilaOrden(sheet, vendedor, diaNuevo, codigo, nuevoOrden);
+}
+
+
+function eliminarFila(sheet, vendedor, dia, codigo) {
+  const lastRow = sheet.getLastRow();
+  const valores = sheet.getRange(1, 1, lastRow, sheet.getLastColumn()).getValues();
+
+  var filaCliente = -1;
+  for (var i = 1; i < valores.length; i++) {
+    var v = String(valores[i][COL_BASE.VENDEDOR - 1]).trim();
+    var d = String(valores[i][COL_BASE.DIA     - 1]).trim().toUpperCase();
+    var c = String(valores[i][COL_BASE.CODIGO  - 1]).trim();
+    if (v === vendedor && d === dia && c === codigo) {
+      filaCliente = i + 1;
+      break;
+    }
+  }
+
+  if (filaCliente === -1) throw new Error('Cliente ' + codigo + ' no encontrado en ' + dia);
+
+  sheet.deleteRow(filaCliente);
+  reordenarBloqueF(sheet, vendedor, dia);
+}
+
+
+function reordenarBloqueF(sheet, vendedor, dia) {
+  var bloque = leerBloque(sheet, vendedor, dia);
+  if (!bloque.length) return;
+
+  bloque.sort(function(a, b) { return a.orden - b.orden; });
+
+  var primeraFila = bloque.reduce(function(min, f) {
+    return f.rowIndex < min ? f.rowIndex : min;
+  }, bloque[0].rowIndex);
+
+  // Borrar de abajo a arriba
+  bloque.slice()
+        .sort(function(a, b) { return b.rowIndex - a.rowIndex; })
+        .forEach(function(f) { sheet.deleteRow(f.rowIndex); });
+
+  // Reinsertar con fórmulas preservadas
+  sheet.insertRowsBefore(primeraFila, bloque.length);
+  escribirBloque(sheet, bloque, primeraFila);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MARCADO EN HOJA SOLICITUDES
+// ═══════════════════════════════════════════════════════════════════════════
+
+function marcarAplicado(sheet, fila) {
+  sheet.getRange(fila, COL_SOL.RESULTADO)
+       .setValue('✅ APLICADO')
+       .setBackground('#B7F5C8')
+       .setFontColor('#1A5C2A')
+       .setFontWeight('bold');
+}
+
+function marcarError(sheet, fila, mensaje) {
+  sheet.getRange(fila, COL_SOL.RESULTADO)
+       .setValue('❌ ERROR: ' + mensaje)
+       .setBackground('#FDEAEA')
+       .setFontColor('#A02020')
+       .setFontWeight('bold');
+}

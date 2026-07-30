@@ -55,6 +55,28 @@
   .zona-btn:active { background: rgba(255,255,255,0.22); }
   .zona-btn svg { width: 16px; height: 16px; opacity: 0.6; }
 
+  /* TAB SWITCHER */
+  .view-tabs { display: flex; gap: 6px; margin-top: 0.75rem; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 4px; }
+  .view-tab { flex: 1; text-align: center; padding: 7px 0; border-radius: 8px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.6); background: transparent; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .view-tab.active { background: #fff; color: var(--accent); }
+  .view-tab .badge-count { display: inline-block; margin-left: 5px; background: var(--sup); color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 6px; }
+
+  /* SOLICITUDES */
+  .sol-filter { padding: 0.75rem 1.25rem 0; }
+  .sol-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 8px; }
+  .sol-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+  .sol-cliente { font-size: 14px; font-weight: 700; color: var(--text); }
+  .sol-vendedor { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .sol-tipo-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; background: #F5F0FF; color: #7C3AED; border: 1px solid #C4B5FD; padding: 3px 9px; border-radius: 20px; flex-shrink: 0; white-space: nowrap; }
+  .sol-detalle { font-size: 13px; color: var(--text2); margin-bottom: 0.75rem; line-height: 1.4; }
+  .sol-meta { font-size: 11px; color: var(--text3); margin-bottom: 0.75rem; }
+  .sol-actions { display: flex; gap: 8px; }
+  .btn-sol-aplicar { flex: 1; padding: 0.65rem; border-radius: 8px; border: none; background: var(--btn-check-color, #2D8A52); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-sol-rechazar { flex: 1; padding: 0.65rem; border-radius: 8px; border: 1.5px solid var(--border); background: transparent; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .sol-status { font-size: 12px; font-weight: 700; text-align: center; padding: 0.6rem; border-radius: 8px; }
+  .sol-status.ok { background: #E6F7ED; color: #1F7A42; }
+  .sol-status.err { background: #FDEAEA; color: #A02020; }
+
   /* HEADER */
   .header { background: var(--accent); padding: 1.25rem 1.25rem 1rem; position: sticky; top: 0; z-index: 100; }
   .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
@@ -156,8 +178,17 @@
     <div class="sup-nombre" id="sup-nombre">—</div>
     <div class="sup-zona" id="sup-zona">—</div>
   </div>
-  <select id="vendedor-select"></select>
-  <div class="days-strip" id="days-strip"></div>
+  <div class="view-tabs">
+    <button class="view-tab active" id="tab-ruteo" onclick="cambiarVista('ruteo')">Ruteo</button>
+    <button class="view-tab" id="tab-solicitudes" onclick="cambiarVista('solicitudes')">Solicitudes<span class="badge-count" id="sol-badge" style="display:none">0</span></button>
+  </div>
+  <div id="ruteo-controls">
+    <select id="vendedor-select"></select>
+    <div class="days-strip" id="days-strip"></div>
+  </div>
+  <div id="sol-controls" style="display:none">
+    <select id="sol-vendedor-filter"></select>
+  </div>
 </div>
 
 <div id="app-content"></div>
@@ -166,6 +197,8 @@
 const URL_SUPERVISORES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1122468659&single=true&output=csv';
 const URL_BASE_CLIENTES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1835040316&single=true&output=csv';
 const URL_BASE_RUTEO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1071989663&single=true&output=csv';
+const URL_SOLICITUDES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=431847994&single=true&output=csv';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNwnkqjWtkwVFZQMtqGCmKIgofMC0VUor35pllpNogNzU4wDTOesxA3H57qkmwDg3n7A/exec';
 
 const ZONAS_VALIDAS = ['RIO NEGRO','NEUQUEN','CORDILLERA SUR','CORDILLERA NORTE','ATLANTICA'];
 const DAYS_ORDER = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO'];
@@ -179,6 +212,10 @@ let selectedVendedor = '';
 let selectedDay = '';
 let pinActual = '';
 let zonaSeleccionada = '';
+let viewMode = 'ruteo';
+let solicitudes = [];
+let solVendedorFiltro = '';
+let solProcesadas = {}; // clave -> 'aplicada' | 'rechazada' (para no depender del refresco del CSV)
 
 // ── UTILIDADES ────────────────────────────────────────────────────────────────
 function norm(s) {
@@ -218,6 +255,12 @@ function canalLabel(clase) {
 }
 function todayDayName() {
   return ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'][new Date().getDay()];
+}
+function normTokens(s) {
+  return norm(s).split(' ').filter(Boolean).sort().join(' ');
+}
+function solicitudKey(s) {
+  return [s['FECHA'], s['HORA'], s['COD. CLIENTE'], normTokens(s['VENDEDOR'])].join('|');
 }
 function mapsUrl(c) {
   const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
@@ -329,6 +372,8 @@ function logout() {
   selectedVendedor = '';
   selectedDay = '';
   zonaSeleccionada = '';
+  viewMode = 'ruteo';
+  solVendedorFiltro = '';
   document.getElementById('header').style.display = 'none';
   document.getElementById('app-content').innerHTML = '';
   document.getElementById('pin-screen').classList.add('hidden');
@@ -361,9 +406,157 @@ function iniciarSesion() {
   });
   sel.onchange = function() { selectedVendedor = sel.value; selectedDay = ''; render(); };
 
+  renderSolFiltro();
+  actualizarBadgeSolicitudes();
+
   document.getElementById('pin-screen').classList.add('hidden');
   document.getElementById('header').style.display = 'block';
-  render();
+  cambiarVista('ruteo');
+}
+
+// ── VISTAS (Ruteo / Solicitudes) ───────────────────────────────────────────────
+function cambiarVista(v) {
+  viewMode = v;
+  document.getElementById('tab-ruteo').classList.toggle('active', v === 'ruteo');
+  document.getElementById('tab-solicitudes').classList.toggle('active', v === 'solicitudes');
+  document.getElementById('ruteo-controls').style.display = v === 'ruteo' ? 'block' : 'none';
+  document.getElementById('sol-controls').style.display = v === 'solicitudes' ? 'block' : 'none';
+  document.getElementById('days-strip').style.display = v === 'ruteo' ? 'flex' : 'none';
+  if (v === 'ruteo') render();
+  else renderSolicitudesView();
+}
+
+function solicitudesDeLaZona() {
+  return solicitudes.filter(function(s) {
+    if (norm(s['ESTADO']) !== 'PENDIENTE') return false;
+    if (solProcesadas[solicitudKey(s)]) return false; // ya procesada en esta sesión
+    return vendedoresZona.some(function(v) { return normTokens(v) === normTokens(s['VENDEDOR']); });
+  });
+}
+
+function renderSolFiltro() {
+  const sel = document.getElementById('sol-vendedor-filter');
+  sel.innerHTML = '<option value="">Todos los vendedores</option>';
+  vendedoresZona.forEach(function(v) {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+  sel.onchange = function() { solVendedorFiltro = sel.value; renderSolicitudesView(); };
+}
+
+function actualizarBadgeSolicitudes() {
+  const badge = document.getElementById('sol-badge');
+  const n = solicitudesDeLaZona().length;
+  if (n > 0) { badge.style.display = 'inline-block'; badge.textContent = n; }
+  else { badge.style.display = 'none'; }
+}
+
+function tipoLabelPanel(tipo) {
+  const t = norm(tipo);
+  if (t.indexOf('ORDEN') !== -1) return '📋 Cambio de orden';
+  if (t.indexOf('DIA') !== -1 || t.indexOf('DÍA') !== -1) return '📅 Cambio de día';
+  return '🗑️ Eliminar del ruteo';
+}
+
+function renderSolicitudesView() {
+  const content = document.getElementById('app-content');
+  let lista = solicitudesDeLaZona();
+  if (solVendedorFiltro) {
+    lista = lista.filter(function(s) { return normTokens(s['VENDEDOR']) === normTokens(solVendedorFiltro); });
+  }
+  actualizarBadgeSolicitudes();
+
+  content.innerHTML = '';
+  if (!lista.length) {
+    content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay solicitudes pendientes' + (solVendedorFiltro ? ' de ' + solVendedorFiltro : ' en tu zona') + '.</div></div>';
+    return;
+  }
+
+  const list = document.createElement('div');
+  list.className = 'list';
+  list.style.padding = '0.75rem 1.25rem';
+
+  lista.forEach(function(s) {
+    const key = solicitudKey(s);
+    const card = document.createElement('div');
+    card.className = 'sol-card';
+    card.id = 'sol-' + key.replace(/[^a-zA-Z0-9]/g, '');
+
+    card.innerHTML =
+      '<div class="sol-top">' +
+        '<div><div class="sol-cliente">' + (s['CLIENTE']||'') + '</div>' +
+        '<div class="sol-vendedor">' + (s['VENDEDOR']||'') + ' · ' + (s['LOCALIDAD']||'') + '</div></div>' +
+        '<div class="sol-tipo-tag">' + tipoLabelPanel(s['TIPO DE CAMBIO']) + '</div>' +
+      '</div>' +
+      '<div class="sol-detalle">' + (s['DETALLE']||'') + '</div>' +
+      '<div class="sol-meta">Día actual: ' + (s['DÍA ACTUAL']||'—') + ' · ' + (s['FECHA']||'') + ' ' + (s['HORA']||'') + '</div>' +
+      '<div class="sol-actions" id="acciones-' + card.id + '">' +
+        '<button class="btn-sol-aplicar">Aplicar</button>' +
+        '<button class="btn-sol-rechazar">Rechazar</button>' +
+      '</div>';
+
+    card.querySelector('.btn-sol-aplicar').addEventListener('click', function() { aplicarSolicitud(s, card); });
+    card.querySelector('.btn-sol-rechazar').addEventListener('click', function() { rechazarSolicitudUI(s, card); });
+
+    list.appendChild(card);
+  });
+
+  content.appendChild(list);
+}
+
+function mostrarResultadoSolicitud(card, ok, mensaje) {
+  const acciones = card.querySelector('.sol-actions');
+  const status = document.createElement('div');
+  status.className = 'sol-status ' + (ok ? 'ok' : 'err');
+  status.textContent = mensaje;
+  acciones.replaceWith(status);
+}
+
+function aplicarSolicitud(s, card) {
+  const btn = card.querySelector('.btn-sol-aplicar');
+  btn.disabled = true;
+  btn.textContent = 'Aplicando...';
+
+  const payload = {
+    accion: 'ejecutarSolicitud',
+    fecha: s['FECHA'], hora: s['HORA'], codigo: s['COD. CLIENTE'], vendedor: s['VENDEDOR'],
+    zonaSupervisor: supActual['Zona']
+  };
+
+  fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+    .then(function() {
+      solProcesadas[solicitudKey(s)] = 'aplicada';
+      mostrarResultadoSolicitud(card, true, '✅ Solicitud aplicada');
+      actualizarBadgeSolicitudes();
+    })
+    .catch(function() {
+      // no-cors no permite leer error real; asumimos que puede haber fallado
+      mostrarResultadoSolicitud(card, false, '❌ Error al aplicar. Reintentá.');
+    });
+}
+
+function rechazarSolicitudUI(s, card) {
+  const motivo = prompt('Motivo del rechazo (opcional):', '') || '';
+  const btn = card.querySelector('.btn-sol-rechazar');
+  btn.disabled = true;
+  btn.textContent = 'Rechazando...';
+
+  const payload = {
+    accion: 'rechazarSolicitud',
+    fecha: s['FECHA'], hora: s['HORA'], codigo: s['COD. CLIENTE'], vendedor: s['VENDEDOR'],
+    zonaSupervisor: supActual['Zona'], motivo: motivo
+  };
+
+  fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+    .then(function() {
+      solProcesadas[solicitudKey(s)] = 'rechazada';
+      mostrarResultadoSolicitud(card, true, '🚫 Solicitud rechazada' + (motivo ? ': ' + motivo : ''));
+      actualizarBadgeSolicitudes();
+    })
+    .catch(function() {
+      mostrarResultadoSolicitud(card, false, '❌ Error al rechazar. Reintentá.');
+    });
 }
 
 // ── RENDER ──────────────────────────────────────────────────────────────────────
@@ -477,16 +670,18 @@ function renderDayTabs(days) {
 // ── CARGA INICIAL ─────────────────────────────────────────────────────────────
 async function cargarDatos() {
   try {
-    const [sup, cli, rut] = await Promise.all([
+    const [sup, cli, rut, sol] = await Promise.all([
       fetch(URL_SUPERVISORES).then(function(r) { return r.text(); }),
       fetch(URL_BASE_CLIENTES).then(function(r) { return r.text(); }),
-      fetch(URL_BASE_RUTEO).then(function(r) { return r.text(); })
+      fetch(URL_BASE_RUTEO).then(function(r) { return r.text(); }),
+      fetch(URL_SOLICITUDES).then(function(r) { return r.text(); })
     ]);
     supervisores = parseCSV(sup);
     baseClientes = parseCSV(cli).filter(function(c) {
       return ZONAS_VALIDAS.indexOf(norm(c['Nombre Territorio'])) !== -1;
     });
     baseRuteo = parseCSV(rut).filter(function(r) { return r['NOMBRE COMERCIAL']; });
+    solicitudes = parseCSV(sol).filter(function(s) { return s['COD. CLIENTE']; });
     renderZonas();
   } catch (e) {
     document.getElementById('zona-screen').innerHTML = '<div class="pin-title">Error al cargar datos</div><div class="pin-sub">Recargá la página</div>';

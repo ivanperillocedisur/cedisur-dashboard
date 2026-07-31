@@ -197,13 +197,6 @@
   /* ENCABEZADO DE DÍA STICKY */
   .day-group-header { position: sticky; background: var(--bg); z-index: 50; }
 
-  /* DRAG & DROP */
-  .drag-handle { cursor: grab; color: var(--text3); flex-shrink: 0; touch-action: none; padding: 4px; display: flex; align-items: center; }
-  .drag-handle svg { width: 14px; height: 14px; }
-  .client-card.dragging { opacity: 0.4; }
-  .card-main.drag-over-top { box-shadow: inset 0 3px 0 var(--sup); }
-  .card-main.drag-over-bottom { box-shadow: inset 0 -3px 0 var(--sup); }
-
   /* CAMBIO PENDIENTE (sin guardar) */
   /* El borde punteado se retiró; el aviso queda solo en el tag "Sin guardar" */
   .pending-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #B45309; background: #FEF3C7; border-radius: 10px; padding: 1px 6px; margin-left: 6px; }
@@ -438,32 +431,29 @@ function restaurarSesionStorage() {
 function getEstadoVirtual(vendedor) {
   const key = normTokens(vendedor);
   if (!estadoVirtualPorVendedor[key]) {
-    estadoVirtualPorVendedor[key] = { diaVirtual: {}, ordenVirtual: {}, canalVirtual: {}, eliminados: {} };
+    estadoVirtualPorVendedor[key] = { diaVirtual: {}, ordenVirtual: {}, canalVirtual: {}, eliminados: {}, pendientes: {} };
+  }
+  // Migración: sesiones guardadas antes de este cambio pueden no tener 'pendientes'
+  if (!estadoVirtualPorVendedor[key].pendientes) {
+    const ev = estadoVirtualPorVendedor[key];
+    ev.pendientes = {};
+    Object.keys(ev.diaVirtual || {}).forEach(function(c) { ev.pendientes[c] = true; });
+    Object.keys(ev.canalVirtual || {}).forEach(function(c) { ev.pendientes[c] = true; });
+    Object.keys(ev.eliminados || {}).forEach(function(c) { ev.pendientes[c] = true; });
   }
   return estadoVirtualPorVendedor[key];
 }
 
 function hayCambiosPendientes() {
   return Object.keys(estadoVirtualPorVendedor).some(function(key) {
-    const ev = estadoVirtualPorVendedor[key];
-    return Object.keys(ev.diaVirtual).length || Object.keys(ev.ordenVirtual).length ||
-           Object.keys(ev.canalVirtual).length || Object.keys(ev.eliminados).length;
+    return Object.keys(estadoVirtualPorVendedor[key].pendientes || {}).length > 0;
   });
 }
 
 function contarCambiosPendientes() {
   let n = 0;
   Object.keys(estadoVirtualPorVendedor).forEach(function(key) {
-    const ev = estadoVirtualPorVendedor[key];
-    const codigosTocados = {};
-    Object.keys(ev.diaVirtual).forEach(function(c) { codigosTocados[c] = true; });
-    Object.keys(ev.canalVirtual).forEach(function(c) { codigosTocados[c] = true; });
-    Object.keys(ev.eliminados).forEach(function(c) { codigosTocados[c] = true; });
-    // Además, códigos cuyo orden cambió dentro de un ordenVirtual materializado
-    Object.keys(ev.ordenVirtual).forEach(function(dia) {
-      ev.ordenVirtual[dia].forEach(function(c) { codigosTocados[c] = true; });
-    });
-    n += Object.keys(codigosTocados).length;
+    n += Object.keys(estadoVirtualPorVendedor[key].pendientes || {}).length;
   });
   return n;
 }
@@ -1006,12 +996,6 @@ function obtenerDiaEfectiva(vendedor, codigo, diaOriginal) {
   return ev.diaVirtual[codigo] || diaOriginal;
 }
 
-function baselineOrdenDia(dia, rows) {
-  const arr = rows.filter(function(r) { return norm(r['DIA CARGA DE PEDIDO']) === dia; });
-  arr.sort(function(a, b) { return (parseInt(a['ORDEN']) || 0) - (parseInt(b['ORDEN']) || 0); });
-  return arr.map(function(r) { return r['CODIGO CLIENTE']; });
-}
-
 function listaOrdenDia(vendedor, dia, rows) {
   const ev = getEstadoVirtual(vendedor);
   if (ev.ordenVirtual[dia]) return ev.ordenVirtual[dia].filter(function(c) { return !ev.eliminados[c]; });
@@ -1051,11 +1035,14 @@ function moverClienteVirtual(vendedor, codigo, diaOrigen, diaDestino, refCodigo,
     if (refIdx !== -1) idx = posicion === 'antes' ? refIdx : refIdx + 1;
   }
   ev.ordenVirtual[diaDestino].splice(idx, 0, codigo);
+  ev.pendientes[codigo] = true;
   markDirty();
 }
 
 function setCanalVirtual(vendedor, codigo, nuevoCanal) {
-  getEstadoVirtual(vendedor).canalVirtual[codigo] = nuevoCanal;
+  const ev = getEstadoVirtual(vendedor);
+  ev.canalVirtual[codigo] = nuevoCanal;
+  ev.pendientes[codigo] = true;
   markDirty();
 }
 
@@ -1066,6 +1053,7 @@ function eliminarClienteVirtual(vendedor, codigo, dia) {
   const idx = ev.ordenVirtual[dia].indexOf(codigo);
   if (idx !== -1) ev.ordenVirtual[dia].splice(idx, 1);
   ev.eliminados[codigo] = true;
+  ev.pendientes[codigo] = true;
   delete ev.diaVirtual[codigo];
   delete ev.canalVirtual[codigo];
   markDirty();
@@ -1150,66 +1138,6 @@ function actualizarDayFilterLabel(diasDisponibles) {
   }
 }
 
-// ── DRAG & DROP (mouse y touch, vía Pointer Events) ─────────────────────────────
-let dragState = null;
-
-function iniciarDrag(e, codigo, dia, cardEl) {
-  e.preventDefault();
-  e.stopPropagation();
-  dragState = { codigo: codigo, origenDia: dia, cardEl: cardEl };
-  cardEl.classList.add('dragging');
-  try { e.target.setPointerCapture(e.pointerId); } catch (err) {}
-  document.addEventListener('pointermove', onDragMove);
-  document.addEventListener('pointerup', onDragEnd);
-}
-
-function onDragMove(e) {
-  if (!dragState) return;
-  e.preventDefault();
-  dragState.cardEl.style.pointerEvents = 'none';
-  const el = document.elementFromPoint(e.clientX, e.clientY);
-  dragState.cardEl.style.pointerEvents = '';
-  if (!el) return;
-  const listEl = el.closest('.list[data-dia]');
-  if (!listEl) return;
-  const cards = Array.prototype.slice.call(listEl.querySelectorAll('.client-card')).filter(function(c) { return c !== dragState.cardEl; });
-  let insertado = false;
-  for (let i = 0; i < cards.length; i++) {
-    const r = cards[i].getBoundingClientRect();
-    const mid = r.top + r.height / 2;
-    if (e.clientY < mid) { listEl.insertBefore(dragState.cardEl, cards[i]); insertado = true; break; }
-  }
-  if (!insertado) listEl.appendChild(dragState.cardEl);
-}
-
-function onDragEnd(e) {
-  if (!dragState) return;
-  document.removeEventListener('pointermove', onDragMove);
-  document.removeEventListener('pointerup', onDragEnd);
-  dragState.cardEl.classList.remove('dragging');
-
-  const vendedor = selectedVendedor;
-  const ev = getEstadoVirtual(vendedor);
-  const listas = document.querySelectorAll('.list[data-dia]');
-  listas.forEach(function(listEl) {
-    const dia = listEl.dataset.dia;
-    const codigos = Array.prototype.slice.call(listEl.querySelectorAll('.client-card')).map(function(c) { return c.dataset.codigo; });
-    ev.ordenVirtual[dia] = codigos;
-  });
-
-  const grupoFinal = dragState.cardEl.closest('.list[data-dia]');
-  const diaFinal = grupoFinal ? grupoFinal.dataset.dia : dragState.origenDia;
-  const rows = ruteoDelVendedor(vendedor);
-  const row = rows.find(function(r) { return r['CODIGO CLIENTE'] === dragState.codigo; });
-  const diaOriginalReal = row ? norm(row['DIA CARGA DE PEDIDO']) : dragState.origenDia;
-  if (diaFinal !== diaOriginalReal) ev.diaVirtual[dragState.codigo] = diaFinal;
-  else delete ev.diaVirtual[dragState.codigo];
-
-  dragState = null;
-  markDirty();
-  render();
-}
-
 // ── RENDER ───────────────────────────────────────────────────────────────────────
 function render() {
   const content = document.getElementById('app-content');
@@ -1266,15 +1194,13 @@ function render() {
     dayHeader.textContent = dia.charAt(0) + dia.slice(1).toLowerCase() + ' · ' + codigos.length + ' cliente' + (codigos.length !== 1 ? 's' : '');
     content.appendChild(dayHeader);
 
-    const baseline = baselineOrdenDia(dia, rows);
-
     const list = document.createElement('div');
     list.className = 'list';
     list.dataset.dia = dia;
     codigos.forEach(function(codigo, idx) {
       const row = codigoToRow[codigo];
       if (!row) return;
-      list.appendChild(buildClientCardSupervisor(row, dia, idx + 1, baseline));
+      list.appendChild(buildClientCardSupervisor(row, dia, idx + 1));
     });
     content.appendChild(list);
   });
@@ -1291,15 +1217,12 @@ function actualizarStickyOffsets() {
   document.querySelectorAll('.day-group-header').forEach(function(h) { h.style.top = headerH + 'px'; });
 }
 
-function buildClientCardSupervisor(row, dia, ordenVisual, baseline) {
+function buildClientCardSupervisor(row, dia, ordenVisual) {
   const ev = getEstadoVirtual(selectedVendedor);
   const codigo = row['CODIGO CLIENTE'];
   const canalReal = ev.canalVirtual[codigo] || row['Canal actual (Presencial / Autogestión)'];
   const cc = canalClass(canalReal);
-  const diaOriginal = norm(row['DIA CARGA DE PEDIDO']);
-  const cambioDia = diaOriginal !== dia;
-  const cambioOrden = !cambioDia && baseline && baseline.indexOf(codigo) !== (ordenVisual - 1);
-  const esPendiente = !!ev.diaVirtual[codigo] || !!ev.canalVirtual[codigo] || cambioDia || cambioOrden;
+  const esPendiente = !!ev.pendientes[codigo];
 
   const card = document.createElement('div');
   card.className = 'client-card ' + cc + (esPendiente ? ' pending-change' : '');
@@ -1307,12 +1230,6 @@ function buildClientCardSupervisor(row, dia, ordenVisual, baseline) {
 
   const main = document.createElement('div');
   main.className = 'card-main';
-
-  const handle = document.createElement('span');
-  handle.className = 'drag-handle';
-  handle.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="3" r="1.3"/><circle cx="11" cy="3" r="1.3"/><circle cx="5" cy="8" r="1.3"/><circle cx="11" cy="8" r="1.3"/><circle cx="5" cy="13" r="1.3"/><circle cx="11" cy="13" r="1.3"/></svg>';
-  handle.addEventListener('pointerdown', function(e) { iniciarDrag(e, codigo, dia, card); });
-  main.appendChild(handle);
 
   if (modoSeleccion) {
     const key = claveSel(dia, codigo);

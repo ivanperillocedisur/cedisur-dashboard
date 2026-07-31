@@ -594,6 +594,15 @@ function normTokens(s) {
 function solicitudKey(s) {
   return [s['COD. CLIENTE'], normTokens(s['VENDEDOR']), (s['DETALLE']||'').trim()].join('|');
 }
+let _fechaFacturaIndex = null;
+function getFechaFactura(codigo) {
+  if (!_fechaFacturaIndex) {
+    _fechaFacturaIndex = {};
+    baseClientes.forEach(function(c) { _fechaFacturaIndex[c['Código SN']] = c['Fecha Última Factura'] || ''; });
+  }
+  return _fechaFacturaIndex[codigo] || '';
+}
+
 function mapsUrl(c) {
   const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
   if (tieneCoords) return 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'];
@@ -936,7 +945,7 @@ function renderClientesView() {
       card.innerHTML =
         '<div class="cli-nombre">' + (c['Nombre SN'] || '') + '</div>' +
         '<div class="cli-sub">' + (c['Localidad'] || '') + ' · ' + c['Código SN'] + ' · Vendedor: ' + (c['Vendedor'] || '—') + '</div>' +
-        '<div class="cli-detalle">' + (c['Dirección entrega'] || '—') + '</div>';
+        '<div class="cli-detalle">' + (c['Dirección entrega'] || '—') + '<br>Última factura: ' + (c['Fecha Última Factura'] || 'Sin compras registradas') + '</div>';
       const btn = document.createElement('button');
       btn.className = 'btn-cli-accion';
       btn.textContent = '📋 Rutear cliente';
@@ -979,7 +988,7 @@ function renderClientesView() {
       card.innerHTML =
         '<div class="cli-nombre">' + it.codigoViejo + ' → ' + it.clienteNuevo['Código SN'] + '</div>' +
         '<div class="cli-sub">' + (it.filaVieja['NOMBRE COMERCIAL'] || '') + ' · ' + (it.filaVieja['VENDEDOR'] || '') + '</div>' +
-        '<div class="cli-detalle">Nuevo nombre: ' + (it.clienteNuevo['Nombre SN'] || '') + '<br>Mantiene día (' + it.filaVieja['DIA CARGA DE PEDIDO'] + ') y orden actual.</div>';
+        '<div class="cli-detalle">Nuevo nombre: ' + (it.clienteNuevo['Nombre SN'] || '') + '<br>Mantiene día (' + it.filaVieja['DIA CARGA DE PEDIDO'] + ') y orden actual.<br>Última factura: ' + (it.clienteNuevo['Fecha Última Factura'] || 'Sin compras registradas') + '</div>';
       const btn = document.createElement('button');
       btn.className = 'btn-cli-accion info';
       btn.textContent = '🔄 Aplicar reemplazo';
@@ -1683,10 +1692,12 @@ function buildClientCardSupervisor(row, dia, ordenVisual) {
 
   const detail = document.createElement('div');
   detail.className = 'card-detail';
+  const fechaFactura = getFechaFactura(codigo);
   detail.innerHTML =
     '<div class="detail-divider"></div>' +
     '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + (row['DIRECCION'] || '—') + '</div></div>' +
     '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>' +
+    '<div class="detail-row"><div class="detail-label">Última factura</div><div class="detail-value">' + (fechaFactura || 'Sin compras registradas') + '</div></div>' +
     '<a class="btn-maps" href="' + mapsUrl(row) + '" target="_blank" onclick="event.stopPropagation()">' +
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
     'Abrir en Maps</a>';

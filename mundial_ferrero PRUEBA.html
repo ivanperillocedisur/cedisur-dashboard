@@ -210,6 +210,15 @@
 
   /* POSICIÓN RELATIVA (modales) */
   .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* PESTAÑA CLIENTES */
+  .cli-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 8px; }
+  .cli-nombre { font-size: 14px; font-weight: 700; color: var(--text); }
+  .cli-sub { font-size: 11px; color: var(--text3); margin-top: 2px; margin-bottom: 0.75rem; }
+  .cli-detalle { font-size: 12px; color: var(--text2); margin-bottom: 0.75rem; line-height: 1.4; background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+  .btn-cli-accion { width: 100%; padding: 0.65rem; border-radius: 8px; border: none; background: var(--sup); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-cli-accion.danger { background: #C0392B; }
+  .btn-cli-accion.info { background: #7C3AED; }
 </style>
 </head>
 <body>
@@ -248,6 +257,7 @@
   <div class="view-tabs">
     <button class="view-tab active" id="tab-ruteo" onclick="cambiarVista('ruteo')">Ruteo</button>
     <button class="view-tab" id="tab-solicitudes" onclick="cambiarVista('solicitudes')">Solicitudes<span class="badge-count" id="sol-badge" style="display:none">0</span></button>
+    <button class="view-tab" id="tab-clientes" onclick="cambiarVista('clientes')">Clientes<span class="badge-count" id="cli-badge" style="display:none">0</span></button>
   </div>
   <div id="ruteo-controls">
     <select id="vendedor-select"></select>
@@ -259,6 +269,13 @@
   </div>
   <div id="sol-controls" style="display:none">
     <select id="sol-vendedor-filter"></select>
+  </div>
+  <div id="cli-controls" style="display:none">
+    <select id="cli-subvista">
+      <option value="sinRutear">📋 Clientes sin rutear</option>
+      <option value="baja">🚫 Clientes a dar de baja</option>
+      <option value="razonSocial">🔄 Cambios de razón social</option>
+    </select>
   </div>
 </div>
 
@@ -366,6 +383,42 @@
   </div>
 </div>
 
+<!-- MODAL AGREGAR CLIENTE AL RUTEO (supervisor) -->
+<div class="modal-overlay" id="alta-modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Rutear cliente</div>
+    <div class="modal-cliente" id="alta-modal-cliente"></div>
+    <div class="modal-field">
+      <label>Día de visita</label>
+      <select id="alta-input-dia" onchange="onAltaDiaChange()">
+        <option value="">— Seleccioná —</option>
+        <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
+        <option>JUEVES</option><option>VIERNES</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Ubicar</label>
+      <select id="alta-input-posicion" onchange="validarAlta()">
+        <option value="final">Al final del día</option>
+        <option value="antes">Antes de...</option>
+        <option value="despues">Después de...</option>
+      </select>
+    </div>
+    <div class="modal-field" id="alta-campo-referencia" style="display:none">
+      <label>Cliente de referencia</label>
+      <select id="alta-input-referencia" onchange="validarAlta()">
+        <option value="">— Seleccioná —</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="cerrarModalAlta()">Cancelar</button>
+      <button class="btn-confirmar" id="alta-btn-confirmar" disabled onclick="confirmarAlta()">Agregar al ruteo</button>
+    </div>
+    <div id="alta-modal-status"></div>
+  </div>
+</div>
+
 <script>
 const URL_SUPERVISORES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1122468659&single=true&output=csv';
 const URL_BASE_CLIENTES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1835040316&single=true&output=csv';
@@ -431,16 +484,16 @@ function restaurarSesionStorage() {
 function getEstadoVirtual(vendedor) {
   const key = normTokens(vendedor);
   if (!estadoVirtualPorVendedor[key]) {
-    estadoVirtualPorVendedor[key] = { diaVirtual: {}, ordenVirtual: {}, canalVirtual: {}, eliminados: {}, pendientes: {} };
+    estadoVirtualPorVendedor[key] = { diaVirtual: {}, ordenVirtual: {}, canalVirtual: {}, eliminados: {}, pendientes: {}, altas: {} };
   }
-  // Migración: sesiones guardadas antes de este cambio pueden no tener 'pendientes'
-  if (!estadoVirtualPorVendedor[key].pendientes) {
-    const ev = estadoVirtualPorVendedor[key];
+  const ev = estadoVirtualPorVendedor[key];
+  if (!ev.pendientes) {
     ev.pendientes = {};
     Object.keys(ev.diaVirtual || {}).forEach(function(c) { ev.pendientes[c] = true; });
     Object.keys(ev.canalVirtual || {}).forEach(function(c) { ev.pendientes[c] = true; });
     Object.keys(ev.eliminados || {}).forEach(function(c) { ev.pendientes[c] = true; });
   }
+  if (!ev.altas) ev.altas = {};
   return estadoVirtualPorVendedor[key];
 }
 
@@ -667,6 +720,7 @@ function iniciarSesion() {
 
   renderSolFiltro();
   actualizarBadgeSolicitudes();
+  actualizarBadgeClientes();
 
   document.getElementById('pin-screen').classList.add('hidden');
   document.getElementById('zona-screen').classList.add('hidden');
@@ -680,10 +734,224 @@ function cambiarVista(v) {
   viewMode = v;
   document.getElementById('tab-ruteo').classList.toggle('active', v === 'ruteo');
   document.getElementById('tab-solicitudes').classList.toggle('active', v === 'solicitudes');
+  document.getElementById('tab-clientes').classList.toggle('active', v === 'clientes');
   document.getElementById('ruteo-controls').style.display = v === 'ruteo' ? 'block' : 'none';
   document.getElementById('sol-controls').style.display = v === 'solicitudes' ? 'block' : 'none';
+  document.getElementById('cli-controls').style.display = v === 'clientes' ? 'block' : 'none';
+  const bar = document.getElementById('bulk-bar'); if (bar) bar.remove();
+  if (v !== 'ruteo') { modoSeleccion = false; seleccionados = {}; }
   if (v === 'ruteo') render();
-  else renderSolicitudesView();
+  else if (v === 'solicitudes') { renderSolicitudesView(); renderConfirmBar(); }
+  else { renderClientesView(); renderConfirmBar(); }
+}
+
+// ── PESTAÑA CLIENTES (Etapa 2E) ─────────────────────────────────────────────────
+
+function codigosRuteadosZona() {
+  const set = {};
+  baseRuteo.forEach(function(r) {
+    if (vendedoresZona.some(function(v) { return normTokens(v) === normTokens(r['VENDEDOR']); })) {
+      set[r['CODIGO CLIENTE']] = r;
+    }
+  });
+  return set;
+}
+
+function codigoYaPendienteEnAlgunVendedor(codigo) {
+  return Object.keys(estadoVirtualPorVendedor).some(function(key) {
+    return !!estadoVirtualPorVendedor[key].altas[codigo];
+  });
+}
+
+function codigoYaEliminadoEnAlgunVendedor(codigo) {
+  return Object.keys(estadoVirtualPorVendedor).some(function(key) {
+    return !!estadoVirtualPorVendedor[key].eliminados[codigo];
+  });
+}
+
+function clientesSinRutear() {
+  const ruteados = codigosRuteadosZona();
+  return baseClientes.filter(function(c) {
+    return norm(c['Nombre Territorio']) === norm(supActual['Zona']) &&
+           !ruteados[c['Código SN']] &&
+           !codigoYaPendienteEnAlgunVendedor(c['Código SN']);
+  });
+}
+
+function clientesParaDarDeBaja() {
+  const activos = {};
+  baseClientes.forEach(function(c) { activos[c['Código SN']] = true; });
+  const ruteados = codigosRuteadosZona();
+  return Object.keys(ruteados).map(function(codigo) { return ruteados[codigo]; })
+    .filter(function(r) {
+      return !activos[r['CODIGO CLIENTE']] && !codigoYaEliminadoEnAlgunVendedor(r['CODIGO CLIENTE']);
+    });
+}
+
+function cambiosRazonSocial() {
+  const ruteados = codigosRuteadosZona();
+  const resultado = [];
+  baseClientes.forEach(function(c) {
+    if (norm(c['Nombre Territorio']) !== norm(supActual['Zona'])) return;
+    const comentarios = c['Comentarios'] || '';
+    const match = comentarios.match(/Cambio RS de\s*(C\d+)/i);
+    if (!match) return;
+    const codigoViejo = match[1];
+    const filaVieja = ruteados[codigoViejo];
+    if (filaVieja && !codigoYaEliminadoEnAlgunVendedor(codigoViejo) && !codigoYaPendienteEnAlgunVendedor(c['Código SN'])) {
+      resultado.push({ clienteNuevo: c, filaVieja: filaVieja, codigoViejo: codigoViejo });
+    }
+  });
+  return resultado;
+}
+
+function actualizarBadgeClientes() {
+  const badge = document.getElementById('cli-badge');
+  const n = clientesSinRutear().length + clientesParaDarDeBaja().length + cambiosRazonSocial().length;
+  if (n > 0) { badge.style.display = 'inline-block'; badge.textContent = n; }
+  else { badge.style.display = 'none'; }
+}
+
+function renderClientesView() {
+  const sel = document.getElementById('cli-subvista');
+  sel.onchange = renderClientesView;
+  const sub = sel.value;
+  const content = document.getElementById('app-content');
+  content.innerHTML = '';
+  actualizarBadgeClientes();
+
+  const list = document.createElement('div');
+  list.className = 'list';
+  list.style.padding = '0.75rem 1.25rem';
+
+  if (sub === 'sinRutear') {
+    const items = clientesSinRutear();
+    if (!items.length) {
+      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay clientes activos sin rutear en tu zona.</div></div>';
+      return;
+    }
+    items.forEach(function(c) {
+      const card = document.createElement('div');
+      card.className = 'cli-card';
+      card.innerHTML =
+        '<div class="cli-nombre">' + (c['Nombre SN'] || '') + '</div>' +
+        '<div class="cli-sub">' + (c['Localidad'] || '') + ' · ' + c['Código SN'] + ' · Vendedor: ' + (c['Vendedor'] || '—') + '</div>' +
+        '<div class="cli-detalle">' + (c['Dirección entrega'] || '—') + '</div>';
+      const btn = document.createElement('button');
+      btn.className = 'btn-cli-accion';
+      btn.textContent = '📋 Rutear cliente';
+      btn.addEventListener('click', function() { abrirModalAlta(c); });
+      card.appendChild(btn);
+      list.appendChild(card);
+    });
+
+  } else if (sub === 'baja') {
+    const items = clientesParaDarDeBaja();
+    if (!items.length) {
+      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay clientes para dar de baja en tu zona.</div></div>';
+      return;
+    }
+    items.forEach(function(r) {
+      const card = document.createElement('div');
+      card.className = 'cli-card';
+      card.innerHTML =
+        '<div class="cli-nombre">' + (r['NOMBRE COMERCIAL'] || '') + '</div>' +
+        '<div class="cli-sub">' + (r['LOCALIDAD'] || '') + ' · ' + r['CODIGO CLIENTE'] + ' · ' + (r['VENDEDOR'] || '') + '</div>' +
+        '<div class="cli-detalle">Este código ya no figura como cliente activo. Día actual: ' + (r['DIA CARGA DE PEDIDO'] || '—') + '</div>';
+      const btn = document.createElement('button');
+      btn.className = 'btn-cli-accion danger';
+      btn.textContent = '🚫 Dar de baja del ruteo';
+      btn.addEventListener('click', function() {
+        eliminarClienteVirtual(r['VENDEDOR'], r['CODIGO CLIENTE'], norm(r['DIA CARGA DE PEDIDO']));
+        renderClientesView();
+      });
+      card.appendChild(btn);
+      list.appendChild(card);
+    });
+
+  } else {
+    const items = cambiosRazonSocial();
+    if (!items.length) {
+      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay cambios de razón social pendientes en tu zona.</div></div>';
+      return;
+    }
+    items.forEach(function(it) {
+      const card = document.createElement('div');
+      card.className = 'cli-card';
+      card.innerHTML =
+        '<div class="cli-nombre">' + it.codigoViejo + ' → ' + it.clienteNuevo['Código SN'] + '</div>' +
+        '<div class="cli-sub">' + (it.filaVieja['NOMBRE COMERCIAL'] || '') + ' · ' + (it.filaVieja['VENDEDOR'] || '') + '</div>' +
+        '<div class="cli-detalle">Nuevo nombre: ' + (it.clienteNuevo['Nombre SN'] || '') + '<br>Mantiene día (' + it.filaVieja['DIA CARGA DE PEDIDO'] + ') y orden actual.</div>';
+      const btn = document.createElement('button');
+      btn.className = 'btn-cli-accion info';
+      btn.textContent = '🔄 Aplicar reemplazo';
+      btn.addEventListener('click', function() {
+        const clienteNuevo = {
+          codigo: it.clienteNuevo['Código SN'],
+          nombre: it.clienteNuevo['Nombre SN'],
+          localidad: it.clienteNuevo['Localidad'],
+          direccion: it.clienteNuevo['Dirección entrega']
+        };
+        reemplazarPorCambioRS(it.filaVieja['VENDEDOR'], it.codigoViejo, clienteNuevo, norm(it.filaVieja['DIA CARGA DE PEDIDO']));
+        renderClientesView();
+      });
+      card.appendChild(btn);
+      list.appendChild(card);
+    });
+  }
+
+  content.appendChild(list);
+}
+
+// ── MODAL RUTEAR CLIENTE NUEVO ───────────────────────────────────────────────────
+let altaClienteActual = null;
+
+function abrirModalAlta(clienteBaseClientes) {
+  altaClienteActual = clienteBaseClientes;
+  document.getElementById('alta-modal-cliente').textContent =
+    (clienteBaseClientes['Nombre SN'] || '') + ' · ' + (clienteBaseClientes['Vendedor'] || '');
+  document.getElementById('alta-input-dia').value = '';
+  document.getElementById('alta-input-posicion').value = 'final';
+  document.getElementById('alta-campo-referencia').style.display = 'none';
+  document.getElementById('alta-btn-confirmar').disabled = true;
+  document.getElementById('alta-btn-confirmar').textContent = 'Agregar al ruteo';
+  document.getElementById('alta-modal-status').innerHTML = '';
+  document.getElementById('alta-modal-overlay').classList.add('open');
+}
+function cerrarModalAlta() {
+  document.getElementById('alta-modal-overlay').classList.remove('open');
+  altaClienteActual = null;
+}
+function onAltaDiaChange() {
+  const dia = document.getElementById('alta-input-dia').value;
+  if (dia && altaClienteActual) {
+    poblarReferencia(document.getElementById('alta-input-referencia'), dia, null, altaClienteActual['Vendedor']);
+  }
+  validarAlta();
+}
+function validarAlta() {
+  const dia = document.getElementById('alta-input-dia').value;
+  const pos = document.getElementById('alta-input-posicion').value;
+  document.getElementById('alta-campo-referencia').style.display = (pos !== 'final') ? 'block' : 'none';
+  const ok = !!dia && (pos === 'final' || document.getElementById('alta-input-referencia').value !== '');
+  document.getElementById('alta-btn-confirmar').disabled = !ok;
+}
+function confirmarAlta() {
+  if (!altaClienteActual) return;
+  const dia = document.getElementById('alta-input-dia').value;
+  const posicion = document.getElementById('alta-input-posicion').value;
+  const refCodigo = posicion !== 'final' ? document.getElementById('alta-input-referencia').value : null;
+
+  const cliente = {
+    codigo: altaClienteActual['Código SN'],
+    nombre: altaClienteActual['Nombre SN'],
+    localidad: altaClienteActual['Localidad'],
+    direccion: altaClienteActual['Dirección entrega']
+  };
+  agregarClienteVirtual(altaClienteActual['Vendedor'], cliente, dia, refCodigo, posicion);
+
+  document.getElementById('alta-modal-status').innerHTML = '<div class="modal-status ok">✅ Agregado a la cola. Confirmá los cambios para guardar en el Sheet.</div>';
+  setTimeout(function() { cerrarModalAlta(); renderClientesView(); }, 900);
 }
 
 function solicitudesDeLaZona() {
@@ -822,11 +1090,14 @@ function rechazarSolicitudUI(s, card) {
 // ── MODAL ACCIÓN EN LOTE (supervisor) ───────────────────────────────────────────
 let bulkTipoActual = null;
 
-function poblarReferencia(selectEl, dia, excluirCodigo) {
-  const rows = ruteoDelVendedor(selectedVendedor);
+function poblarReferencia(selectEl, dia, excluirCodigo, vendedorParam) {
+  const vendedor = vendedorParam || selectedVendedor;
+  const rows = ruteoDelVendedor(vendedor);
+  const ev = getEstadoVirtual(vendedor);
   const codigoToRow = {};
   rows.forEach(function(r) { codigoToRow[r['CODIGO CLIENTE']] = r; });
-  const codigos = listaOrdenDia(selectedVendedor, dia, rows).filter(function(c) { return c !== excluirCodigo; });
+  Object.keys(ev.altas).forEach(function(c) { codigoToRow[c] = { 'NOMBRE COMERCIAL': ev.altas[c].nombre + ' (nuevo)' }; });
+  const codigos = listaOrdenDia(vendedor, dia, rows).filter(function(c) { return c !== excluirCodigo; });
   selectEl.innerHTML = '<option value="">— Seleccioná —</option>';
   codigos.forEach(function(codigo) {
     const row = codigoToRow[codigo];
@@ -1056,6 +1327,42 @@ function eliminarClienteVirtual(vendedor, codigo, dia) {
   ev.pendientes[codigo] = true;
   delete ev.diaVirtual[codigo];
   delete ev.canalVirtual[codigo];
+  delete ev.altas[codigo];
+  markDirty();
+}
+
+// ── ALTAS Y REEMPLAZOS (Etapa 2E) ───────────────────────────────────────────────
+function calcularIndiceInsercion(vendedor, dia, refCodigo, posicion) {
+  const ev = getEstadoVirtual(vendedor);
+  const arr = ev.ordenVirtual[dia] || [];
+  if (!refCodigo || posicion === 'final') return arr.length;
+  const idx = arr.indexOf(refCodigo);
+  return idx === -1 ? arr.length : (posicion === 'antes' ? idx : idx + 1);
+}
+
+function agregarClienteVirtual(vendedor, cliente, dia, refCodigo, posicion) {
+  const rows = ruteoDelVendedor(vendedor);
+  const ev = getEstadoVirtual(vendedor);
+  materializarDia(vendedor, dia, rows);
+  const idx = calcularIndiceInsercion(vendedor, dia, refCodigo, posicion);
+  ev.ordenVirtual[dia].splice(idx, 0, cliente.codigo);
+  ev.altas[cliente.codigo] = cliente;
+  ev.pendientes[cliente.codigo] = true;
+  markDirty();
+}
+
+function reemplazarPorCambioRS(vendedor, codigoViejo, clienteNuevo, dia) {
+  const rows = ruteoDelVendedor(vendedor);
+  const ev = getEstadoVirtual(vendedor);
+  materializarDia(vendedor, dia, rows);
+  const idx = ev.ordenVirtual[dia].indexOf(codigoViejo);
+  if (idx !== -1) ev.ordenVirtual[dia].splice(idx, 1);
+  ev.eliminados[codigoViejo] = true;
+  ev.pendientes[codigoViejo] = true;
+  const insertIdx = idx === -1 ? ev.ordenVirtual[dia].length : idx;
+  ev.ordenVirtual[dia].splice(insertIdx, 0, clienteNuevo.codigo);
+  ev.altas[clienteNuevo.codigo] = clienteNuevo;
+  ev.pendientes[clienteNuevo.codigo] = true;
   markDirty();
 }
 
@@ -1148,18 +1455,33 @@ function render() {
   }
 
   const rows = ruteoDelVendedor(selectedVendedor);
-  if (!rows.length) {
+  const ev = getEstadoVirtual(selectedVendedor);
+  const hayAltas = Object.keys(ev.altas).length > 0;
+  if (!rows.length && !hayAltas) {
     content.innerHTML = '<div class="empty"><div class="empty-text">Este vendedor no tiene clientes ruteados.</div></div>';
     return;
   }
 
   const codigoToRow = {};
   rows.forEach(function(r) { codigoToRow[r['CODIGO CLIENTE']] = r; });
+  Object.keys(ev.altas).forEach(function(codigo) {
+    if (!codigoToRow[codigo]) {
+      const alta = ev.altas[codigo];
+      codigoToRow[codigo] = {
+        'CODIGO CLIENTE': codigo,
+        'NOMBRE COMERCIAL': alta.nombre + ' (nuevo)',
+        'LOCALIDAD': alta.localidad,
+        'DIRECCION': alta.direccion,
+        'Canal actual (Presencial / Autogestión)': 'Presencial',
+        'Latitud': '', 'Longitud': ''
+      };
+    }
+  });
 
-  const ev = getEstadoVirtual(selectedVendedor);
   const diasSet = {};
   rows.forEach(function(r) { const d = norm(r['DIA CARGA DE PEDIDO']); if (d) diasSet[d] = true; });
   Object.keys(ev.diaVirtual).forEach(function(c) { diasSet[ev.diaVirtual[c]] = true; });
+  Object.keys(ev.ordenVirtual).forEach(function(d) { if (ev.ordenVirtual[d].length) diasSet[d] = true; });
   const diasDisponibles = Object.keys(diasSet).sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
 
   renderDayFilterPanel(diasDisponibles);
@@ -1361,13 +1683,15 @@ function confirmarCambiosGlobal() {
   const vendedoresConCambios = Object.keys(estadoVirtualPorVendedor).filter(function(key) {
     const ev = estadoVirtualPorVendedor[key];
     return Object.keys(ev.diaVirtual).length || Object.keys(ev.ordenVirtual).length ||
-           Object.keys(ev.canalVirtual).length || Object.keys(ev.eliminados).length;
+           Object.keys(ev.canalVirtual).length || Object.keys(ev.eliminados).length ||
+           Object.keys(ev.altas).length;
   });
 
   const promesas = vendedoresConCambios.map(function(key) {
     const ev = estadoVirtualPorVendedor[key];
-    const filaVendedor = baseRuteo.find(function(r) { return normTokens(r['VENDEDOR']) === key; });
-    const vendedorReal = filaVendedor ? filaVendedor['VENDEDOR'] : selectedVendedor;
+    const filaVendedor = baseRuteo.find(function(r) { return normTokens(r['VENDEDOR']) === key; }) ||
+                          baseClientes.find(function(c) { return normTokens(c['Vendedor']) === key; });
+    const vendedorReal = filaVendedor ? (filaVendedor['VENDEDOR'] || filaVendedor['Vendedor']) : selectedVendedor;
 
     const payload = {
       accion: 'aplicarPlanRuteo',
@@ -1375,7 +1699,8 @@ function confirmarCambiosGlobal() {
       zonaSupervisor: supActual['Zona'],
       dias: ev.ordenVirtual,
       canal: ev.canalVirtual,
-      eliminar: Object.keys(ev.eliminados)
+      eliminar: Object.keys(ev.eliminados),
+      altas: ev.altas
     };
     return fetch(APPS_SCRIPT_URL, {
       method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
@@ -1429,6 +1754,10 @@ document.getElementById('edit-modal-overlay').addEventListener('click', function
 });
 document.getElementById('bulk-modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModalLote();
+});
+
+document.getElementById('alta-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModalAlta();
 });
 </script>
 </body>

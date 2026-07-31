@@ -212,11 +212,12 @@
   .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
   /* PESTAÑA CLIENTES */
-  .cli-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 8px; }
-  .cli-nombre { font-size: 14px; font-weight: 700; color: var(--text); }
-  .cli-sub { font-size: 11px; color: var(--text3); margin-top: 2px; margin-bottom: 0.75rem; }
-  .cli-detalle { font-size: 12px; color: var(--text2); margin-bottom: 0.75rem; line-height: 1.4; background: var(--bg); border-radius: 8px; padding: 8px 10px; }
-  .btn-cli-accion { width: 100%; padding: 0.65rem; border-radius: 8px; border: none; background: var(--sup); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .cli-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; padding: 0.75rem 1.25rem; }
+  .cli-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; }
+  .cli-nombre { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.25; }
+  .cli-sub { font-size: 10px; color: var(--text3); margin-top: 2px; margin-bottom: 0.4rem; line-height: 1.3; }
+  .cli-detalle { font-size: 11px; color: var(--text2); margin-bottom: 0.5rem; line-height: 1.35; background: var(--bg); border-radius: 6px; padding: 5px 8px; }
+  .btn-cli-accion { width: 100%; padding: 0.45rem; border-radius: 7px; border: none; background: var(--sup); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: auto; }
   .btn-cli-accion.danger { background: #C0392B; }
   .btn-cli-accion.info { background: #7C3AED; }
 </style>
@@ -893,8 +894,7 @@ function renderClientesView() {
   });
 
   const list = document.createElement('div');
-  list.className = 'list';
-  list.style.padding = '0.75rem 1.25rem';
+  list.className = 'cli-list';
 
   if (sub === 'sinRutear') {
     if (!items.length) {
@@ -1740,7 +1740,10 @@ function descartarCambios() {
   if (!confirm('¿Descartar todos los cambios sin guardar?')) return;
   estadoVirtualPorVendedor = {};
   markDirty();
-  render();
+  if (viewMode === 'ruteo') render();
+  else if (viewMode === 'solicitudes') renderSolicitudesView();
+  else renderClientesView();
+  renderConfirmBar();
 }
 
 function confirmarCambiosGlobal() {
@@ -1779,7 +1782,10 @@ function confirmarCambiosGlobal() {
   Promise.all(promesas).then(function() {
     estadoVirtualPorVendedor = {};
     markDirty();
-    render();
+    if (viewMode === 'ruteo') render();
+    else if (viewMode === 'solicitudes') renderSolicitudesView();
+    else renderClientesView();
+    renderConfirmBar();
     alert('✅ Cambios guardados. Puede tardar unos minutos en reflejarse en la app por el delay de publicación de Google Sheets.');
   }).catch(function() {
     btn.disabled = false;

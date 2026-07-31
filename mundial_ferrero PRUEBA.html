@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
 <style>
   :root {
     --bg: #F5F3EF;
@@ -225,6 +226,7 @@
   .map-legend-chip.off { opacity: 0.35; }
   .map-sin-coords { font-size: 11px; color: var(--text3); padding: 0 1rem 0.5rem; flex-shrink: 0; }
   #leaflet-map { flex: 1; width: 100%; }
+  .map-num-marker { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; }
 
   /* PESTAÑA CLIENTES */
   .cli-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; padding: 0.75rem 1.25rem; }
@@ -1898,24 +1900,45 @@ function abrirMapa() {
       const codigos = listaOrdenDia(selectedVendedor, dia, rows);
       const layer = L.layerGroup();
       const color = COLOR_POR_DIA[dia] || '#666';
+      const puntosOrdenados = [];
+      let ordenVisual = 0;
 
       codigos.forEach(function(codigo) {
         const row = codigoToRow[codigo];
         if (!row) return;
+        ordenVisual++;
         const lat = parseFloat(row['Latitud']);
         const lon = parseFloat(row['Longitud']);
         if (!lat || !lon) { sinCoords++; return; }
 
-        const marker = L.circleMarker([lat, lon], {
-          radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.9
-        }).bindPopup(
-          '<strong>' + (row['NOMBRE COMERCIAL'] || '') + '</strong><br>' +
+        const icon = L.divIcon({
+          className: '',
+          html: '<div class="map-num-marker" style="background:' + color + '">' + ordenVisual + '</div>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+        const marker = L.marker([lat, lon], { icon: icon }).bindPopup(
+          '<strong>' + ordenVisual + '. ' + (row['NOMBRE COMERCIAL'] || '') + '</strong><br>' +
           (row['DIRECCION'] || '') + '<br>' +
           '<span style="color:' + color + '">' + dia.charAt(0) + dia.slice(1).toLowerCase() + '</span> · ' + codigo
         );
         layer.addLayer(marker);
+        puntosOrdenados.push([lat, lon]);
         bounds.push([lat, lon]);
       });
+
+      // Línea de recorrido con flechas de dirección, dentro de la misma capa del día
+      if (puntosOrdenados.length > 1) {
+        const linea = L.polyline(puntosOrdenados, { color: color, weight: 2.5, opacity: 0.6, dashArray: '6,6' });
+        layer.addLayer(linea);
+        const flechas = L.polylineDecorator(linea, {
+          patterns: [{
+            offset: '5%', repeat: '12%',
+            symbol: L.Symbol.arrowHead({ pixelSize: 9, polygon: false, pathOptions: { color: color, weight: 2.5, opacity: 0.9 } })
+          }]
+        });
+        layer.addLayer(flechas);
+      }
 
       layer.addTo(leafletMap);
       capasPorDia[dia] = layer;

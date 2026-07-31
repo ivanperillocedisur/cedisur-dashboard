@@ -100,8 +100,7 @@
   select option { background: #1d3a8f; color: #fff; }
   select:focus { outline: none; border-color: rgba(255,255,255,0.5); }
 
-  .days-strip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-top: 0.75rem; }
-  .days-strip::-webkit-scrollbar { display: none; }
+  /* (day-tab ahora se usa dentro del dropdown de filtro) */
   .day-tab { flex-shrink: 0; padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); background: transparent; font-family: 'DM Sans', sans-serif; }
   .day-tab.active { background: #fff; color: var(--accent); border-color: transparent; font-weight: 600; }
 
@@ -183,6 +182,41 @@
   .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
   .empty-text { font-size: 15px; }
   .loader { text-align: center; padding: 3rem; color: var(--text3); font-size: 14px; }
+
+  /* FILTRO DE DÍAS (dropdown multiselect) */
+  .day-filter-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 0.75rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 0.55rem 0.75rem; border-radius: 8px; cursor: pointer; }
+  .day-filter-btn svg { width: 12px; height: 12px; flex-shrink: 0; transition: transform 0.15s; }
+  .day-filter-btn.open svg { transform: rotate(180deg); }
+  .day-filter-panel { display: none; background: #fff; border-radius: 10px; padding: 0.75rem; margin-top: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+  .day-filter-panel.open { display: block; }
+  .day-filter-row { display: flex; align-items: center; gap: 8px; padding: 6px 4px; font-size: 14px; color: var(--text); cursor: pointer; }
+  .day-filter-row input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+  .day-filter-divider { height: 1px; background: var(--border); margin: 4px 0; }
+  .day-filter-todos { font-weight: 700; color: var(--accent); }
+
+  /* ENCABEZADO DE DÍA STICKY */
+  .day-group-header { position: sticky; background: var(--bg); z-index: 50; }
+
+  /* DRAG & DROP */
+  .drag-handle { cursor: grab; color: var(--text3); flex-shrink: 0; touch-action: none; padding: 4px; display: flex; align-items: center; }
+  .drag-handle svg { width: 14px; height: 14px; }
+  .client-card.dragging { opacity: 0.4; }
+  .card-main.drag-over-top { box-shadow: inset 0 3px 0 var(--sup); }
+  .card-main.drag-over-bottom { box-shadow: inset 0 -3px 0 var(--sup); }
+
+  /* CAMBIO PENDIENTE (sin guardar) */
+  .client-card.pending-change { outline: 2px dashed #E8A020; outline-offset: 2px; }
+  .pending-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #B45309; background: #FEF3C7; border-radius: 10px; padding: 1px 6px; margin-left: 6px; }
+
+  /* BARRA DE CONFIRMACIÓN DE CAMBIOS */
+  .confirm-changes-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1A3D28; padding: 0.75rem 1.25rem; box-shadow: 0 -2px 12px rgba(0,0,0,0.2); z-index: 260; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .confirm-changes-count { color: #fff; font-size: 13px; font-weight: 600; }
+  .confirm-changes-actions { display: flex; gap: 8px; }
+  .btn-confirm-changes { padding: 0.55rem 1rem; border-radius: 8px; border: none; background: #2D8A52; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn-discard-changes { padding: 0.55rem 0.9rem; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.3); background: transparent; color: rgba(255,255,255,0.8); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* POSICIÓN RELATIVA (modales) */
+  .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 </style>
 </head>
 <body>
@@ -224,7 +258,11 @@
   </div>
   <div id="ruteo-controls">
     <select id="vendedor-select"></select>
-    <div class="days-strip" id="days-strip"></div>
+    <button class="day-filter-btn" id="day-filter-btn" onclick="toggleDayFilterPanel()">
+      <span id="day-filter-label">Todos los días</span>
+      <svg viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 1l5 5 5-5"/></svg>
+    </button>
+    <div class="day-filter-panel" id="day-filter-panel"></div>
   </div>
   <div id="sol-controls" style="display:none">
     <select id="sol-vendedor-filter"></select>
@@ -240,26 +278,33 @@
     <div class="modal-title">Editar cliente</div>
     <div class="modal-cliente" id="edit-modal-cliente"></div>
     <div class="tipo-grid">
-      <button class="tipo-btn" data-tipo="orden" onclick="selectTipoEdit(this)"><span class="tipo-icon">📋</span>CAMBIAR<br>ORDEN</button>
-      <button class="tipo-btn" data-tipo="dia" onclick="selectTipoEdit(this)"><span class="tipo-icon">📅</span>CAMBIAR<br>DÍA</button>
+      <button class="tipo-btn" data-tipo="posicion" onclick="selectTipoEdit(this)"><span class="tipo-icon">📋</span>MOVER<br>POSICIÓN</button>
       <button class="tipo-btn" data-tipo="canal" onclick="selectTipoEdit(this)"><span class="tipo-icon">🔀</span>CAMBIAR<br>CANAL</button>
       <button class="tipo-btn" data-tipo="eliminar" onclick="selectTipoEdit(this)"><span class="tipo-icon">🗑️</span>ELIMINAR<br>DEL RUTEO</button>
     </div>
-    <div id="edit-campo-orden" class="modal-field" style="display:none">
-      <label>Nuevo número de orden</label>
-      <input type="number" id="edit-input-orden" min="1" placeholder="Ej: 5" oninput="validarEnvioEdit()">
-    </div>
-    <div id="edit-campo-dia" class="modal-field" style="display:none">
-      <label>Nuevo día de visita</label>
-      <select id="edit-input-dia" onchange="validarEnvioEdit()">
-        <option value="">— Seleccioná —</option>
-        <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
-        <option>JUEVES</option><option>VIERNES</option>
-      </select>
-    </div>
-    <div id="edit-campo-dia-orden" class="modal-field" style="display:none">
-      <label>Nuevo orden en ese día</label>
-      <input type="number" id="edit-input-dia-orden" min="1" placeholder="Ej: 3" oninput="validarEnvioEdit()">
+    <div id="edit-campo-posicion" style="display:none">
+      <div class="modal-field">
+        <label>Día de destino</label>
+        <select id="edit-input-dia" onchange="onEditDiaChange()">
+          <option value="">— Seleccioná —</option>
+          <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
+          <option>JUEVES</option><option>VIERNES</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Ubicar</label>
+        <select id="edit-input-posicion" onchange="validarEnvioEdit()">
+          <option value="final">Al final del día</option>
+          <option value="antes">Antes de...</option>
+          <option value="despues">Después de...</option>
+        </select>
+      </div>
+      <div class="modal-field" id="edit-campo-referencia" style="display:none">
+        <label>Cliente de referencia</label>
+        <select id="edit-input-referencia" onchange="validarEnvioEdit()">
+          <option value="">— Seleccioná —</option>
+        </select>
+      </div>
     </div>
     <div id="edit-campo-canal" class="modal-field" style="display:none">
       <label>Nuevo canal</label>
@@ -284,13 +329,29 @@
     <div class="modal-handle"></div>
     <div class="modal-title" id="bulk-modal-title">Aplicar a varios clientes</div>
     <div class="modal-cliente" id="bulk-modal-sub"></div>
-    <div id="bulk-campo-dia" class="modal-field" style="display:none">
-      <label>Nuevo día de visita</label>
-      <select id="bulk-input-dia" onchange="validarBulk()">
-        <option value="">— Seleccioná —</option>
-        <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
-        <option>JUEVES</option><option>VIERNES</option>
-      </select>
+    <div id="bulk-campo-dia-wrap" style="display:none">
+      <div class="modal-field">
+        <label>Día de destino</label>
+        <select id="bulk-input-dia" onchange="onBulkDiaChange()">
+          <option value="">— Seleccioná —</option>
+          <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
+          <option>JUEVES</option><option>VIERNES</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Ubicar</label>
+        <select id="bulk-input-posicion" onchange="validarBulk()">
+          <option value="final">Al final del día</option>
+          <option value="antes">Antes de...</option>
+          <option value="despues">Después de...</option>
+        </select>
+      </div>
+      <div class="modal-field" id="bulk-campo-referencia" style="display:none">
+        <label>Cliente de referencia</label>
+        <select id="bulk-input-referencia" onchange="validarBulk()">
+          <option value="">— Seleccioná —</option>
+        </select>
+      </div>
     </div>
     <div id="bulk-campo-canal" class="modal-field" style="display:none">
       <label>Nuevo canal</label>
@@ -302,7 +363,7 @@
       </select>
     </div>
     <div id="bulk-campo-eliminar" class="modal-field" style="display:none">
-      <div class="detail-value">Esta acción eliminará del ruteo a los clientes seleccionados. No se puede deshacer.</div>
+      <div class="detail-value">Esta acción marcará para eliminar del ruteo a los clientes seleccionados.</div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancelar" onclick="cerrarModalLote()">Cancelar</button>
@@ -328,15 +389,88 @@ let baseRuteo = [];
 let supActual = null;
 let vendedoresZona = [];
 let selectedVendedor = '';
-let selectedDay = '';
 let pinActual = '';
 let zonaSeleccionada = '';
 let viewMode = 'ruteo';
 let solicitudes = [];
 let solVendedorFiltro = '';
 let solProcesadas = {};
-let editModalData = null; // {codigo, vendedor, dia, nombre}
-let tipoEditSeleccionado = null; // clave -> 'aplicada' | 'rechazada' (para no depender del refresco del CSV)
+let editModalData = null; // {codigo, dia, nombre}
+let tipoEditSeleccionado = null;
+
+let diasFiltro = DAYS_ORDER.slice(0, 5); // LUNES..VIERNES activos por defecto
+let modoSeleccion = false;
+let seleccionados = {}; // clave "dia|codigo" -> {codigo, dia, nombre}
+
+// ── ESTADO VIRTUAL (cambios pendientes de confirmar) ────────────────────────────
+// Por vendedor: { diaVirtual: {codigo:dia}, ordenVirtual: {dia:[codigo,...]}, canalVirtual: {codigo:canal}, eliminados: {codigo:true} }
+let estadoVirtualPorVendedor = {};
+
+function SS_KEY() { return 'panelSup_session_v1'; }
+
+function guardarSesionStorage() {
+  try {
+    sessionStorage.setItem(SS_KEY(), JSON.stringify({
+      supActual: supActual,
+      zonaSeleccionada: zonaSeleccionada,
+      selectedVendedor: selectedVendedor,
+      diasFiltro: diasFiltro,
+      estadoVirtualPorVendedor: estadoVirtualPorVendedor
+    }));
+  } catch (e) {}
+}
+
+function restaurarSesionStorage() {
+  try {
+    const raw = sessionStorage.getItem(SS_KEY());
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    if (!s.supActual) return false;
+    supActual = s.supActual;
+    zonaSeleccionada = s.zonaSeleccionada || '';
+    selectedVendedor = s.selectedVendedor || '';
+    diasFiltro = s.diasFiltro || DAYS_ORDER.slice(0, 5);
+    estadoVirtualPorVendedor = s.estadoVirtualPorVendedor || {};
+    return true;
+  } catch (e) { return false; }
+}
+
+function getEstadoVirtual(vendedor) {
+  const key = normTokens(vendedor);
+  if (!estadoVirtualPorVendedor[key]) {
+    estadoVirtualPorVendedor[key] = { diaVirtual: {}, ordenVirtual: {}, canalVirtual: {}, eliminados: {} };
+  }
+  return estadoVirtualPorVendedor[key];
+}
+
+function hayCambiosPendientes() {
+  return Object.keys(estadoVirtualPorVendedor).some(function(key) {
+    const ev = estadoVirtualPorVendedor[key];
+    return Object.keys(ev.diaVirtual).length || Object.keys(ev.ordenVirtual).length ||
+           Object.keys(ev.canalVirtual).length || Object.keys(ev.eliminados).length;
+  });
+}
+
+function contarCambiosPendientes() {
+  let n = 0;
+  Object.keys(estadoVirtualPorVendedor).forEach(function(key) {
+    const ev = estadoVirtualPorVendedor[key];
+    const codigosTocados = {};
+    Object.keys(ev.diaVirtual).forEach(function(c) { codigosTocados[c] = true; });
+    Object.keys(ev.canalVirtual).forEach(function(c) { codigosTocados[c] = true; });
+    Object.keys(ev.eliminados).forEach(function(c) { codigosTocados[c] = true; });
+    // Además, códigos cuyo orden cambió dentro de un ordenVirtual materializado
+    Object.keys(ev.ordenVirtual).forEach(function(dia) {
+      ev.ordenVirtual[dia].forEach(function(c) { codigosTocados[c] = true; });
+    });
+    n += Object.keys(codigosTocados).length;
+  });
+  return n;
+}
+
+function markDirty() {
+  guardarSesionStorage();
+}
 
 // ── UTILIDADES ────────────────────────────────────────────────────────────────
 function norm(s) {
@@ -409,6 +543,7 @@ function seleccionarZona(z) {
   document.getElementById('zona-screen').classList.add('hidden');
   document.getElementById('pin-screen').classList.remove('hidden');
   renderPinPad();
+  guardarSesionStorage();
 }
 
 function volverAZonas() {
@@ -484,21 +619,26 @@ function pinConfirmar() {
     return;
   }
   supActual = sup;
+  guardarSesionStorage();
   iniciarSesion();
 }
 
 function logout() {
+  if (hayCambiosPendientes() && !confirm('Tenés cambios sin guardar que se perderán. ¿Salir igual?')) return;
   supActual = null;
   pinActual = '';
   selectedVendedor = '';
-  selectedDay = '';
   zonaSeleccionada = '';
   viewMode = 'ruteo';
   solVendedorFiltro = '';
   modoSeleccion = false;
   seleccionados = {};
+  estadoVirtualPorVendedor = {};
+  try { sessionStorage.removeItem(SS_KEY()); } catch (e) {}
   const bar = document.getElementById('bulk-bar');
   if (bar) bar.remove();
+  const cbar = document.getElementById('confirm-bar');
+  if (cbar) cbar.remove();
   document.getElementById('header').style.display = 'none';
   document.getElementById('app-content').innerHTML = '';
   document.getElementById('pin-screen').classList.add('hidden');
@@ -529,14 +669,20 @@ function iniciarSesion() {
     opt.value = v; opt.textContent = v;
     sel.appendChild(opt);
   });
-  sel.onchange = function() { selectedVendedor = sel.value; selectedDay = ''; modoSeleccion = false; seleccionados = {}; render(); };
+  sel.onchange = function() { selectedVendedor = sel.value; modoSeleccion = false; seleccionados = {}; guardarSesionStorage(); render(); };
+
+  if (selectedVendedor && vendedoresZona.indexOf(selectedVendedor) !== -1) {
+    sel.value = selectedVendedor;
+  }
 
   renderSolFiltro();
   actualizarBadgeSolicitudes();
 
   document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('zona-screen').classList.add('hidden');
   document.getElementById('header').style.display = 'block';
   cambiarVista('ruteo');
+  guardarSesionStorage();
 }
 
 // ── VISTAS (Ruteo / Solicitudes) ───────────────────────────────────────────────
@@ -546,7 +692,6 @@ function cambiarVista(v) {
   document.getElementById('tab-solicitudes').classList.toggle('active', v === 'solicitudes');
   document.getElementById('ruteo-controls').style.display = v === 'ruteo' ? 'block' : 'none';
   document.getElementById('sol-controls').style.display = v === 'solicitudes' ? 'block' : 'none';
-  document.getElementById('days-strip').style.display = v === 'ruteo' ? 'flex' : 'none';
   if (v === 'ruteo') render();
   else renderSolicitudesView();
 }
@@ -687,14 +832,31 @@ function rechazarSolicitudUI(s, card) {
 // ── MODAL ACCIÓN EN LOTE (supervisor) ───────────────────────────────────────────
 let bulkTipoActual = null;
 
+function poblarReferencia(selectEl, dia, excluirCodigo) {
+  const rows = ruteoDelVendedor(selectedVendedor);
+  const codigoToRow = {};
+  rows.forEach(function(r) { codigoToRow[r['CODIGO CLIENTE']] = r; });
+  const codigos = listaOrdenDia(selectedVendedor, dia, rows).filter(function(c) { return c !== excluirCodigo; });
+  selectEl.innerHTML = '<option value="">— Seleccioná —</option>';
+  codigos.forEach(function(codigo) {
+    const row = codigoToRow[codigo];
+    const opt = document.createElement('option');
+    opt.value = codigo;
+    opt.textContent = row ? row['NOMBRE COMERCIAL'] : codigo;
+    selectEl.appendChild(opt);
+  });
+}
+
 function abrirModalLote(tipo) {
   bulkTipoActual = tipo;
   const n = Object.keys(seleccionados).length;
   document.getElementById('bulk-modal-sub').textContent = n + ' cliente' + (n !== 1 ? 's' : '') + ' seleccionado' + (n !== 1 ? 's' : '');
-  document.getElementById('bulk-campo-dia').style.display = tipo === 'dia' ? 'block' : 'none';
+  document.getElementById('bulk-campo-dia-wrap').style.display = tipo === 'dia' ? 'block' : 'none';
   document.getElementById('bulk-campo-canal').style.display = tipo === 'canal' ? 'block' : 'none';
   document.getElementById('bulk-campo-eliminar').style.display = tipo === 'eliminar' ? 'block' : 'none';
   document.getElementById('bulk-input-dia').value = '';
+  document.getElementById('bulk-input-posicion').value = 'final';
+  document.getElementById('bulk-campo-referencia').style.display = 'none';
   document.getElementById('bulk-input-canal').value = '';
   document.getElementById('bulk-modal-title').textContent =
     tipo === 'dia' ? 'Mover de día' : tipo === 'canal' ? 'Cambiar canal' : 'Eliminar del ruteo';
@@ -703,15 +865,27 @@ function abrirModalLote(tipo) {
   document.getElementById('bulk-btn-confirmar').disabled = (tipo !== 'eliminar');
   document.getElementById('bulk-modal-overlay').classList.add('open');
 }
+function onBulkDiaChange() {
+  const dia = document.getElementById('bulk-input-dia').value;
+  if (dia) poblarReferencia(document.getElementById('bulk-input-referencia'), dia, null);
+  validarBulk();
+}
 function cerrarModalLote() {
   document.getElementById('bulk-modal-overlay').classList.remove('open');
   bulkTipoActual = null;
 }
 function validarBulk() {
   let ok = false;
-  if (bulkTipoActual === 'dia') ok = document.getElementById('bulk-input-dia').value !== '';
-  else if (bulkTipoActual === 'canal') ok = document.getElementById('bulk-input-canal').value !== '';
-  else if (bulkTipoActual === 'eliminar') ok = true;
+  if (bulkTipoActual === 'dia') {
+    const dia = document.getElementById('bulk-input-dia').value;
+    const pos = document.getElementById('bulk-input-posicion').value;
+    document.getElementById('bulk-campo-referencia').style.display = (pos !== 'final') ? 'block' : 'none';
+    ok = !!dia && (pos === 'final' || document.getElementById('bulk-input-referencia').value !== '');
+  } else if (bulkTipoActual === 'canal') {
+    ok = document.getElementById('bulk-input-canal').value !== '';
+  } else if (bulkTipoActual === 'eliminar') {
+    ok = true;
+  }
   document.getElementById('bulk-btn-confirmar').disabled = !ok;
 }
 function confirmarLote() {
@@ -719,47 +893,52 @@ function confirmarLote() {
   btn.disabled = true;
   btn.textContent = 'Aplicando...';
 
-  const items = Object.values(seleccionados).map(function(s) {
-    return { codigo: s.codigo, vendedor: s.vendedor, dia: s.dia };
+  let items = Object.values(seleccionados); // {dia, codigo, nombre}
+  const rowsVendedor = ruteoDelVendedor(selectedVendedor);
+  items.sort(function(a, b) {
+    const da = DAYS_ORDER.indexOf(a.dia), db = DAYS_ORDER.indexOf(b.dia);
+    if (da !== db) return da - db;
+    const listaA = listaOrdenDia(selectedVendedor, a.dia, rowsVendedor);
+    return listaA.indexOf(a.codigo) - listaA.indexOf(b.codigo);
   });
 
-  const payload = {
-    accion: 'loteAcciones',
-    tipo: bulkTipoActual,
-    items: items,
-    zonaSupervisor: supActual['Zona']
-  };
-  if (bulkTipoActual === 'dia') payload.nuevoDia = document.getElementById('bulk-input-dia').value;
-  if (bulkTipoActual === 'canal') payload.nuevoCanal = document.getElementById('bulk-input-canal').value;
+  if (bulkTipoActual === 'canal') {
+    const nuevoCanal = document.getElementById('bulk-input-canal').value;
+    items.forEach(function(it) { setCanalVirtual(selectedVendedor, it.codigo, nuevoCanal); });
 
-  fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-    .then(function() {
-      document.getElementById('bulk-modal-status').innerHTML = '<div class="modal-status ok">✅ Cambios aplicados. Recargá para ver el resultado.</div>';
-      btn.textContent = 'Aplicado';
-      seleccionados = {};
-      modoSeleccion = false;
-      setTimeout(function() { cerrarModalLote(); render(); }, 1500);
-    })
-    .catch(function() {
-      document.getElementById('bulk-modal-status').innerHTML = '<div class="modal-status err">❌ Error al aplicar. Reintentá.</div>';
-      btn.disabled = false;
-      btn.textContent = 'Aplicar a todos';
+  } else if (bulkTipoActual === 'eliminar') {
+    items.forEach(function(it) { eliminarClienteVirtual(selectedVendedor, it.codigo, it.dia); });
+
+  } else if (bulkTipoActual === 'dia') {
+    const nuevoDia = document.getElementById('bulk-input-dia').value;
+    const posicion = document.getElementById('bulk-input-posicion').value;
+    let refActual = posicion !== 'final' ? document.getElementById('bulk-input-referencia').value : null;
+    let posActual = posicion;
+    items.forEach(function(it) {
+      moverClienteVirtual(selectedVendedor, it.codigo, it.dia, nuevoDia, refActual, posActual);
+      refActual = it.codigo;
+      posActual = 'despues';
     });
+  }
+
+  seleccionados = {};
+  modoSeleccion = false;
+  document.getElementById('bulk-modal-status').innerHTML = '<div class="modal-status ok">✅ Cambios agregados a la cola. Confirmá al final para guardar en el Sheet.</div>';
+  btn.textContent = 'Aplicado';
+  setTimeout(function() { cerrarModalLote(); render(); }, 1000);
 }
 
 // ── MODAL DE EDICIÓN DIRECTA (supervisor) ──────────────────────────────────────
-function abrirModalEdit(codigo, vendedor, dia, nombre) {
-  editModalData = { codigo: codigo, vendedor: vendedor, dia: dia, nombre: nombre };
+function abrirModalEdit(codigo, dia, nombre) {
+  editModalData = { codigo: codigo, dia: dia, nombre: nombre };
   tipoEditSeleccionado = null;
   document.getElementById('edit-modal-cliente').textContent = nombre;
   document.querySelectorAll('#edit-modal-overlay .tipo-btn').forEach(function(b) { b.classList.remove('selected'); });
-  document.getElementById('edit-campo-orden').style.display = 'none';
-  document.getElementById('edit-campo-dia').style.display = 'none';
-  document.getElementById('edit-campo-dia-orden').style.display = 'none';
+  document.getElementById('edit-campo-posicion').style.display = 'none';
   document.getElementById('edit-campo-canal').style.display = 'none';
-  document.getElementById('edit-input-orden').value = '';
   document.getElementById('edit-input-dia').value = '';
-  document.getElementById('edit-input-dia-orden').value = '';
+  document.getElementById('edit-input-posicion').value = 'final';
+  document.getElementById('edit-campo-referencia').style.display = 'none';
   document.getElementById('edit-input-canal').value = '';
   document.getElementById('edit-btn-confirmar').disabled = true;
   document.getElementById('edit-btn-confirmar').textContent = 'Aplicar cambio';
@@ -775,76 +954,119 @@ function selectTipoEdit(btn) {
   document.querySelectorAll('#edit-modal-overlay .tipo-btn').forEach(function(b) { b.classList.remove('selected'); });
   btn.classList.add('selected');
   tipoEditSeleccionado = btn.dataset.tipo;
-  document.getElementById('edit-campo-orden').style.display = tipoEditSeleccionado === 'orden' ? 'block' : 'none';
-  document.getElementById('edit-campo-dia').style.display = tipoEditSeleccionado === 'dia' ? 'block' : 'none';
-  document.getElementById('edit-campo-dia-orden').style.display = tipoEditSeleccionado === 'dia' ? 'block' : 'none';
+  document.getElementById('edit-campo-posicion').style.display = tipoEditSeleccionado === 'posicion' ? 'block' : 'none';
   document.getElementById('edit-campo-canal').style.display = tipoEditSeleccionado === 'canal' ? 'block' : 'none';
+  validarEnvioEdit();
+}
+function onEditDiaChange() {
+  const dia = document.getElementById('edit-input-dia').value;
+  if (dia && editModalData) poblarReferencia(document.getElementById('edit-input-referencia'), dia, editModalData.codigo);
   validarEnvioEdit();
 }
 function validarEnvioEdit() {
   let ok = false;
-  if (tipoEditSeleccionado === 'orden') ok = parseInt(document.getElementById('edit-input-orden').value) > 0;
-  else if (tipoEditSeleccionado === 'dia') ok = document.getElementById('edit-input-dia').value !== '' && parseInt(document.getElementById('edit-input-dia-orden').value) > 0;
-  else if (tipoEditSeleccionado === 'canal') ok = document.getElementById('edit-input-canal').value !== '';
-  else if (tipoEditSeleccionado === 'eliminar') ok = true;
+  if (tipoEditSeleccionado === 'posicion') {
+    const dia = document.getElementById('edit-input-dia').value;
+    const pos = document.getElementById('edit-input-posicion').value;
+    document.getElementById('edit-campo-referencia').style.display = (pos !== 'final') ? 'block' : 'none';
+    ok = !!dia && (pos === 'final' || document.getElementById('edit-input-referencia').value !== '');
+  } else if (tipoEditSeleccionado === 'canal') {
+    ok = document.getElementById('edit-input-canal').value !== '';
+  } else if (tipoEditSeleccionado === 'eliminar') {
+    ok = true;
+  }
   document.getElementById('edit-btn-confirmar').disabled = !ok;
 }
 function confirmarEdicion() {
   if (!editModalData || !tipoEditSeleccionado) return;
-  const btn = document.getElementById('edit-btn-confirmar');
-  btn.disabled = true;
-  btn.textContent = 'Aplicando...';
 
-  const payload = {
-    accion: 'editarCliente',
-    tipo: tipoEditSeleccionado,
-    codigo: editModalData.codigo,
-    vendedor: editModalData.vendedor,
-    dia: editModalData.dia,
-    zonaSupervisor: supActual['Zona']
-  };
-  if (tipoEditSeleccionado === 'orden') {
-    payload.nuevoOrden = document.getElementById('edit-input-orden').value;
-  } else if (tipoEditSeleccionado === 'dia') {
-    payload.nuevoDia = document.getElementById('edit-input-dia').value;
-    payload.nuevoOrden = document.getElementById('edit-input-dia-orden').value;
+  if (tipoEditSeleccionado === 'posicion') {
+    const nuevoDia = document.getElementById('edit-input-dia').value;
+    const posicion = document.getElementById('edit-input-posicion').value;
+    const refCodigo = posicion !== 'final' ? document.getElementById('edit-input-referencia').value : null;
+    moverClienteVirtual(selectedVendedor, editModalData.codigo, editModalData.dia, nuevoDia, refCodigo, posicion);
   } else if (tipoEditSeleccionado === 'canal') {
-    payload.nuevoCanal = document.getElementById('edit-input-canal').value;
+    setCanalVirtual(selectedVendedor, editModalData.codigo, document.getElementById('edit-input-canal').value);
+  } else if (tipoEditSeleccionado === 'eliminar') {
+    eliminarClienteVirtual(selectedVendedor, editModalData.codigo, editModalData.dia);
   }
 
-  fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-    .then(function() {
-      document.getElementById('edit-modal-status').innerHTML = '<div class="modal-status ok">✅ Cambio aplicado. El listado se actualizará al recargar.</div>';
-      btn.textContent = 'Aplicado';
-      setTimeout(cerrarModalEdit, 1500);
-    })
-    .catch(function() {
-      document.getElementById('edit-modal-status').innerHTML = '<div class="modal-status err">❌ Error al aplicar. Reintentá.</div>';
-      btn.disabled = false;
-      btn.textContent = 'Aplicar cambio';
-    });
+  document.getElementById('edit-modal-status').innerHTML = '<div class="modal-status ok">✅ Cambio agregado a la cola. Confirmá al final para guardar en el Sheet.</div>';
+  setTimeout(function() { cerrarModalEdit(); render(); }, 900);
 }
 
-// ── RENDER ──────────────────────────────────────────────────────────────────────
-function vendedorDisplayToRuteo(nombreBaseClientes) {
-  // En BASE CLIENTES el vendedor viene como "APELLIDO NOMBRE".
-  // En BASE RUTEO puede venir como "Nombre Apellido". Comparamos por norm de tokens.
-  return norm(nombreBaseClientes);
-}
-
-let diasFiltro = DAYS_ORDER.slice(0, 5); // LUNES..VIERNES activos por defecto
-let modoSeleccion = false;
-let seleccionados = {}; // clave "vendedor|dia|codigo" -> {codigo, dia, vendedor, nombre}
-
-function claveSel(vendedor, dia, codigo) { return normTokens(vendedor) + '|' + dia + '|' + codigo; }
-
+// ── ESTADO VIRTUAL: helpers de lectura ──────────────────────────────────────────
 function ruteoDelVendedor(vendedor) {
-  const objetivo = norm(vendedor).split(' ').filter(Boolean).sort().join(' ');
-  return baseRuteo.filter(function(r) {
-    const rv = norm(r['VENDEDOR']).split(' ').filter(Boolean).sort().join(' ');
-    return rv === objetivo;
-  });
+  const objetivo = normTokens(vendedor);
+  return baseRuteo.filter(function(r) { return normTokens(r['VENDEDOR']) === objetivo; });
 }
+
+function obtenerDiaEfectiva(vendedor, codigo, diaOriginal) {
+  const ev = getEstadoVirtual(vendedor);
+  return ev.diaVirtual[codigo] || diaOriginal;
+}
+
+function listaOrdenDia(vendedor, dia, rows) {
+  const ev = getEstadoVirtual(vendedor);
+  if (ev.ordenVirtual[dia]) return ev.ordenVirtual[dia].filter(function(c) { return !ev.eliminados[c]; });
+  const arr = rows.filter(function(r) {
+    const codigo = r['CODIGO CLIENTE'];
+    if (ev.eliminados[codigo]) return false;
+    const diaOriginal = norm(r['DIA CARGA DE PEDIDO']);
+    return obtenerDiaEfectiva(vendedor, codigo, diaOriginal) === dia;
+  });
+  arr.sort(function(a, b) { return (parseInt(a['ORDEN']) || 0) - (parseInt(b['ORDEN']) || 0); });
+  return arr.map(function(r) { return r['CODIGO CLIENTE']; });
+}
+
+function materializarDia(vendedor, dia, rows) {
+  const ev = getEstadoVirtual(vendedor);
+  if (!ev.ordenVirtual[dia]) ev.ordenVirtual[dia] = listaOrdenDia(vendedor, dia, rows);
+}
+
+// ── ESTADO VIRTUAL: mutaciones ───────────────────────────────────────────────────
+function moverClienteVirtual(vendedor, codigo, diaOrigen, diaDestino, refCodigo, posicion) {
+  const rows = ruteoDelVendedor(vendedor);
+  const ev = getEstadoVirtual(vendedor);
+  materializarDia(vendedor, diaOrigen, rows);
+  materializarDia(vendedor, diaDestino, rows);
+
+  const idxOrig = ev.ordenVirtual[diaOrigen].indexOf(codigo);
+  if (idxOrig !== -1) ev.ordenVirtual[diaOrigen].splice(idxOrig, 1);
+
+  const row = rows.find(function(r) { return r['CODIGO CLIENTE'] === codigo; });
+  const diaOriginalReal = row ? norm(row['DIA CARGA DE PEDIDO']) : diaOrigen;
+  if (diaDestino !== diaOriginalReal) ev.diaVirtual[codigo] = diaDestino;
+  else delete ev.diaVirtual[codigo];
+
+  let idx = ev.ordenVirtual[diaDestino].length;
+  if (refCodigo) {
+    const refIdx = ev.ordenVirtual[diaDestino].indexOf(refCodigo);
+    if (refIdx !== -1) idx = posicion === 'antes' ? refIdx : refIdx + 1;
+  }
+  ev.ordenVirtual[diaDestino].splice(idx, 0, codigo);
+  markDirty();
+}
+
+function setCanalVirtual(vendedor, codigo, nuevoCanal) {
+  getEstadoVirtual(vendedor).canalVirtual[codigo] = nuevoCanal;
+  markDirty();
+}
+
+function eliminarClienteVirtual(vendedor, codigo, dia) {
+  const rows = ruteoDelVendedor(vendedor);
+  const ev = getEstadoVirtual(vendedor);
+  materializarDia(vendedor, dia, rows);
+  const idx = ev.ordenVirtual[dia].indexOf(codigo);
+  if (idx !== -1) ev.ordenVirtual[dia].splice(idx, 1);
+  ev.eliminados[codigo] = true;
+  delete ev.diaVirtual[codigo];
+  delete ev.canalVirtual[codigo];
+  markDirty();
+}
+
+// ── SELECCIÓN MÚLTIPLE ───────────────────────────────────────────────────────────
+function claveSel(dia, codigo) { return dia + '|' + codigo; }
 
 function toggleModoSeleccion() {
   modoSeleccion = !modoSeleccion;
@@ -852,44 +1074,166 @@ function toggleModoSeleccion() {
   render();
 }
 
-function toggleSeleccionCliente(vendedor, dia, codigo, nombre, checked) {
-  const key = claveSel(vendedor, dia, codigo);
-  if (checked) seleccionados[key] = { vendedor: vendedor, dia: dia, codigo: codigo, nombre: nombre };
+function toggleSeleccionCliente(dia, codigo, nombre, checked) {
+  const key = claveSel(dia, codigo);
+  if (checked) seleccionados[key] = { dia: dia, codigo: codigo, nombre: nombre };
   else delete seleccionados[key];
   renderBarraAcciones();
 }
 
+// ── FILTRO DE DÍAS (dropdown multiselect) ───────────────────────────────────────
+function toggleDayFilterPanel() {
+  const panel = document.getElementById('day-filter-panel');
+  const btn = document.getElementById('day-filter-btn');
+  const abierto = panel.classList.toggle('open');
+  btn.classList.toggle('open', abierto);
+}
+
+function renderDayFilterPanel(diasDisponibles) {
+  const panel = document.getElementById('day-filter-panel');
+  panel.innerHTML = '';
+
+  const todosRow = document.createElement('div');
+  todosRow.className = 'day-filter-row day-filter-todos';
+  const todosChk = document.createElement('input');
+  todosChk.type = 'checkbox';
+  todosChk.checked = diasDisponibles.length > 0 && diasDisponibles.every(function(d) { return diasFiltro.indexOf(d) !== -1; });
+  todosChk.addEventListener('change', function() {
+    diasFiltro = todosChk.checked ? diasDisponibles.slice() : [];
+    guardarSesionStorage();
+    render();
+  });
+  todosRow.appendChild(todosChk);
+  todosRow.appendChild(document.createTextNode('Todos los días'));
+  panel.appendChild(todosRow);
+
+  const div = document.createElement('div');
+  div.className = 'day-filter-divider';
+  panel.appendChild(div);
+
+  diasDisponibles.forEach(function(dia) {
+    const row = document.createElement('div');
+    row.className = 'day-filter-row';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.checked = diasFiltro.indexOf(dia) !== -1;
+    chk.addEventListener('change', function() {
+      const idx = diasFiltro.indexOf(dia);
+      if (chk.checked && idx === -1) diasFiltro.push(dia);
+      else if (!chk.checked && idx !== -1) diasFiltro.splice(idx, 1);
+      guardarSesionStorage();
+      render();
+    });
+    row.appendChild(chk);
+    row.appendChild(document.createTextNode(dia.charAt(0) + dia.slice(1).toLowerCase()));
+    panel.appendChild(row);
+  });
+}
+
+function actualizarDayFilterLabel(diasDisponibles) {
+  const label = document.getElementById('day-filter-label');
+  if (diasDisponibles.length > 0 && diasDisponibles.every(function(d) { return diasFiltro.indexOf(d) !== -1; })) {
+    label.textContent = 'Todos los días';
+  } else if (diasFiltro.length === 0) {
+    label.textContent = 'Ningún día seleccionado';
+  } else if (diasFiltro.length === 1) {
+    label.textContent = diasFiltro[0].charAt(0) + diasFiltro[0].slice(1).toLowerCase();
+  } else {
+    label.textContent = diasFiltro.length + ' días seleccionados';
+  }
+}
+
+// ── DRAG & DROP (mouse y touch, vía Pointer Events) ─────────────────────────────
+let dragState = null;
+
+function iniciarDrag(e, codigo, dia, cardEl) {
+  e.preventDefault();
+  e.stopPropagation();
+  dragState = { codigo: codigo, origenDia: dia, cardEl: cardEl };
+  cardEl.classList.add('dragging');
+  try { e.target.setPointerCapture(e.pointerId); } catch (err) {}
+  document.addEventListener('pointermove', onDragMove);
+  document.addEventListener('pointerup', onDragEnd);
+}
+
+function onDragMove(e) {
+  if (!dragState) return;
+  e.preventDefault();
+  dragState.cardEl.style.pointerEvents = 'none';
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  dragState.cardEl.style.pointerEvents = '';
+  if (!el) return;
+  const listEl = el.closest('.list[data-dia]');
+  if (!listEl) return;
+  const cards = Array.prototype.slice.call(listEl.querySelectorAll('.client-card')).filter(function(c) { return c !== dragState.cardEl; });
+  let insertado = false;
+  for (let i = 0; i < cards.length; i++) {
+    const r = cards[i].getBoundingClientRect();
+    const mid = r.top + r.height / 2;
+    if (e.clientY < mid) { listEl.insertBefore(dragState.cardEl, cards[i]); insertado = true; break; }
+  }
+  if (!insertado) listEl.appendChild(dragState.cardEl);
+}
+
+function onDragEnd(e) {
+  if (!dragState) return;
+  document.removeEventListener('pointermove', onDragMove);
+  document.removeEventListener('pointerup', onDragEnd);
+  dragState.cardEl.classList.remove('dragging');
+
+  const vendedor = selectedVendedor;
+  const ev = getEstadoVirtual(vendedor);
+  const listas = document.querySelectorAll('.list[data-dia]');
+  listas.forEach(function(listEl) {
+    const dia = listEl.dataset.dia;
+    const codigos = Array.prototype.slice.call(listEl.querySelectorAll('.client-card')).map(function(c) { return c.dataset.codigo; });
+    ev.ordenVirtual[dia] = codigos;
+  });
+
+  const grupoFinal = dragState.cardEl.closest('.list[data-dia]');
+  const diaFinal = grupoFinal ? grupoFinal.dataset.dia : dragState.origenDia;
+  const rows = ruteoDelVendedor(vendedor);
+  const row = rows.find(function(r) { return r['CODIGO CLIENTE'] === dragState.codigo; });
+  const diaOriginalReal = row ? norm(row['DIA CARGA DE PEDIDO']) : dragState.origenDia;
+  if (diaFinal !== diaOriginalReal) ev.diaVirtual[dragState.codigo] = diaFinal;
+  else delete ev.diaVirtual[dragState.codigo];
+
+  dragState = null;
+  markDirty();
+  render();
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────────
 function render() {
   const content = document.getElementById('app-content');
   if (!selectedVendedor) {
-    document.getElementById('days-strip').innerHTML = '';
+    document.getElementById('day-filter-panel').innerHTML = '';
     content.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Seleccioná un vendedor de tu equipo para ver su ruteo</div></div>';
     return;
   }
 
   const rows = ruteoDelVendedor(selectedVendedor);
   if (!rows.length) {
-    document.getElementById('days-strip').innerHTML = '';
     content.innerHTML = '<div class="empty"><div class="empty-text">Este vendedor no tiene clientes ruteados.</div></div>';
     return;
   }
 
-  // Días disponibles para este vendedor
-  const diasDisponibles = [];
-  const seen = {};
-  rows.forEach(function(r) {
-    const d = norm(r['DIA CARGA DE PEDIDO']);
-    if (d && !seen[d]) { seen[d] = true; diasDisponibles.push(d); }
-  });
-  diasDisponibles.sort(function(a,b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
+  const codigoToRow = {};
+  rows.forEach(function(r) { codigoToRow[r['CODIGO CLIENTE']] = r; });
 
-  renderDayFilter(diasDisponibles);
+  const ev = getEstadoVirtual(selectedVendedor);
+  const diasSet = {};
+  rows.forEach(function(r) { const d = norm(r['DIA CARGA DE PEDIDO']); if (d) diasSet[d] = true; });
+  Object.keys(ev.diaVirtual).forEach(function(c) { diasSet[ev.diaVirtual[c]] = true; });
+  const diasDisponibles = Object.keys(diasSet).sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
+
+  renderDayFilterPanel(diasDisponibles);
+  actualizarDayFilterLabel(diasDisponibles);
 
   const diasAMostrar = diasDisponibles.filter(function(d) { return diasFiltro.indexOf(d) !== -1; });
 
   content.innerHTML = '';
 
-  // Header con botón de modo selección + stats generales
   const toolbar = document.createElement('div');
   toolbar.className = 'sel-toolbar';
   toolbar.innerHTML =
@@ -901,62 +1245,83 @@ function render() {
 
   if (!diasAMostrar.length) {
     content.innerHTML += '<div class="empty"><div class="empty-text">No hay días seleccionados en el filtro.</div></div>';
+    renderBarraAcciones();
+    renderConfirmBar();
     return;
   }
 
   diasAMostrar.forEach(function(dia) {
-    const clientesDia = rows.filter(function(r) { return norm(r['DIA CARGA DE PEDIDO']) === dia; });
-    clientesDia.sort(function(a,b) { return (parseInt(a['ORDEN'])||0) - (parseInt(b['ORDEN'])||0); });
-    if (!clientesDia.length) return;
+    const codigos = listaOrdenDia(selectedVendedor, dia, rows);
+    if (!codigos.length) return;
 
     const dayHeader = document.createElement('div');
     dayHeader.className = 'day-group-header';
-    dayHeader.textContent = dia.charAt(0) + dia.slice(1).toLowerCase() + ' · ' + clientesDia.length + ' cliente' + (clientesDia.length !== 1 ? 's' : '');
+    dayHeader.textContent = dia.charAt(0) + dia.slice(1).toLowerCase() + ' · ' + codigos.length + ' cliente' + (codigos.length !== 1 ? 's' : '');
     content.appendChild(dayHeader);
 
     const list = document.createElement('div');
     list.className = 'list';
-    clientesDia.forEach(function(c) {
-      list.appendChild(buildClientCardSupervisor(c, dia));
+    list.dataset.dia = dia;
+    codigos.forEach(function(codigo, idx) {
+      const row = codigoToRow[codigo];
+      if (!row) return;
+      list.appendChild(buildClientCardSupervisor(row, dia, idx + 1));
     });
     content.appendChild(list);
   });
 
+  const headerH = document.getElementById('header').offsetHeight;
+  document.querySelectorAll('.day-group-header').forEach(function(h) { h.style.top = headerH + 'px'; });
+
   renderBarraAcciones();
+  renderConfirmBar();
 }
 
-function buildClientCardSupervisor(c, dia) {
-  const cc = canalClass(c['Canal actual (Presencial / Autogestión)']);
-  const codigo = c['CODIGO CLIENTE'];
-  const key = claveSel(selectedVendedor, dia, codigo);
+function buildClientCardSupervisor(row, dia, ordenVisual) {
+  const ev = getEstadoVirtual(selectedVendedor);
+  const codigo = row['CODIGO CLIENTE'];
+  const canalReal = ev.canalVirtual[codigo] || row['Canal actual (Presencial / Autogestión)'];
+  const cc = canalClass(canalReal);
+  const diaOriginal = norm(row['DIA CARGA DE PEDIDO']);
+  const esPendiente = !!ev.diaVirtual[codigo] || !!ev.canalVirtual[codigo] || diaOriginal !== dia ||
+    (parseInt(row['ORDEN']) || 0) !== ordenVisual;
+
   const card = document.createElement('div');
-  card.className = 'client-card ' + cc;
+  card.className = 'client-card ' + cc + (esPendiente ? ' pending-change' : '');
+  card.dataset.codigo = codigo;
 
   const main = document.createElement('div');
   main.className = 'card-main';
 
+  const handle = document.createElement('span');
+  handle.className = 'drag-handle';
+  handle.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="3" r="1.3"/><circle cx="11" cy="3" r="1.3"/><circle cx="5" cy="8" r="1.3"/><circle cx="11" cy="8" r="1.3"/><circle cx="5" cy="13" r="1.3"/><circle cx="11" cy="13" r="1.3"/></svg>';
+  handle.addEventListener('pointerdown', function(e) { iniciarDrag(e, codigo, dia, card); });
+  main.appendChild(handle);
+
   if (modoSeleccion) {
+    const key = claveSel(dia, codigo);
     const chk = document.createElement('input');
     chk.type = 'checkbox';
     chk.className = 'sel-checkbox';
     chk.checked = !!seleccionados[key];
     chk.addEventListener('click', function(e) { e.stopPropagation(); });
     chk.addEventListener('change', function() {
-      toggleSeleccionCliente(selectedVendedor, dia, codigo, c['NOMBRE COMERCIAL'], chk.checked);
+      toggleSeleccionCliente(dia, codigo, row['NOMBRE COMERCIAL'], chk.checked);
     });
     main.appendChild(chk);
   }
 
   const numDiv = document.createElement('div');
   numDiv.className = 'order-num';
-  numDiv.textContent = c['ORDEN'] || '';
+  numDiv.textContent = ordenVisual;
   main.appendChild(numDiv);
 
   const info = document.createElement('div');
   info.className = 'client-info';
   info.innerHTML =
-    '<div class="client-name">' + (c['NOMBRE COMERCIAL'] || '') + '</div>' +
-    '<div class="client-sub">' + (c['LOCALIDAD'] || '') + ' · ' + (codigo || '') + '</div>';
+    '<div class="client-name">' + (row['NOMBRE COMERCIAL'] || '') + (esPendiente ? '<span class="pending-tag">Sin guardar</span>' : '') + '</div>' +
+    '<div class="client-sub">' + (row['LOCALIDAD'] || '') + ' · ' + codigo + '</div>';
   main.appendChild(info);
 
   const tag = document.createElement('div');
@@ -968,9 +1333,9 @@ function buildClientCardSupervisor(c, dia) {
   detail.className = 'card-detail';
   detail.innerHTML =
     '<div class="detail-divider"></div>' +
-    '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + (c['DIRECCION'] || '—') + '</div></div>' +
-    '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + (codigo || '—') + '</div></div>' +
-    '<a class="btn-maps" href="' + mapsUrl(c) + '" target="_blank" onclick="event.stopPropagation()">' +
+    '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + (row['DIRECCION'] || '—') + '</div></div>' +
+    '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>' +
+    '<a class="btn-maps" href="' + mapsUrl(row) + '" target="_blank" onclick="event.stopPropagation()">' +
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
     'Abrir en Maps</a>';
 
@@ -979,7 +1344,7 @@ function buildClientCardSupervisor(c, dia) {
   btnEditar.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg> Editar cliente';
   btnEditar.addEventListener('click', function(e) {
     e.stopPropagation();
-    abrirModalEdit(codigo, selectedVendedor, dia, c['NOMBRE COMERCIAL']);
+    abrirModalEdit(codigo, dia, row['NOMBRE COMERCIAL']);
   });
   detail.appendChild(btnEditar);
 
@@ -998,23 +1363,7 @@ function buildClientCardSupervisor(c, dia) {
   return card;
 }
 
-function renderDayFilter(diasDisponibles) {
-  const strip = document.getElementById('days-strip');
-  strip.innerHTML = '';
-  diasDisponibles.forEach(function(day) {
-    const btn = document.createElement('button');
-    btn.className = 'day-tab' + (diasFiltro.indexOf(day) !== -1 ? ' active' : '');
-    btn.textContent = day.charAt(0) + day.slice(1).toLowerCase();
-    btn.onclick = function() {
-      const idx = diasFiltro.indexOf(day);
-      if (idx === -1) diasFiltro.push(day); else diasFiltro.splice(idx, 1);
-      render();
-    };
-    strip.appendChild(btn);
-  });
-}
-
-// ── BARRA DE ACCIONES EN LOTE ────────────────────────────────────────────────
+// ── BARRA DE ACCIONES EN LOTE (durante selección) ───────────────────────────────
 function renderBarraAcciones() {
   let bar = document.getElementById('bulk-bar');
   const n = Object.keys(seleccionados).length;
@@ -1040,6 +1389,79 @@ function renderBarraAcciones() {
   bar.querySelector('#bulk-eliminar').addEventListener('click', function() { abrirModalLote('eliminar'); });
 }
 
+// ── BARRA DE CONFIRMACIÓN DE CAMBIOS PENDIENTES ─────────────────────────────────
+function renderConfirmBar() {
+  let bar = document.getElementById('confirm-bar');
+  const n = contarCambiosPendientes();
+  if (modoSeleccion || n === 0) {
+    if (bar) bar.remove();
+    return;
+  }
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'confirm-bar';
+    bar.className = 'confirm-changes-bar';
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML =
+    '<div class="confirm-changes-count">' + n + ' cambio' + (n !== 1 ? 's' : '') + ' sin guardar</div>' +
+    '<div class="confirm-changes-actions">' +
+      '<button class="btn-discard-changes" id="btn-discard">Descartar</button>' +
+      '<button class="btn-confirm-changes" id="btn-confirm">Confirmar cambios</button>' +
+    '</div>';
+  bar.querySelector('#btn-discard').addEventListener('click', descartarCambios);
+  bar.querySelector('#btn-confirm').addEventListener('click', confirmarCambiosGlobal);
+}
+
+function descartarCambios() {
+  if (!confirm('¿Descartar todos los cambios sin guardar?')) return;
+  estadoVirtualPorVendedor = {};
+  markDirty();
+  render();
+}
+
+function confirmarCambiosGlobal() {
+  const bar = document.getElementById('confirm-bar');
+  const btn = bar.querySelector('#btn-confirm');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  const vendedoresConCambios = Object.keys(estadoVirtualPorVendedor).filter(function(key) {
+    const ev = estadoVirtualPorVendedor[key];
+    return Object.keys(ev.diaVirtual).length || Object.keys(ev.ordenVirtual).length ||
+           Object.keys(ev.canalVirtual).length || Object.keys(ev.eliminados).length;
+  });
+
+  const promesas = vendedoresConCambios.map(function(key) {
+    const ev = estadoVirtualPorVendedor[key];
+    const filaVendedor = baseRuteo.find(function(r) { return normTokens(r['VENDEDOR']) === key; });
+    const vendedorReal = filaVendedor ? filaVendedor['VENDEDOR'] : selectedVendedor;
+
+    const payload = {
+      accion: 'aplicarPlanRuteo',
+      vendedor: vendedorReal,
+      zonaSupervisor: supActual['Zona'],
+      dias: ev.ordenVirtual,
+      canal: ev.canalVirtual,
+      eliminar: Object.keys(ev.eliminados)
+    };
+    return fetch(APPS_SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+  });
+
+  Promise.all(promesas).then(function() {
+    estadoVirtualPorVendedor = {};
+    markDirty();
+    render();
+    alert('✅ Cambios guardados. Puede tardar unos minutos en reflejarse en la app por el delay de publicación de Google Sheets.');
+  }).catch(function() {
+    btn.disabled = false;
+    btn.textContent = 'Confirmar cambios';
+    alert('❌ Hubo un error al guardar. Reintentá.');
+  });
+}
+
 // ── CARGA INICIAL ─────────────────────────────────────────────────────────────
 async function cargarDatos() {
   try {
@@ -1055,7 +1477,12 @@ async function cargarDatos() {
     });
     baseRuteo = parseCSV(rut).filter(function(r) { return r['NOMBRE COMERCIAL']; });
     solicitudes = parseCSV(sol).filter(function(s) { return s['COD. CLIENTE']; });
-    renderZonas();
+
+    if (restaurarSesionStorage() && supActual) {
+      iniciarSesion();
+    } else {
+      renderZonas();
+    }
   } catch (e) {
     document.getElementById('zona-screen').innerHTML = '<div class="pin-title">Error al cargar datos</div><div class="pin-sub">Recargá la página</div>';
   }

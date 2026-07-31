@@ -276,6 +276,8 @@
       <option value="baja">🚫 Clientes a dar de baja</option>
       <option value="razonSocial">🔄 Cambios de razón social</option>
     </select>
+    <select id="cli-vendedor-filter"></select>
+    <select id="cli-localidad-filter"></select>
   </div>
 </div>
 
@@ -441,6 +443,8 @@ let viewMode = 'ruteo';
 let solicitudes = [];
 let solVendedorFiltro = '';
 let solProcesadas = {};
+let cliVendedorFiltro = '';
+let cliLocalidadFiltro = '';
 let editModalData = null; // {codigo, dia, nombre}
 let tipoEditSeleccionado = null;
 
@@ -812,6 +816,61 @@ function actualizarBadgeClientes() {
   else { badge.style.display = 'none'; }
 }
 
+function vendedorDeItem(sub, item) {
+  if (sub === 'sinRutear') return item['Vendedor'] || '';
+  if (sub === 'baja') return item['VENDEDOR'] || '';
+  return item.filaVieja['VENDEDOR'] || '';
+}
+function localidadDeItem(sub, item) {
+  if (sub === 'sinRutear') return item['Localidad'] || '';
+  if (sub === 'baja') return item['LOCALIDAD'] || '';
+  return item.filaVieja['LOCALIDAD'] || '';
+}
+
+function poblarFiltrosClientes(sub, itemsSinFiltrar) {
+  const selV = document.getElementById('cli-vendedor-filter');
+  const selL = document.getElementById('cli-localidad-filter');
+
+  const vendedoresUnicos = [];
+  const seenV = {};
+  itemsSinFiltrar.forEach(function(it) {
+    const v = vendedorDeItem(sub, it);
+    if (v && !seenV[v]) { seenV[v] = true; vendedoresUnicos.push(v); }
+  });
+  vendedoresUnicos.sort();
+
+  const valorVActual = selV.value;
+  selV.innerHTML = '<option value="">Todos los vendedores</option>';
+  vendedoresUnicos.forEach(function(v) {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    selV.appendChild(opt);
+  });
+  if (vendedoresUnicos.indexOf(valorVActual) !== -1) selV.value = valorVActual;
+  else cliVendedorFiltro = '';
+
+  const localidadesUnicas = [];
+  const seenL = {};
+  itemsSinFiltrar.forEach(function(it) {
+    const l = localidadDeItem(sub, it);
+    if (l && !seenL[l]) { seenL[l] = true; localidadesUnicas.push(l); }
+  });
+  localidadesUnicas.sort();
+
+  const valorLActual = selL.value;
+  selL.innerHTML = '<option value="">Todas las localidades</option>';
+  localidadesUnicas.forEach(function(l) {
+    const opt = document.createElement('option');
+    opt.value = l; opt.textContent = l;
+    selL.appendChild(opt);
+  });
+  if (localidadesUnicas.indexOf(valorLActual) !== -1) selL.value = valorLActual;
+  else cliLocalidadFiltro = '';
+
+  selV.onchange = function() { cliVendedorFiltro = selV.value; renderClientesView(); };
+  selL.onchange = function() { cliLocalidadFiltro = selL.value; renderClientesView(); };
+}
+
 function renderClientesView() {
   const sel = document.getElementById('cli-subvista');
   sel.onchange = renderClientesView;
@@ -820,14 +879,26 @@ function renderClientesView() {
   content.innerHTML = '';
   actualizarBadgeClientes();
 
+  let itemsCrudos;
+  if (sub === 'sinRutear') itemsCrudos = clientesSinRutear();
+  else if (sub === 'baja') itemsCrudos = clientesParaDarDeBaja();
+  else itemsCrudos = cambiosRazonSocial();
+
+  poblarFiltrosClientes(sub, itemsCrudos);
+
+  const items = itemsCrudos.filter(function(it) {
+    if (cliVendedorFiltro && normTokens(vendedorDeItem(sub, it)) !== normTokens(cliVendedorFiltro)) return false;
+    if (cliLocalidadFiltro && localidadDeItem(sub, it) !== cliLocalidadFiltro) return false;
+    return true;
+  });
+
   const list = document.createElement('div');
   list.className = 'list';
   list.style.padding = '0.75rem 1.25rem';
 
   if (sub === 'sinRutear') {
-    const items = clientesSinRutear();
     if (!items.length) {
-      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay clientes activos sin rutear en tu zona.</div></div>';
+      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay clientes activos sin rutear que coincidan con el filtro.</div></div>';
       return;
     }
     items.forEach(function(c) {
@@ -846,9 +917,8 @@ function renderClientesView() {
     });
 
   } else if (sub === 'baja') {
-    const items = clientesParaDarDeBaja();
     if (!items.length) {
-      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay clientes para dar de baja en tu zona.</div></div>';
+      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay clientes para dar de baja que coincidan con el filtro.</div></div>';
       return;
     }
     items.forEach(function(r) {
@@ -870,9 +940,8 @@ function renderClientesView() {
     });
 
   } else {
-    const items = cambiosRazonSocial();
     if (!items.length) {
-      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay cambios de razón social pendientes en tu zona.</div></div>';
+      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay cambios de razón social que coincidan con el filtro.</div></div>';
       return;
     }
     items.forEach(function(it) {

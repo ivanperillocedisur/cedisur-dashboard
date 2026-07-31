@@ -2,7 +2,7 @@
 <html lang="es"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>CEDISUR — Links Equipo de Ventas</title>
+<title>CEDISUR — Portal de Tableros</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
 
@@ -86,7 +86,7 @@ body {
 
 <div class="top">
   <h1>CEDISUR</h1>
-  <p>LINKS · EQUIPO DE VENTAS</p>
+  <p>Portal de Tableros · Fuerza de Ventas</p>
 </div>
 
 <div class="wrap">
@@ -104,6 +104,10 @@ body {
    pega su URL aca abajo. Debe terminar en "output=csv".
    La planilla debe tener estas columnas (en la fila 1):
       nombre , descripcion , vigencia , url , orden
+   Columnas OPCIONALES para personalizar colores por tarjeta
+   (si se dejan vacias, se usa el estilo institucional por defecto):
+      color_fondo , color_titulo , color_texto , color_borde
+   Los valores deben ser codigos de color, ej: #FFFFFF o #2B3A8A
    Mientras SHEET_URL este vacio, se usan los datos DEMO de abajo.
    ============================================================ */
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSKlbXi7eQwkHWuqU9ynjSBZjYNm4PwNs6VtknRXOS-6Eboa1lJf0fNmXaduzr2u6oWaXcXD9cUDLFY/pub?gid=0&single=true&output=csv";
@@ -128,10 +132,18 @@ function render(items) {
     a.className = "card";
     a.href = it.url || "#";
     if ((it.url||"").startsWith("http")) a.target = "_blank";
+
+    /* Colores personalizados desde la planilla (columnas opcionales) */
+    if (it.color_fondo)  a.style.background   = it.color_fondo;
+    if (it.color_borde)  a.style.borderLeftColor = it.color_borde;
+
+    const tituloStyle = it.color_titulo ? ' style="color:' + it.color_titulo + '"' : '';
+    const textoStyle  = it.color_texto  ? ' style="color:' + it.color_texto  + '"' : '';
+
     a.innerHTML =
       '<div class="card-body">' +
-        '<div class="card-title">' + it.nombre + '</div>' +
-        (it.descripcion ? '<div class="card-desc">' + it.descripcion + '</div>' : '') +
+        '<div class="card-title"' + tituloStyle + '>' + it.nombre + '</div>' +
+        (it.descripcion ? '<div class="card-desc"' + textoStyle + '>' + it.descripcion + '</div>' : '') +
         (it.vigencia ? '<span class="card-vig">' + it.vigencia + '</span>' : '') +
       '</div>' + chevSVG;
     cont.appendChild(a);

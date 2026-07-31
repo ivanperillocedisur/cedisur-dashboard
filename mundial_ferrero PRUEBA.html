@@ -56,8 +56,8 @@
   .zona-btn svg { width: 16px; height: 16px; opacity: 0.6; }
 
   /* TAB SWITCHER */
-  .view-tabs { display: flex; gap: 6px; margin-top: 0.75rem; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 4px; }
-  .view-tab { flex: 1; text-align: center; padding: 7px 0; border-radius: 8px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.6); background: transparent; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .view-tabs { display: flex; gap: 4px; margin-top: 0.5rem; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 3px; }
+  .view-tab { flex: 1; text-align: center; padding: 5px 0; border-radius: 6px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); background: transparent; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
   .view-tab.active { background: #fff; color: var(--accent); }
   .view-tab .badge-count { display: inline-block; margin-left: 5px; background: var(--sup); color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 6px; }
 
@@ -78,24 +78,24 @@
   .sol-status.err { background: #FDEAEA; color: #A02020; }
 
   /* HEADER */
-  .header { background: var(--accent); padding: 1.25rem 1.25rem 1rem; position: sticky; top: 0; z-index: 100; }
-  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-  .app-name { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: rgba(255,255,255,0.6); text-transform: uppercase; }
-  .sup-badge { font-size: 10px; font-weight: 700; color: var(--accent); background: var(--sup-border); padding: 2px 8px; border-radius: 20px; letter-spacing: 0.05em; }
+  .header { background: var(--accent); padding: 0.65rem 1rem 0.6rem; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem; }
+  .app-name { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: rgba(255,255,255,0.55); text-transform: uppercase; }
+  .sup-badge { font-size: 9px; font-weight: 700; color: var(--accent); background: var(--sup-border); padding: 1px 6px; border-radius: 20px; letter-spacing: 0.05em; }
   .btn-logout { background: none; border: none; cursor: pointer; padding: 4px; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 4px; font-family: 'DM Sans', sans-serif; font-size: 12px; -webkit-tap-highlight-color: transparent; }
   .btn-logout svg { width: 15px; height: 15px; }
 
-  .sup-info { color: #fff; }
-  .sup-nombre { font-size: 17px; font-weight: 700; }
-  .sup-zona { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+  .sup-info { color: #fff; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+  .sup-nombre { font-size: 14px; font-weight: 700; }
+  .sup-zona { font-size: 11px; color: rgba(255,255,255,0.65); }
 
   /* SELECTOR VENDEDOR */
   select {
     width: 100%; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
-    color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
-    padding: 0.6rem 0.75rem; border-radius: 8px; appearance: none; -webkit-appearance: none;
+    color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    padding: 0.4rem 0.65rem; border-radius: 7px; appearance: none; -webkit-appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.6)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; margin-top: 0.75rem;
+    background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; margin-top: 0.4rem;
   }
   select option { background: #1d3a8f; color: #fff; }
   select:focus { outline: none; border-color: rgba(255,255,255,0.5); }
@@ -184,7 +184,7 @@
   .loader { text-align: center; padding: 3rem; color: var(--text3); font-size: 14px; }
 
   /* FILTRO DE DÍAS (dropdown multiselect) */
-  .day-filter-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 0.75rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 0.55rem 0.75rem; border-radius: 8px; cursor: pointer; }
+  .day-filter-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 0.4rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 0.4rem 0.65rem; border-radius: 7px; cursor: pointer; }
   .day-filter-btn svg { width: 12px; height: 12px; flex-shrink: 0; transition: transform 0.15s; }
   .day-filter-btn.open svg { transform: rotate(180deg); }
   .day-filter-panel { display: none; background: #fff; border-radius: 10px; padding: 0.75rem; margin-top: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
@@ -696,7 +696,7 @@ function logout() {
 function iniciarSesion() {
   const zona = norm(supActual['Zona']);
   document.getElementById('sup-nombre').textContent = supActual['Nombre'] || 'Supervisor';
-  document.getElementById('sup-zona').textContent = 'Zona: ' + (supActual['Zona'] || '—');
+  document.getElementById('sup-zona').textContent = '· ' + (supActual['Zona'] || '—');
 
   // Vendedores de la zona desde BASE CLIENTES
   const set = {};

@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel de Supervisor</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     --bg: #F5F3EF;
@@ -208,8 +210,21 @@
   .btn-confirm-changes { padding: 0.55rem 1rem; border-radius: 8px; border: none; background: #2D8A52; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
   .btn-discard-changes { padding: 0.55rem 0.9rem; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.3); background: transparent; color: rgba(255,255,255,0.8); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
 
-  /* POSICIÓN RELATIVA (modales) */
-  .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  /* BOTÓN VER MAPA */
+  .btn-ver-mapa { display: block; width: 100%; margin-top: 0.5rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 0.45rem 0.65rem; border-radius: 7px; cursor: pointer; }
+
+  /* MODAL MAPA */
+  .map-overlay { display: none; position: fixed; inset: 0; background: #fff; z-index: 600; flex-direction: column; }
+  .map-overlay.open { display: flex; }
+  .map-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--accent); flex-shrink: 0; }
+  .map-title { color: #fff; font-size: 14px; font-weight: 700; }
+  .map-close { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+  .map-legend { display: flex; gap: 6px; flex-wrap: wrap; padding: 0.5rem 1rem; background: var(--bg); flex-shrink: 0; }
+  .map-legend-chip { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; cursor: pointer; border: 1.5px solid transparent; background: #fff; color: var(--text2); -webkit-tap-highlight-color: transparent; }
+  .map-legend-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .map-legend-chip.off { opacity: 0.35; }
+  .map-sin-coords { font-size: 11px; color: var(--text3); padding: 0 1rem 0.5rem; flex-shrink: 0; }
+  #leaflet-map { flex: 1; width: 100%; }
 
   /* PESTAÑA CLIENTES */
   .cli-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; padding: 0.75rem 1.25rem; }
@@ -267,6 +282,7 @@
       <svg viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 1l5 5 5-5"/></svg>
     </button>
     <div class="day-filter-panel" id="day-filter-panel"></div>
+    <button class="btn-ver-mapa" onclick="abrirMapa()">🗺️ Ver mapa de clientes</button>
   </div>
   <div id="sol-controls" style="display:none">
     <select id="sol-vendedor-filter"></select>
@@ -420,6 +436,17 @@
     </div>
     <div id="alta-modal-status"></div>
   </div>
+</div>
+
+<!-- MODAL MAPA DE CLIENTES (supervisor) -->
+<div class="map-overlay" id="map-overlay">
+  <div class="map-header">
+    <div class="map-title" id="map-title">Mapa de clientes</div>
+    <button class="map-close" onclick="cerrarMapa()">✕</button>
+  </div>
+  <div class="map-legend" id="map-legend"></div>
+  <div class="map-sin-coords" id="map-sin-coords"></div>
+  <div id="leaflet-map"></div>
 </div>
 
 <script>
@@ -1818,6 +1845,111 @@ async function cargarDatos() {
   } catch (e) {
     document.getElementById('zona-screen').innerHTML = '<div class="pin-title">Error al cargar datos</div><div class="pin-sub">Recargá la página</div>';
   }
+}
+
+// ── MAPA DE CLIENTES (supervisor) ───────────────────────────────────────────────
+const COLOR_POR_DIA = {
+  LUNES: '#1d3a8f',
+  MARTES: '#0F766E',
+  MIERCOLES: '#C2410C',
+  JUEVES: '#7C3AED',
+  VIERNES: '#B45309'
+};
+
+let leafletMap = null;
+let capasPorDia = {};
+
+function abrirMapa() {
+  if (!selectedVendedor) {
+    alert('Seleccioná primero un vendedor para ver su mapa.');
+    return;
+  }
+
+  const rows = ruteoDelVendedor(selectedVendedor);
+  const codigoToRow = {};
+  rows.forEach(function(r) { codigoToRow[r['CODIGO CLIENTE']] = r; });
+
+  const diasSet = {};
+  rows.forEach(function(r) { const d = norm(r['DIA CARGA DE PEDIDO']); if (d) diasSet[d] = true; });
+  const diasDisponibles = Object.keys(diasSet).sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
+  const diasAMostrar = diasDisponibles.filter(function(d) { return diasFiltro.indexOf(d) !== -1; });
+
+  document.getElementById('map-title').textContent = 'Mapa · ' + selectedVendedor;
+  document.getElementById('map-overlay').classList.add('open');
+
+  // Inicializar el mapa recién la primera vez (Leaflet necesita el contenedor visible)
+  setTimeout(function() {
+    if (!leafletMap) {
+      leafletMap = L.map('leaflet-map');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19
+      }).addTo(leafletMap);
+    } else {
+      Object.keys(capasPorDia).forEach(function(d) { leafletMap.removeLayer(capasPorDia[d]); });
+    }
+    leafletMap.invalidateSize();
+
+    capasPorDia = {};
+    const bounds = [];
+    let sinCoords = 0;
+
+    diasAMostrar.forEach(function(dia) {
+      const codigos = listaOrdenDia(selectedVendedor, dia, rows);
+      const layer = L.layerGroup();
+      const color = COLOR_POR_DIA[dia] || '#666';
+
+      codigos.forEach(function(codigo) {
+        const row = codigoToRow[codigo];
+        if (!row) return;
+        const lat = parseFloat(row['Latitud']);
+        const lon = parseFloat(row['Longitud']);
+        if (!lat || !lon) { sinCoords++; return; }
+
+        const marker = L.circleMarker([lat, lon], {
+          radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.9
+        }).bindPopup(
+          '<strong>' + (row['NOMBRE COMERCIAL'] || '') + '</strong><br>' +
+          (row['DIRECCION'] || '') + '<br>' +
+          '<span style="color:' + color + '">' + dia.charAt(0) + dia.slice(1).toLowerCase() + '</span> · ' + codigo
+        );
+        layer.addLayer(marker);
+        bounds.push([lat, lon]);
+      });
+
+      layer.addTo(leafletMap);
+      capasPorDia[dia] = layer;
+    });
+
+    document.getElementById('map-sin-coords').textContent =
+      sinCoords > 0 ? sinCoords + ' cliente' + (sinCoords !== 1 ? 's' : '') + ' sin ubicación cargada (no se muestran en el mapa)' : '';
+
+    renderLeyendaMapa(diasAMostrar);
+
+    if (bounds.length) leafletMap.fitBounds(bounds, { padding: [30, 30] });
+    else leafletMap.setView([-38.95, -68.06], 7); // fallback: centro aproximado de Patagonia norte
+  }, 50);
+}
+
+function renderLeyendaMapa(dias) {
+  const legend = document.getElementById('map-legend');
+  legend.innerHTML = '';
+  dias.forEach(function(dia) {
+    const color = COLOR_POR_DIA[dia] || '#666';
+    const chip = document.createElement('button');
+    chip.className = 'map-legend-chip';
+    chip.innerHTML = '<span class="dot" style="background:' + color + '"></span>' + dia.charAt(0) + dia.slice(1).toLowerCase();
+    chip.addEventListener('click', function() {
+      const activo = chip.classList.toggle('off');
+      if (activo) leafletMap.removeLayer(capasPorDia[dia]);
+      else capasPorDia[dia].addTo(leafletMap);
+    });
+    legend.appendChild(chip);
+  });
+}
+
+function cerrarMapa() {
+  document.getElementById('map-overlay').classList.remove('open');
 }
 
 cargarDatos();

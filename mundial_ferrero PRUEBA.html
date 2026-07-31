@@ -205,7 +205,7 @@
   .card-main.drag-over-bottom { box-shadow: inset 0 -3px 0 var(--sup); }
 
   /* CAMBIO PENDIENTE (sin guardar) */
-  .client-card.pending-change { outline: 2px dashed #E8A020; outline-offset: 2px; }
+  /* El borde punteado se retiró; el aviso queda solo en el tag "Sin guardar" */
   .pending-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #B45309; background: #FEF3C7; border-radius: 10px; padding: 1px 6px; margin-left: 6px; }
 
   /* BARRA DE CONFIRMACIÓN DE CAMBIOS */
@@ -1006,6 +1006,12 @@ function obtenerDiaEfectiva(vendedor, codigo, diaOriginal) {
   return ev.diaVirtual[codigo] || diaOriginal;
 }
 
+function baselineOrdenDia(dia, rows) {
+  const arr = rows.filter(function(r) { return norm(r['DIA CARGA DE PEDIDO']) === dia; });
+  arr.sort(function(a, b) { return (parseInt(a['ORDEN']) || 0) - (parseInt(b['ORDEN']) || 0); });
+  return arr.map(function(r) { return r['CODIGO CLIENTE']; });
+}
+
 function listaOrdenDia(vendedor, dia, rows) {
   const ev = getEstadoVirtual(vendedor);
   if (ev.ordenVirtual[dia]) return ev.ordenVirtual[dia].filter(function(c) { return !ev.eliminados[c]; });
@@ -1087,6 +1093,7 @@ function toggleDayFilterPanel() {
   const btn = document.getElementById('day-filter-btn');
   const abierto = panel.classList.toggle('open');
   btn.classList.toggle('open', abierto);
+  requestAnimationFrame(actualizarStickyOffsets);
 }
 
 function renderDayFilterPanel(diasDisponibles) {
@@ -1259,32 +1266,40 @@ function render() {
     dayHeader.textContent = dia.charAt(0) + dia.slice(1).toLowerCase() + ' · ' + codigos.length + ' cliente' + (codigos.length !== 1 ? 's' : '');
     content.appendChild(dayHeader);
 
+    const baseline = baselineOrdenDia(dia, rows);
+
     const list = document.createElement('div');
     list.className = 'list';
     list.dataset.dia = dia;
     codigos.forEach(function(codigo, idx) {
       const row = codigoToRow[codigo];
       if (!row) return;
-      list.appendChild(buildClientCardSupervisor(row, dia, idx + 1));
+      list.appendChild(buildClientCardSupervisor(row, dia, idx + 1, baseline));
     });
     content.appendChild(list);
   });
 
-  const headerH = document.getElementById('header').offsetHeight;
-  document.querySelectorAll('.day-group-header').forEach(function(h) { h.style.top = headerH + 'px'; });
-
+  actualizarStickyOffsets();
   renderBarraAcciones();
   renderConfirmBar();
 }
 
-function buildClientCardSupervisor(row, dia, ordenVisual) {
+function actualizarStickyOffsets() {
+  const headerEl = document.getElementById('header');
+  if (!headerEl) return;
+  const headerH = headerEl.offsetHeight;
+  document.querySelectorAll('.day-group-header').forEach(function(h) { h.style.top = headerH + 'px'; });
+}
+
+function buildClientCardSupervisor(row, dia, ordenVisual, baseline) {
   const ev = getEstadoVirtual(selectedVendedor);
   const codigo = row['CODIGO CLIENTE'];
   const canalReal = ev.canalVirtual[codigo] || row['Canal actual (Presencial / Autogestión)'];
   const cc = canalClass(canalReal);
   const diaOriginal = norm(row['DIA CARGA DE PEDIDO']);
-  const esPendiente = !!ev.diaVirtual[codigo] || !!ev.canalVirtual[codigo] || diaOriginal !== dia ||
-    (parseInt(row['ORDEN']) || 0) !== ordenVisual;
+  const cambioDia = diaOriginal !== dia;
+  const cambioOrden = !cambioDia && baseline && baseline.indexOf(codigo) !== (ordenVisual - 1);
+  const esPendiente = !!ev.diaVirtual[codigo] || !!ev.canalVirtual[codigo] || cambioDia || cambioOrden;
 
   const card = document.createElement('div');
   card.className = 'client-card ' + cc + (esPendiente ? ' pending-change' : '');
@@ -1489,6 +1504,8 @@ async function cargarDatos() {
 }
 
 cargarDatos();
+
+window.addEventListener('resize', function() { actualizarStickyOffsets(); });
 
 document.getElementById('edit-modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModalEdit();

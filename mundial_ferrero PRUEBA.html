@@ -166,6 +166,19 @@
   .modal-status.ok { background: #E6F7ED; color: #1F7A42; }
   .modal-status.err { background: #FDEAEA; color: #A02020; }
 
+  /* SELECCIÓN MÚLTIPLE */
+  .sel-toolbar { padding: 0.75rem 1.25rem 0.25rem; display: flex; justify-content: flex-end; }
+  .btn-sel-toggle { font-size: 12px; font-weight: 600; color: var(--sup); background: var(--sup-light); border: 1.5px solid var(--sup-border); padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-sel-toggle.active { background: #FDEAEA; color: #A02020; border-color: #E89090; }
+  .day-group-header { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text2); padding: 1rem 1.25rem 0.4rem; }
+  .sel-checkbox { width: 18px; height: 18px; accent-color: var(--sup); cursor: pointer; flex-shrink: 0; margin-right: 2px; }
+
+  .bulk-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--accent); padding: 0.75rem 1.25rem; box-shadow: 0 -2px 12px rgba(0,0,0,0.15); z-index: 250; display: flex; flex-direction: column; gap: 8px; }
+  .bulk-count { color: #fff; font-size: 13px; font-weight: 600; }
+  .bulk-actions { display: flex; gap: 8px; }
+  .bulk-btn { flex: 1; padding: 0.6rem 0.5rem; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .bulk-btn.danger { background: #C0392B; }
+
   .empty { text-align: center; padding: 3rem 1.5rem; color: var(--text3); }
   .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
   .empty-text { font-size: 15px; }
@@ -262,6 +275,40 @@
       <button class="btn-confirmar" id="edit-btn-confirmar" disabled onclick="confirmarEdicion()">Aplicar cambio</button>
     </div>
     <div id="edit-modal-status"></div>
+  </div>
+</div>
+
+<!-- MODAL ACCIÓN EN LOTE (supervisor) -->
+<div class="modal-overlay" id="bulk-modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="bulk-modal-title">Aplicar a varios clientes</div>
+    <div class="modal-cliente" id="bulk-modal-sub"></div>
+    <div id="bulk-campo-dia" class="modal-field" style="display:none">
+      <label>Nuevo día de visita</label>
+      <select id="bulk-input-dia" onchange="validarBulk()">
+        <option value="">— Seleccioná —</option>
+        <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
+        <option>JUEVES</option><option>VIERNES</option>
+      </select>
+    </div>
+    <div id="bulk-campo-canal" class="modal-field" style="display:none">
+      <label>Nuevo canal</label>
+      <select id="bulk-input-canal" onchange="validarBulk()">
+        <option value="">— Seleccioná —</option>
+        <option value="Presencial">Presencial</option>
+        <option value="Telefónico">Telefónico</option>
+        <option value="Ecommerce">Ecommerce</option>
+      </select>
+    </div>
+    <div id="bulk-campo-eliminar" class="modal-field" style="display:none">
+      <div class="detail-value">Esta acción eliminará del ruteo a los clientes seleccionados. No se puede deshacer.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="cerrarModalLote()">Cancelar</button>
+      <button class="btn-confirmar" id="bulk-btn-confirmar" disabled onclick="confirmarLote()">Aplicar a todos</button>
+    </div>
+    <div id="bulk-modal-status"></div>
   </div>
 </div>
 
@@ -448,6 +495,10 @@ function logout() {
   zonaSeleccionada = '';
   viewMode = 'ruteo';
   solVendedorFiltro = '';
+  modoSeleccion = false;
+  seleccionados = {};
+  const bar = document.getElementById('bulk-bar');
+  if (bar) bar.remove();
   document.getElementById('header').style.display = 'none';
   document.getElementById('app-content').innerHTML = '';
   document.getElementById('pin-screen').classList.add('hidden');
@@ -478,7 +529,7 @@ function iniciarSesion() {
     opt.value = v; opt.textContent = v;
     sel.appendChild(opt);
   });
-  sel.onchange = function() { selectedVendedor = sel.value; selectedDay = ''; render(); };
+  sel.onchange = function() { selectedVendedor = sel.value; selectedDay = ''; modoSeleccion = false; seleccionados = {}; render(); };
 
   renderSolFiltro();
   actualizarBadgeSolicitudes();
@@ -633,6 +684,69 @@ function rechazarSolicitudUI(s, card) {
     });
 }
 
+// ── MODAL ACCIÓN EN LOTE (supervisor) ───────────────────────────────────────────
+let bulkTipoActual = null;
+
+function abrirModalLote(tipo) {
+  bulkTipoActual = tipo;
+  const n = Object.keys(seleccionados).length;
+  document.getElementById('bulk-modal-sub').textContent = n + ' cliente' + (n !== 1 ? 's' : '') + ' seleccionado' + (n !== 1 ? 's' : '');
+  document.getElementById('bulk-campo-dia').style.display = tipo === 'dia' ? 'block' : 'none';
+  document.getElementById('bulk-campo-canal').style.display = tipo === 'canal' ? 'block' : 'none';
+  document.getElementById('bulk-campo-eliminar').style.display = tipo === 'eliminar' ? 'block' : 'none';
+  document.getElementById('bulk-input-dia').value = '';
+  document.getElementById('bulk-input-canal').value = '';
+  document.getElementById('bulk-modal-title').textContent =
+    tipo === 'dia' ? 'Mover de día' : tipo === 'canal' ? 'Cambiar canal' : 'Eliminar del ruteo';
+  document.getElementById('bulk-modal-status').innerHTML = '';
+  document.getElementById('bulk-btn-confirmar').textContent = 'Aplicar a todos';
+  document.getElementById('bulk-btn-confirmar').disabled = (tipo !== 'eliminar');
+  document.getElementById('bulk-modal-overlay').classList.add('open');
+}
+function cerrarModalLote() {
+  document.getElementById('bulk-modal-overlay').classList.remove('open');
+  bulkTipoActual = null;
+}
+function validarBulk() {
+  let ok = false;
+  if (bulkTipoActual === 'dia') ok = document.getElementById('bulk-input-dia').value !== '';
+  else if (bulkTipoActual === 'canal') ok = document.getElementById('bulk-input-canal').value !== '';
+  else if (bulkTipoActual === 'eliminar') ok = true;
+  document.getElementById('bulk-btn-confirmar').disabled = !ok;
+}
+function confirmarLote() {
+  const btn = document.getElementById('bulk-btn-confirmar');
+  btn.disabled = true;
+  btn.textContent = 'Aplicando...';
+
+  const items = Object.values(seleccionados).map(function(s) {
+    return { codigo: s.codigo, vendedor: s.vendedor, dia: s.dia };
+  });
+
+  const payload = {
+    accion: 'loteAcciones',
+    tipo: bulkTipoActual,
+    items: items,
+    zonaSupervisor: supActual['Zona']
+  };
+  if (bulkTipoActual === 'dia') payload.nuevoDia = document.getElementById('bulk-input-dia').value;
+  if (bulkTipoActual === 'canal') payload.nuevoCanal = document.getElementById('bulk-input-canal').value;
+
+  fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+    .then(function() {
+      document.getElementById('bulk-modal-status').innerHTML = '<div class="modal-status ok">✅ Cambios aplicados. Recargá para ver el resultado.</div>';
+      btn.textContent = 'Aplicado';
+      seleccionados = {};
+      modoSeleccion = false;
+      setTimeout(function() { cerrarModalLote(); render(); }, 1500);
+    })
+    .catch(function() {
+      document.getElementById('bulk-modal-status').innerHTML = '<div class="modal-status err">❌ Error al aplicar. Reintentá.</div>';
+      btn.disabled = false;
+      btn.textContent = 'Aplicar a todos';
+    });
+}
+
 // ── MODAL DE EDICIÓN DIRECTA (supervisor) ──────────────────────────────────────
 function abrirModalEdit(codigo, vendedor, dia, nombre) {
   editModalData = { codigo: codigo, vendedor: vendedor, dia: dia, nombre: nombre };
@@ -718,12 +832,31 @@ function vendedorDisplayToRuteo(nombreBaseClientes) {
   return norm(nombreBaseClientes);
 }
 
+let diasFiltro = DAYS_ORDER.slice(0, 5); // LUNES..VIERNES activos por defecto
+let modoSeleccion = false;
+let seleccionados = {}; // clave "vendedor|dia|codigo" -> {codigo, dia, vendedor, nombre}
+
+function claveSel(vendedor, dia, codigo) { return normTokens(vendedor) + '|' + dia + '|' + codigo; }
+
 function ruteoDelVendedor(vendedor) {
   const objetivo = norm(vendedor).split(' ').filter(Boolean).sort().join(' ');
   return baseRuteo.filter(function(r) {
     const rv = norm(r['VENDEDOR']).split(' ').filter(Boolean).sort().join(' ');
     return rv === objetivo;
   });
+}
+
+function toggleModoSeleccion() {
+  modoSeleccion = !modoSeleccion;
+  seleccionados = {};
+  render();
+}
+
+function toggleSeleccionCliente(vendedor, dia, codigo, nombre, checked) {
+  const key = claveSel(vendedor, dia, codigo);
+  if (checked) seleccionados[key] = { vendedor: vendedor, dia: dia, codigo: codigo, nombre: nombre };
+  else delete seleccionados[key];
+  renderBarraAcciones();
 }
 
 function render() {
@@ -741,91 +874,171 @@ function render() {
     return;
   }
 
-  // Días disponibles
-  const days = [];
+  // Días disponibles para este vendedor
+  const diasDisponibles = [];
   const seen = {};
   rows.forEach(function(r) {
     const d = norm(r['DIA CARGA DE PEDIDO']);
-    if (d && !seen[d]) { seen[d] = true; days.push(d); }
+    if (d && !seen[d]) { seen[d] = true; diasDisponibles.push(d); }
   });
-  days.sort(function(a,b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
-  if (!selectedDay || days.indexOf(selectedDay) === -1) {
-    const today = todayDayName();
-    selectedDay = days.indexOf(today) !== -1 ? today : days[0];
-  }
-  renderDayTabs(days);
+  diasDisponibles.sort(function(a,b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
 
-  const clientesDia = rows.filter(function(r) { return norm(r['DIA CARGA DE PEDIDO']) === selectedDay; });
-  clientesDia.sort(function(a,b) { return (parseInt(a['ORDEN'])||0) - (parseInt(b['ORDEN'])||0); });
+  renderDayFilter(diasDisponibles);
+
+  const diasAMostrar = diasDisponibles.filter(function(d) { return diasFiltro.indexOf(d) !== -1; });
 
   content.innerHTML = '';
 
-  // Stats
-  const canales = { presencial: 0, ecom: 0, telefonico: 0 };
-  clientesDia.forEach(function(c) { canales[canalClass(c['Canal actual (Presencial / Autogestión)'])]++; });
-  const stats = document.createElement('div');
-  stats.className = 'stats-bar';
-  stats.innerHTML =
-    '<div class="stat"><div class="stat-num">' + clientesDia.length + '</div><div class="stat-label">Clientes</div></div>' +
-    '<div class="stat"><div class="stat-num">' + canales.presencial + '</div><div class="stat-label">Presencial</div></div>' +
-    '<div class="stat"><div class="stat-num">' + (canales.ecom + canales.telefonico) + '</div><div class="stat-label">No presencial</div></div>';
-  content.appendChild(stats);
+  // Header con botón de modo selección + stats generales
+  const toolbar = document.createElement('div');
+  toolbar.className = 'sel-toolbar';
+  toolbar.innerHTML =
+    '<button class="btn-sel-toggle' + (modoSeleccion ? ' active' : '') + '" id="btn-sel-toggle">' +
+      (modoSeleccion ? '✕ Cancelar selección' : '☑ Seleccionar clientes') +
+    '</button>';
+  toolbar.querySelector('#btn-sel-toggle').addEventListener('click', toggleModoSeleccion);
+  content.appendChild(toolbar);
 
-  // Lista
-  const list = document.createElement('div');
-  list.className = 'list';
-  clientesDia.forEach(function(c) {
-    const cc = canalClass(c['Canal actual (Presencial / Autogestión)']);
-    const card = document.createElement('div');
-    card.className = 'client-card ' + cc;
+  if (!diasAMostrar.length) {
+    content.innerHTML += '<div class="empty"><div class="empty-text">No hay días seleccionados en el filtro.</div></div>';
+    return;
+  }
 
-    const main = document.createElement('div');
-    main.className = 'card-main';
-    main.innerHTML =
-      '<div class="order-num">' + (c['ORDEN'] || '') + '</div>' +
-      '<div class="client-info">' +
-        '<div class="client-name">' + (c['NOMBRE COMERCIAL'] || '') + '</div>' +
-        '<div class="client-sub">' + (c['LOCALIDAD'] || '') + ' · ' + (c['CODIGO CLIENTE'] || '') + '</div>' +
-      '</div>' +
-      '<div class="canal-tag ' + cc + '">' + canalLabel(cc) + '</div>';
+  diasAMostrar.forEach(function(dia) {
+    const clientesDia = rows.filter(function(r) { return norm(r['DIA CARGA DE PEDIDO']) === dia; });
+    clientesDia.sort(function(a,b) { return (parseInt(a['ORDEN'])||0) - (parseInt(b['ORDEN'])||0); });
+    if (!clientesDia.length) return;
 
-    const detail = document.createElement('div');
-    detail.className = 'card-detail';
-    detail.innerHTML =
-      '<div class="detail-divider"></div>' +
-      '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + (c['DIRECCION'] || '—') + '</div></div>' +
-      '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + (c['CODIGO CLIENTE'] || '—') + '</div></div>' +
-      '<a class="btn-maps" href="' + mapsUrl(c) + '" target="_blank" onclick="event.stopPropagation()">' +
-      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
-      'Abrir en Maps</a>';
+    const dayHeader = document.createElement('div');
+    dayHeader.className = 'day-group-header';
+    dayHeader.textContent = dia.charAt(0) + dia.slice(1).toLowerCase() + ' · ' + clientesDia.length + ' cliente' + (clientesDia.length !== 1 ? 's' : '');
+    content.appendChild(dayHeader);
 
-    const btnEditar = document.createElement('button');
-    btnEditar.className = 'btn-editar';
-    btnEditar.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg> Editar cliente';
-    btnEditar.addEventListener('click', function(e) {
-      e.stopPropagation();
-      abrirModalEdit(c['CODIGO CLIENTE'], selectedVendedor, selectedDay, c['NOMBRE COMERCIAL']);
+    const list = document.createElement('div');
+    list.className = 'list';
+    clientesDia.forEach(function(c) {
+      list.appendChild(buildClientCardSupervisor(c, dia));
     });
-    detail.appendChild(btnEditar);
-
-    main.addEventListener('click', function() { card.classList.toggle('expanded'); });
-    card.appendChild(main);
-    card.appendChild(detail);
-    list.appendChild(card);
+    content.appendChild(list);
   });
-  content.appendChild(list);
+
+  renderBarraAcciones();
 }
 
-function renderDayTabs(days) {
+function buildClientCardSupervisor(c, dia) {
+  const cc = canalClass(c['Canal actual (Presencial / Autogestión)']);
+  const codigo = c['CODIGO CLIENTE'];
+  const key = claveSel(selectedVendedor, dia, codigo);
+  const card = document.createElement('div');
+  card.className = 'client-card ' + cc;
+
+  const main = document.createElement('div');
+  main.className = 'card-main';
+
+  if (modoSeleccion) {
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.className = 'sel-checkbox';
+    chk.checked = !!seleccionados[key];
+    chk.addEventListener('click', function(e) { e.stopPropagation(); });
+    chk.addEventListener('change', function() {
+      toggleSeleccionCliente(selectedVendedor, dia, codigo, c['NOMBRE COMERCIAL'], chk.checked);
+    });
+    main.appendChild(chk);
+  }
+
+  const numDiv = document.createElement('div');
+  numDiv.className = 'order-num';
+  numDiv.textContent = c['ORDEN'] || '';
+  main.appendChild(numDiv);
+
+  const info = document.createElement('div');
+  info.className = 'client-info';
+  info.innerHTML =
+    '<div class="client-name">' + (c['NOMBRE COMERCIAL'] || '') + '</div>' +
+    '<div class="client-sub">' + (c['LOCALIDAD'] || '') + ' · ' + (codigo || '') + '</div>';
+  main.appendChild(info);
+
+  const tag = document.createElement('div');
+  tag.className = 'canal-tag ' + cc;
+  tag.textContent = canalLabel(cc);
+  main.appendChild(tag);
+
+  const detail = document.createElement('div');
+  detail.className = 'card-detail';
+  detail.innerHTML =
+    '<div class="detail-divider"></div>' +
+    '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + (c['DIRECCION'] || '—') + '</div></div>' +
+    '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + (codigo || '—') + '</div></div>' +
+    '<a class="btn-maps" href="' + mapsUrl(c) + '" target="_blank" onclick="event.stopPropagation()">' +
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
+    'Abrir en Maps</a>';
+
+  const btnEditar = document.createElement('button');
+  btnEditar.className = 'btn-editar';
+  btnEditar.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg> Editar cliente';
+  btnEditar.addEventListener('click', function(e) {
+    e.stopPropagation();
+    abrirModalEdit(codigo, selectedVendedor, dia, c['NOMBRE COMERCIAL']);
+  });
+  detail.appendChild(btnEditar);
+
+  main.addEventListener('click', function() {
+    if (modoSeleccion) {
+      const chk = main.querySelector('.sel-checkbox');
+      chk.checked = !chk.checked;
+      chk.dispatchEvent(new Event('change'));
+    } else {
+      card.classList.toggle('expanded');
+    }
+  });
+
+  card.appendChild(main);
+  card.appendChild(detail);
+  return card;
+}
+
+function renderDayFilter(diasDisponibles) {
   const strip = document.getElementById('days-strip');
   strip.innerHTML = '';
-  days.forEach(function(day) {
+  diasDisponibles.forEach(function(day) {
     const btn = document.createElement('button');
-    btn.className = 'day-tab' + (day === selectedDay ? ' active' : '');
+    btn.className = 'day-tab' + (diasFiltro.indexOf(day) !== -1 ? ' active' : '');
     btn.textContent = day.charAt(0) + day.slice(1).toLowerCase();
-    btn.onclick = function() { selectedDay = day; render(); };
+    btn.onclick = function() {
+      const idx = diasFiltro.indexOf(day);
+      if (idx === -1) diasFiltro.push(day); else diasFiltro.splice(idx, 1);
+      render();
+    };
     strip.appendChild(btn);
   });
+}
+
+// ── BARRA DE ACCIONES EN LOTE ────────────────────────────────────────────────
+function renderBarraAcciones() {
+  let bar = document.getElementById('bulk-bar');
+  const n = Object.keys(seleccionados).length;
+  if (!modoSeleccion || n === 0) {
+    if (bar) bar.remove();
+    return;
+  }
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'bulk-bar';
+    bar.className = 'bulk-bar';
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML =
+    '<div class="bulk-count">' + n + ' seleccionado' + (n !== 1 ? 's' : '') + '</div>' +
+    '<div class="bulk-actions">' +
+      '<button class="bulk-btn" id="bulk-dia">📅 Mover de día</button>' +
+      '<button class="bulk-btn" id="bulk-canal">🔀 Canal</button>' +
+      '<button class="bulk-btn danger" id="bulk-eliminar">🗑️ Eliminar</button>' +
+    '</div>';
+  bar.querySelector('#bulk-dia').addEventListener('click', function() { abrirModalLote('dia'); });
+  bar.querySelector('#bulk-canal').addEventListener('click', function() { abrirModalLote('canal'); });
+  bar.querySelector('#bulk-eliminar').addEventListener('click', function() { abrirModalLote('eliminar'); });
+}
 }
 
 // ── CARGA INICIAL ─────────────────────────────────────────────────────────────
@@ -853,6 +1066,9 @@ cargarDatos();
 
 document.getElementById('edit-modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModalEdit();
+});
+document.getElementById('bulk-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModalLote();
 });
 </script>
 </body>

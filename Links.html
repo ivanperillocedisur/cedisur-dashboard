@@ -121,6 +121,8 @@ body {
    - tema:       vino | rojo | azul | violeta | verde | gris
    - icono:      estrella | pulso | rayo | lapiz  (si vacio, usa "estrella")
    - icono_url:  opcional, link a logo de marca. Si se completa, pisa al icono.
+                 Acepta el link normal de "Compartir" de Google Drive
+                 (debe estar configurado como "Cualquiera con el enlace").
    ============================================================ */
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSKlbXi7eQwkHWuqU9ynjSBZjYNm4PwNs6VtknRXOS-6Eboa1lJf0fNmXaduzr2u6oWaXcXD9cUDLFY/pub?gid=0&single=true&output=csv";
 
@@ -146,6 +148,19 @@ const ICONOS = {
   rayo:     '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>',
   lapiz:    '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>'
 };
+/* Convierte un link "compartir" de Google Drive al formato de imagen directa.
+   Detecta patrones como .../file/d/ID/view o .../open?id=ID */
+function resolverUrlImagen(url) {
+  if (!url) return url;
+  if (!url.includes("drive.google.com")) return url;
+  let id = null;
+  let m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) id = m[1];
+  if (!id) { m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/); if (m) id = m[1]; }
+  if (!id) return url;
+  return "https://drive.google.com/thumbnail?id=" + id + "&sz=w400";
+}
+
 const chevSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
 
 function render(items) {
@@ -161,8 +176,9 @@ function render(items) {
     const key = String(it.icono||"").trim().toLowerCase();
     const fallback = ICONOS[key] || ICONOS.estrella;
     if (it.icono_url) {
+      const urlImg = resolverUrlImagen(it.icono_url);
       // onerror: si el link no carga una imagen valida, se reemplaza por el icono generico
-      iconoHTML = '<img src="' + it.icono_url + '" alt="" onerror="this.parentElement.innerHTML=\'' + fallback.replace(/'/g,"\\'") + '\'">';
+      iconoHTML = '<img src="' + urlImg + '" alt="" onerror="this.parentElement.innerHTML=\'' + fallback.replace(/'/g,"\\'") + '\'">';
     } else {
       iconoHTML = fallback;
     }

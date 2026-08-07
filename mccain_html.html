@@ -176,7 +176,7 @@
   <div id="selectorView">
     <div class="selector-box">
       <p>Buscá tu nombre, tu zona, o mirá el total Cedisur</p>
-      <input id="searchInput" class="search-input" type="text" placeholder="Ej: Leonardo, Neuquén, Cedisur...">
+      <input id="searchInput" class="search-input" type="text" placeholder="Escribí para buscar...">
       <div id="resultList" class="result-list"></div>
     </div>
   </div>
@@ -199,7 +199,7 @@
   <div id="loadingBox" class="loading">Cargando datos del plan…</div>
   <div id="errorBox" class="error-box" style="display:none;"></div>
 
-  <footer>Datos actualizados según el último procesamiento del 5641 · Cedisur</footer>
+  <footer></footer>
 </div>
 
 <script>
@@ -238,17 +238,6 @@ const ZONAS = ['ATLANTICA','CORDILLERA NORTE','CORDILLERA SUR','NEUQUEN','RIO NE
 // =============================================================================
 // PARSER CSV simple (sin librerías externas)
 // =============================================================================
-function parseCSV(text) {
-  const lines = text.replace(/\r/g, '').split('\n').filter(l => l.length > 0);
-  if (lines.length === 0) return [];
-  const headers = splitCSVLine(lines[0]).map(h => h.trim());
-  return lines.slice(1).map(line => {
-    const vals = splitCSVLine(line);
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = (vals[i] !== undefined ? vals[i].trim() : ''));
-    return obj;
-  });
-}
 function splitCSVLine(line) {
   const out = []; let cur = ''; let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
@@ -266,10 +255,51 @@ function splitCSVLine(line) {
   out.push(cur);
   return out;
 }
+
+// Las pestañas tienen filas de título/leyenda ANTES del encabezado real
+// (ej. "Objetivos por vendedor y mes..." en la fila 1). En vez de asumir
+// que la primera línea del CSV es el encabezado, buscamos la fila que
+// contiene la celda "VENDEDOR" y usamos esa como encabezado real.
+// Todo lo de arriba se devuelve aparte, por si hace falta leerlo (premio del mes).
+function extraerEncabezadoYFilas(text) {
+  const lines = text.replace(/\r/g, '').split('\n').filter(l => l.length > 0);
+  let headerIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const celdas = splitCSVLine(lines[i]).map(c => c.trim().toUpperCase());
+    if (celdas.includes('VENDEDOR')) { headerIdx = i; break; }
+  }
+  if (headerIdx === -1) return { headers: [], rows: [], lineasPrevias: lines };
+  const headers = splitCSVLine(lines[headerIdx]).map(h => h.trim());
+  const rows = lines.slice(headerIdx + 1).map(line => {
+    const vals = splitCSVLine(line);
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (vals[i] !== undefined ? vals[i].trim() : ''));
+    return obj;
+  });
+  return { headers, rows, lineasPrevias: lines.slice(0, headerIdx) };
+}
+
+// El premio del mes vive en una fila ANTES del encabezado, con el mes en la
+// primera celda (ej. "AGOSTO 2026") y el texto del premio en la segunda.
+// Se identifica por patrón "NOMBREMES AAAA" en la primera celda, así funciona
+// sin importar en qué fila exacta quedó ubicada.
+function extraerPremiosPorMes(lineasPrevias) {
+  const premios = {};
+  const patronMes = /^[A-ZÁÉÍÓÚÑ]+\s+\d{4}$/i;
+  lineasPrevias.forEach(line => {
+    const celdas = splitCSVLine(line).map(c => c.trim());
+    const mes = (celdas[0] || '').toUpperCase();
+    const texto = celdas[1] || '';
+    if (patronMes.test(mes) && texto && texto.toUpperCase() !== 'PREMIO DEL MES') {
+      premios[mes] = texto;
+    }
+  });
+  return premios;
+}
 async function fetchCSV(url) {
   const res = await fetch(url + '&_ts=' + Date.now());
   if (!res.ok) throw new Error('No se pudo leer un CSV publicado (' + res.status + ')');
-  return parseCSV(await res.text());
+  return extraerEncabezadoYFilas(await res.text());
 }
 function num(v) { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? 0 : n; }
 
@@ -289,20 +319,22 @@ async function cargarDatos() {
     const [objetivos, resumen, fotos, ventas] = await Promise.all([
       fetchCSV(CSV_OBJETIVOS), fetchCSV(CSV_RESUMEN), fetchCSV(CSV_FOTOS), fetchCSV(CSV_VENTAS)
     ]);
-    DATA.objetivos = objetivos.filter(r => r.VENDEDOR);
-    DATA.resumen   = resumen.filter(r => r.VENDEDOR);
-    DATA.fotos     = fotos.filter(r => r.VENDEDOR);
-    DATA.ventas    = ventas.filter(r => r.VENDEDOR);
+    DATA.objetivos = objetivos.rows.filter(r => r.VENDEDOR);
+    DATA.resumen   = resumen.rows.filter(r => r.VENDEDOR);
+    DATA.fotos     = fotos.rows.filter(r => r.VENDEDOR);
+    DATA.ventas    = ventas.rows.filter(r => r.VENDEDOR);
+
+    if (DATA.objetivos.length === 0) {
+      throw new Error('OBJETIVOS_MCCAIN no tiene filas de vendedores debajo del encabezado. Revisá que la pestaña publicada tenga datos.');
+    }
 
     // Mes actual = el más reciente presente en OBJETIVOS_MCCAIN
     const meses = [...new Set(DATA.objetivos.map(r => r.MES))];
     MES_ACTUAL = meses[meses.length - 1];
 
-    // Premio del mes: fila especial en OBJETIVOS_MCCAIN (col A = MES, col B = premio),
-    // separada de las filas de vendedor. La distinguimos porque esas filas SI tienen
-    // VENDEDOR y estas NO deberían — se lee directo de las primeras filas del sheet crudo.
-    const filaPremio = objetivos.find(r => r.MES === MES_ACTUAL && !r.VENDEDOR && r['PREMIO DEL MES']);
-    PREMIO_TEXTO = filaPremio ? filaPremio['PREMIO DEL MES'] : '';
+    // Premio del mes: fila especial ubicada antes del encabezado real
+    const premiosPorMes = extraerPremiosPorMes(objetivos.lineasPrevias);
+    PREMIO_TEXTO = premiosPorMes[MES_ACTUAL.toUpperCase()] || '';
 
     armarListaEntidades();
     document.getElementById('loadingBox').style.display = 'none';

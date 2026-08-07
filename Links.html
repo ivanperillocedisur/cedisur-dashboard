@@ -54,12 +54,12 @@ body {
 .card::before {
   content: ""; position: absolute; top: -30px; right: -40px;
   width: 140px; height: 140px; border-radius: 50%;
-  background: rgba(255,255,255,.10);
+  background: var(--circulo, rgba(255,255,255,.10));
 }
 .card::after {
   content: ""; position: absolute; top: 30px; right: -10px;
   width: 80px; height: 80px; border-radius: 50%;
-  background: rgba(255,255,255,.08);
+  background: var(--circulo, rgba(255,255,255,.08));
 }
 .card-icon {
   height: 64px; min-width: 64px; max-width: 120px;
@@ -135,13 +135,40 @@ const DEMO = [
 ];
 
 const TEMAS = {
-  vino:    "linear-gradient(135deg, #4A1010 0%, #7A2E1E 100%)",
-  rojo:    "linear-gradient(135deg, #B71C1C 0%, #E53935 100%)",
-  azul:    "linear-gradient(135deg, #1A3A8F 0%, #3D6FD9 100%)",
-  violeta: "linear-gradient(135deg, #4A148C 0%, #7B3FB8 100%)",
-  verde:   "linear-gradient(135deg, #1B5E20 0%, #43A047 100%)",
-  gris:    "linear-gradient(135deg, #37474F 0%, #607D8B 100%)"
+  vino:    { fondo: "linear-gradient(135deg, #4A1010 0%, #7A2E1E 100%)" },
+  rojo:    { fondo: "linear-gradient(135deg, #B71C1C 0%, #E53935 100%)" },
+  azul:    { fondo: "linear-gradient(135deg, #1A3A8F 0%, #3D6FD9 100%)" },
+  violeta: { fondo: "linear-gradient(135deg, #4A148C 0%, #7B3FB8 100%)" },
+  verde:   { fondo: "linear-gradient(135deg, #1B5E20 0%, #43A047 100%)" },
+  gris:    { fondo: "linear-gradient(135deg, #37474F 0%, #607D8B 100%)" },
+  blanco:  {
+    fondo: "linear-gradient(135deg, #FFFFFF 0%, #F1F2F4 100%)",
+    texto_titulo: "#1A1D21",
+    texto_desc: "#5A5F66",
+    chip_fondo: "rgba(0,0,0,.06)",
+    chip_texto: "#3A3D42",
+    circulo: "rgba(0,0,0,.05)",
+    icono_fondo: "rgba(0,0,0,.06)",
+    icono_color: "#1A1D21",
+    flecha_fondo: "rgba(0,0,0,.08)",
+    flecha_color: "#1A1D21",
+    sombra: "0 4px 14px rgba(0,0,0,.10)",
+    borde: "1px solid #E4E5E8"
+  }
 };
+/* Valores por defecto para temas oscuros (no hace falta repetirlos arriba) */
+const TEMA_DEFAULT = {
+  texto_titulo: "#fff", texto_desc: "rgba(255,255,255,.85)",
+  chip_fondo: "rgba(255,255,255,.20)", chip_texto: "#fff",
+  circulo: "rgba(255,255,255,.10)",
+  icono_fondo: "rgba(255,255,255,.16)", icono_color: "#fff",
+  flecha_fondo: "rgba(255,255,255,.22)", flecha_color: "#fff",
+  sombra: "0 4px 14px rgba(0,0,0,.12)", borde: "none"
+};
+function resolverTema(nombre) {
+  const t = TEMAS[String(nombre||"").trim().toLowerCase()] || TEMAS.azul;
+  return Object.assign({}, TEMA_DEFAULT, t);
+}
 
 const ICONOS = {
   estrella: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.4 7.1.6-5.4 4.6 1.7 6.9L12 17l-6.3 3.5 1.7-6.9L2 9l7.1-.6z"/></svg>',
@@ -162,7 +189,13 @@ function resolverUrlImagen(url) {
   return "https://drive.google.com/thumbnail?id=" + id + "&sz=w800";
 }
 
-const chevSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+function chevSVG(color) {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="' + (color||"#fff") + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+}
+/* Reemplaza el color de trazo (#fff) del SVG generico por el color del tema */
+function fallbackConColor(svg, color) {
+  return svg.replace(/#fff/g, color || "#fff");
+}
 
 function render(items) {
   items.sort((a,b) => (parseInt(a.orden)||99) - (parseInt(b.orden)||99));
@@ -171,23 +204,25 @@ function render(items) {
   items.forEach(it => {
     if (!it.nombre) return;
     const esAncho = String(it.ancho).trim() === "2";
-    const fondo = TEMAS[String(it.tema||"").trim().toLowerCase()] || TEMAS.azul;
+    const tema = resolverTema(it.tema);
     const key = String(it.icono||"").trim().toLowerCase();
     const fallback = ICONOS[key] || ICONOS.estrella;
 
     const a = document.createElement("a");
     a.className = "card" + (esAncho ? " wide" : "");
-    a.style.background = fondo;
+    a.style.background = tema.fondo;
+    a.style.boxShadow = tema.sombra;
+    a.style.border = tema.borde;
+    a.style.setProperty("--circulo", tema.circulo);
     a.href = it.url || "#";
     if ((it.url||"").startsWith("http")) a.target = "_blank";
 
-    /* Contenido de texto de la tarjeta (sin el icono, que se agrega aparte como elemento real) */
     a.innerHTML =
-      '<div class="card-icon"></div>' +
-      '<div class="chev">' + chevSVG + '</div>' +
-      (it.vigencia ? '<span class="card-vig">' + it.vigencia + '</span><br>' : '') +
-      '<div class="card-title">' + it.nombre + '</div>' +
-      (it.descripcion ? '<div class="card-desc">' + it.descripcion + '</div>' : '');
+      '<div class="card-icon" style="background:' + tema.icono_fondo + '"></div>' +
+      '<div class="chev" style="background:' + tema.flecha_fondo + '">' + chevSVG(tema.flecha_color) + '</div>' +
+      (it.vigencia ? '<span class="card-vig" style="background:' + tema.chip_fondo + ';color:' + tema.chip_texto + '">' + it.vigencia + '</span><br>' : '') +
+      '<div class="card-title" style="color:' + tema.texto_titulo + '">' + it.nombre + '</div>' +
+      (it.descripcion ? '<div class="card-desc" style="color:' + tema.texto_desc + '">' + it.descripcion + '</div>' : '');
 
     /* Icono/logo: se inserta como elemento real, con manejo de error seguro (sin conflicto de comillas) */
     const cajaIcono = a.querySelector(".card-icon");
@@ -195,10 +230,10 @@ function render(items) {
       const img = document.createElement("img");
       img.src = resolverUrlImagen(it.icono_url);
       img.alt = "";
-      img.onerror = function () { cajaIcono.innerHTML = fallback; };
+      img.onerror = function () { cajaIcono.innerHTML = fallbackConColor(fallback, tema.icono_color); };
       cajaIcono.appendChild(img);
     } else {
-      cajaIcono.innerHTML = fallback;
+      cajaIcono.innerHTML = fallbackConColor(fallback, tema.icono_color);
     }
 
     cont.appendChild(a);

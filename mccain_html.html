@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>McCain — Modo Objetivos</title>
+<title>Plan McCain — Modo Objetivos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -194,8 +194,7 @@
 
   <div class="header">
     <div class="eyebrow" id="eyebrowMes">Cedisur</div>
-    <h1>MODO<br><span>OBJETIVOS</span></h1>
-    <div class="sub">McCain</div>
+    <h1>CONEXIÓN<br><span>MCCAIN - RETAIL</span></h1>
   </div>
 
   <!-- ============ SELECTOR CENTRAL ============ -->
@@ -236,6 +235,7 @@ const CSV_OBJETIVOS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMIK6L8k
 const CSV_RESUMEN    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMIK6L8kV-8DXcaCkpYpeMwf3rGYZoe6EfbyQ3gGlCKgHM910NX-XJkI8Mc4FT2wPu6SzvLcnvYr9j/pub?gid=1955559121&single=true&output=csv";
 const CSV_FOTOS      = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMIK6L8kV-8DXcaCkpYpeMwf3rGYZoe6EfbyQ3gGlCKgHM910NX-XJkI8Mc4FT2wPu6SzvLcnvYr9j/pub?gid=1781951683&single=true&output=csv";
 const CSV_VENTAS     = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMIK6L8kV-8DXcaCkpYpeMwf3rGYZoe6EfbyQ3gGlCKgHM910NX-XJkI8Mc4FT2wPu6SzvLcnvYr9j/pub?gid=1932769880&single=true&output=csv";
+const CSV_CLIENTES   = "PENDIENTE_PUBLICAR_CLIENTES_DET_MCCAIN"; // ver instrucciones abajo
 
 // Mapeo vendedor (nombre display) -> zona, igual al usado en CedisurCentral.gs
 // (FOTOS_POP_MCCAIN no trae columna ZONA, así que la resolvemos acá)
@@ -332,7 +332,7 @@ function num(v) { const n = parseFloat(String(v).replace(',', '.')); return isNa
 // =============================================================================
 // ESTADO GLOBAL
 // =============================================================================
-let DATA = { objetivos: [], resumen: [], fotos: [], ventas: [] };
+let DATA = { objetivos: [], resumen: [], fotos: [], ventas: [], clientes: [] };
 let MES_ACTUAL = null;
 let PREMIO_TEXTO = '';
 let ENTIDADES = []; // lista para el buscador: vendedores + zonas + total
@@ -354,6 +354,15 @@ async function cargarDatos() {
     DATA.resumen   = resumen.rows.filter(r => r.VENDEDOR);
     DATA.fotos     = fotos.rows.filter(r => r.VENDEDOR);
     DATA.ventas    = ventas.rows.filter(r => r.VENDEDOR);
+
+    // CLIENTES_DET_MCCAIN es opcional: si todavía no se publicó, la app sigue
+    // funcionando igual, solo sin la lista de "clientes con compra".
+    try {
+      const clientes = await fetchCSV(CSV_CLIENTES);
+      DATA.clientes = clientes.rows.filter(r => r.VENDEDOR);
+    } catch (e) {
+      DATA.clientes = [];
+    }
 
     if (DATA.objetivos.length === 0) {
       throw new Error('OBJETIVOS_MCCAIN no tiene filas de vendedores debajo del encabezado. Revisá que la pestaña publicada tenga datos.');
@@ -456,6 +465,7 @@ function calcularValores(entidad) {
   const resumenFilas    = DATA.resumen.filter(r => normKey(r.MES) === MES_ACTUAL && vendedoresNorm.includes(normKey(r.VENDEDOR)));
   const fotosFilas      = DATA.fotos.filter(r => normKey(r.MES) === MES_ACTUAL && vendedoresNorm.includes(normKey(r.VENDEDOR)));
   const ventasFilas     = DATA.ventas.filter(r => normKey(r.MES) === MES_ACTUAL && vendedoresNorm.includes(normKey(r.VENDEDOR)));
+  const clientesFilas   = DATA.clientes.filter(r => normKey(r.MES) === MES_ACTUAL && vendedoresNorm.includes(normKey(r.VENDEDOR)));
 
   const objKilos    = objetivosFilas.reduce((a, r) => a + num(r['OBJETIVO KILOS']), 0);
   const objClientes = objetivosFilas.reduce((a, r) => a + num(r['OBJETIVO CLIENTES']), 0);
@@ -474,11 +484,28 @@ function calcularValores(entidad) {
     porArticulo[key].kilos += num(r['KILOS ACUMULADOS'] || r['UNIDADES ACUMULADAS']);
   });
 
+  // Listado de clientes con compra: cada fila de CLIENTES_DET_MCCAIN con
+  // "PRIMERA COMPRA DEL MES" = 1 representa un cliente único ese mes.
+  // Si dos vendedores de la misma zona comparten un cliente por error de
+  // carga, el Set() lo deja una sola vez en el listado igual.
+  const listaClientesConCompra = [...new Set(
+    clientesFilas.filter(r => num(r['PRIMERA COMPRA DEL MES (1/0)'] ?? r['PRIMERA COMPRA DEL MES']) === 1)
+                 .map(r => r.CLIENTE).filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b));
+
+  // Listado de clientes de Fotos POP: texto libre separado por comas en la
+  // columna "CLIENTES FOTOS POP" de FOTOS_POP_MCCAIN.
+  const listaClientesFotos = [...new Set(
+    fotosFilas.flatMap(r => String(r['CLIENTES FOTOS POP'] || '').split(',').map(s => s.trim()).filter(Boolean))
+  )].sort((a, b) => a.localeCompare(b));
+
   return {
     kilos:    { objetivo: objKilos,    real: realKilos },
     clientes: { objetivo: objClientes, real: realClientes },
     fotos:    { objetivo: objFotos,    real: realFotos },
     detalleArticulos: Object.values(porArticulo).sort((a,b) => b.kilos - a.kilos),
+    listaClientesConCompra,
+    listaClientesFotos,
   };
 }
 
@@ -495,9 +522,9 @@ function renderTarjeta(entidad) {
   cont.innerHTML = '';
 
   const defs = [
-    { key: 'kilos',    label: 'Kilos McCain',        unidad: 'kg',       icono:'🥔', tieneDetalle: true  },
-    { key: 'clientes', label: 'Clientes con compra',  unidad: 'clientes', icono:'🧾', tieneDetalle: false },
-    { key: 'fotos',    label: 'Fotos POP',            unidad: 'fotos',    icono:'📸', tieneDetalle: false },
+    { key: 'kilos',    label: 'Kilos McCain',        unidad: 'kg',       icono:'🥔', tipoDetalle:'articulos' },
+    { key: 'clientes', label: 'Clientes con compra',  unidad: 'clientes', icono:'🧾', tipoDetalle:'clientesCompra' },
+    { key: 'fotos',    label: 'Fotos POP',            unidad: 'fotos',    icono:'📸', tipoDetalle:'clientesFotos' },
   ];
 
   let objetivosVigentes = 0;
@@ -513,14 +540,9 @@ function renderTarjeta(entidad) {
 
     const card = document.createElement('div');
     card.className = 'obj-card';
-    card.innerHTML = `
-      <div class="top-row">
-        <span class="label"><span class="ico">${def.icono}</span>${def.label}</span>
-        <span class="pct ${cumplido ? 'done' : 'pending'}">${pct}%</span>
-      </div>
-      <div class="progress-outer"><div class="progress-inner ${cumplido ? 'done' : ''}" style="width:${pct}%"></div></div>
-      <div class="detail-line">${fmtNum(d.real)} / ${fmtNum(d.objetivo)} ${def.unidad}</div>
-      ${def.tieneDetalle && v.detalleArticulos.length ? `
+    let detalleHtml = '';
+    if (def.tipoDetalle === 'articulos' && v.detalleArticulos.length) {
+      detalleHtml = `
         <details class="breakdown">
           <summary>Ver detalle por artículo</summary>
           ${v.detalleArticulos.map(a => `
@@ -528,7 +550,33 @@ function renderTarjeta(entidad) {
               <span class="art-name">${a.desc}</span>
               <span class="art-val">${fmtNum(a.kilos)} kg</span>
             </div>`).join('')}
-        </details>` : ''}
+        </details>`;
+    } else if (def.tipoDetalle === 'clientesCompra') {
+      detalleHtml = `
+        <details class="breakdown">
+          <summary>Ver listado de clientes</summary>
+          ${v.listaClientesConCompra.length
+            ? v.listaClientesConCompra.map(c => `<div class="art-row"><span class="art-name">${c}</span></div>`).join('')
+            : '<div class="art-row"><span class="art-name">Sin clientes cargados todavía.</span></div>'}
+        </details>`;
+    } else if (def.tipoDetalle === 'clientesFotos') {
+      detalleHtml = `
+        <details class="breakdown">
+          <summary>Ver quién compartió foto</summary>
+          ${v.listaClientesFotos.length
+            ? v.listaClientesFotos.map(c => `<div class="art-row"><span class="art-name">${c}</span></div>`).join('')
+            : '<div class="art-row"><span class="art-name">Sin clientes cargados todavía.</span></div>'}
+        </details>`;
+    }
+
+    card.innerHTML = `
+      <div class="top-row">
+        <span class="label"><span class="ico">${def.icono}</span>${def.label}</span>
+        <span class="pct ${cumplido ? 'done' : 'pending'}">${pct}%</span>
+      </div>
+      <div class="progress-outer"><div class="progress-inner ${cumplido ? 'done' : ''}" style="width:${pct}%"></div></div>
+      <div class="detail-line">${fmtNum(d.real)} / ${fmtNum(d.objetivo)} ${def.unidad}</div>
+      ${detalleHtml}
     `;
     cont.appendChild(card);
   });

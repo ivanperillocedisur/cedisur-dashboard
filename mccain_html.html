@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plan McCain — Modo Objetivos</title>
+<title>Conexión McCain — Objetivos </title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -570,7 +570,7 @@ function renderTarjeta(entidad) {
     } else if (def.tipoDetalle === 'clientesFotos') {
       detalleHtml = `
         <details class="breakdown">
-          <summary>Ver quién compartió foto</summary>
+          <summary>Ver quién compartió foto en el PDV</summary>
           ${v.listaClientesFotos.length
             ? v.listaClientesFotos.map(c => `<div class="art-row"><span class="art-name">${c}</span></div>`).join('')
             : '<div class="art-row"><span class="art-name">Sin clientes cargados todavía.</span></div>'}

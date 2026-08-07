@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan McCain — Modo Objetivos</title>
+<style>
+  :root{
+    --naranja:#F4913C;
+    --naranja-oscuro:#D9721A;
+    --crema:#FFF3E0;
+    --negro:#1A1208;
+    --verde:#3E8A5B;
+    --gris:#8A7A66;
+    --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Arial Narrow', Arial, sans-serif;
+    background: radial-gradient(circle at 20% 0%, #FFA84D 0%, var(--naranja) 45%, var(--naranja-oscuro) 100%);
+    min-height:100vh;
+    color:var(--negro);
+  }
+  .wrap{max-width:480px; margin:0 auto; padding:20px 16px 60px;}
+
+  /* ---------- Header ---------- */
+  .header{text-align:center; margin-bottom:22px; position:relative;}
+  .header h1{
+    font-family: Impact, 'Arial Black', sans-serif;
+    font-size:2.5rem;
+    line-height:0.95;
+    color:var(--negro);
+    background:var(--crema);
+    display:inline-block;
+    padding:6px 18px;
+    transform:rotate(-2deg);
+    box-shadow:6px 6px 0 rgba(0,0,0,0.15);
+    margin:2px 0;
+  }
+  .header .rocket{font-size:2.2rem; display:block; margin:6px 0;}
+  .header .sub{color:#fff; font-weight:bold; font-size:0.85rem; letter-spacing:0.5px; margin-top:6px;}
+
+  /* ---------- Selector central ---------- */
+  .selector-box{
+    background:var(--crema);
+    border-radius:18px;
+    padding:22px 18px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25);
+    text-align:center;
+  }
+  .selector-box p{margin:0 0 12px; font-weight:bold; color:var(--negro); font-size:0.95rem;}
+  .search-input{
+    width:100%;
+    padding:14px 16px;
+    border-radius:12px;
+    border:2px solid var(--naranja-oscuro);
+    font-size:1rem;
+    outline:none;
+    margin-bottom:10px;
+  }
+  .search-input:focus{border-color:var(--verde);}
+  .result-list{max-height:280px; overflow-y:auto; text-align:left;}
+  .result-item{
+    padding:12px 14px;
+    background:#fff;
+    border-radius:10px;
+    margin-bottom:8px;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border:1px solid #eee;
+    transition:transform .1s;
+  }
+  .result-item:active{transform:scale(0.98);}
+  .result-item .tag{
+    font-size:0.7rem;
+    font-weight:bold;
+    color:#fff;
+    background:var(--gris);
+    padding:2px 8px;
+    border-radius:20px;
+  }
+  .result-item.zona .tag{background:var(--naranja-oscuro);}
+  .result-item.total .tag{background:var(--verde);}
+  .no-results{color:var(--gris); font-size:0.85rem; padding:10px;}
+
+  /* ---------- Vista de tarjeta ---------- */
+  .card-view{display:none;}
+  .back-btn{
+    background:none; border:none; color:#fff; font-weight:bold;
+    font-size:0.9rem; margin-bottom:14px; cursor:pointer;
+    display:flex; align-items:center; gap:6px;
+  }
+  .name-banner{
+    text-align:center; margin-bottom:16px;
+  }
+  .name-banner h2{
+    font-family: Impact, 'Arial Black', sans-serif;
+    color:#fff; font-size:1.6rem; margin:0;
+    text-shadow:2px 2px 0 rgba(0,0,0,0.2);
+  }
+  .name-banner .zona-label{
+    color:var(--negro); background:var(--crema); display:inline-block;
+    padding:3px 12px; border-radius:20px; font-size:0.75rem; font-weight:bold; margin-top:6px;
+  }
+
+  .achievement{
+    background:linear-gradient(135deg,#FFD54A,#FFB020);
+    border-radius:16px;
+    padding:16px;
+    text-align:center;
+    margin-bottom:16px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.2);
+    display:none;
+  }
+  .achievement.show{display:block;}
+  .achievement .big{font-size:1.8rem;}
+  .achievement h3{margin:6px 0 4px; font-family:Impact,'Arial Black',sans-serif; color:var(--negro); font-size:1.1rem;}
+  .achievement p{margin:0; color:#3a2a10; font-size:0.85rem; font-weight:bold;}
+
+  .obj-card{
+    background:var(--card);
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:14px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.15);
+  }
+  .obj-card .top-row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
+  .obj-card .label{font-weight:bold; font-size:0.95rem; color:var(--negro);}
+  .obj-card .pct{font-weight:bold; font-size:1.3rem;}
+  .obj-card .pct.done{color:var(--verde);}
+  .obj-card .pct.pending{color:var(--naranja-oscuro);}
+  .progress-outer{
+    background:#eee; border-radius:20px; height:14px; overflow:hidden; margin-bottom:8px;
+  }
+  .progress-inner{
+    height:100%; border-radius:20px;
+    background:linear-gradient(90deg, var(--naranja), var(--verde));
+    transition:width .6s ease;
+  }
+  .progress-inner.done{background:linear-gradient(90deg,#4CAF6B,#2E7D4C);}
+  .obj-card .detail-line{font-size:0.85rem; color:var(--gris); font-weight:bold;}
+
+  details.breakdown{margin-top:8px;}
+  details.breakdown summary{
+    font-size:0.8rem; color:var(--naranja-oscuro); font-weight:bold; cursor:pointer; outline:none;
+  }
+  .art-row{
+    display:flex; justify-content:space-between; font-size:0.8rem;
+    padding:6px 0; border-bottom:1px solid #f2f2f2;
+  }
+  .art-row:last-child{border-bottom:none;}
+  .art-row .art-name{color:#444; flex:1; padding-right:8px;}
+  .art-row .art-val{font-weight:bold; color:var(--negro); white-space:nowrap;}
+
+  .loading, .error-box{
+    text-align:center; color:#fff; font-weight:bold; padding:40px 10px;
+  }
+  .error-box{color:#fff; background:rgba(0,0,0,0.15); border-radius:12px;}
+
+  footer{text-align:center; color:rgba(255,255,255,0.8); font-size:0.7rem; margin-top:20px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <span class="rocket">🚀</span>
+    <h1>AGOSTO<br>MODO<br>OBJETIVOS</h1>
+    <div class="sub">PLAN MCCAIN · CEDISUR</div>
+  </div>
+
+  <!-- ============ SELECTOR CENTRAL ============ -->
+  <div id="selectorView">
+    <div class="selector-box">
+      <p>Buscá tu nombre, tu zona, o mirá el total Cedisur</p>
+      <input id="searchInput" class="search-input" type="text" placeholder="Ej: Leonardo, Neuquén, Cedisur...">
+      <div id="resultList" class="result-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ VISTA TARJETA ============ -->
+  <div id="cardView" class="card-view">
+    <button class="back-btn" onclick="volverASelector()">← Buscar otro</button>
+    <div class="name-banner">
+      <h2 id="entityName">—</h2>
+      <div class="zona-label" id="entityZona">—</div>
+    </div>
+    <div id="achievementBox" class="achievement">
+      <div class="big">🏆</div>
+      <h3>¡Objetivo logrado!</h3>
+      <p id="premioTexto"></p>
+    </div>
+    <div id="cardsContainer"></div>
+  </div>
+
+  <div id="loadingBox" class="loading">Cargando datos del plan…</div>
+  <div id="errorBox" class="error-box" style="display:none;"></div>
+
+  <footer>Datos actualizados según el último procesamiento del 5641 · Cedisur</footer>
+</div>
+
+<script>
+// =============================================================================
+// CONFIG — URLs de los CSV publicados
+// =============================================================================
+const CSV_OBJETIVOS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMIK6L8kV-8DXcaCkpYpeMwf3rGYZoe6EfbyQ3gGlCKgHM910NX-XJkI8Mc4FT2wPu6SzvLcnvYr9j/pub?gid=1916602281&single=true&output=csv";
+const CSV_RESUMEN    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMIK6L8kV-8DXcaCkpYpeMwf3rGYZoe6EfbyQ3gGlCKgHM910NX-XJkI8Mc4FT2wPu6SzvLcnvYr9j/pub?gid=1955559121&single=true&output=csv";
+const CSV_FOTOS      = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMIK6L8kV-8DXcaCkpYpeMwf3rGYZoe6EfbyQ3gGlCKgHM910NX-XJkI8Mc4FT2wPu6SzvLcnvYr9j/pub?gid=1781951683&single=true&output=csv";
+const CSV_VENTAS     = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMIK6L8kV-8DXcaCkpYpeMwf3rGYZoe6EfbyQ3gGlCKgHM910NX-XJkI8Mc4FT2wPu6SzvLcnvYr9j/pub?gid=1932769880&single=true&output=csv";
+
+// Mapeo vendedor (nombre display) -> zona, igual al usado en CedisurCentral.gs
+// (FOTOS_POP_MCCAIN no trae columna ZONA, así que la resolvemos acá)
+const ZONA_DE_VENDEDOR = {
+  'Leonardo Chiesa'        : 'ATLANTICA',
+  'Guillermo Madrid'       : 'ATLANTICA',
+  'Luis Velazquez'         : 'ATLANTICA',
+  'Guillermo Alderete'     : 'CORDILLERA NORTE',
+  'Hugo Lezana'            : 'CORDILLERA NORTE',
+  'Horacio Ulloa'          : 'CORDILLERA NORTE',
+  'Julian Jensen'          : 'CORDILLERA SUR',
+  'Sebastian Ponce de Leon': 'CORDILLERA SUR',
+  'Alberto Castillo'       : 'NEUQUEN',
+  'Dario Macaya'           : 'NEUQUEN',
+  'Samuel Arenas'          : 'NEUQUEN',
+  'Jonatan Lozano'         : 'NEUQUEN',
+  'Jose Martinez'          : 'NEUQUEN',
+  'David Bertran'          : 'RIO NEGRO',
+  'Miguel Escales'         : 'RIO NEGRO',
+  'Pablo Figueroa'         : 'RIO NEGRO',
+  'Alejandro Fragnul'      : 'RIO NEGRO',
+  'Pablo Zangari'          : 'RIO NEGRO',
+};
+const ZONAS = ['ATLANTICA','CORDILLERA NORTE','CORDILLERA SUR','NEUQUEN','RIO NEGRO'];
+
+// =============================================================================
+// PARSER CSV simple (sin librerías externas)
+// =============================================================================
+function parseCSV(text) {
+  const lines = text.replace(/\r/g, '').split('\n').filter(l => l.length > 0);
+  if (lines.length === 0) return [];
+  const headers = splitCSVLine(lines[0]).map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = splitCSVLine(line);
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (vals[i] !== undefined ? vals[i].trim() : ''));
+    return obj;
+  });
+}
+function splitCSVLine(line) {
+  const out = []; let cur = ''; let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+      else if (c === '"') { inQuotes = false; }
+      else { cur += c; }
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { out.push(cur); cur = ''; }
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+async function fetchCSV(url) {
+  const res = await fetch(url + '&_ts=' + Date.now());
+  if (!res.ok) throw new Error('No se pudo leer un CSV publicado (' + res.status + ')');
+  return parseCSV(await res.text());
+}
+function num(v) { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? 0 : n; }
+
+// =============================================================================
+// ESTADO GLOBAL
+// =============================================================================
+let DATA = { objetivos: [], resumen: [], fotos: [], ventas: [] };
+let MES_ACTUAL = null;
+let PREMIO_TEXTO = '';
+let ENTIDADES = []; // lista para el buscador: vendedores + zonas + total
+
+// =============================================================================
+// CARGA DE DATOS
+// =============================================================================
+async function cargarDatos() {
+  try {
+    const [objetivos, resumen, fotos, ventas] = await Promise.all([
+      fetchCSV(CSV_OBJETIVOS), fetchCSV(CSV_RESUMEN), fetchCSV(CSV_FOTOS), fetchCSV(CSV_VENTAS)
+    ]);
+    DATA.objetivos = objetivos.filter(r => r.VENDEDOR);
+    DATA.resumen   = resumen.filter(r => r.VENDEDOR);
+    DATA.fotos     = fotos.filter(r => r.VENDEDOR);
+    DATA.ventas    = ventas.filter(r => r.VENDEDOR);
+
+    // Mes actual = el más reciente presente en OBJETIVOS_MCCAIN
+    const meses = [...new Set(DATA.objetivos.map(r => r.MES))];
+    MES_ACTUAL = meses[meses.length - 1];
+
+    // Premio del mes: fila especial en OBJETIVOS_MCCAIN (col A = MES, col B = premio),
+    // separada de las filas de vendedor. La distinguimos porque esas filas SI tienen
+    // VENDEDOR y estas NO deberían — se lee directo de las primeras filas del sheet crudo.
+    const filaPremio = objetivos.find(r => r.MES === MES_ACTUAL && !r.VENDEDOR && r['PREMIO DEL MES']);
+    PREMIO_TEXTO = filaPremio ? filaPremio['PREMIO DEL MES'] : '';
+
+    armarListaEntidades();
+    document.getElementById('loadingBox').style.display = 'none';
+    renderResultados();
+  } catch (err) {
+    document.getElementById('loadingBox').style.display = 'none';
+    const box = document.getElementById('errorBox');
+    box.style.display = 'block';
+    box.textContent = 'No se pudieron cargar los datos del plan. Probá recargar la página. (' + err.message + ')';
+  }
+}
+
+function armarListaEntidades() {
+  const vendedoresMes = DATA.objetivos.filter(r => r.MES === MES_ACTUAL && r.VENDEDOR);
+  ENTIDADES = [];
+  vendedoresMes.forEach(r => {
+    ENTIDADES.push({ tipo: 'vendedor', nombre: r.VENDEDOR, zona: r.ZONA || ZONA_DE_VENDEDOR[r.VENDEDOR] || '' });
+  });
+  ZONAS.forEach(z => ENTIDADES.push({ tipo: 'zona', nombre: z, zona: z }));
+  ENTIDADES.push({ tipo: 'total', nombre: 'CEDISUR TOTAL', zona: '' });
+}
+
+// =============================================================================
+// BUSCADOR
+// =============================================================================
+const searchInput = document.getElementById('searchInput');
+const resultList  = document.getElementById('resultList');
+
+function normalizarTexto(s) {
+  return (s || '').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+searchInput.addEventListener('input', renderResultados);
+function renderResultados() {
+  const q = normalizarTexto(searchInput.value);
+  const filtradas = ENTIDADES.filter(e => normalizarTexto(e.nombre).includes(q) || normalizarTexto(e.zona).includes(q));
+  resultList.innerHTML = '';
+  if (filtradas.length === 0) {
+    resultList.innerHTML = '<div class="no-results">Sin resultados. Revisá cómo escribiste el nombre.</div>';
+    return;
+  }
+  filtradas.slice(0, 40).forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'result-item ' + e.tipo;
+    const tagTxt = e.tipo === 'vendedor' ? (e.zona || '') : (e.tipo === 'total' ? 'TOTAL' : 'ZONA');
+    div.innerHTML = `<span>${e.nombre}</span><span class="tag">${tagTxt}</span>`;
+    div.onclick = () => seleccionarEntidad(e);
+    resultList.appendChild(div);
+  });
+}
+// La lista se dibuja recién cuando terminan de llegar los datos (ver cargarDatos)
+
+// =============================================================================
+// NAVEGACIÓN
+// =============================================================================
+function volverASelector() {
+  document.getElementById('cardView').style.display = 'none';
+  document.getElementById('selectorView').style.display = 'block';
+  searchInput.value = '';
+  renderResultados();
+}
+
+function seleccionarEntidad(entidad) {
+  document.getElementById('selectorView').style.display = 'none';
+  document.getElementById('cardView').style.display = 'block';
+  document.getElementById('entityName').textContent = entidad.nombre;
+  document.getElementById('entityZona').textContent =
+    entidad.tipo === 'vendedor' ? (entidad.zona || 'SIN ZONA') :
+    entidad.tipo === 'zona' ? 'ZONA' : 'TODA LA EMPRESA';
+  renderTarjeta(entidad);
+}
+
+// =============================================================================
+// CÁLCULO DE OBJETIVOS SEGÚN ENTIDAD (vendedor / zona / total)
+// =============================================================================
+function calcularValores(entidad) {
+  let vendedoresIncluidos;
+  if (entidad.tipo === 'vendedor') vendedoresIncluidos = [entidad.nombre];
+  else if (entidad.tipo === 'zona') vendedoresIncluidos = Object.keys(ZONA_DE_VENDEDOR).filter(v => ZONA_DE_VENDEDOR[v] === entidad.nombre);
+  else vendedoresIncluidos = Object.keys(ZONA_DE_VENDEDOR);
+
+  const objetivosFilas = DATA.objetivos.filter(r => r.MES === MES_ACTUAL && vendedoresIncluidos.includes(r.VENDEDOR));
+  const resumenFilas    = DATA.resumen.filter(r => r.MES === MES_ACTUAL && vendedoresIncluidos.includes(r.VENDEDOR));
+  const fotosFilas      = DATA.fotos.filter(r => r.MES === MES_ACTUAL && vendedoresIncluidos.includes(r.VENDEDOR));
+  const ventasFilas     = DATA.ventas.filter(r => r.MES === MES_ACTUAL && vendedoresIncluidos.includes(r.VENDEDOR));
+
+  const objKilos    = objetivosFilas.reduce((a, r) => a + num(r['OBJETIVO KILOS']), 0);
+  const objClientes = objetivosFilas.reduce((a, r) => a + num(r['OBJETIVO CLIENTES']), 0);
+  const objFotos     = objetivosFilas.reduce((a, r) => a + num(r['OBJETIVO FOTOS POP']), 0);
+
+  const realKilos    = resumenFilas.reduce((a, r) => a + num(r['KILOS ACUMULADOS']), 0);
+  const realClientes = resumenFilas.reduce((a, r) => a + num(r['CLIENTES CON COMPRA']), 0);
+  const realFotos     = fotosFilas.reduce((a, r) => a + num(r['CANTIDAD APROBADA']), 0);
+
+  // Detalle por artículo (solo tiene sentido sumar kilos por SKU)
+  const porArticulo = {};
+  ventasFilas.forEach(r => {
+    const key = r['N° ARTICULO'] || r['DESCRIPCION ARTICULO'];
+    if (!key) return;
+    if (!porArticulo[key]) porArticulo[key] = { desc: r['DESCRIPCION ARTICULO'] || key, kilos: 0 };
+    porArticulo[key].kilos += num(r['KILOS ACUMULADOS'] || r['UNIDADES ACUMULADAS']);
+  });
+
+  return {
+    kilos:    { objetivo: objKilos,    real: realKilos },
+    clientes: { objetivo: objClientes, real: realClientes },
+    fotos:    { objetivo: objFotos,    real: realFotos },
+    detalleArticulos: Object.values(porArticulo).sort((a,b) => b.kilos - a.kilos),
+  };
+}
+
+// =============================================================================
+// RENDER DE TARJETA
+// =============================================================================
+function fmtNum(n) {
+  return Math.round(n).toLocaleString('es-AR');
+}
+
+function renderTarjeta(entidad) {
+  const v = calcularValores(entidad);
+  const cont = document.getElementById('cardsContainer');
+  cont.innerHTML = '';
+
+  const defs = [
+    { key: 'kilos',    label: 'Kilos McCain',        unidad: 'kg',       tieneDetalle: true  },
+    { key: 'clientes', label: 'Clientes con compra',  unidad: 'clientes', tieneDetalle: false },
+    { key: 'fotos',    label: 'Fotos POP',            unidad: 'fotos',    tieneDetalle: false },
+  ];
+
+  let objetivosVigentes = 0;
+  let objetivosCumplidos = 0;
+
+  defs.forEach(def => {
+    const d = v[def.key];
+    if (!d.objetivo || d.objetivo <= 0) return; // objetivo no vigente este mes -> no se muestra la tarjeta
+    objetivosVigentes++;
+    const pct = Math.min(100, Math.round((d.real / d.objetivo) * 100));
+    const cumplido = d.real >= d.objetivo;
+    if (cumplido) objetivosCumplidos++;
+
+    const card = document.createElement('div');
+    card.className = 'obj-card';
+    card.innerHTML = `
+      <div class="top-row">
+        <span class="label">${def.label}</span>
+        <span class="pct ${cumplido ? 'done' : 'pending'}">${pct}%</span>
+      </div>
+      <div class="progress-outer"><div class="progress-inner ${cumplido ? 'done' : ''}" style="width:${pct}%"></div></div>
+      <div class="detail-line">${fmtNum(d.real)} / ${fmtNum(d.objetivo)} ${def.unidad}</div>
+      ${def.tieneDetalle && v.detalleArticulos.length ? `
+        <details class="breakdown">
+          <summary>Ver detalle por artículo</summary>
+          ${v.detalleArticulos.map(a => `
+            <div class="art-row">
+              <span class="art-name">${a.desc}</span>
+              <span class="art-val">${fmtNum(a.kilos)} kg</span>
+            </div>`).join('')}
+        </details>` : ''}
+    `;
+    cont.appendChild(card);
+  });
+
+  if (objetivosVigentes === 0) {
+    cont.innerHTML = '<div class="obj-card"><span class="label">Todavía no hay objetivos cargados para este mes.</span></div>';
+  }
+
+  const achBox = document.getElementById('achievementBox');
+  if (objetivosVigentes > 0 && objetivosCumplidos === objetivosVigentes) {
+    achBox.classList.add('show');
+    document.getElementById('premioTexto').textContent = PREMIO_TEXTO || 'Consultá con tu supervisor los detalles del premio de este mes.';
+  } else {
+    achBox.classList.remove('show');
+  }
+}
+
+cargarDatos();
+</script>
+</body>
+</html>

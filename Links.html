@@ -2,7 +2,7 @@
 <html lang="es"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>CEDISUR — Links Gerencia Comercial</title>
+<title>CEDISUR — Links Equipo de Ventas</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
 
@@ -23,6 +23,7 @@ body {
   padding: 22px 20px 20px; color: #fff;
   box-shadow: 0 3px 14px rgba(43,58,138,.25);
   position: sticky; top: 0; z-index: 10;
+  transform: translateZ(0);
 }
 .top h1 {
   font-family: 'Barlow Condensed', sans-serif;
@@ -46,6 +47,8 @@ body {
   overflow: hidden; min-height: 150px;
   box-shadow: 0 4px 14px rgba(0,0,0,.12);
   transition: transform .12s;
+  transform: translateZ(0); /* evita glitch de render en scroll de iOS */
+  -webkit-backface-visibility: hidden;
 }
 .card:active { transform: scale(.98); }
 .card::before {
@@ -59,13 +62,14 @@ body {
   background: rgba(255,255,255,.08);
 }
 .card-icon {
-  width: 44px; height: 44px; border-radius: 12px;
+  width: 64px; height: 64px; border-radius: 14px;
   background: rgba(255,255,255,.16);
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 14px; position: relative; z-index: 1;
+  overflow: hidden;
 }
-.card-icon svg { width: 22px; height: 22px; }
-.card-icon img { width: 26px; height: 26px; object-fit: contain; }
+.card-icon svg { width: 30px; height: 30px; }
+.card-icon img { width: 100%; height: 100%; object-fit: contain; padding: 8px; }
 .chev {
   position: absolute; top: 16px; right: 16px;
   width: 30px; height: 30px; border-radius: 50%;
@@ -97,13 +101,13 @@ body {
 
 <div class="top">
   <h1>CEDISUR</h1>
-  <p>LINKS · GERENCIA COMERCIAL</p>
+  <p>LINKS · EQUIPO DE VENTAS</p>
 </div>
 
 <div class="wrap">
   <div id="status" class="status">Cargando tableros…</div>
   <div id="cards" class="cards"></div>
-  <div class="foot">Gerencia Comercial · Cedisur</div>
+  <div class="foot">Inteligencia Comercial · Cedisur</div>
 </div>
 
 <script>
@@ -154,11 +158,13 @@ function render(items) {
     const fondo = TEMAS[String(it.tema||"").trim().toLowerCase()] || TEMAS.azul;
 
     let iconoHTML;
+    const key = String(it.icono||"").trim().toLowerCase();
+    const fallback = ICONOS[key] || ICONOS.estrella;
     if (it.icono_url) {
-      iconoHTML = '<img src="' + it.icono_url + '" alt="">';
+      // onerror: si el link no carga una imagen valida, se reemplaza por el icono generico
+      iconoHTML = '<img src="' + it.icono_url + '" alt="" onerror="this.parentElement.innerHTML=\'' + fallback.replace(/'/g,"\\'") + '\'">';
     } else {
-      const key = String(it.icono||"").trim().toLowerCase();
-      iconoHTML = ICONOS[key] || ICONOS.estrella;
+      iconoHTML = fallback;
     }
 
     const a = document.createElement("a");

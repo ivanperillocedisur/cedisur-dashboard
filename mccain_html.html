@@ -4,172 +4,192 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Plan McCain — Modo Objetivos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --naranja:#F4913C;
-    --naranja-oscuro:#D9721A;
-    --crema:#FFF3E0;
-    --negro:#1A1208;
-    --verde:#3E8A5B;
-    --gris:#8A7A66;
+    --fondo-1:#FF7A1A;
+    --fondo-2:#B8460E;
+    --acento:#FFC93C;
+    --tinta:#241608;
+    --exito:#1FAA6D;
+    --exito-suave:#E6F6EE;
+    --pendiente:#FF7A1A;
     --card:#FFFFFF;
+    --texto-sec:#7A6D5F;
+    --linea:#F0EBE4;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    font-family:'Arial Narrow', Arial, sans-serif;
-    background: radial-gradient(circle at 20% 0%, #FFA84D 0%, var(--naranja) 45%, var(--naranja-oscuro) 100%);
+    font-family:'Inter', Arial, sans-serif;
+    background: linear-gradient(160deg, var(--fondo-1) 0%, var(--fondo-2) 100%);
     min-height:100vh;
-    color:var(--negro);
+    color:var(--tinta);
   }
-  .wrap{max-width:480px; margin:0 auto; padding:20px 16px 60px;}
+  .wrap{max-width:480px; margin:0 auto; padding:28px 18px 50px;}
 
   /* ---------- Header ---------- */
-  .header{text-align:center; margin-bottom:22px; position:relative;}
-  .header h1{
-    font-family: Impact, 'Arial Black', sans-serif;
-    font-size:2.5rem;
-    line-height:0.95;
-    color:var(--negro);
-    background:var(--crema);
-    display:inline-block;
-    padding:6px 18px;
-    transform:rotate(-2deg);
-    box-shadow:6px 6px 0 rgba(0,0,0,0.15);
-    margin:2px 0;
+  .header{text-align:center; margin-bottom:26px;}
+  .header .eyebrow{
+    color:var(--acento); font-weight:800; font-size:0.72rem; letter-spacing:2px;
+    text-transform:uppercase; margin-bottom:6px;
   }
-  .header .rocket{font-size:2.2rem; display:block; margin:6px 0;}
-  .header .sub{color:#fff; font-weight:bold; font-size:0.85rem; letter-spacing:0.5px; margin-top:6px;}
+  .header h1{
+    font-family:'Archivo Black', Impact, sans-serif;
+    font-size:2.1rem;
+    line-height:1.05;
+    color:#fff;
+    margin:0;
+    letter-spacing:0.5px;
+  }
+  .header h1 span{color:var(--acento);}
+  .header .sub{
+    color:rgba(255,255,255,0.75); font-weight:600; font-size:0.8rem;
+    letter-spacing:1px; margin-top:8px; text-transform:uppercase;
+  }
 
   /* ---------- Selector central ---------- */
   .selector-box{
-    background:var(--crema);
-    border-radius:18px;
-    padding:22px 18px;
-    box-shadow:0 8px 24px rgba(0,0,0,0.25);
-    text-align:center;
+    background:var(--card);
+    border-radius:20px;
+    padding:24px 20px;
+    box-shadow:0 16px 40px rgba(0,0,0,0.25);
   }
-  .selector-box p{margin:0 0 12px; font-weight:bold; color:var(--negro); font-size:0.95rem;}
+  .selector-box p{margin:0 0 14px; font-weight:700; color:var(--tinta); font-size:0.95rem; text-align:center;}
   .search-input{
     width:100%;
     padding:14px 16px;
     border-radius:12px;
-    border:2px solid var(--naranja-oscuro);
+    border:2px solid var(--linea);
+    background:#FAF8F5;
+    font-family:'Inter', sans-serif;
     font-size:1rem;
     outline:none;
-    margin-bottom:10px;
+    margin-bottom:12px;
+    transition:border-color .15s;
   }
-  .search-input:focus{border-color:var(--verde);}
-  .result-list{max-height:280px; overflow-y:auto; text-align:left;}
+  .search-input:focus{border-color:var(--fondo-1); background:#fff;}
+  .result-list{max-height:300px; overflow-y:auto;}
   .result-item{
-    padding:12px 14px;
+    padding:13px 16px;
     background:#fff;
-    border-radius:10px;
+    border-radius:12px;
     margin-bottom:8px;
     cursor:pointer;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    border:1px solid #eee;
-    transition:transform .1s;
+    border:1px solid var(--linea);
+    transition:transform .1s, border-color .1s;
+    font-weight:600;
   }
   .result-item:active{transform:scale(0.98);}
+  .result-item:hover{border-color:var(--fondo-1);}
   .result-item .tag{
-    font-size:0.7rem;
-    font-weight:bold;
+    font-size:0.68rem;
+    font-weight:800;
     color:#fff;
-    background:var(--gris);
-    padding:2px 8px;
+    background:var(--texto-sec);
+    padding:3px 10px;
     border-radius:20px;
+    letter-spacing:0.3px;
   }
-  .result-item.zona .tag{background:var(--naranja-oscuro);}
-  .result-item.total .tag{background:var(--verde);}
-  .no-results{color:var(--gris); font-size:0.85rem; padding:10px;}
+  .result-item.zona .tag{background:var(--fondo-1);}
+  .result-item.total .tag{background:var(--exito);}
+  .no-results{color:var(--texto-sec); font-size:0.85rem; padding:10px; text-align:center;}
 
   /* ---------- Vista de tarjeta ---------- */
   .card-view{display:none;}
   .back-btn{
-    background:none; border:none; color:#fff; font-weight:bold;
-    font-size:0.9rem; margin-bottom:14px; cursor:pointer;
+    background:rgba(255,255,255,0.15); border:none; color:#fff; font-weight:700;
+    font-size:0.85rem; margin-bottom:18px; cursor:pointer;
     display:flex; align-items:center; gap:6px;
+    padding:8px 14px; border-radius:20px;
   }
-  .name-banner{
-    text-align:center; margin-bottom:16px;
-  }
+  .back-btn:active{background:rgba(255,255,255,0.25);}
+  .name-banner{text-align:center; margin-bottom:20px;}
   .name-banner h2{
-    font-family: Impact, 'Arial Black', sans-serif;
-    color:#fff; font-size:1.6rem; margin:0;
-    text-shadow:2px 2px 0 rgba(0,0,0,0.2);
+    font-family:'Archivo Black', sans-serif;
+    color:#fff; font-size:1.5rem; margin:0; letter-spacing:0.3px;
   }
   .name-banner .zona-label{
-    color:var(--negro); background:var(--crema); display:inline-block;
-    padding:3px 12px; border-radius:20px; font-size:0.75rem; font-weight:bold; margin-top:6px;
+    color:var(--fondo-2); background:#fff; display:inline-block;
+    padding:4px 14px; border-radius:20px; font-size:0.72rem; font-weight:800;
+    letter-spacing:0.5px; margin-top:8px;
   }
 
   .achievement{
-    background:linear-gradient(135deg,#FFD54A,#FFB020);
-    border-radius:16px;
-    padding:16px;
+    background:var(--card);
+    border-radius:18px;
+    padding:20px;
     text-align:center;
     margin-bottom:16px;
-    box-shadow:0 6px 18px rgba(0,0,0,0.2);
+    box-shadow:0 10px 26px rgba(0,0,0,0.2);
+    border:2px solid var(--acento);
     display:none;
   }
   .achievement.show{display:block;}
-  .achievement .big{font-size:1.8rem;}
-  .achievement h3{margin:6px 0 4px; font-family:Impact,'Arial Black',sans-serif; color:var(--negro); font-size:1.1rem;}
-  .achievement p{margin:0; color:#3a2a10; font-size:0.85rem; font-weight:bold;}
+  .achievement .big{font-size:2rem; margin-bottom:4px;}
+  .achievement h3{margin:0 0 6px; font-family:'Archivo Black', sans-serif; color:var(--tinta); font-size:1.05rem;}
+  .achievement p{margin:0; color:var(--texto-sec); font-size:0.85rem; font-weight:600;}
 
   .obj-card{
     background:var(--card);
-    border-radius:16px;
-    padding:16px;
+    border-radius:18px;
+    padding:18px;
     margin-bottom:14px;
-    box-shadow:0 4px 14px rgba(0,0,0,0.15);
+    box-shadow:0 6px 18px rgba(0,0,0,0.12);
   }
-  .obj-card .top-row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
-  .obj-card .label{font-weight:bold; font-size:0.95rem; color:var(--negro);}
-  .obj-card .pct{font-weight:bold; font-size:1.3rem;}
-  .obj-card .pct.done{color:var(--verde);}
-  .obj-card .pct.pending{color:var(--naranja-oscuro);}
+  .obj-card .top-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .obj-card .label{font-weight:700; font-size:0.95rem; color:var(--tinta); display:flex; align-items:center; gap:8px;}
+  .obj-card .label .ico{font-size:1.1rem;}
+  .obj-card .pct{font-weight:800; font-size:1.4rem; font-family:'Archivo Black', sans-serif;}
+  .obj-card .pct.done{color:var(--exito);}
+  .obj-card .pct.pending{color:var(--fondo-1);}
   .progress-outer{
-    background:#eee; border-radius:20px; height:14px; overflow:hidden; margin-bottom:8px;
+    background:var(--linea); border-radius:20px; height:10px; overflow:hidden; margin-bottom:10px;
   }
   .progress-inner{
     height:100%; border-radius:20px;
-    background:linear-gradient(90deg, var(--naranja), var(--verde));
+    background:var(--fondo-1);
     transition:width .6s ease;
   }
-  .progress-inner.done{background:linear-gradient(90deg,#4CAF6B,#2E7D4C);}
-  .obj-card .detail-line{font-size:0.85rem; color:var(--gris); font-weight:bold;}
+  .progress-inner.done{background:var(--exito);}
+  .obj-card .detail-line{font-size:0.85rem; color:var(--texto-sec); font-weight:700;}
 
-  details.breakdown{margin-top:8px;}
+  details.breakdown{margin-top:10px;}
   details.breakdown summary{
-    font-size:0.8rem; color:var(--naranja-oscuro); font-weight:bold; cursor:pointer; outline:none;
+    font-size:0.8rem; color:var(--fondo-1); font-weight:700; cursor:pointer; outline:none;
+    list-style:none;
   }
+  details.breakdown summary::-webkit-details-marker{display:none;}
+  details.breakdown summary::before{content:'▸ '; }
+  details.breakdown[open] summary::before{content:'▾ '; }
   .art-row{
-    display:flex; justify-content:space-between; font-size:0.8rem;
-    padding:6px 0; border-bottom:1px solid #f2f2f2;
+    display:flex; justify-content:space-between; font-size:0.82rem;
+    padding:8px 0; border-bottom:1px solid var(--linea);
   }
   .art-row:last-child{border-bottom:none;}
-  .art-row .art-name{color:#444; flex:1; padding-right:8px;}
-  .art-row .art-val{font-weight:bold; color:var(--negro); white-space:nowrap;}
+  .art-row .art-name{color:#555; flex:1; padding-right:8px;}
+  .art-row .art-val{font-weight:700; color:var(--tinta); white-space:nowrap;}
 
   .loading, .error-box{
-    text-align:center; color:#fff; font-weight:bold; padding:40px 10px;
+    text-align:center; color:#fff; font-weight:700; padding:40px 10px;
   }
-  .error-box{color:#fff; background:rgba(0,0,0,0.15); border-radius:12px;}
+  .error-box{background:rgba(0,0,0,0.18); border-radius:14px;}
 
-  footer{text-align:center; color:rgba(255,255,255,0.8); font-size:0.7rem; margin-top:20px;}
+  footer{text-align:center; color:rgba(255,255,255,0.6); font-size:0.7rem; margin-top:24px;}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="header">
-    <span class="rocket">🚀</span>
-    <h1>AGOSTO<br>MODO<br>OBJETIVOS</h1>
-    <div class="sub">PLAN MCCAIN · CEDISUR</div>
+    <div class="eyebrow" id="eyebrowMes">Cedisur</div>
+    <h1>MODO<br><span>OBJETIVOS</span></h1>
+    <div class="sub">Plan McCain</div>
   </div>
 
   <!-- ============ SELECTOR CENTRAL ============ -->
@@ -314,6 +334,11 @@ let ENTIDADES = []; // lista para el buscador: vendedores + zonas + total
 // =============================================================================
 // CARGA DE DATOS
 // =============================================================================
+function normKey(s) {
+  return (s || '').toString().trim().toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 async function cargarDatos() {
   try {
     const [objetivos, resumen, fotos, ventas] = await Promise.all([
@@ -329,15 +354,18 @@ async function cargarDatos() {
     }
 
     // Mes actual = el más reciente presente en OBJETIVOS_MCCAIN
-    const meses = [...new Set(DATA.objetivos.map(r => r.MES))];
+    const meses = [...new Set(DATA.objetivos.map(r => normKey(r.MES)))];
     MES_ACTUAL = meses[meses.length - 1];
 
     // Premio del mes: fila especial ubicada antes del encabezado real
     const premiosPorMes = extraerPremiosPorMes(objetivos.lineasPrevias);
-    PREMIO_TEXTO = premiosPorMes[MES_ACTUAL.toUpperCase()] || '';
+    const premiosNorm = {};
+    Object.keys(premiosPorMes).forEach(k => premiosNorm[normKey(k)] = premiosPorMes[k]);
+    PREMIO_TEXTO = premiosNorm[MES_ACTUAL] || '';
 
     armarListaEntidades();
     document.getElementById('loadingBox').style.display = 'none';
+    document.getElementById('eyebrowMes').textContent = 'Cedisur · ' + MES_ACTUAL.charAt(0) + MES_ACTUAL.slice(1).toLowerCase();
     renderResultados();
   } catch (err) {
     document.getElementById('loadingBox').style.display = 'none';
@@ -348,7 +376,7 @@ async function cargarDatos() {
 }
 
 function armarListaEntidades() {
-  const vendedoresMes = DATA.objetivos.filter(r => r.MES === MES_ACTUAL && r.VENDEDOR);
+  const vendedoresMes = DATA.objetivos.filter(r => normKey(r.MES) === MES_ACTUAL && r.VENDEDOR);
   ENTIDADES = [];
   vendedoresMes.forEach(r => {
     ENTIDADES.push({ tipo: 'vendedor', nombre: r.VENDEDOR, zona: r.ZONA || ZONA_DE_VENDEDOR[r.VENDEDOR] || '' });
@@ -416,11 +444,12 @@ function calcularValores(entidad) {
   if (entidad.tipo === 'vendedor') vendedoresIncluidos = [entidad.nombre];
   else if (entidad.tipo === 'zona') vendedoresIncluidos = Object.keys(ZONA_DE_VENDEDOR).filter(v => ZONA_DE_VENDEDOR[v] === entidad.nombre);
   else vendedoresIncluidos = Object.keys(ZONA_DE_VENDEDOR);
+  const vendedoresNorm = vendedoresIncluidos.map(normKey);
 
-  const objetivosFilas = DATA.objetivos.filter(r => r.MES === MES_ACTUAL && vendedoresIncluidos.includes(r.VENDEDOR));
-  const resumenFilas    = DATA.resumen.filter(r => r.MES === MES_ACTUAL && vendedoresIncluidos.includes(r.VENDEDOR));
-  const fotosFilas      = DATA.fotos.filter(r => r.MES === MES_ACTUAL && vendedoresIncluidos.includes(r.VENDEDOR));
-  const ventasFilas     = DATA.ventas.filter(r => r.MES === MES_ACTUAL && vendedoresIncluidos.includes(r.VENDEDOR));
+  const objetivosFilas = DATA.objetivos.filter(r => normKey(r.MES) === MES_ACTUAL && vendedoresNorm.includes(normKey(r.VENDEDOR)));
+  const resumenFilas    = DATA.resumen.filter(r => normKey(r.MES) === MES_ACTUAL && vendedoresNorm.includes(normKey(r.VENDEDOR)));
+  const fotosFilas      = DATA.fotos.filter(r => normKey(r.MES) === MES_ACTUAL && vendedoresNorm.includes(normKey(r.VENDEDOR)));
+  const ventasFilas     = DATA.ventas.filter(r => normKey(r.MES) === MES_ACTUAL && vendedoresNorm.includes(normKey(r.VENDEDOR)));
 
   const objKilos    = objetivosFilas.reduce((a, r) => a + num(r['OBJETIVO KILOS']), 0);
   const objClientes = objetivosFilas.reduce((a, r) => a + num(r['OBJETIVO CLIENTES']), 0);
@@ -460,9 +489,9 @@ function renderTarjeta(entidad) {
   cont.innerHTML = '';
 
   const defs = [
-    { key: 'kilos',    label: 'Kilos McCain',        unidad: 'kg',       tieneDetalle: true  },
-    { key: 'clientes', label: 'Clientes con compra',  unidad: 'clientes', tieneDetalle: false },
-    { key: 'fotos',    label: 'Fotos POP',            unidad: 'fotos',    tieneDetalle: false },
+    { key: 'kilos',    label: 'Kilos McCain',        unidad: 'kg',       icono:'🥔', tieneDetalle: true  },
+    { key: 'clientes', label: 'Clientes con compra',  unidad: 'clientes', icono:'🧾', tieneDetalle: false },
+    { key: 'fotos',    label: 'Fotos POP',            unidad: 'fotos',    icono:'📸', tieneDetalle: false },
   ];
 
   let objetivosVigentes = 0;
@@ -480,7 +509,7 @@ function renderTarjeta(entidad) {
     card.className = 'obj-card';
     card.innerHTML = `
       <div class="top-row">
-        <span class="label">${def.label}</span>
+        <span class="label"><span class="ico">${def.icono}</span>${def.label}</span>
         <span class="pct ${cumplido ? 'done' : 'pending'}">${pct}%</span>
       </div>
       <div class="progress-outer"><div class="progress-inner ${cumplido ? 'done' : ''}" style="width:${pct}%"></div></div>

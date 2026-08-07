@@ -172,17 +172,8 @@ function render(items) {
     if (!it.nombre) return;
     const esAncho = String(it.ancho).trim() === "2";
     const fondo = TEMAS[String(it.tema||"").trim().toLowerCase()] || TEMAS.azul;
-
-    let iconoHTML;
     const key = String(it.icono||"").trim().toLowerCase();
     const fallback = ICONOS[key] || ICONOS.estrella;
-    if (it.icono_url) {
-      const urlImg = resolverUrlImagen(it.icono_url);
-      // onerror: si el link no carga una imagen valida, se reemplaza por el icono generico
-      iconoHTML = '<img src="' + urlImg + '" alt="" onerror="this.parentElement.innerHTML=\'' + fallback.replace(/'/g,"\\'") + '\'">';
-    } else {
-      iconoHTML = fallback;
-    }
 
     const a = document.createElement("a");
     a.className = "card" + (esAncho ? " wide" : "");
@@ -190,12 +181,25 @@ function render(items) {
     a.href = it.url || "#";
     if ((it.url||"").startsWith("http")) a.target = "_blank";
 
+    /* Contenido de texto de la tarjeta (sin el icono, que se agrega aparte como elemento real) */
     a.innerHTML =
-      '<div class="card-icon">' + iconoHTML + '</div>' +
+      '<div class="card-icon"></div>' +
       '<div class="chev">' + chevSVG + '</div>' +
       (it.vigencia ? '<span class="card-vig">' + it.vigencia + '</span><br>' : '') +
       '<div class="card-title">' + it.nombre + '</div>' +
       (it.descripcion ? '<div class="card-desc">' + it.descripcion + '</div>' : '');
+
+    /* Icono/logo: se inserta como elemento real, con manejo de error seguro (sin conflicto de comillas) */
+    const cajaIcono = a.querySelector(".card-icon");
+    if (it.icono_url) {
+      const img = document.createElement("img");
+      img.src = resolverUrlImagen(it.icono_url);
+      img.alt = "";
+      img.onerror = function () { cajaIcono.innerHTML = fallback; };
+      cajaIcono.appendChild(img);
+    } else {
+      cajaIcono.innerHTML = fallback;
+    }
 
     cont.appendChild(a);
   });

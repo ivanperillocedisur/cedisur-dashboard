@@ -716,6 +716,7 @@ let curW=SEM_DATOS-1, curF="total", openIdx=null;   // arranca en la última sem
 const ROC3_META = 40;
 const ROC3_PREMIO = 100000;
 let DATA_ROC3 = {}; // { vendedor: cantidadClientesDistintos } — se llena desde CLIENTES_ROCHER_TIRA3
+let DATA_ROC3_NOMBRES = {}; // { vendedor: [nombresDeClientes] } — se llena desde CLIENTES_ROCHER_TIRA3
 let curWA="total", openIdxA=null;        // ranking acumulado
 let segPer="acu", openZonesSeg={};        // seguimiento
 const ZONE_LIST=["ATLANTICA","CORDILLERA NORTE","CORDILLERA SUR","NEUQUEN","RIO NEGRO"];
@@ -1208,17 +1209,27 @@ async function fetchSheets(){
       DATA.bonusCarga=arr;
     }
 
-    // ── CLIENTES_ROCHER_TIRA3 → DATA_ROC3 ────────────────────────────────────
+    // ── CLIENTES_ROCHER_TIRA3 → DATA_ROC3 / DATA_ROC3_NOMBRES ────────────────
     // Estructura: VENDEDOR | CLIENTES | CANT_DISTINTOS
+    // CLIENTES viene como "codigo:nombre,codigo:nombre,..." (compatibilidad: si no
+    // hay ":", se usa el texto completo como nombre igual).
     if(rRoc3.ok){
-      const obj={};
+      const obj={}, nombresObj={};
       (await rRoc3.text()).trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
         const c=csvRow(r);
         const vendedor=(c[0]||'').trim();
         if(!vendedor)return;
         obj[vendedor]=numCol(c[2]);
+        const clientesStr=(c[1]||'').trim();
+        const nombres=clientesStr?clientesStr.split(',').map(par=>{
+          par=par.trim(); if(!par)return null;
+          const idx=par.indexOf(':');
+          return idx>=0?par.slice(idx+1):par;
+        }).filter(Boolean).sort((a,b)=>a.localeCompare(b,'es')):[];
+        nombresObj[vendedor]=nombres;
       });
       DATA_ROC3=obj;
+      DATA_ROC3_NOMBRES=nombresObj;
     }
 
     // ── Reconstruir motor de bonus (goles por unidad de cada acción) ─────────
@@ -1288,30 +1299,51 @@ function renderBonusTrack(){
 }
 
 // ── Premio especial Rocher Tira x3: lista de vendedores con progreso ──────
+// Gradiente rojo→amarillo→verde: usamos los mismos 3 colores que heatColor()
+// para que sea consistente con el resto del tablero (Seguimiento). El truco
+// para que la barra de progreso muestre SIEMPRE el color correspondiente a
+// su avance real (no todo el degradé comprimido en el ancho que ocupa) es
+// fijar un background-size mayor al 100%, proporcional al % de avance: así
+// al llegar al 100% el degradé calza exacto y termina en verde.
+const ROC3_GRADIENTE = "linear-gradient(90deg,#C62828 0%,#F9A825 50%,#2E7D32 100%)";
+function roc3BgSize(pct){ return pct>0 ? Math.round(10000/pct) : 10000; }
+
 function renderRoc3Premio(){
   const cont=document.getElementById("roc3List");
   if(!cont)return;
-  const filas=DATA.sellers.map(s=>({seller:s, cant:DATA_ROC3[s]||0}))
+  const filas=DATA.sellers.map(s=>({seller:s, cant:DATA_ROC3[s]||0, nombres:DATA_ROC3_NOMBRES[s]||[]}))
     .sort((a,b)=>b.cant-a.cant);
   if(!filas.some(f=>f.cant>0)){
     cont.innerHTML=`<p style="color:var(--muted);font-size:13px;font-style:italic">Todavía no hay datos cargados de clientes distintos (CLIENTES_ROCHER_TIRA3).</p>`;
     return;
   }
-  cont.innerHTML=`<div class="dgrid" style="grid-template-columns:1fr">` + filas.map(f=>{
+  cont.innerHTML=`<div class="dgrid" style="grid-template-columns:1fr">` + filas.map((f,i)=>{
     const alcanzado=f.cant>=ROC3_META;
     const pct=Math.min(Math.round(f.cant/ROC3_META*100),100);
-    const color=alcanzado?"#2E7D32":(pct>=75?"var(--gold)":"var(--fg)");
+    const textColor=heatColor(pct);
+    const bgSize=roc3BgSize(pct);
+    const tieneClientes=f.nombres.length>0;
     return `<div class="dprod" style="margin-bottom:6px">
-      <div class="ds" style="margin-bottom:6px">
-        <span style="font-weight:700;color:var(--text)">${alcanzado?"✅ ":""}${f.seller}</span>
-        <span style="font-weight:800;color:${color}">${f.cant} / ${ROC3_META} clientes</span>
+      <div class="ds" style="margin-bottom:6px;cursor:${tieneClientes?"pointer":"default"}" ${tieneClientes?`onclick="toggleRoc3Clientes(${i})"`:""}>
+        <span style="font-weight:700;color:var(--text)">${alcanzado?"✅ ":""}${f.seller}${tieneClientes?` <span id="roc3chev${i}" style="font-size:11px;color:var(--muted);transition:transform .2s;display:inline-block">▾</span>`:""}</span>
+        <span style="font-weight:800;color:${textColor}">${f.cant} / ${ROC3_META} clientes</span>
       </div>
-      <div class="dt"><div class="df" style="width:${pct}%;background:${color}"></div></div>
+      <div class="dt"><div class="df" style="width:${pct}%;background-image:${ROC3_GRADIENTE};background-size:${bgSize}% 100%;background-position:0 0"></div></div>
       ${alcanzado
         ? `<div class="dg" style="color:#2E7D32">🏆 Meta alcanzada — $${ROC3_PREMIO.toLocaleString("es-AR")} + 10 goles</div>`
         : `<div class="dg" style="color:var(--muted);font-size:12px;font-weight:600">Faltan ${ROC3_META-f.cant} clientes distintos</div>`}
+      ${tieneClientes?`<div id="roc3names${i}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:11.5px;color:var(--muted);line-height:1.7">${f.nombres.map(n=>`<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:2px 9px;margin:2px 3px 2px 0">${n}</span>`).join("")}</div>`:""}
     </div>`;
   }).join("") + `</div>`;
+}
+
+function toggleRoc3Clientes(i){
+  const el=document.getElementById("roc3names"+i);
+  const chev=document.getElementById("roc3chev"+i);
+  if(!el)return;
+  const open=el.style.display==="block";
+  el.style.display=open?"none":"block";
+  if(chev)chev.style.transform=open?"rotate(0deg)":"rotate(180deg)";
 }
 </script>
 </body>

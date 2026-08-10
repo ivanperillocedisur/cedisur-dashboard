@@ -35,16 +35,17 @@ body {
 }
 .wrap { max-width: 620px; margin: 0 auto; padding: 16px 12px 32px; }
 .status { text-align: center; color: var(--muted); font-size: 12px; padding: 24px 0; }
-.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cards { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
 @media (max-width: 420px) {
-  .cards { grid-template-columns: 1fr; }
+  .cards { grid-template-columns: minmax(0,1fr); }
   .card.wide { grid-column: span 1; }
 }
 .card.wide { grid-column: span 2; }
 .card {
   position: relative; display: block; border-radius: 16px;
   padding: 18px 16px 16px; text-decoration: none; color: #fff;
-  overflow: hidden; min-height: 150px;
+  overflow: hidden; min-height: 150px; min-width: 0;
+  word-wrap: break-word; overflow-wrap: break-word;
   box-shadow: 0 4px 14px rgba(0,0,0,.12);
   transition: transform .12s;
   transform: translateZ(0); /* evita glitch de render en scroll de iOS */

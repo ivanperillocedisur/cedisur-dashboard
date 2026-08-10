@@ -119,7 +119,7 @@ body {
       nombre , descripcion , vigencia , url , orden , ancho , tema , icono , icono_url
 
    - ancho:      1 (mitad de pantalla) o 2 (ancho completo)
-   - tema:       vino | rojo | azul | violeta | verde | gris
+   - tema:       vino | rojo | azul | violeta | verde | gris | blanco | naranja
    - icono:      estrella | pulso | rayo | lapiz  (si vacio, usa "estrella")
    - icono_url:  opcional, link a logo de marca. Si se completa, pisa al icono.
                  Acepta el link normal de "Compartir" de Google Drive
@@ -132,6 +132,8 @@ const DEMO = [
   { nombre: "Plan Crecimiento Paladini", descripcion: "Concurso de ventas · Ranking mensual por vendedor y zona.", vigencia: "Jul – Oct 26", url: "#", orden: 2, ancho: 1, tema: "rojo", icono: "pulso" },
   { nombre: "Desafío Semanal", descripcion: "Productos y ranking del desafío activo.", vigencia: "Renovación Semanal", url: "https://ivanperillocedisur.github.io/cedisur-dashboard/Desafio_Semanal_2026.html", orden: 3, ancho: 1, tema: "azul", icono: "rayo" },
   { nombre: "Activaciones y Trade Marketing", descripcion: "Pedidos y registros de activaciones.", vigencia: "Link Permanente", url: "#", orden: 4, ancho: 1, tema: "violeta", icono: "lapiz" },
+  { nombre: "Manual de Marca", descripcion: "Lineamientos visuales y plantillas institucionales.", vigencia: "Referencia", url: "#", orden: 5, ancho: 1, tema: "blanco", icono: "lapiz" },
+  { nombre: "Conexión McCain", descripcion: "Objetivos del mes: kg, clientes y fotos POP.", vigencia: "Agosto 26", url: "#", orden: 6, ancho: 1, tema: "naranja", icono: "estrella" },
 ];
 
 const TEMAS = {
@@ -154,6 +156,20 @@ const TEMAS = {
     flecha_color: "#1A1D21",
     sombra: "0 4px 14px rgba(0,0,0,.10)",
     borde: "1px solid #E4E5E8"
+  },
+  naranja: {
+    fondo: "linear-gradient(135deg, #F57C00 0%, #FB8C00 100%)",
+    texto_titulo: "#1A1206",
+    texto_desc: "rgba(26,18,6,.75)",
+    chip_fondo: "#FFC107",
+    chip_texto: "#1A1206",
+    circulo: "rgba(255,255,255,.14)",
+    icono_fondo: "rgba(0,0,0,.14)",
+    icono_color: "#1A1206",
+    flecha_fondo: "#FFC107",
+    flecha_color: "#1A1206",
+    sombra: "0 4px 14px rgba(0,0,0,.15)",
+    borde: "none"
   }
 };
 /* Valores por defecto para temas oscuros (no hace falta repetirlos arriba) */

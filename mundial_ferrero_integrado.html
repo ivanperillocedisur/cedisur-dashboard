@@ -469,6 +469,7 @@ table.heat thead th.rowhead{text-align:left;padding-left:14px;min-width:210px}
 <button class="tbtn" onclick="showTab('reglas',this)">⚽ Cómo se juega</button>
 <button class="tbtn" onclick="showTab('premios',this)">🏆 Premios</button>
 <button class="tbtn" onclick="showTab('bonus',this)">⚡ Bonus Track</button>
+<button class="tbtn" onclick="showTab('roc3',this)">🎯 CCC Rocher Tira x 3</button>
 </div>
 <!-- ===== RANKING SEMANAL ===== -->
 <div class="tab-panel active" id="tab-ranking">
@@ -646,6 +647,9 @@ table.heat thead th.rowhead{text-align:left;padding-left:14px;min-width:210px}
 <p>🆕 Los premios son acumulativos. Si ganas 3 semanas ($300.000) y llegás 1° ($1.000.000), cobrás $1.300.000 en total.</p>
 </div>
 </div>
+<p style="font-size:12.5px;color:var(--muted);margin-top:14px;text-align:center">
+⚡ También corre el sub-concurso <strong>Rocher Tira x3</strong> con premio individual de Ferrero — ver la pestaña <strong>🎯 CCC Rocher Tira x 3</strong>.
+</p>
 </div>
 <!-- ===== BONUS TRACK ===== -->
 <div class="tab-panel" id="tab-bonus">
@@ -654,6 +658,7 @@ table.heat thead th.rowhead{text-align:left;padding-left:14px;min-width:210px}
 <p>Acciones comerciales especiales que suman <strong>goles adicionales</strong> al ranking, tanto semanal como acumulado.</p>
 </div>
 <div class="bt-active">
+
 <span style="font-size:18px">⚡</span>
 <p id="btActiveTxt">Cargando acciones activas...</p>
 </div>
@@ -664,6 +669,20 @@ table.heat thead th.rowhead{text-align:left;padding-left:14px;min-width:210px}
 <p>Por cada acción cumplida (venta o implementación), el vendedor suma los goles indicados. Se cargan por cantidad y el sistema calcula los goles automáticamente. Los goles bonus impactan en el ranking semanal y en el acumulado del mundial.</p>
 </div>
 </div>
+<!-- ===== CCC ROCHER TIRA x 3 (sub-concurso individual) ===== -->
+<div class="tab-panel" id="tab-roc3">
+<div class="bt-hero" style="background:linear-gradient(135deg,var(--score) 0%,#7A1F1F 100%)">
+<h2>🎯 CCC ROCHER TIRA x 3</h2>
+<p>Sub-concurso individual del proveedor <strong>Ferrero</strong>: clientes distintos que compraron <strong>Rocher Tira x3 (16 x 37,5 Gr.)</strong> entre las semanas 6 y 9.</p>
+</div>
+<div class="spec-box" style="margin-top:0;margin-bottom:16px">
+<div class="st">⚡ OBJETIVO DEL PROVEEDOR — AGOSTO (S6 a S9)</div>
+<p>Cada vendedor que alcance <strong>40 clientes distintos</strong> que le compraron Rocher Tira x3 gana <strong>$100.000</strong> a cargo de Ferrero, y suma <strong>+10 goles</strong> de Bonus Track (una sola vez, sin importar si supera los 40). No es competitivo entre vendedores: todo el que llegue, cobra.</p>
+</div>
+<h3 class="bt-secttl">📊 Real vs. Objetivo por vendedor</h3>
+<div id="roc3List"></div>
+</div>
+
 </div>
 <script>
 // ── URLs Google Sheets (CSV publicado) ──────────────────────────────────────
@@ -672,6 +691,7 @@ const URL_FERRERO_KG      = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQj
 const URL_BONUS_CONFIG    = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=1522924197&single=true&output=csv";
 const URL_BONUS_TRACK     = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=850228986&single=true&output=csv";
 const URL_DIAS_PROCESADOS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=1868345261&single=true&output=csv";
+const URL_CLIENTES_ROC3   = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=1611198669&single=true&output=csv";
 
 const DATA = {"sellers":["Guillermo Alderete","David Bertran","Alberto Castillo","Leonardo Chiesa","Dario Macaya","Miguel Escales","Pablo Figueroa","Alejandro Fragnul","Samuel Arenas","Julian Jensen","Hugo Lezana","Jonatan Lozano","Guillermo Madrid","Jose Martinez","Sebastian Ponce de Leon","Horacio Ulloa","Luis Velazquez","Pablo Zangari"],"products":[{"id":"kbw","name":"Kinder Bueno + White","color":"#2E7D32","short":"K.Bueno"},{"id":"kcm","name":"Kinder Choco + Maxi","color":"#C62828","short":"K.Choco"},{"id":"nut","name":"Nutella","color":"#4E342E","short":"Nutella"},{"id":"raf","name":"Raffaello","color":"#8D6E63","short":"Raffaello"},{"id":"roc","name":"Rocher","color":"#C8960C","short":"Rocher"},{"id":"tt","name":"Tic Tac","color":"#1565C0","short":"Tic Tac"}],"objectives":{"Guillermo Alderete":{"kbw":[18,18,18,18,18,15,15,15,15],"kcm":[18,18,18,18,18,15,15,15,15],"nut":[15,15,15,15,15,13,13,13,13],"raf":[11,11,11,11,11,9,9,9,9],"roc":[52,52,52,52,52,43,43,43,43],"tt":[41,41,41,41,41,35,35,35,35]},"David Bertran":{"kbw":[12,12,12,12,12,10,10,10,10],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[20,20,20,20,20,17,17,17,17],"raf":[6,6,6,6,6,5,5,5,5],"roc":[49,49,49,49,49,41,41,41,41],"tt":[57,57,57,57,57,48,48,48,48]},"Alberto Castillo":{"kbw":[21,21,21,21,21,17,17,17,17],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[31,31,31,31,31,26,26,26,26],"raf":[9,9,9,9,9,8,8,8,8],"roc":[107,107,107,107,107,89,89,89,89],"tt":[40,40,40,40,40,33,33,33,33]},"Leonardo Chiesa":{"kbw":[13,13,13,13,13,11,11,11,11],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[37,37,37,37,37,31,31,31,31],"raf":[6,6,6,6,6,5,5,5,5],"roc":[56,56,56,56,56,46,46,46,46],"tt":[18,18,18,18,18,15,15,15,15]},"Dario Macaya":{"kbw":[29,29,29,29,29,24,24,24,24],"kcm":[19,19,19,19,19,16,16,16,16],"nut":[32,32,32,32,32,26,26,26,26],"raf":[11,11,11,11,11,9,9,9,9],"roc":[90,90,90,90,90,75,75,75,75],"tt":[23,23,23,23,23,20,20,20,20]},"Miguel Escales":{"kbw":[21,21,21,21,21,17,17,17,17],"kcm":[23,23,23,23,23,19,19,19,19],"nut":[14,14,14,14,14,12,12,12,12],"raf":[14,14,14,14,14,12,12,12,12],"roc":[90,90,90,90,90,75,75,75,75],"tt":[18,18,18,18,18,15,15,15,15]},"Pablo Figueroa":{"kbw":[35,35,35,35,35,29,29,29,29],"kcm":[88,88,88,88,88,73,73,73,73],"nut":[46,46,46,46,46,38,38,38,38],"raf":[15,15,15,15,15,13,13,13,13],"roc":[137,137,137,137,137,114,114,114,114],"tt":[81,81,81,81,81,67,67,67,67]},"Alejandro Fragnul":{"kbw":[12,12,12,12,12,10,10,10,10],"kcm":[15,15,15,15,15,13,13,13,13],"nut":[40,40,40,40,40,33,33,33,33],"raf":[8,8,8,8,8,7,7,7,7],"roc":[62,62,62,62,62,52,52,52,52],"tt":[18,18,18,18,18,15,15,15,15]},"Samuel Arenas":{"kbw":[52,52,52,52,52,43,43,43,43],"kcm":[48,48,48,48,48,40,40,40,40],"nut":[118,118,118,118,118,99,99,99,99],"raf":[14,14,14,14,14,12,12,12,12],"roc":[189,189,189,189,189,157,157,157,157],"tt":[32,32,32,32,32,27,27,27,27]},"Julian Jensen":{"kbw":[12,12,12,12,12,10,10,10,10],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[43,43,43,43,43,36,36,36,36],"raf":[6,6,6,6,6,5,5,5,5],"roc":[42,42,42,42,42,35,35,35,35],"tt":[19,19,19,19,19,16,16,16,16]},"Hugo Lezana":{"kbw":[18,18,18,18,18,15,15,15,15],"kcm":[26,26,26,26,26,22,22,22,22],"nut":[44,44,44,44,44,36,36,36,36],"raf":[14,14,14,14,14,12,12,12,12],"roc":[53,53,53,53,53,44,44,44,44],"tt":[18,18,18,18,18,15,15,15,15]},"Jonatan Lozano":{"kbw":[32,32,32,32,32,27,27,27,27],"kcm":[27,27,27,27,27,23,23,23,23],"nut":[52,52,52,52,52,43,43,43,43],"raf":[10,10,10,10,10,8,8,8,8],"roc":[102,102,102,102,102,85,85,85,85],"tt":[25,25,25,25,25,21,21,21,21]},"Guillermo Madrid":{"kbw":[16,16,16,16,16,14,14,14,14],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[14,14,14,14,14,12,12,12,12],"raf":[11,11,11,11,11,9,9,9,9],"roc":[42,42,42,42,42,35,35,35,35],"tt":[18,18,18,18,18,15,15,15,15]},"Jose Martinez":{"kbw":[28,28,28,28,28,23,23,23,23],"kcm":[122,122,122,122,122,101,101,101,101],"nut":[77,77,77,77,77,64,64,64,64],"raf":[18,18,18,18,18,15,15,15,15],"roc":[178,178,178,178,178,149,149,149,149],"tt":[145,145,145,145,145,121,121,121,121]},"Sebastian Ponce de Leon":{"kbw":[59,59,59,59,59,49,49,49,49],"kcm":[54,54,54,54,54,45,45,45,45],"nut":[133,133,133,133,133,111,111,111,111],"raf":[6,6,6,6,6,5,5,5,5],"roc":[106,106,106,106,106,89,89,89,89],"tt":[90,90,90,90,90,75,75,75,75]},"Horacio Ulloa":{"kbw":[19,19,19,19,19,16,16,16,16],"kcm":[21,21,21,21,21,17,17,17,17],"nut":[14,14,14,14,14,12,12,12,12],"raf":[12,12,12,12,12,10,10,10,10],"roc":[67,67,67,67,67,56,56,56,56],"tt":[46,46,46,46,46,38,38,38,38]},"Luis Velazquez":{"kbw":[14,14,14,14,14,12,12,12,12],"kcm":[17,17,17,17,17,14,14,14,14],"nut":[14,14,14,14,14,12,12,12,12],"raf":[6,6,6,6,6,5,5,5,5],"roc":[42,42,42,42,42,35,35,35,35],"tt":[18,18,18,18,18,15,15,15,15]},"Pablo Zangari":{"kbw":[13,13,13,13,13,11,11,11,11],"kcm":[27,27,27,27,27,22,22,22,22],"nut":[24,24,24,24,24,20,20,20,20],"raf":[6,6,6,6,6,5,5,5,5],"roc":[65,65,65,65,65,54,54,54,54],"tt":[18,18,18,18,18,15,15,15,15]}},"sales":{"Guillermo Alderete":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"David Bertran":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Alberto Castillo":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Leonardo Chiesa":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Dario Macaya":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Miguel Escales":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Pablo Figueroa":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Alejandro Fragnul":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Samuel Arenas":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Julian Jensen":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Hugo Lezana":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Jonatan Lozano":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Guillermo Madrid":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Jose Martinez":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Sebastian Ponce de Leon":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Horacio Ulloa":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Luis Velazquez":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]},"Pablo Zangari":{"kbw":[0,0,0,0,0,0,0,0,0],"kcm":[0,0,0,0,0,0,0,0,0],"nut":[0,0,0,0,0,0,0,0,0],"raf":[0,0,0,0,0,0,0,0,0],"roc":[0,0,0,0,0,0,0,0,0],"tt":[0,0,0,0,0,0,0,0,0]}},"_zonaByName":{"Guillermo Alderete":"CORDILLERA NORTE","Hugo Lezana":"CORDILLERA NORTE","Horacio Ulloa":"CORDILLERA NORTE","David Bertran":"RIO NEGRO","Miguel Escales":"RIO NEGRO","Pablo Figueroa":"RIO NEGRO","Alejandro Fragnul":"RIO NEGRO","Pablo Zangari":"RIO NEGRO","Alberto Castillo":"NEUQUEN","Dario Macaya":"NEUQUEN","Samuel Arenas":"NEUQUEN","Jonatan Lozano":"NEUQUEN","Jose Martinez":"NEUQUEN","Leonardo Chiesa":"ATLANTICA","Guillermo Madrid":"ATLANTICA","Luis Velazquez":"ATLANTICA","Julian Jensen":"CORDILLERA SUR","Sebastian Ponce de Leon":"NEUQUEN"},"_semDatos":1,"bonusConfig":[],"bonusCarga":[]};
 
@@ -691,6 +711,11 @@ const ZONES=["CORDILLERA NORTE","RIO NEGRO","NEUQUEN","ATLANTICA","NEUQUEN","RIO
 
 let SEM_DATOS=DATA._semDatos;          // semanas con datos cargados (se recalcula tras fetch)
 let curW=SEM_DATOS-1, curF="total", openIdx=null;   // arranca en la última semana con datos
+
+// ── Premio especial Rocher Tira x3: 40 clientes distintos (S6-S9) ──────────
+const ROC3_META = 40;
+const ROC3_PREMIO = 100000;
+let DATA_ROC3 = {}; // { vendedor: cantidadClientesDistintos } — se llena desde CLIENTES_ROCHER_TIRA3
 let curWA="total", openIdxA=null;        // ranking acumulado
 let segPer="acu", openZonesSeg={};        // seguimiento
 const ZONE_LIST=["ATLANTICA","CORDILLERA NORTE","CORDILLERA SUR","NEUQUEN","RIO NEGRO"];
@@ -1077,6 +1102,7 @@ function buildSelectors(){
 }
 buildSelectors();
 renderBonusTrack();
+renderRoc3Premio();
 
 // ══════════════════════════════════════════════════════════════════════════
 // CONEXIÓN A GOOGLE SHEETS (producción)
@@ -1124,10 +1150,11 @@ async function fetchSheets(){
   const btn=document.querySelector('.btn-actualizar');
   if(btn){btn.disabled=true;btn.textContent='Cargando...';}
   try{
-    const [rV,rCfg,rBt]=await Promise.all([
+    const [rV,rCfg,rBt,rRoc3]=await Promise.all([
       fetch(URL_VENTAS_MUNDIAL),
       fetch(URL_BONUS_CONFIG),
       fetch(URL_BONUS_TRACK),
+      fetch(URL_CLIENTES_ROC3),
     ]);
 
     // ── VENTAS_MUNDIAL → DATA.sales ──────────────────────────────────────────
@@ -1181,6 +1208,19 @@ async function fetchSheets(){
       DATA.bonusCarga=arr;
     }
 
+    // ── CLIENTES_ROCHER_TIRA3 → DATA_ROC3 ────────────────────────────────────
+    // Estructura: VENDEDOR | CLIENTES | CANT_DISTINTOS
+    if(rRoc3.ok){
+      const obj={};
+      (await rRoc3.text()).trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
+        const c=csvRow(r);
+        const vendedor=(c[0]||'').trim();
+        if(!vendedor)return;
+        obj[vendedor]=numCol(c[2]);
+      });
+      DATA_ROC3=obj;
+    }
+
     // ── Reconstruir motor de bonus (goles por unidad de cada acción) ─────────
     Object.keys(_accGoles).forEach(k=>delete _accGoles[k]);
     (DATA.bonusConfig||[]).forEach(a=>{_accGoles[a.accion]=a.golesPorUnidad;});
@@ -1193,6 +1233,7 @@ async function fetchSheets(){
     // ── Repintar selectores (semanas del header + período de seguimiento) y tablero
     buildSelectors();
     renderBonusTrack();
+    renderRoc3Premio();
 
     const lu=document.getElementById('last-updated');
     if(lu)lu.textContent='Actualizado: '+new Date().toLocaleString('es-AR');
@@ -1244,6 +1285,33 @@ function renderBonusTrack(){
       }).join("");
     }
   }
+}
+
+// ── Premio especial Rocher Tira x3: lista de vendedores con progreso ──────
+function renderRoc3Premio(){
+  const cont=document.getElementById("roc3List");
+  if(!cont)return;
+  const filas=DATA.sellers.map(s=>({seller:s, cant:DATA_ROC3[s]||0}))
+    .sort((a,b)=>b.cant-a.cant);
+  if(!filas.some(f=>f.cant>0)){
+    cont.innerHTML=`<p style="color:var(--muted);font-size:13px;font-style:italic">Todavía no hay datos cargados de clientes distintos (CLIENTES_ROCHER_TIRA3).</p>`;
+    return;
+  }
+  cont.innerHTML=`<div class="dgrid" style="grid-template-columns:1fr">` + filas.map(f=>{
+    const alcanzado=f.cant>=ROC3_META;
+    const pct=Math.min(Math.round(f.cant/ROC3_META*100),100);
+    const color=alcanzado?"#2E7D32":(pct>=75?"var(--gold)":"var(--fg)");
+    return `<div class="dprod" style="margin-bottom:6px">
+      <div class="ds" style="margin-bottom:6px">
+        <span style="font-weight:700;color:var(--text)">${alcanzado?"✅ ":""}${f.seller}</span>
+        <span style="font-weight:800;color:${color}">${f.cant} / ${ROC3_META} clientes</span>
+      </div>
+      <div class="dt"><div class="df" style="width:${pct}%;background:${color}"></div></div>
+      ${alcanzado
+        ? `<div class="dg" style="color:#2E7D32">🏆 Meta alcanzada — $${ROC3_PREMIO.toLocaleString("es-AR")} + 10 goles</div>`
+        : `<div class="dg" style="color:var(--muted);font-size:12px;font-weight:600">Faltan ${ROC3_META-f.cant} clientes distintos</div>`}
+    </div>`;
+  }).join("") + `</div>`;
 }
 </script>
 </body>

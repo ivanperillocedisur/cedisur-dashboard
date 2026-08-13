@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concurso Cachafaz</title>
+<style>
+  :root{
+    --bg:#141414;
+    --panel:#1c1c1c;
+    --panel2:#212121;
+    --border:#2c2c2c;
+    --gold:#c9a34e;
+    --gold-light:#e8cf94;
+    --cream:#f5e6c8;
+    --text:#e8e6df;
+    --text-dim:#8a8a8a;
+    --text-faint:#666;
+    --win-bg:#241f14;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Barlow Condensed',Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:16px;
+    max-width:720px;
+    margin:0 auto;
+  }
+  @font-face{
+    font-family:'Barlow Condensed';
+    src:local('Barlow Condensed');
+  }
+  .serif{font-family:Georgia,'Times New Roman',serif;}
+
+  header{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    margin-bottom:18px;padding-top:8px;
+  }
+  header img{height:52px;}
+  header h1{
+    font-family:Georgia,serif;color:var(--cream);
+    font-size:24px;letter-spacing:.5px;font-weight:400;
+  }
+
+  nav.tabs{
+    display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border);
+    padding-bottom:10px;overflow-x:auto;
+  }
+  nav.tabs button{
+    background:transparent;border:none;color:var(--text-dim);
+    font-family:'Barlow Condensed',Arial,sans-serif;font-size:14px;font-weight:600;
+    padding:7px 14px;border-radius:6px;cursor:pointer;white-space:nowrap;
+    transition:background .15s,color .15s;
+  }
+  nav.tabs button.active{background:var(--win-bg);color:var(--gold);}
+  nav.tabs button:not(.active):hover{background:#1a1a1a;color:#aaa;}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .kpi-row{display:flex;gap:8px;margin-bottom:14px;}
+  .kpi{
+    flex:1;background:var(--panel2);border-radius:8px;padding:10px 8px;text-align:center;
+  }
+  .kpi .label{color:var(--text-dim);font-size:11px;}
+  .kpi .value{color:var(--cream);font-size:20px;font-weight:700;margin-top:2px;}
+  .kpi .value.small{font-size:14px;}
+
+  .banner{
+    border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .banner.win{background:var(--win-bg);border:1px solid var(--gold);color:var(--gold-light);}
+  .banner.nowin{background:#241414;border:1px solid #5a2e2e;color:#d99;}
+  .banner .dot{font-size:15px;line-height:1;}
+
+  .chips{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+  .chip{
+    background:var(--bg);color:var(--text-dim);font-size:12px;padding:6px 13px;
+    border-radius:999px;border:1px solid var(--border);cursor:pointer;
+    font-family:'Barlow Condensed',Arial,sans-serif;font-weight:600;
+  }
+  .chip.active{background:#2c2c2c;color:var(--gold-light);border-color:var(--border);}
+
+  table.rank{width:100%;border-collapse:collapse;background:#0f0f0f;border-radius:8px;overflow:hidden;}
+  table.rank thead th{
+    color:#777;font-size:11px;font-weight:600;text-align:right;padding:8px 10px;
+    border-bottom:1px solid var(--border);
+  }
+  table.rank thead th:nth-child(1),table.rank thead th:nth-child(2){text-align:left;}
+  table.rank tbody tr.row{cursor:pointer;border-bottom:1px solid var(--border);}
+  table.rank tbody tr.row:hover{background:#1a1a1a;}
+  table.rank tbody tr.row.lead{background:#221c0c;}
+  table.rank tbody tr.row.lead:hover{background:#2a2210;}
+  table.rank td{padding:10px 10px;font-size:13px;vertical-align:middle;}
+  table.rank td.num{text-align:right;color:#d4d4d4;}
+  table.rank td.pos{color:var(--text-dim);font-weight:700;width:30px;}
+  table.rank tr.lead td.pos{color:var(--gold);}
+  table.rank td.vend .name{color:var(--cream);font-weight:600;font-size:13.5px;}
+  table.rank td.vend .zona{color:var(--text-dim);font-size:11px;}
+  table.rank td.score{font-weight:700;font-size:14px;color:#d4d4d4;}
+  table.rank tr.lead td.score{color:var(--gold);}
+  table.rank td.chevron{width:18px;color:#666;text-align:right;}
+  table.rank tr.lead td.chevron{color:var(--gold);}
+
+  tr.detail{display:none;background:#0a0a0a;}
+  tr.detail.open{display:table-row;}
+  tr.detail td{padding:0 14px 14px 40px;border-bottom:1px solid var(--border);}
+  .detail-grid{display:flex;gap:26px;flex-wrap:wrap;padding-top:8px;}
+  .detail-grid .dlabel{color:var(--text-dim);font-size:11px;}
+  .detail-grid .dval{color:var(--gold-light);font-size:13px;margin-top:2px;}
+  .detail-grid .dval .obj{color:#777;}
+
+  .empty{color:var(--text-dim);font-size:13px;text-align:center;padding:24px 10px;}
+
+  /* Bases y condiciones */
+  .bases{background:var(--panel2);border-radius:10px;padding:18px 18px 6px;}
+  .bases h2{font-family:Georgia,serif;color:var(--cream);font-size:17px;margin-bottom:10px;font-weight:400;}
+  .bases ul{list-style:none;padding:0;margin:0 0 14px;}
+  .bases li{
+    font-size:13.5px;line-height:1.55;color:var(--text);padding:8px 0 8px 20px;
+    border-bottom:1px solid var(--border);position:relative;
+  }
+  .bases li:last-child{border-bottom:none;}
+  .bases li::before{
+    content:'—';position:absolute;left:0;color:var(--gold);
+  }
+  .bases strong{color:var(--gold-light);font-weight:700;}
+
+  /* Zona */
+  table.zona{width:100%;border-collapse:collapse;background:#0f0f0f;border-radius:8px;overflow:hidden;}
+  table.zona thead th{
+    color:#777;font-size:11px;font-weight:600;text-align:right;padding:9px 10px;
+    border-bottom:1px solid var(--border);
+  }
+  table.zona thead th:nth-child(1){text-align:left;}
+  table.zona td{padding:11px 10px;font-size:13.5px;border-bottom:1px solid var(--border);}
+  table.zona td:first-child{color:var(--cream);font-weight:600;}
+  table.zona td.num{text-align:right;color:#d4d4d4;}
+  .bar-wrap{background:#000;border-radius:4px;height:6px;margin-top:5px;overflow:hidden;}
+  .bar{height:100%;background:var(--gold);border-radius:4px;}
+
+  footer{text-align:center;color:var(--text-faint);font-size:11px;margin:24px 0 6px;}
+
+  @media (max-width:420px){
+    header h1{font-size:19px;}
+    .kpi .value{font-size:17px;}
+    table.rank td, table.rank thead th{padding:8px 6px;font-size:12px;}
+    .detail-grid{gap:16px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="Logo-header-1024x765.png" alt="Cachafaz" onerror="this.style.display='none'">
+  <h1>Concurso Cachafaz</h1>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-view="v-ranking" onclick="showView('v-ranking',this)">Ranking</button>
+  <button data-view="v-zona" onclick="showView('v-zona',this)">Cumplimiento por zona</button>
+  <button data-view="v-bases" onclick="showView('v-bases',this)">Bases y condiciones</button>
+</nav>
+
+<!-- ═══════════ VIEW: RANKING ═══════════ -->
+<div class="view active" id="v-ranking">
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">Días restantes</div>
+      <div class="value" id="kpi-dias">-</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Líder actual</div>
+      <div class="value" id="kpi-lider">-</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Premio</div>
+      <div class="value small">Smart TV</div>
+    </div>
+  </div>
+
+  <div id="banner-estado"></div>
+
+  <div class="chips" id="chips-zona"></div>
+
+  <table class="rank">
+    <thead>
+      <tr>
+        <th>#</th><th>Vendedor</th><th>Kilos</th><th>Clientes</th><th>Puntaje</th><th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody-ranking"></tbody>
+  </table>
+  <div class="empty" id="ranking-empty" style="display:none">Sin datos cargados todavía.</div>
+</div>
+
+<!-- ═══════════ VIEW: CUMPLIMIENTO POR ZONA ═══════════ -->
+<div class="view" id="v-zona">
+  <table class="zona">
+    <thead>
+      <tr><th>Zona</th><th>% Kilos</th><th>% Clientes</th></tr>
+    </thead>
+    <tbody id="tbody-zona"></tbody>
+  </table>
+  <div class="empty" id="zona-empty" style="display:none">Sin datos cargados todavía.</div>
+</div>
+
+<!-- ═══════════ VIEW: BASES Y CONDICIONES ═══════════ -->
+<div class="view" id="v-bases">
+  <div class="bases">
+    <h2>Bases y condiciones</h2>
+    <ul>
+      <li><strong>Duración:</strong> del 17/8/2026 al 11/9/2026 inclusive (20 días hábiles, 4 semanas comerciales).</li>
+      <li><strong>Participantes:</strong> los 18 vendedores de las 5 zonas de Cedisur (Neuquén, Río Negro, Cordillera Norte, Cordillera Sur, Atlántica).</li>
+      <li><strong>Cómo se calcula el puntaje:</strong> (% de cumplimiento de kilos × 60%) + (% de cumplimiento de clientes con compra × 40%).</li>
+      <li><strong>Ganador:</strong> hay un solo ganador, el vendedor con el puntaje más alto al cierre del concurso.</li>
+      <li><strong>Condición para acceder al premio:</strong> el puntaje del ganador debe ser mayor a 100. Si nadie supera ese valor, el concurso queda sin ganador.</li>
+      <li><strong>Premio:</strong> 1 Smart TV para el ganador.</li>
+      <li><strong>Desempate:</strong> en caso de igualdad de puntaje, gana quien tenga mayor % de cumplimiento de kilos.</li>
+      <li><strong>Cliente con compra:</strong> cualquier cliente con al menos un producto Cachafaz facturado durante el período del concurso.</li>
+    </ul>
+  </div>
+</div>
+
+<footer>Datos actualizados según la última carga del Dataset Central 5641</footer>
+
+<script>
+const CSV_RESUMEN = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTVCuuh5O5eI0FQvjVibN0YrjcYuxgGMefw73Q-5ieuET_TCf2VTCPt47_nTmQ610Bo6o7nUY0g2JV2/pub?gid=1869870545&single=true&output=csv';
+
+const CACH_INICIO = new Date(2026,7,17);
+const CACH_FIN    = new Date(2026,8,11);
+
+let DATA = [];
+let zonaActiva = 'TODAS';
+
+function showView(id, btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function parseCSV(text){
+  const lines = text.trim().split(/\r?\n/);
+  const headers = lines[0].split(',').map(h=>h.trim());
+  return lines.slice(1).filter(l=>l.trim().length).map(line=>{
+    const cells = line.split(',');
+    const obj = {};
+    headers.forEach((h,i)=>obj[h]=cells[i]!==undefined?cells[i].trim():'');
+    return obj;
+  });
+}
+
+function num(v){
+  const n = parseFloat(String(v).replace(/\./g,'').replace(',','.'));
+  return isNaN(n) ? parseFloat(v) || 0 : n;
+}
+
+function pct(v){
+  // acepta tanto "0.94" como "94%" como "94"
+  let s = String(v).replace('%','').trim();
+  let n = parseFloat(s.replace(',','.'));
+  if (isNaN(n)) return 0;
+  if (Math.abs(n) <= 1.5) n = n*100; // viene como fraccion (0.94)
+  return n;
+}
+
+function diasRestantes(){
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  if (hoy < CACH_INICIO) return Math.round((CACH_FIN-CACH_INICIO)/86400000)+1;
+  if (hoy > CACH_FIN) return 0;
+  return Math.max(0, Math.round((CACH_FIN-hoy)/86400000));
+}
+
+function render(){
+  const rows = DATA.map(r=>({
+    sap: r['VENDEDOR (SAP)']||'',
+    nombre: r['NOMBRE DISPLAY']||'',
+    zona: r['ZONA']||'',
+    kilosReal: num(r['KILOS REAL']),
+    kilosObj: num(r['OBJETIVO KILOS']),
+    pctKilos: pct(r['% KILOS']),
+    cliReal: num(r['CLIENTES REAL']),
+    cliObj: num(r['OBJETIVO CLIENTES']),
+    pctCli: pct(r['% CLIENTES']),
+    puntaje: parseFloat(String(r['PUNTAJE']).replace(',','.')) || 0,
+  })).sort((a,b)=> b.puntaje - a.puntaje || b.pctKilos - a.pctKilos);
+
+  // ── KPIs ──
+  document.getElementById('kpi-dias').textContent = diasRestantes();
+  document.getElementById('kpi-lider').textContent = rows.length ? rows[0].puntaje.toFixed(1) : '-';
+
+  const hayGanador = rows.length && rows[0].puntaje > 100;
+  const bannerEl = document.getElementById('banner-estado');
+  if (rows.length === 0){
+    bannerEl.innerHTML = '';
+  } else if (hayGanador){
+    bannerEl.innerHTML = `<div class="banner win"><span class="dot">&#9733;</span>Hay ganador provisorio: ${rows[0].nombre} supera el 100% requerido para acceder al premio.</div>`;
+  } else {
+    bannerEl.innerHTML = `<div class="banner nowin"><span class="dot">&#9679;</span>Todavía nadie supera el 100% necesario. Por ahora el concurso quedaría sin ganador.</div>`;
+  }
+
+  // ── Chips de zona ──
+  const zonas = ['TODAS', ...Array.from(new Set(rows.map(r=>r.zona))).filter(Boolean).sort()];
+  const chipsEl = document.getElementById('chips-zona');
+  chipsEl.innerHTML = zonas.map(z=>{
+    const label = z === 'TODAS' ? 'Todas las zonas' : tituloCase(z);
+    return `<span class="chip ${z===zonaActiva?'active':''}" onclick="setZona('${z}')">${label}</span>`;
+  }).join('');
+
+  const filtradas = zonaActiva === 'TODAS' ? rows : rows.filter(r=>r.zona===zonaActiva);
+
+  // ── Tabla ranking ──
+  const tbody = document.getElementById('tbody-ranking');
+  document.getElementById('ranking-empty').style.display = filtradas.length ? 'none' : 'block';
+  tbody.innerHTML = filtradas.map((r,idx)=>{
+    const posGlobal = rows.indexOf(r) + 1;
+    const isLead = posGlobal === 1 && hayGanador;
+    const rid = 'r'+idx;
+    return `
+      <tr class="row ${isLead?'lead':''}" onclick="toggleDetail('${rid}')">
+        <td class="pos">${posGlobal}</td>
+        <td class="vend"><div class="name">${r.nombre||r.sap}</div><div class="zona">${tituloCase(r.zona)}</div></td>
+        <td class="num">${r.pctKilos.toFixed(0)}%</td>
+        <td class="num">${r.pctCli.toFixed(0)}%</td>
+        <td class="score">${r.puntaje.toFixed(1)}</td>
+        <td class="chevron" id="chev-${rid}">&#9662;</td>
+      </tr>
+      <tr class="detail" id="det-${rid}">
+        <td colspan="6">
+          <div class="detail-grid">
+            <div>
+              <div class="dlabel">Kilos</div>
+              <div class="dval">${fmt(r.kilosReal)} kg <span class="obj">/ obj. ${fmt(r.kilosObj)} kg</span></div>
+            </div>
+            <div>
+              <div class="dlabel">Clientes con compra</div>
+              <div class="dval">${r.cliReal} <span class="obj">/ obj. ${r.cliObj}</span></div>
+            </div>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  // ── Cumplimiento por zona ──
+  const zonasResumen = {};
+  rows.forEach(r=>{
+    if(!r.zona) return;
+    if(!zonasResumen[r.zona]) zonasResumen[r.zona] = {kilosReal:0,kilosObj:0,cliReal:0,cliObj:0};
+    zonasResumen[r.zona].kilosReal += r.kilosReal;
+    zonasResumen[r.zona].kilosObj  += r.kilosObj;
+    zonasResumen[r.zona].cliReal   += r.cliReal;
+    zonasResumen[r.zona].cliObj    += r.cliObj;
+  });
+  const tbodyZona = document.getElementById('tbody-zona');
+  const zonaKeys = Object.keys(zonasResumen).sort();
+  document.getElementById('zona-empty').style.display = zonaKeys.length ? 'none' : 'block';
+  tbodyZona.innerHTML = zonaKeys.map(z=>{
+    const d = zonasResumen[z];
+    const pk = d.kilosObj ? (d.kilosReal/d.kilosObj*100) : 0;
+    const pc = d.cliObj ? (d.cliReal/d.cliObj*100) : 0;
+    return `
+      <tr>
+        <td>${tituloCase(z)}</td>
+        <td class="num">${pk.toFixed(0)}%<div class="bar-wrap"><div class="bar" style="width:${Math.min(100,pk)}%"></div></div></td>
+        <td class="num">${pc.toFixed(0)}%<div class="bar-wrap"><div class="bar" style="width:${Math.min(100,pc)}%"></div></div></td>
+      </tr>`;
+  }).join('');
+}
+
+function fmt(n){
+  return Math.round(n).toLocaleString('es-AR');
+}
+
+function tituloCase(s){
+  if(!s) return '';
+  return s.toLowerCase().split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+}
+
+function setZona(z){
+  zonaActiva = z;
+  render();
+}
+
+function toggleDetail(rid){
+  const det = document.getElementById('det-'+rid);
+  const chev = document.getElementById('chev-'+rid);
+  const isOpen = det.classList.contains('open');
+  det.classList.toggle('open', !isOpen);
+  chev.innerHTML = !isOpen ? '&#9652;' : '&#9662;';
+}
+
+function cargarDatos(){
+  fetch(CSV_RESUMEN + (CSV_RESUMEN.includes('?')?'&':'?') + 'v=' + Date.now())
+    .then(r=>r.text())
+    .then(text=>{
+      DATA = parseCSV(text);
+      render();
+    })
+    .catch(err=>{
+      console.error('Error cargando RESUMEN_CACHAFAZ:', err);
+      document.getElementById('ranking-empty').style.display='block';
+      document.getElementById('ranking-empty').textContent='No se pudo cargar el ranking. Revisá la URL del CSV publicado.';
+    });
+}
+
+cargarDatos();
+setInterval(cargarDatos, 5*60*1000); // refresca cada 5 minutos
+</script>
+
+</body>
+</html>

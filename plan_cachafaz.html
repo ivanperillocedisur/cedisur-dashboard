@@ -39,10 +39,10 @@
     margin-bottom:18px;padding-top:8px;
   }
   header .logo-box{
-    background:#ffffff;border-radius:14px;padding:10px 18px;
+    background:#ffffff;border-radius:14px;padding:6px 14px;
     display:flex;align-items:center;justify-content:center;
   }
-  header .logo-box img{height:48px;display:block;}
+  header .logo-box img{height:78px;display:block;}
   header h1{
     font-family:'Barlow Condensed',Arial,sans-serif;color:var(--cream);
     font-size:22px;letter-spacing:.5px;font-weight:700;text-transform:uppercase;
@@ -112,8 +112,8 @@
 
   tr.detail{display:none;background:#0a0a0a;}
   tr.detail.open{display:table-row;}
-  tr.detail td{padding:0 14px 14px 40px;border-bottom:1px solid var(--border);}
-  .detail-grid{display:flex;gap:30px;flex-wrap:wrap;padding-top:10px;}
+  tr.detail td{padding:0 14px 16px;border-bottom:1px solid var(--border);}
+  .detail-grid{display:flex;justify-content:center;gap:40px;flex-wrap:wrap;padding-top:10px;text-align:center;}
   .detail-grid .dlabel{color:var(--text-dim);font-size:13px;}
   .detail-grid .dval{color:var(--gold-light);font-size:17px;font-weight:600;margin-top:4px;}
   .detail-grid .dval .obj{color:#888;font-weight:400;font-size:14px;}
@@ -141,9 +141,23 @@
     border-bottom:1px solid var(--border);
   }
   table.zona thead th:nth-child(1){text-align:left;}
+  table.zona tr.row{cursor:pointer;}
+  table.zona tr.row:hover{background:#1a1a1a;}
   table.zona td{padding:11px 10px;font-size:13.5px;border-bottom:1px solid var(--border);}
   table.zona td:first-child{color:var(--cream);font-weight:600;}
   table.zona td.num{text-align:right;color:#d4d4d4;}
+  table.zona td.chevron{width:20px;color:#666;text-align:right;font-size:12px;}
+  table.zona tr.detail{display:none;background:#0a0a0a;}
+  table.zona tr.detail.open{display:table-row;}
+  table.zona tr.detail td{padding:6px 14px 14px;border-bottom:1px solid var(--border);}
+  .zona-vend-list{display:flex;flex-direction:column;gap:8px;padding-top:6px;}
+  .zona-vend-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 10px;background:#161616;border-radius:6px;
+  }
+  .zvend-name{color:var(--cream);font-size:13px;font-weight:600;}
+  .zvend-nums{display:flex;gap:12px;font-size:12px;color:var(--text-dim);}
+  .zvend-nums .zvend-score{color:var(--gold-light);font-weight:700;}
   .bar-wrap{background:#000;border-radius:4px;height:6px;margin-top:5px;overflow:hidden;}
   .bar{height:100%;background:var(--gold);border-radius:4px;}
 
@@ -166,27 +180,12 @@
 
 <nav class="tabs">
   <button class="active" data-view="v-ranking" onclick="showView('v-ranking',this)">Ranking</button>
-  <button data-view="v-zona" onclick="showView('v-zona',this)">Cumplimiento por zona</button>
-  <button data-view="v-bases" onclick="showView('v-bases',this)">Bases y condiciones</button>
+  <button data-view="v-zona" onclick="showView('v-zona',this)">Por Zona</button>
+  <button data-view="v-bases" onclick="showView('v-bases',this)">Bases y Condiciones</button>
 </nav>
 
 <!-- ═══════════ VIEW: RANKING ═══════════ -->
 <div class="view active" id="v-ranking">
-
-  <div class="kpi-row">
-    <div class="kpi">
-      <div class="label">Días restantes</div>
-      <div class="value" id="kpi-dias">-</div>
-    </div>
-    <div class="kpi">
-      <div class="label">Líder actual</div>
-      <div class="value" id="kpi-lider">-</div>
-    </div>
-    <div class="kpi">
-      <div class="label">Premio</div>
-      <div class="value small">Smart TV</div>
-    </div>
-  </div>
 
   <div id="banner-estado"></div>
 
@@ -207,7 +206,7 @@
 <div class="view" id="v-zona">
   <table class="zona">
     <thead>
-      <tr><th>Zona</th><th>% Kilos</th><th>% Clientes</th></tr>
+      <tr><th>Zona</th><th>% Kilos</th><th>% Clientes</th><th></th></tr>
     </thead>
     <tbody id="tbody-zona"></tbody>
   </table>
@@ -217,7 +216,7 @@
 <!-- ═══════════ VIEW: BASES Y CONDICIONES ═══════════ -->
 <div class="view" id="v-bases">
   <div class="bases">
-    <h2>Bases y condiciones</h2>
+    <h2>Bases y Condiciones</h2>
     <ul>
       <li><strong>Duración:</strong> del 17/8/2026 al 11/9/2026 inclusive (20 días hábiles, 4 semanas comerciales).</li>
       <li><strong>Participantes:</strong> los 18 vendedores de las 5 zonas de Cedisur (Neuquén, Río Negro, Cordillera Norte, Cordillera Sur, Atlántica).</li>
@@ -294,8 +293,7 @@ function render(){
   })).sort((a,b)=> b.puntaje - a.puntaje || b.pctKilos - a.pctKilos);
 
   // ── KPIs ──
-  document.getElementById('kpi-dias').textContent = diasRestantes();
-  document.getElementById('kpi-lider').textContent = rows.length ? rows[0].puntaje.toFixed(1) : '-';
+  // (KPIs de dias restantes / lider / premio removidos de la vista)
 
   const hayGanador = rows.length && rows[0].puntaje > 100;
   const bannerEl = document.getElementById('banner-estado');
@@ -360,17 +358,42 @@ function render(){
   const tbodyZona = document.getElementById('tbody-zona');
   const zonaKeys = Object.keys(zonasResumen).sort();
   document.getElementById('zona-empty').style.display = zonaKeys.length ? 'none' : 'block';
-  tbodyZona.innerHTML = zonaKeys.map(z=>{
+  tbodyZona.innerHTML = zonaKeys.map((z,zi)=>{
     const d = zonasResumen[z];
     const pk = d.kilosObj ? (d.kilosReal/d.kilosObj*100) : 0;
     const pc = d.cliObj ? (d.cliReal/d.cliObj*100) : 0;
+    const zid = 'z'+zi;
+    const vendedoresZona = rows.filter(r=>r.zona===z).sort((a,b)=>b.puntaje-a.puntaje);
+    const filasVend = vendedoresZona.map(v=>`
+      <div class="zona-vend-row">
+        <div class="zvend-name">${v.nombre||v.sap}</div>
+        <div class="zvend-nums">
+          <span>${v.pctKilos.toFixed(0)}% kg</span>
+          <span>${v.pctCli.toFixed(0)}% cli</span>
+          <span class="zvend-score">${v.puntaje.toFixed(1)} pts</span>
+        </div>
+      </div>`).join('');
     return `
-      <tr>
+      <tr class="row" onclick="toggleZonaDetail('${zid}')">
         <td>${tituloCase(z)}</td>
         <td class="num">${pk.toFixed(0)}%<div class="bar-wrap"><div class="bar" style="width:${Math.min(100,pk)}%"></div></div></td>
         <td class="num">${pc.toFixed(0)}%<div class="bar-wrap"><div class="bar" style="width:${Math.min(100,pc)}%"></div></div></td>
+        <td class="chevron" id="chev-${zid}">&#9662;</td>
+      </tr>
+      <tr class="detail" id="det-${zid}">
+        <td colspan="4">
+          <div class="zona-vend-list">${filasVend}</div>
+        </td>
       </tr>`;
   }).join('');
+}
+
+function toggleZonaDetail(zid){
+  const det = document.getElementById('det-'+zid);
+  const chev = document.getElementById('chev-'+zid);
+  const isOpen = det.classList.contains('open');
+  det.classList.toggle('open', !isOpen);
+  chev.innerHTML = !isOpen ? '&#9652;' : '&#9662;';
 }
 
 function fmt(n){

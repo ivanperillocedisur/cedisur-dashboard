@@ -295,11 +295,15 @@ function num(v){
 }
 
 function pct(v){
-  // acepta tanto "0.94" como "94%" como "94"
-  let s = String(v).replace('%','').trim();
+  // Si el valor ya trae "%", es un porcentaje explícito (ej: "0,81%" = 0.81%)
+  // y NO debe reescalarse. Solo se multiplica por 100 cuando llega como
+  // fracción sin símbolo (ej: "0.94" queriendo decir 94%).
+  const raw = String(v).trim();
+  const teniaSimbolo = raw.includes('%');
+  const s = raw.replace('%','').trim();
   let n = parseFloat(s.replace(',','.'));
   if (isNaN(n)) return 0;
-  if (Math.abs(n) <= 1.5) n = n*100; // viene como fraccion (0.94)
+  if (!teniaSimbolo && Math.abs(n) <= 1.5) n = n*100; // fracción sin símbolo (0.94 → 94)
   return n;
 }
 

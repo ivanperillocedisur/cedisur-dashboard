@@ -422,10 +422,10 @@ table.heat thead th.rowhead{text-align:left;padding-left:14px;min-width:210px}
 <div class="tab-panel active" id="tab-pdvferrero">
 <div class="bt-hero" style="background:linear-gradient(135deg,var(--score) 0%,#7A1F1F 100%)">
 <h2>🎯 COMBO PDV FERRERO — SEP 2026</h2>
-<p>Incentivo del proveedor <strong>Ferrero</strong>: colocar el combo completo en cada PDV, del 1° al 30 de septiembre.</p>
+<p>Incentivo del proveedor <strong>Ferrero</strong>: colocar el combo completo en cada PDV, del 25 de agosto al 30 de septiembre.</p>
 </div>
 <div class="spec-box" style="margin-top:0;margin-bottom:16px">
-<div class="st">⚡ OBJETIVO DEL PROVEEDOR — SEPTIEMBRE (1 al 30/9)</div>
+<div class="st">⚡ OBJETIVO DEL PROVEEDOR — 25/8 AL 30/9</div>
 <p>En cada PDV, el vendedor debe colocar (acumulado en cualquier momento del mes, no hace falta que sea en la misma visita): <strong>1 display de Rocher Tira x3</strong> + <strong>1 caja de Kinder Bueno Regular (15 u.)</strong> + <strong>2 unidades de Nutella 140g</strong>. El objetivo es <strong>estandarizado</strong> (igual para todos, no configurable por vendedor).</p>
 </div>
 <div class="rsec" style="margin-bottom:16px">
@@ -451,12 +451,14 @@ table.heat thead th.rowhead{text-align:left;padding-left:14px;min-width:210px}
 </div>
 <script>
 // ── URL Google Sheets (CSV publicado) ───────────────────────────────────────
-const URL_PDV_FERRERO = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=REEMPLAZAR_GID&single=true&output=csv"; // ⚠ reemplazar por el gid real de PDV_FERRERO_RESUMEN
+const URL_PDV_FERRERO  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=806740444&single=true&output=csv";
+const URL_PDV_DETALLE  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=2057495250&single=true&output=csv";
 
 // Vendedores participantes del combo
 const VENDEDORES = ["Guillermo Alderete", "David Bertran", "Alberto Castillo", "Leonardo Chiesa", "Dario Macaya", "Miguel Escales", "Pablo Figueroa", "Alejandro Fragnul", "Samuel Arenas", "Julian Jensen", "Hugo Lezana", "Jonatan Lozano", "Guillermo Madrid", "Jose Martinez", "Sebastian Ponce de Leon", "Horacio Ulloa", "Luis Velazquez", "Pablo Zangari"];
 
 let DATA_PDV = {}; // { vendedor: cantidadPdvLogrados } — se llena desde PDV_FERRERO_RESUMEN
+let DATA_PDV_CLIENTES = {}; // { vendedor: [nombresDeClientes con LOGRADO=1] } — se llena desde PDV_DISPLAY_FERRERO
 
 // Escala de premio por vendedor (no acumulativo entre tramos)
 const PDV_META = 40;
@@ -525,7 +527,10 @@ async function fetchSheets(){
   const btn=document.querySelector('.btn-actualizar');
   if(btn){btn.disabled=true;btn.textContent='Cargando...';}
   try{
-    const rPdv=await fetch(URL_PDV_FERRERO);
+    const [rPdv,rDet]=await Promise.all([
+      fetch(URL_PDV_FERRERO),
+      fetch(URL_PDV_DETALLE),
+    ]);
     // Estructura: VENDEDOR | CANT_PDV_LOGRADOS
     if(rPdv.ok){
       const obj={};
@@ -536,6 +541,21 @@ async function fetchSheets(){
         obj[vendedor]=numCol(c[1]);
       });
       DATA_PDV=obj;
+    }
+    // Estructura: VENDEDOR | CODIGO_CLIENTE | NOMBRE_CLIENTE | ROCHER | KBUENO | NUTELLA | LOGRADO
+    if(rDet.ok){
+      const clientesObj={};
+      (await rDet.text()).trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
+        const c=csvRow(r);
+        const vendedor=(c[0]||'').trim();
+        const nombre=(c[2]||'').trim();
+        const logrado=numCol(c[6]);
+        if(!vendedor || logrado!==1)return;
+        if(!clientesObj[vendedor])clientesObj[vendedor]=[];
+        clientesObj[vendedor].push(nombre||'(sin nombre)');
+      });
+      Object.keys(clientesObj).forEach(v=>clientesObj[v].sort((a,b)=>a.localeCompare(b,'es')));
+      DATA_PDV_CLIENTES=clientesObj;
     }
     const ts=new Date().toLocaleString('es-AR');
     const lu=document.getElementById('last-updated');
@@ -553,28 +573,39 @@ async function fetchSheets(){
 function renderPdvFerrero(){
   const cont=document.getElementById("pdvList");
   if(!cont)return;
-  const filas=VENDEDORES.map(s=>({seller:s, cant:DATA_PDV[s]||0}))
+  const filas=VENDEDORES.map(s=>({seller:s, cant:DATA_PDV[s]||0, clientes:DATA_PDV_CLIENTES[s]||[]}))
     .sort((a,b)=>b.cant-a.cant);
   if(!filas.some(f=>f.cant>0)){
     cont.innerHTML=`<p style="color:var(--muted);font-size:13px;font-style:italic">Todavía no hay datos cargados de PDV logrados (PDV_FERRERO_RESUMEN).</p>`;
   } else {
-    cont.innerHTML=`<div class="dgrid" style="grid-template-columns:1fr">` + filas.map(f=>{
+    cont.innerHTML=`<div class="dgrid" style="grid-template-columns:1fr">` + filas.map((f,i)=>{
       const alcanzado=f.cant>=PDV_META;
       const pct=Math.min(Math.round(f.cant/PDV_META*100),100);
       const textColor=heatColor(pct);
       const bgSize=pdvBgSize(pct);
       const premio=pdvPremio(f.cant);
+      const tieneClientes=f.clientes.length>0;
       return `<div class="dprod" style="margin-bottom:6px">
-        <div class="ds" style="margin-bottom:6px">
-          <span style="font-weight:700;color:var(--text)">${alcanzado?"✅ ":""}${f.seller}</span>
+        <div class="ds" style="margin-bottom:6px;cursor:${tieneClientes?"pointer":"default"}" ${tieneClientes?`onclick="togglePdvClientes(${i})"`:""}>
+          <span style="font-weight:700;color:var(--text)">${alcanzado?"✅ ":""}${f.seller}${tieneClientes?` <span id="pdvchev${i}" style="font-size:11px;color:var(--muted);transition:transform .2s;display:inline-block">▾</span>`:""}</span>
           <span style="font-weight:800;color:${textColor}">${f.cant} / ${PDV_META} PDV</span>
         </div>
         <div class="dt"><div class="df" style="width:${pct}%;background-image:${PDV_GRADIENTE};background-size:${bgSize}% 100%;background-position:0 0"></div></div>
         <div class="dg" style="color:${premio>0?'#2E7D32':'var(--muted)'}">${premio>0?`🏆 Premio actual: $${premio.toLocaleString("es-AR")}`:"Sin premio todavía (menos de 15 PDV)"}</div>
+        ${tieneClientes?`<div id="pdvnames${i}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:11.5px;color:var(--muted);line-height:1.7">${f.clientes.map(n=>`<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:2px 9px;margin:2px 3px 2px 0">${n}</span>`).join("")}</div>`:""}
       </div>`;
     }).join("") + `</div>`;
   }
   renderPdvSupervisores();
+}
+
+function togglePdvClientes(i){
+  const el=document.getElementById("pdvnames"+i);
+  const chev=document.getElementById("pdvchev"+i);
+  if(!el)return;
+  const open=el.style.display==="block";
+  el.style.display=open?"none":"block";
+  if(chev)chev.style.transform=open?"rotate(0deg)":"rotate(180deg)";
 }
 
 function renderPdvSupervisores(){

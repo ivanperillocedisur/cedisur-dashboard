@@ -586,12 +586,12 @@ function renderPdvFerrero(){
       const premio=pdvPremio(f.cant);
       const tieneClientes=f.clientes.length>0;
       return `<div class="dprod" style="margin-bottom:6px">
-        <div class="ds" style="margin-bottom:6px;cursor:${tieneClientes?"pointer":"default"}" ${tieneClientes?`onclick="togglePdvClientes(${i})"`:""}>
-          <span style="font-weight:700;color:var(--text)">${alcanzado?"✅ ":""}${f.seller}${tieneClientes?` <span id="pdvchev${i}" style="font-size:11px;color:var(--muted);transition:transform .2s;display:inline-block">▾</span>`:""}</span>
+        <div class="ds" style="margin-bottom:6px;font-size:15px;cursor:${tieneClientes?"pointer":"default"}" ${tieneClientes?`onclick="togglePdvClientes(${i})"`:""}>
+          <span style="font-weight:800;color:var(--text)">${alcanzado?"✅ ":""}${f.seller}${tieneClientes?` <span id="pdvchev${i}" style="font-size:11px;color:var(--muted);transition:transform .2s;display:inline-block">▾</span>`:""}</span>
           <span style="font-weight:800;color:${textColor}">${f.cant} / ${PDV_META} PDV</span>
         </div>
         <div class="dt"><div class="df" style="width:${pct}%;background-image:${PDV_GRADIENTE};background-size:${bgSize}% 100%;background-position:0 0"></div></div>
-        <div class="dg" style="color:${premio>0?'#2E7D32':'var(--muted)'}">${premio>0?`🏆 Premio actual: $${premio.toLocaleString("es-AR")}`:"Sin premio todavía (menos de 15 PDV)"}</div>
+        <div class="dg" style="font-size:12px;font-weight:600;color:${premio>0?'#2E7D32':'var(--muted)'}">${premio>0?`🏆 Premio actual: $${premio.toLocaleString("es-AR")}`:"Sin premio todavía (menos de 15 PDV)"}</div>
         ${tieneClientes?`<div id="pdvnames${i}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:11.5px;color:var(--muted);line-height:1.7">${f.clientes.map(n=>`<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:2px 9px;margin:2px 3px 2px 0">${n}</span>`).join("")}</div>`:""}
       </div>`;
     }).join("") + `</div>`;
@@ -629,12 +629,12 @@ function renderPdvSupervisores(){
     const textColor=f.gana?"#2E7D32":heatColor(f.pct);
     const bgSize=pdvBgSize(Math.max(f.pct,1));
     return `<div class="dprod" style="margin-bottom:6px">
-      <div class="ds" style="margin-bottom:6px">
-        <span style="font-weight:700;color:var(--text)">${f.gana?"✅ ":""}${f.sup} <span style="font-weight:400;color:var(--muted);font-size:11px">(${f.equipo.length} vendedores)</span></span>
+      <div class="ds" style="margin-bottom:6px;font-size:15px">
+        <span style="font-weight:800;color:var(--text)">${f.gana?"✅ ":""}${f.sup} <span style="font-weight:400;color:var(--muted);font-size:11px">(${f.equipo.length} vendedores)</span></span>
         <span style="font-weight:800;color:${textColor}">${f.logrados} / ${f.equipo.length} en meta (${f.pct}%)</span>
       </div>
       <div class="dt"><div class="df" style="width:${Math.min(f.pct,100)}%;background-image:${PDV_GRADIENTE};background-size:${bgSize}% 100%;background-position:0 0"></div></div>
-      <div class="dg" style="color:${f.gana?'#2E7D32':'var(--muted)'}">${f.gana?`🏆 Gana premio de supervisor: $${PDV_PREMIO_SUPERVISOR.toLocaleString("es-AR")}`:`Necesita ${Math.ceil(PDV_UMBRAL_SUPERVISOR*f.equipo.length)-f.logrados} vendedor(es) más en la meta para ganar`}</div>
+      <div class="dg" style="font-size:12px;font-weight:600;color:${f.gana?'#2E7D32':'var(--muted)'}">${f.gana?`🏆 Gana premio de supervisor: $${PDV_PREMIO_SUPERVISOR.toLocaleString("es-AR")}`:`Necesita ${Math.ceil(PDV_UMBRAL_SUPERVISOR*f.equipo.length)-f.logrados} vendedor(es) más en la meta para ganar`}</div>
     </div>`;
   }).join("") + `</div>`;
 }

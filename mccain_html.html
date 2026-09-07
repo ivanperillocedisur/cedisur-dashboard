@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plan McCain — Modo Objetivos</title>
+<title>Conexión McCain — Objetivos </title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -305,22 +305,26 @@ function extraerEncabezadoYFilas(text) {
   return { headers, rows, lineasPrevias: lines.slice(0, headerIdx) };
 }
 
-// El premio del mes vive en una fila ANTES del encabezado, con el mes en la
-// primera celda (ej. "AGOSTO 2026") y el texto del premio en la segunda.
+// El premio del mes (y, opcionalmente, la etiqueta del objetivo de Clientes)
+// viven en una fila ANTES del encabezado: columna A = mes (ej. "AGOSTO 2026"),
+// columna B = texto del premio, columna C (opcional) = etiqueta personalizada
+// para la tarjeta de Clientes ese mes (ej. "Clientes con compra Horneables + AirFryer").
 // Se identifica por patrón "NOMBREMES AAAA" en la primera celda, así funciona
 // sin importar en qué fila exacta quedó ubicada.
-function extraerPremiosPorMes(lineasPrevias) {
+function extraerConfigPorMes(lineasPrevias) {
   const premios = {};
+  const etiquetasClientes = {};
   const patronMes = /^[A-ZÁÉÍÓÚÑ]+\s+\d{4}$/i;
   lineasPrevias.forEach(line => {
     const celdas = splitCSVLine(line).map(c => c.trim());
     const mes = (celdas[0] || '').toUpperCase();
+    if (!patronMes.test(mes)) return;
     const texto = celdas[1] || '';
-    if (patronMes.test(mes) && texto && texto.toUpperCase() !== 'PREMIO DEL MES') {
-      premios[mes] = texto;
-    }
+    const etiqueta = celdas[2] || '';
+    if (texto && texto.toUpperCase() !== 'PREMIO DEL MES') premios[mes] = texto;
+    if (etiqueta) etiquetasClientes[mes] = etiqueta;
   });
-  return premios;
+  return { premios, etiquetasClientes };
 }
 async function fetchCSV(url) {
   const res = await fetch(url + '&_ts=' + Date.now());
@@ -335,6 +339,7 @@ function num(v) { const n = parseFloat(String(v).replace(',', '.')); return isNa
 let DATA = { objetivos: [], resumen: [], fotos: [], ventas: [], clientes: [] };
 let MES_ACTUAL = null;
 let PREMIO_TEXTO = '';
+let ETIQUETA_CLIENTES = 'Clientes con compra';
 let ENTIDADES = []; // lista para el buscador: vendedores + zonas + total
 let CLIENTES_CONECTADO = true;
 
@@ -377,11 +382,15 @@ async function cargarDatos() {
     const meses = [...new Set(DATA.objetivos.map(r => normKey(r.MES)))];
     MES_ACTUAL = meses[meses.length - 1];
 
-    // Premio del mes: fila especial ubicada antes del encabezado real
-    const premiosPorMes = extraerPremiosPorMes(objetivos.lineasPrevias);
+    // Premio del mes y etiqueta de Clientes: fila especial ubicada antes del encabezado real
+    const config = extraerConfigPorMes(objetivos.lineasPrevias);
     const premiosNorm = {};
-    Object.keys(premiosPorMes).forEach(k => premiosNorm[normKey(k)] = premiosPorMes[k]);
+    Object.keys(config.premios).forEach(k => premiosNorm[normKey(k)] = config.premios[k]);
     PREMIO_TEXTO = premiosNorm[MES_ACTUAL] || '';
+
+    const etiquetasNorm = {};
+    Object.keys(config.etiquetasClientes).forEach(k => etiquetasNorm[normKey(k)] = config.etiquetasClientes[k]);
+    ETIQUETA_CLIENTES = etiquetasNorm[MES_ACTUAL] || 'Clientes con compra';
 
     armarListaEntidades();
     document.getElementById('loadingBox').style.display = 'none';
@@ -528,7 +537,7 @@ function renderTarjeta(entidad) {
 
   const defs = [
     { key: 'kilos',    label: 'Kilos McCain',        unidad: 'kg',       icono:'🥔', tipoDetalle:'articulos' },
-    { key: 'clientes', label: 'Clientes con compra',  unidad: 'clientes', icono:'🧾', tipoDetalle:'clientesCompra' },
+    { key: 'clientes', label: ETIQUETA_CLIENTES,      unidad: 'clientes', icono:'🧾', tipoDetalle:'clientesCompra' },
     { key: 'fotos',    label: 'Fotos POP',            unidad: 'fotos',    icono:'📸', tipoDetalle:'clientesFotos' },
   ];
 
@@ -570,7 +579,7 @@ function renderTarjeta(entidad) {
     } else if (def.tipoDetalle === 'clientesFotos') {
       detalleHtml = `
         <details class="breakdown">
-          <summary>Ver quién compartió foto</summary>
+          <summary>Ver quién compartió foto en el PDV</summary>
           ${v.listaClientesFotos.length
             ? v.listaClientesFotos.map(c => `<div class="art-row"><span class="art-name">${c}</span></div>`).join('')
             : '<div class="art-row"><span class="art-name">Sin clientes cargados todavía.</span></div>'}

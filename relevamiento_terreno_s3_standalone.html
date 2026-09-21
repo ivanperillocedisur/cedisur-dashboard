@@ -300,7 +300,7 @@ function emptyDay(){
   return {
     conectividadProblema: null, conectividadDetalle: '',
     clientesMalAsignados: '', objeciones: '',
-    usoCanasta: null, canastaTipo: '', canastaFacilidad: null, canastaFeedback: '',
+    canastaVisitas: [],
     totalTareasAsignadas: '', calificacionGestor: null,
     tareaFaltante: '', duplicadas: null, duplicadasDetalle: '',
     performanceProblema: null, performanceDetalle: '',
@@ -323,7 +323,7 @@ function esc(s){ const d=document.createElement('div'); d.textContent=s||''; ret
 function isDayStarted(d){
   const acts = data[d];
   return acts.tareas.length>0 || acts.notaCierre.trim() || acts.objeciones.trim() ||
-         acts.clientesMalAsignados.trim() || acts.usoCanasta!==null || acts.voces.length>0;
+         acts.clientesMalAsignados.trim() || acts.canastaVisitas.length>0 || acts.voces.length>0;
 }
 
 function renderTabs(){
@@ -346,6 +346,37 @@ function render(){
   const d = data[currentDay];
   const dayMeta = DAYS.find(x=>x.id===currentDay);
   const main = document.getElementById('main');
+
+  const CANASTA_TIPOS = ['Base','Foco','Exploratoria','Innovación','Destacados'];
+  const canastasHtml = d.canastaVisitas.map((c,i)=>{
+    if(c.guardada){
+      const resumenBits = [
+        c.tipos && c.tipos.length ? c.tipos.join(', ') : '(sin canasta elegida)',
+        c.facilidad ? 'facilidad: '+c.facilidad+'/5' : null,
+      ].filter(Boolean).join(' · ');
+      return `
+      <div class="tarea-item tarea-compacta" data-edit-canasta="${i}">
+        <span class="ti-compacta-txt">${esc(resumenBits)}</span>
+        <button class="ti-del" data-del-canasta="${i}">✕</button>
+      </div>`;
+    }
+    return `
+    <div class="tarea-item">
+      <button class="ti-del" data-del-canasta="${i}">✕</button>
+      <div class="ti-num">Visita ${i+1}</div>
+      <label>¿Qué canasta o canastas se usaron?</label>
+      <div class="btn-row">
+        ${CANASTA_TIPOS.map(v=>`<div class="chip ${(c.tipos||[]).includes(v)?'on':''}" data-c="${i}" data-cf="tipos" data-cv="${v}" style="flex:0 0 auto;min-width:0;padding:8px 10px;">${v}</div>`).join('')}
+      </div>
+      <label>Facilidad para encontrar/aplicar la recomendación (1 a 5)</label>
+      <div class="btn-row">
+        ${[1,2,3,4,5].map(n=>`<div class="chip ${c.facilidad===n?'on':''}" data-c="${i}" data-cf="facilidad" data-cv="${n}" style="flex:1;">${n}</div>`).join('')}
+      </div>
+      <label>Feedback del vendedor</label>
+      <input type="text" data-c="${i}" data-cf="feedback" value="${esc(c.feedback||'')}" placeholder="Qué le sirve, qué le sobra, qué le falta...">
+      <button class="btn-guardar-tarea" data-guardar-canasta="${i}">GUARDAR</button>
+    </div>`;
+  }).join('') || '<div class="empty-state">Todavía no cargaste ninguna visita de canasta.</div>';
 
   const tareasHtml = d.tareas.map((t,i)=>{
     if(t.guardada){
@@ -434,20 +465,9 @@ function render(){
 
     <div class="card">
       <h2>Canastas (Eje 1)</h2>
-      <label>¿Usó alguna canasta en esta visita?</label>
-      <div class="btn-row">
-        ${['Sí','No'].map(v=>`<div class="chip ${d.usoCanasta===v?'on '+(v==='Sí'?'pos':'neg'):''}" data-f="usoCanasta" data-v="${v}">${v}</div>`).join('')}
-      </div>
-      <label>¿Cuál?</label>
-      <div class="btn-row">
-        ${['Base','Foco','Exploratoria','Innovación','Destacados'].map(v=>`<div class="chip ${d.canastaTipo===v?'on':''}" data-f="canastaTipo" data-v="${v}" style="flex:0 0 auto;min-width:0;padding:8px 10px;">${v}</div>`).join('')}
-      </div>
-      <label>Facilidad para encontrar/aplicar la recomendación (1 a 5)</label>
-      <div class="btn-row">
-        ${[1,2,3,4,5].map(n=>`<div class="chip ${d.canastaFacilidad===n?'on':''}" data-f="canastaFacilidad" data-v="${n}" style="flex:1;">${n}</div>`).join('')}
-      </div>
-      <label>Feedback del vendedor sobre la canasta</label>
-      <div class="field-wrap"><textarea data-f="canastaFeedback" data-mic="1" placeholder="Qué le sirve, qué le sobra, qué le falta...">${esc(d.canastaFeedback)}</textarea></div>
+      <div class="hint">Cargá una entrada por cada visita en la que se hable de canastas.</div>
+      <div id="canastasWrap">${canastasHtml}</div>
+      <button class="add-btn" id="btnAddCanasta">+ Agregar visita de canasta</button>
 
       <label>¿Tuvo problemas de performance o carga de la app?</label>
       <div class="btn-row">
@@ -499,6 +519,48 @@ function bindEvents(){
       });
     } else {
       el.addEventListener('input', ()=>{ field(currentDay, el.dataset.f, el.value); });
+    }
+  });
+
+  document.getElementById('btnAddCanasta').addEventListener('click', ()=>{
+    d.canastaVisitas.push({tipos:[], facilidad:null, feedback:'', guardada:false});
+    saveAll(); render();
+  });
+  document.querySelectorAll('[data-del-canasta]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      d.canastaVisitas.splice(Number(btn.dataset.delCanasta),1);
+      saveAll(); render();
+    });
+  });
+  document.querySelectorAll('[data-guardar-canasta]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      d.canastaVisitas[Number(btn.dataset.guardarCanasta)].guardada = true;
+      saveAll(); render();
+    });
+  });
+  document.querySelectorAll('[data-edit-canasta]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      d.canastaVisitas[Number(el.dataset.editCanasta)].guardada = false;
+      render();
+    });
+  });
+  document.querySelectorAll('[data-c][data-cf]').forEach(el=>{
+    const i = Number(el.dataset.c), f = el.dataset.cf;
+    if(el.classList.contains('chip')){
+      el.addEventListener('click', ()=>{
+        const v = f==='facilidad' ? Number(el.dataset.cv) : el.dataset.cv;
+        const cv = d.canastaVisitas[i];
+        if(f==='tipos'){
+          if(!cv.tipos) cv.tipos = [];
+          cv.tipos = cv.tipos.includes(v) ? cv.tipos.filter(x=>x!==v) : [...cv.tipos, v];
+        } else {
+          cv[f] = cv[f]===v ? null : v;
+        }
+        saveAll(); render();
+      });
+    } else {
+      el.addEventListener('input', ()=>{ d.canastaVisitas[i][f]=el.value; saveAll(); });
     }
   });
 
@@ -654,8 +716,12 @@ function buildResumenTexto(){
     if(d.conectividadProblema) out += `\nConectividad: ${d.conectividadProblema}${d.conectividadDetalle?' — '+d.conectividadDetalle:''}\n`;
     if(d.clientesMalAsignados.trim()) out += `\nClientes mal asignados / tareas irrisorias:\n${d.clientesMalAsignados.trim()}\n`;
     if(d.objeciones.trim()) out += `\nObjeciones del vendedor:\n${d.objeciones.trim()}\n`;
-    if(d.usoCanasta) out += `\nUso de canasta: ${d.usoCanasta}${d.canastaTipo?' ('+d.canastaTipo+')':''}${d.canastaFacilidad?' | facilidad: '+d.canastaFacilidad+'/5':''}\n`;
-    if(d.canastaFeedback.trim()) out += `Feedback canasta: ${d.canastaFeedback.trim()}\n`;
+    if(d.canastaVisitas.length){
+      out += `\nVisitas de canasta (${d.canastaVisitas.length}):\n`;
+      d.canastaVisitas.forEach((c,i)=>{
+        out += `${i+1}. ${(c.tipos||[]).join(', ')||'(sin elegir)'} | facilidad: ${c.facilidad||'-'}/5${c.feedback?' | feedback: '+c.feedback:''}\n`;
+      });
+    }
     if(d.performanceProblema) out += `Problemas de performance/carga: ${d.performanceProblema}${d.performanceDetalle.trim()?' — '+d.performanceDetalle.trim():''}\n`;
     if(d.totalTareasAsignadas) out += `\nTotal de tareas asignadas ese día: ${d.totalTareasAsignadas}\n`;
     if(d.calificacionGestor) out += `Calificación del vendedor sobre el gestor: ${d.calificacionGestor}/5\n`;
@@ -678,7 +744,15 @@ function buildResumenTSV(){
     });
   });
   rows.push('');
-  rows.push(['Dia','Vendedor','ConectividadOK','ClientesMalAsignados','Objeciones','UsoCanasta','TipoCanasta','FacilidadCanasta','FeedbackCanasta','TotalTareasAsignadas','CalifGestor','TareaFaltante','Duplicadas','ProblemaPerformance','NotaCierre'].join('\t'));
+  rows.push(['Dia','Vendedor','#Visita','CanastasUsadas','Facilidad','Feedback'].join('\t'));
+  DAYS.forEach(dm=>{
+    const d = data[dm.id];
+    d.canastaVisitas.forEach((c,i)=>{
+      rows.push([dm.dow, dm.vendedor, i+1, (c.tipos||[]).join('/'), c.facilidad||'', (c.feedback||'').replace(/\t/g,' ')].join('\t'));
+    });
+  });
+  rows.push('');
+  rows.push(['Dia','Vendedor','ConectividadOK','ClientesMalAsignados','Objeciones','CantidadVisitasCanasta','TotalTareasAsignadas','CalifGestor','TareaFaltante','Duplicadas','ProblemaPerformance','NotaCierre'].join('\t'));
   DAYS.forEach(dm=>{
     const d = data[dm.id];
     if(!isDayStarted(dm.id)) return;
@@ -687,8 +761,7 @@ function buildResumenTSV(){
       d.conectividadProblema==='No' ? 'Si' : (d.conectividadProblema==='Sí' ? 'No' : ''),
       (d.clientesMalAsignados||'').replace(/\n/g,' '),
       (d.objeciones||'').replace(/\n/g,' '),
-      d.usoCanasta||'', d.canastaTipo||'', d.canastaFacilidad||'',
-      (d.canastaFeedback||'').replace(/\n/g,' '),
+      d.canastaVisitas.length||'',
       d.totalTareasAsignadas||'', d.calificacionGestor||'',
       (d.tareaFaltante||'').replace(/\n/g,' '),
       d.duplicadas||'',

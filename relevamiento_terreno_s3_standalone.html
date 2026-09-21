@@ -93,6 +93,18 @@
     font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;
     color:var(--violet);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;
   }
+  .tarea-item.tarea-compacta{
+    display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;
+  }
+  .tarea-item.tarea-compacta .ti-compacta-txt{
+    flex:1;font-size:12.5px;color:var(--text);font-weight:600;
+  }
+  .tarea-item.tarea-compacta .ti-del{position:static;flex-shrink:0;}
+  .btn-guardar-tarea{
+    width:100%;margin-top:12px;border:none;border-radius:8px;padding:11px;
+    background:var(--green);color:#fff;font-family:'Barlow Condensed',sans-serif;
+    font-weight:800;letter-spacing:.08em;font-size:13px;cursor:pointer;
+  }
   .ti-del{
     position:absolute;top:8px;right:8px;border:none;background:none;
     color:var(--text-muted);font-size:15px;cursor:pointer;padding:2px 6px;
@@ -335,10 +347,27 @@ function render(){
   const dayMeta = DAYS.find(x=>x.id===currentDay);
   const main = document.getElementById('main');
 
-  const tareasHtml = d.tareas.map((t,i)=>`
+  const tareasHtml = d.tareas.map((t,i)=>{
+    if(t.guardada){
+      const resumenBits = [
+        t.cliente ? esc(t.cliente) : null,
+        t.tipo ? esc(t.tipo) : '(sin tipo)',
+        t.aplica ? 'aplica: '+t.aplica : null,
+        t.venta ? 'venta: '+t.venta : null,
+        t.tiempo ? t.tiempo+' min' : null,
+      ].filter(Boolean).join(' · ');
+      return `
+      <div class="tarea-item tarea-compacta" data-edit-tarea="${i}">
+        <span class="ti-compacta-txt">${resumenBits || 'Tarea '+(i+1)}</span>
+        <button class="ti-del" data-del-tarea="${i}">✕</button>
+      </div>`;
+    }
+    return `
     <div class="tarea-item">
       <button class="ti-del" data-del-tarea="${i}">✕</button>
       <div class="ti-num">Tarea ${i+1}</div>
+      <label>Cliente (nombre o código)</label>
+      <input type="text" data-t="${i}" data-tf="cliente" value="${esc(t.cliente||'')}" placeholder="Ej: 4821 - Kiosco Don José">
       <label>Tipo de tarea</label>
       <input type="text" data-t="${i}" data-tf="tipo" value="${esc(t.tipo)}" placeholder="Ej: ofrecer combo, recuperar cliente...">
       <label>¿Aplicaba al cliente?</label>
@@ -363,7 +392,9 @@ function render(){
       <div class="btn-row">
         ${['Sí','No','No aplica'].map(v=>`<div class="chip ${t.monto===v?'on '+(v==='Sí'?'pos':v==='No'?'neg':'mid'):''}" data-t="${i}" data-tf="monto" data-tv="${v}">${v}</div>`).join('')}
       </div>
-    </div>`).join('') || '<div class="empty-state">Todavía no cargaste ninguna tarea de este día.</div>';
+      <button class="btn-guardar-tarea" data-guardar-tarea="${i}">GUARDAR</button>
+    </div>`;
+  }).join('') || '<div class="empty-state">Todavía no cargaste ninguna tarea de este día.</div>';
 
   const vocesHtml = d.voces.map((v,i)=>`
     <div class="voice-note">
@@ -402,20 +433,6 @@ function render(){
     </div>
 
     <div class="card">
-      <h2>Conectividad y ruteo</h2>
-      <label>¿Hubo problemas de conectividad?</label>
-      <div class="btn-row">
-        ${['Sí','No'].map(v=>`<div class="chip ${d.conectividadProblema===v?'on '+(v==='Sí'?'neg':'pos'):''}" data-f="conectividadProblema" data-v="${v}">${v}</div>`).join('')}
-      </div>
-      <label>Detalle (opcional)</label>
-      <div class="field-wrap"><textarea data-f="conectividadDetalle" data-mic="1" placeholder="Qué pasó, en qué momento...">${esc(d.conectividadDetalle)}</textarea></div>
-      <label>Clientes mal asignados o tareas irrisorias</label>
-      <div class="field-wrap"><textarea data-f="clientesMalAsignados" data-mic="1" placeholder="Ej: le apareció ofrecer papas prefritas a una panadería...">${esc(d.clientesMalAsignados)}</textarea></div>
-      <label>Objeciones del vendedor</label>
-      <div class="field-wrap"><textarea data-f="objeciones" data-mic="1" placeholder="Qué le costó, qué no le convenció...">${esc(d.objeciones)}</textarea></div>
-    </div>
-
-    <div class="card">
       <h2>Canastas (Eje 1)</h2>
       <label>¿Usó alguna canasta en esta visita?</label>
       <div class="btn-row">
@@ -437,6 +454,20 @@ function render(){
         ${['Sí','No'].map(v=>`<div class="chip ${d.performanceProblema===v?'on '+(v==='Sí'?'neg':'pos'):''}" data-f="performanceProblema" data-v="${v}">${v}</div>`).join('')}
       </div>
       <div class="field-wrap"><textarea data-f="performanceDetalle" data-mic="1" placeholder="En qué momento, qué pantalla...">${esc(d.performanceDetalle)}</textarea></div>
+    </div>
+
+    <div class="card">
+      <h2>Conectividad y ruteo</h2>
+      <label>¿Hubo problemas de conectividad?</label>
+      <div class="btn-row">
+        ${['Sí','No'].map(v=>`<div class="chip ${d.conectividadProblema===v?'on '+(v==='Sí'?'neg':'pos'):''}" data-f="conectividadProblema" data-v="${v}">${v}</div>`).join('')}
+      </div>
+      <label>Detalle (opcional)</label>
+      <div class="field-wrap"><textarea data-f="conectividadDetalle" data-mic="1" placeholder="Qué pasó, en qué momento...">${esc(d.conectividadDetalle)}</textarea></div>
+      <label>Clientes mal asignados o tareas irrisorias</label>
+      <div class="field-wrap"><textarea data-f="clientesMalAsignados" data-mic="1" placeholder="Ej: le apareció ofrecer papas prefritas a una panadería...">${esc(d.clientesMalAsignados)}</textarea></div>
+      <label>Objeciones del vendedor</label>
+      <div class="field-wrap"><textarea data-f="objeciones" data-mic="1" placeholder="Qué le costó, qué no le convenció...">${esc(d.objeciones)}</textarea></div>
     </div>
 
     <div class="card">
@@ -472,13 +503,26 @@ function bindEvents(){
   });
 
   document.getElementById('btnAddTarea').addEventListener('click', ()=>{
-    d.tareas.push({tipo:'', aplica:null, resolucion:'', tiempo:'', venta:null, monto:null});
+    d.tareas.push({cliente:'', tipo:'', aplica:null, resolucion:'', tiempo:'', venta:null, monto:null, guardada:false});
     saveAll(); render();
   });
   document.querySelectorAll('[data-del-tarea]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
       d.tareas.splice(Number(btn.dataset.delTarea),1);
       saveAll(); render();
+    });
+  });
+  document.querySelectorAll('[data-guardar-tarea]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      d.tareas[Number(btn.dataset.guardarTarea)].guardada = true;
+      saveAll(); render();
+    });
+  });
+  document.querySelectorAll('[data-edit-tarea]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      d.tareas[Number(el.dataset.editTarea)].guardada = false;
+      render();
     });
   });
   document.querySelectorAll('[data-t][data-tf]').forEach(el=>{
@@ -604,7 +648,7 @@ function buildResumenTexto(){
     if(d.tareas.length){
       out += `\nTareas revisadas (${d.tareas.length}):\n`;
       d.tareas.forEach((t,i)=>{
-        out += `${i+1}. ${t.tipo||'(sin tipo)'} — aplica: ${t.aplica||'-'} | resolución: ${t.resolucion||'-'} | tiempo: ${t.tiempo||'-'} min | venta: ${t.venta||'-'} | aumentó monto: ${t.monto||'-'}\n`;
+        out += `${i+1}. ${t.cliente?('['+t.cliente+'] '):''}${t.tipo||'(sin tipo)'} — aplica: ${t.aplica||'-'} | resolución: ${t.resolucion||'-'} | tiempo: ${t.tiempo||'-'} min | venta: ${t.venta||'-'} | aumentó monto: ${t.monto||'-'}\n`;
       });
     }
     if(d.conectividadProblema) out += `\nConectividad: ${d.conectividadProblema}${d.conectividadDetalle?' — '+d.conectividadDetalle:''}\n`;
@@ -624,13 +668,13 @@ function buildResumenTexto(){
 }
 
 function buildResumenTSV(){
-  const headers = ['Dia','Vendedor','#Tarea','Tipo','Aplica','Resolucion','Tiempo(min)','Venta','AumentoMonto'];
+  const headers = ['Dia','Vendedor','#Tarea','Cliente','Tipo','Aplica','Resolucion','Tiempo(min)','Venta','AumentoMonto'];
   let rows = [headers.join('\t')];
   DAYS.forEach(dm=>{
     const d = data[dm.id];
     if(!d.tareas.length) return;
     d.tareas.forEach((t,i)=>{
-      rows.push([dm.dow, dm.vendedor, i+1, t.tipo||'', t.aplica||'', t.resolucion||'', t.tiempo||'', t.venta||'', t.monto||''].join('\t'));
+      rows.push([dm.dow, dm.vendedor, i+1, t.cliente||'', t.tipo||'', t.aplica||'', t.resolucion||'', t.tiempo||'', t.venta||'', t.monto||''].join('\t'));
     });
   });
   rows.push('');

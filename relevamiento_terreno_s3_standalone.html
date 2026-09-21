@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Relevamiento en Terreno — Semana 3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap');
+  :root{
+    --navy:#2B3A8A; --navy-dark:#1A2260; --violet:#613bc0;
+    --bg:#F0F2F8; --panel:#FFFFFF; --border:#D8DCF0;
+    --text:#1A1F3A; --text-muted:#6B74A0;
+    --green:#00897B; --green-bg:#E0F2F1;
+    --red:#C62828; --red-bg:#FFEBEE;
+    --amber:#C25E00; --amber-bg:#FFF3E0;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  :root:not([data-theme="light"]){ }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14161f; --panel:#1c1f2c; --border:#2b2f42;
+      --text:#eef0fa; --text-muted:#9aa0c2;
+      --green-bg:#0d2b27; --red-bg:#341415; --amber-bg:#332008;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14161f; --panel:#1c1f2c; --border:#2b2f42;
+    --text:#eef0fa; --text-muted:#9aa0c2;
+    --green-bg:#0d2b27; --red-bg:#341415; --amber-bg:#332008;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    margin:0;font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);
+    font-size:14px;line-height:1.4;
+  }
+  header{
+    position:sticky;top:0;z-index:20;
+    background:var(--navy);color:#fff;
+    padding:calc(14px + env(safe-area-inset-top,0px)) 16px 0;
+  }
+  header h1{
+    font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;
+    margin:0 0 2px;letter-spacing:.2px;
+  }
+  header .sub{font-size:11.5px;color:rgba(255,255,255,.7);margin-bottom:12px;}
+  .day-tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:0;}
+  .day-tab{
+    flex:1;min-width:76px;text-align:center;padding:9px 4px 10px;
+    font-family:'Barlow Condensed',sans-serif;font-size:12.5px;font-weight:700;
+    color:rgba(255,255,255,.65);border-bottom:3px solid transparent;cursor:pointer;
+    white-space:nowrap;
+  }
+  .day-tab .dt-day{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.8;}
+  .day-tab.active{color:#fff;border-bottom-color:var(--violet);}
+  .day-tab.done::after{content:' ✓';color:#7CE0C6;}
+
+  main{padding:14px 14px 90px;max-width:640px;margin:0 auto;}
+  .card{
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:14px 15px;margin-bottom:14px;
+  }
+  .card h2{
+    font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;
+    color:var(--navy);margin:0 0 3px;text-transform:uppercase;letter-spacing:.06em;
+  }
+  :root[data-theme="dark"] .card h2, @media (prefers-color-scheme:dark){.card h2{color:#8fa0e6;}}
+  .card .hint{font-size:11.5px;color:var(--text-muted);margin-bottom:10px;}
+  label{display:block;font-size:11.5px;font-weight:700;color:var(--text-muted);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.05em;}
+  label:first-of-type{margin-top:0;}
+  textarea, input[type=text], input[type=number], select{
+    width:100%;font-family:inherit;font-size:14px;padding:9px 10px;
+    border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);
+  }
+  textarea{min-height:64px;resize:vertical;}
+  .btn-row{display:flex;gap:7px;flex-wrap:wrap;}
+  .chip{
+    flex:1;min-width:64px;text-align:center;padding:9px 6px;border-radius:8px;
+    border:1.5px solid var(--border);background:var(--bg);color:var(--text-muted);
+    font-size:12.5px;font-weight:700;cursor:pointer;
+  }
+  .chip.on{border-color:var(--navy);background:var(--navy);color:#fff;}
+  .chip.on.pos{border-color:var(--green);background:var(--green);}
+  .chip.on.neg{border-color:var(--red);background:var(--red);}
+  .chip.on.mid{border-color:var(--amber);background:var(--amber);}
+
+  .tarea-item{
+    border:1px solid var(--border);border-radius:10px;padding:11px 12px;margin-bottom:10px;
+    background:var(--bg);position:relative;
+  }
+  .tarea-item .ti-num{
+    font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;
+    color:var(--violet);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;
+  }
+  .ti-del{
+    position:absolute;top:8px;right:8px;border:none;background:none;
+    color:var(--text-muted);font-size:15px;cursor:pointer;padding:2px 6px;
+  }
+  .add-btn{
+    width:100%;border:1.5px dashed var(--border);background:transparent;color:var(--navy);
+    padding:10px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;
+  }
+  :root[data-theme="dark"] .add-btn{color:#8fa0e6;}
+
+  .voice-row{display:flex;align-items:center;gap:8px;margin-top:10px;}
+  .voice-btn{
+    flex-shrink:0;width:40px;height:40px;border-radius:50%;border:none;
+    background:var(--red);color:#fff;font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .voice-btn.recording{animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.5);}50%{box-shadow:0 0 0 8px rgba(198,40,40,0);}}
+  .voice-status{font-size:12px;color:var(--text-muted);flex:1;}
+  .voice-note{
+    display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);
+    border-radius:8px;padding:6px 10px;margin-top:8px;
+  }
+  .voice-note audio{flex:1;height:32px;}
+  .voice-del{border:none;background:none;color:var(--text-muted);font-size:14px;cursor:pointer;}
+
+  .save-strip{
+    position:fixed;left:0;right:0;bottom:0;z-index:20;
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));
+    background:var(--panel);border-top:1px solid var(--border);
+    display:flex;gap:8px;align-items:center;
+  }
+  .save-strip .status{font-size:11.5px;color:var(--text-muted);flex:1;}
+  .save-strip button{
+    font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.05em;
+    text-transform:uppercase;font-size:12.5px;border:none;border-radius:8px;
+    padding:11px 16px;cursor:pointer;
+  }
+  .btn-copy{background:var(--violet);color:#fff;}
+  .empty-state{text-align:center;color:var(--text-muted);font-size:12.5px;padding:14px;}
+
+  .toast{
+    position:fixed;bottom:66px;left:50%;transform:translateX(-50%);
+    background:var(--text);color:var(--panel);padding:8px 16px;border-radius:20px;
+    font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50;
+  }
+  .toast.show{opacity:1;}
+
+  .field-wrap{position:relative;}
+  .mic-btn{
+    position:absolute;top:26px;right:6px;width:26px;height:26px;border-radius:50%;
+    border:none;background:var(--panel);color:var(--text-muted);font-size:12px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:0 0 0 1px var(--border);
+  }
+  .mic-btn.listening{background:var(--red);color:#fff;box-shadow:none;}
+  .field-wrap textarea, .field-wrap input[type=text]{padding-right:36px;}
+  .status.cloud{color:var(--green);}
+  .status.local{color:var(--amber);}
+
+  .settings-btn{
+    position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:10px;z-index:30;
+    width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.35);
+    background:rgba(255,255,255,.12);color:#fff;font-size:14px;cursor:pointer;
+  }
+  .settings-modal{
+    position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .settings-modal.open{display:flex;}
+  .settings-box{
+    background:var(--panel);border-radius:12px;padding:18px;width:100%;max-width:420px;
+  }
+  .settings-box h3{font-family:'Barlow Condensed',sans-serif;font-size:16px;margin:0 0 6px;color:var(--navy);}
+  .settings-box p{font-size:12px;color:var(--text-muted);margin:0 0 10px;line-height:1.5;}
+  .settings-box input{margin-bottom:10px;}
+  .settings-actions{display:flex;gap:8px;justify-content:flex-end;}
+  .settings-actions button{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12.5px;
+    text-transform:uppercase;border-radius:8px;padding:9px 14px;cursor:pointer;border:none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Relevamiento en terreno</h1>
+  <div class="sub">Semana 3 · Ejes 1 y 2 · grupo piloto</div>
+  <div class="day-tabs" id="dayTabs"></div>
+</header>
+
+<button class="settings-btn" id="btnSettings">⚙</button>
+<div class="settings-modal" id="settingsModal">
+  <div class="settings-box">
+    <h3>Sincronización con Google Sheets</h3>
+    <p>Pegá acá la URL del Web App de Apps Script conectado a tu planilla (ver instrucciones que te dio Claude). Se guarda en este navegador y no hace falta cargarla de nuevo.</p>
+    <input type="text" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+    <div class="settings-actions">
+      <button id="btnSettingsCancel" style="background:var(--bg);color:var(--text);">Cerrar</button>
+      <button id="btnSettingsSave" style="background:var(--navy);color:#fff;">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<div class="save-strip">
+  <span class="status" id="saveStatus">Guardado automático en este teléfono</span>
+  <button class="btn-copy" id="btnSheets" style="background:var(--green);">Copiar p/ Sheets</button>
+  <button class="btn-copy" id="btnCopy">Copiar resumen</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS = [
+  {id:'mar', dow:'Martes 22', vendedor:'Pablo Figueroa'},
+  {id:'mie', dow:'Miércoles 23', vendedor:'José Martinez'},
+  {id:'jue', dow:'Jueves 24', vendedor:'Miguel Escales'},
+  {id:'vie', dow:'Viernes 25', vendedor:'Samuel Arenas'},
+];
+const STORE_KEY = 'relevamiento_s3_v1';
+
+function loadAll(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+
+const SHEETS_URL_KEY = 'relevamiento_sheets_url';
+let sheetsSyncTimer = null;
+let lastSyncOK = null; // null=nunca, true/false segun ultimo intento
+
+function saveAll(dayId){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }catch(e){
+    showToast('No se pudo guardar localmente (memoria llena)');
+  }
+  updateSaveStatus();
+  scheduleSheetsSync();
+}
+
+function getSheetsUrl(){
+  return (localStorage.getItem(SHEETS_URL_KEY) || '').trim();
+}
+function setSheetsUrl(url){
+  localStorage.setItem(SHEETS_URL_KEY, url.trim());
+  updateSaveStatus();
+}
+
+function scheduleSheetsSync(){
+  const url = getSheetsUrl();
+  if(!url) return;
+  clearTimeout(sheetsSyncTimer);
+  sheetsSyncTimer = setTimeout(syncToSheets, 1200);
+}
+
+async function syncToSheets(){
+  const url = getSheetsUrl();
+  if(!url) return;
+  try{
+    const payload = { dias: data, enviadoEn: new Date().toISOString() };
+    const res = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    lastSyncOK = res.ok;
+  }catch(e){
+    lastSyncOK = false;
+  }
+  updateSaveStatus();
+}
+
+function updateSaveStatus(){
+  const el = document.getElementById('saveStatus');
+  if(!el) return;
+  const url = getSheetsUrl();
+  if(!url){
+    el.textContent = 'Guardado en este dispositivo — Sheets no configurado (⚙)';
+    el.className = 'status local';
+  } else if(lastSyncOK === true){
+    el.textContent = 'Guardado en el dispositivo y sincronizado con Sheets ✓';
+    el.className = 'status cloud';
+  } else if(lastSyncOK === false){
+    el.textContent = 'Guardado en el dispositivo — no se pudo sincronizar con Sheets';
+    el.className = 'status local';
+  } else {
+    el.textContent = 'Guardado en el dispositivo — sincronizando con Sheets...';
+    el.className = 'status local';
+  }
+}
+function emptyDay(){
+  return {
+    conectividadProblema: null, conectividadDetalle: '',
+    clientesMalAsignados: '', objeciones: '',
+    usoCanasta: null, canastaTipo: '', canastaFacilidad: null, canastaFeedback: '',
+    totalTareasAsignadas: '', calificacionGestor: null,
+    tareaFaltante: '', duplicadas: null, duplicadasDetalle: '',
+    performanceProblema: null, performanceDetalle: '',
+    notaCierre: '', tareas: [], voces: [],
+  };
+}
+let data = loadAll();
+DAYS.forEach(d=>{ if(!data[d.id]) data[d.id] = emptyDay(); });
+saveAll();
+
+let currentDay = DAYS[0].id;
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1600);
+}
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+function isDayStarted(d){
+  const acts = data[d];
+  return acts.tareas.length>0 || acts.notaCierre.trim() || acts.objeciones.trim() ||
+         acts.clientesMalAsignados.trim() || acts.usoCanasta!==null || acts.voces.length>0;
+}
+
+function renderTabs(){
+  const wrap = document.getElementById('dayTabs');
+  wrap.innerHTML = DAYS.map(d=>`
+    <div class="day-tab ${d.id===currentDay?'active':''} ${isDayStarted(d.id)?'done':''}" data-day="${d.id}">
+      <span class="dt-day">${esc(d.dow.split(' ')[0])} ${esc(d.dow.split(' ')[1])}</span>${esc(d.vendedor.split(' ')[0])}
+    </div>`).join('');
+  wrap.querySelectorAll('[data-day]').forEach(el=>{
+    el.addEventListener('click', ()=>{ currentDay = el.dataset.day; render(); });
+  });
+}
+
+function field(dayId, key, value){
+  data[dayId][key] = value; saveAll(dayId); renderTabs();
+}
+
+function render(){
+  renderTabs();
+  const d = data[currentDay];
+  const dayMeta = DAYS.find(x=>x.id===currentDay);
+  const main = document.getElementById('main');
+
+  const tareasHtml = d.tareas.map((t,i)=>`
+    <div class="tarea-item">
+      <button class="ti-del" data-del-tarea="${i}">✕</button>
+      <div class="ti-num">Tarea ${i+1}</div>
+      <label>Tipo de tarea</label>
+      <input type="text" data-t="${i}" data-tf="tipo" value="${esc(t.tipo)}" placeholder="Ej: ofrecer combo, recuperar cliente...">
+      <label>¿Aplicaba al cliente?</label>
+      <div class="btn-row">
+        ${['Sí','Parcial','No'].map(v=>`<div class="chip ${t.aplica===v?'on '+(v==='Sí'?'pos':v==='No'?'neg':'mid'):''}" data-t="${i}" data-tf="aplica" data-tv="${v}">${v}</div>`).join('')}
+      </div>
+      <label>¿Cómo se resolvió?</label>
+      <select data-t="${i}" data-tf="resolucion">
+        <option value="" ${!t.resolucion?'selected':''}>Elegir...</option>
+        <option value="tal-cual" ${t.resolucion==='tal-cual'?'selected':''}>Tal cual la sugería el gestor</option>
+        <option value="distinto" ${t.resolucion==='distinto'?'selected':''}>Se resolvió distinto (llamada, otro día, etc.)</option>
+        <option value="movida" ${t.resolucion==='movida'?'selected':''}>Se movió a otro día</option>
+        <option value="no-hecha" ${t.resolucion==='no-hecha'?'selected':''}>No se hizo</option>
+      </select>
+      <label>Tiempo aproximado (minutos)</label>
+      <input type="number" min="0" data-t="${i}" data-tf="tiempo" value="${t.tiempo||''}" placeholder="Ej: 5">
+      <label>¿Se concretó venta?</label>
+      <div class="btn-row">
+        ${['Sí','No'].map(v=>`<div class="chip ${t.venta===v?'on '+(v==='Sí'?'pos':'neg'):''}" data-t="${i}" data-tf="venta" data-tv="${v}">${v}</div>`).join('')}
+      </div>
+      <label>¿Aumentó el monto del pedido por la tarea?</label>
+      <div class="btn-row">
+        ${['Sí','No','No aplica'].map(v=>`<div class="chip ${t.monto===v?'on '+(v==='Sí'?'pos':v==='No'?'neg':'mid'):''}" data-t="${i}" data-tf="monto" data-tv="${v}">${v}</div>`).join('')}
+      </div>
+    </div>`).join('') || '<div class="empty-state">Todavía no cargaste ninguna tarea de este día.</div>';
+
+  const vocesHtml = d.voces.map((v,i)=>`
+    <div class="voice-note">
+      <audio controls src="${v.dataUrl}"></audio>
+      <button class="voice-del" data-del-voz="${i}">✕</button>
+    </div>`).join('');
+
+  main.innerHTML = `
+    <div class="card">
+      <h2>${esc(dayMeta.dow)}</h2>
+      <div class="hint">Salida con ${esc(dayMeta.vendedor)}</div>
+    </div>
+
+    <div class="card">
+      <h2>Gestor de tareas (Eje 2)</h2>
+      <div class="hint">Cargá una entrada por cada tarea que revisen juntos durante la visita.</div>
+      <div id="tareasWrap">${tareasHtml}</div>
+      <button class="add-btn" id="btnAddTarea">+ Agregar tarea revisada</button>
+
+      <label>Total de tareas asignadas al vendedor ese día</label>
+      <input type="number" min="0" data-f="totalTareasAsignadas" value="${d.totalTareasAsignadas}" placeholder="Ej: 8 (aunque solo revisen algunas juntos)">
+
+      <label>Calificación general del vendedor sobre el gestor (1 a 5)</label>
+      <div class="btn-row">
+        ${[1,2,3,4,5].map(n=>`<div class="chip ${d.calificacionGestor===n?'on':''}" data-f="calificacionGestor" data-v="${n}" style="flex:1;">${n}</div>`).join('')}
+      </div>
+
+      <label>¿Identificó alguna tarea que debería existir y no está contemplada?</label>
+      <div class="field-wrap"><textarea data-f="tareaFaltante" data-mic="1" placeholder="Ej: no hay tarea para avisar vencimiento de mercadería...">${esc(d.tareaFaltante)}</textarea></div>
+
+      <label>¿Hubo tareas duplicadas o contradictorias para el mismo cliente?</label>
+      <div class="btn-row">
+        ${['Sí','No'].map(v=>`<div class="chip ${d.duplicadas===v?'on '+(v==='Sí'?'neg':'pos'):''}" data-f="duplicadas" data-v="${v}">${v}</div>`).join('')}
+      </div>
+      <div class="field-wrap"><textarea data-f="duplicadasDetalle" data-mic="1" placeholder="Detalle si corresponde...">${esc(d.duplicadasDetalle)}</textarea></div>
+    </div>
+
+    <div class="card">
+      <h2>Conectividad y ruteo</h2>
+      <label>¿Hubo problemas de conectividad?</label>
+      <div class="btn-row">
+        ${['Sí','No'].map(v=>`<div class="chip ${d.conectividadProblema===v?'on '+(v==='Sí'?'neg':'pos'):''}" data-f="conectividadProblema" data-v="${v}">${v}</div>`).join('')}
+      </div>
+      <label>Detalle (opcional)</label>
+      <div class="field-wrap"><textarea data-f="conectividadDetalle" data-mic="1" placeholder="Qué pasó, en qué momento...">${esc(d.conectividadDetalle)}</textarea></div>
+      <label>Clientes mal asignados o tareas irrisorias</label>
+      <div class="field-wrap"><textarea data-f="clientesMalAsignados" data-mic="1" placeholder="Ej: le apareció ofrecer papas prefritas a una panadería...">${esc(d.clientesMalAsignados)}</textarea></div>
+      <label>Objeciones del vendedor</label>
+      <div class="field-wrap"><textarea data-f="objeciones" data-mic="1" placeholder="Qué le costó, qué no le convenció...">${esc(d.objeciones)}</textarea></div>
+    </div>
+
+    <div class="card">
+      <h2>Canastas (Eje 1)</h2>
+      <label>¿Usó alguna canasta en esta visita?</label>
+      <div class="btn-row">
+        ${['Sí','No'].map(v=>`<div class="chip ${d.usoCanasta===v?'on '+(v==='Sí'?'pos':'neg'):''}" data-f="usoCanasta" data-v="${v}">${v}</div>`).join('')}
+      </div>
+      <label>¿Cuál?</label>
+      <div class="btn-row">
+        ${['Base','Foco','Exploratoria','Innovación','Destacados'].map(v=>`<div class="chip ${d.canastaTipo===v?'on':''}" data-f="canastaTipo" data-v="${v}" style="flex:0 0 auto;min-width:0;padding:8px 10px;">${v}</div>`).join('')}
+      </div>
+      <label>Facilidad para encontrar/aplicar la recomendación (1 a 5)</label>
+      <div class="btn-row">
+        ${[1,2,3,4,5].map(n=>`<div class="chip ${d.canastaFacilidad===n?'on':''}" data-f="canastaFacilidad" data-v="${n}" style="flex:1;">${n}</div>`).join('')}
+      </div>
+      <label>Feedback del vendedor sobre la canasta</label>
+      <div class="field-wrap"><textarea data-f="canastaFeedback" data-mic="1" placeholder="Qué le sirve, qué le sobra, qué le falta...">${esc(d.canastaFeedback)}</textarea></div>
+
+      <label>¿Tuvo problemas de performance o carga de la app?</label>
+      <div class="btn-row">
+        ${['Sí','No'].map(v=>`<div class="chip ${d.performanceProblema===v?'on '+(v==='Sí'?'neg':'pos'):''}" data-f="performanceProblema" data-v="${v}">${v}</div>`).join('')}
+      </div>
+      <div class="field-wrap"><textarea data-f="performanceDetalle" data-mic="1" placeholder="En qué momento, qué pantalla...">${esc(d.performanceDetalle)}</textarea></div>
+    </div>
+
+    <div class="card">
+      <h2>Cierre del día</h2>
+      <label>Nota general (podés dictarla con el micrófono del teclado)</label>
+      <div class="field-wrap"><textarea data-f="notaCierre" data-mic="1" placeholder="Resumen libre de la jornada...">${esc(d.notaCierre)}</textarea></div>
+      <label>Nota de voz</label>
+      <div class="voice-row">
+        <button class="voice-btn" id="btnVoice">●</button>
+        <span class="voice-status" id="voiceStatus">Tocá para grabar una nota de voz</span>
+      </div>
+      ${vocesHtml}
+    </div>
+  `;
+
+  bindEvents();
+}
+
+function bindEvents(){
+  const d = data[currentDay];
+
+  document.querySelectorAll('[data-f]').forEach(el=>{
+    if(el.classList.contains('chip')){
+      el.addEventListener('click', ()=>{
+        const f = el.dataset.f, v = isNaN(Number(el.dataset.v)) ? el.dataset.v : Number(el.dataset.v);
+        d[f] = d[f]===v ? null : v;
+        field(currentDay, f, d[f]);
+        render();
+      });
+    } else {
+      el.addEventListener('input', ()=>{ field(currentDay, el.dataset.f, el.value); });
+    }
+  });
+
+  document.getElementById('btnAddTarea').addEventListener('click', ()=>{
+    d.tareas.push({tipo:'', aplica:null, resolucion:'', tiempo:'', venta:null, monto:null});
+    saveAll(); render();
+  });
+  document.querySelectorAll('[data-del-tarea]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      d.tareas.splice(Number(btn.dataset.delTarea),1);
+      saveAll(); render();
+    });
+  });
+  document.querySelectorAll('[data-t][data-tf]').forEach(el=>{
+    const i = Number(el.dataset.t), f = el.dataset.tf;
+    if(el.classList.contains('chip')){
+      el.addEventListener('click', ()=>{
+        const v = el.dataset.tv;
+        d.tareas[i][f] = d.tareas[i][f]===v ? null : v;
+        saveAll(); render();
+      });
+    } else {
+      el.addEventListener('input', ()=>{ d.tareas[i][f]=el.value; saveAll(); });
+      el.addEventListener('change', ()=>{ d.tareas[i][f]=el.value; saveAll(); });
+    }
+  });
+
+  document.querySelectorAll('[data-del-voz]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      d.voces.splice(Number(btn.dataset.delVoz),1);
+      saveAll(); render();
+    });
+  });
+
+  setupVoiceRecorder();
+  setupMicButtons();
+}
+
+// ---------------- Dictado por campo (Web Speech API) ----------------
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+function setupMicButtons(){
+  document.querySelectorAll('[data-mic]').forEach(ta=>{
+    if(ta.dataset.micBound) return;
+    ta.dataset.micBound = '1';
+    const wrap = ta.parentElement;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'mic-btn';
+    btn.textContent = '🎤';
+    btn.title = 'Dictar en este campo';
+    wrap.appendChild(btn);
+
+    if(!SpeechRec){
+      btn.style.opacity = '.35';
+      btn.addEventListener('click', ()=> showToast('Dictado no disponible en este navegador. Usá el micrófono del teclado.'));
+      return;
+    }
+
+    let rec = null, listening = false;
+    btn.addEventListener('click', ()=>{
+      if(listening){ rec.stop(); return; }
+      rec = new SpeechRec();
+      rec.lang = 'es-AR';
+      rec.interimResults = false;
+      rec.continuous = false;
+      rec.onstart = ()=>{ listening = true; btn.classList.add('listening'); };
+      rec.onresult = (e)=>{
+        const texto = e.results[0][0].transcript;
+        const sep = ta.value.trim() ? ' ' : '';
+        ta.value = ta.value + sep + texto;
+        ta.dispatchEvent(new Event('input'));
+      };
+      rec.onerror = ()=>{ showToast('No se pudo escuchar. Probá de nuevo.'); };
+      rec.onend = ()=>{ listening = false; btn.classList.remove('listening'); };
+      rec.start();
+    });
+  });
+}
+
+// ---------------- Grabador de voz ----------------
+let mediaRecorder=null, audioChunks=[], recording=false;
+function setupVoiceRecorder(){
+  const btn = document.getElementById('btnVoice');
+  const status = document.getElementById('voiceStatus');
+  if(!btn) return;
+
+  if(!navigator.mediaDevices || !window.MediaRecorder){
+    status.textContent = 'Grabación no disponible en este navegador. Podés dictar con el micrófono del teclado en el campo de texto.';
+    btn.style.opacity = '.4'; btn.style.pointerEvents='none';
+    return;
+  }
+
+  btn.addEventListener('click', async ()=>{
+    if(!recording){
+      try{
+        const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = e=>audioChunks.push(e.data);
+        mediaRecorder.onstop = ()=>{
+          const blob = new Blob(audioChunks, {type:'audio/webm'});
+          const reader = new FileReader();
+          reader.onload = ()=>{
+            data[currentDay].voces.push({dataUrl:reader.result});
+            saveAll(); render(); showToast('Nota de voz guardada');
+          };
+          reader.readAsDataURL(blob);
+          stream.getTracks().forEach(t=>t.stop());
+        };
+        mediaRecorder.start();
+        recording = true;
+        btn.classList.add('recording'); btn.textContent='■';
+        status.textContent = 'Grabando... tocá de nuevo para detener';
+      }catch(e){
+        status.textContent = 'No se pudo acceder al micrófono. Revisá los permisos del navegador.';
+      }
+    } else {
+      mediaRecorder.stop();
+      recording = false;
+      btn.classList.remove('recording'); btn.textContent='●';
+      status.textContent = 'Tocá para grabar una nota de voz';
+    }
+  });
+}
+
+// ---------------- Copiar resumen ----------------
+function buildResumenTexto(){
+  let out = 'RELEVAMIENTO EN TERRENO — SEMANA 3\n';
+  DAYS.forEach(dm=>{
+    const d = data[dm.id];
+    if(!isDayStarted(dm.id)) return;
+    out += `\n${'='.repeat(40)}\n${dm.dow} — ${dm.vendedor}\n${'='.repeat(40)}\n`;
+
+    if(d.tareas.length){
+      out += `\nTareas revisadas (${d.tareas.length}):\n`;
+      d.tareas.forEach((t,i)=>{
+        out += `${i+1}. ${t.tipo||'(sin tipo)'} — aplica: ${t.aplica||'-'} | resolución: ${t.resolucion||'-'} | tiempo: ${t.tiempo||'-'} min | venta: ${t.venta||'-'} | aumentó monto: ${t.monto||'-'}\n`;
+      });
+    }
+    if(d.conectividadProblema) out += `\nConectividad: ${d.conectividadProblema}${d.conectividadDetalle?' — '+d.conectividadDetalle:''}\n`;
+    if(d.clientesMalAsignados.trim()) out += `\nClientes mal asignados / tareas irrisorias:\n${d.clientesMalAsignados.trim()}\n`;
+    if(d.objeciones.trim()) out += `\nObjeciones del vendedor:\n${d.objeciones.trim()}\n`;
+    if(d.usoCanasta) out += `\nUso de canasta: ${d.usoCanasta}${d.canastaTipo?' ('+d.canastaTipo+')':''}${d.canastaFacilidad?' | facilidad: '+d.canastaFacilidad+'/5':''}\n`;
+    if(d.canastaFeedback.trim()) out += `Feedback canasta: ${d.canastaFeedback.trim()}\n`;
+    if(d.performanceProblema) out += `Problemas de performance/carga: ${d.performanceProblema}${d.performanceDetalle.trim()?' — '+d.performanceDetalle.trim():''}\n`;
+    if(d.totalTareasAsignadas) out += `\nTotal de tareas asignadas ese día: ${d.totalTareasAsignadas}\n`;
+    if(d.calificacionGestor) out += `Calificación del vendedor sobre el gestor: ${d.calificacionGestor}/5\n`;
+    if(d.tareaFaltante.trim()) out += `Tarea que debería existir y no está: ${d.tareaFaltante.trim()}\n`;
+    if(d.duplicadas) out += `Tareas duplicadas/contradictorias: ${d.duplicadas}${d.duplicadasDetalle.trim()?' — '+d.duplicadasDetalle.trim():''}\n`;
+    if(d.notaCierre.trim()) out += `\nNota del día:\n${d.notaCierre.trim()}\n`;
+    if(d.voces.length) out += `\n(${d.voces.length} nota${d.voces.length>1?'s':''} de voz grabada${d.voces.length>1?'s':''} — quedan en la app, no se copian como texto)\n`;
+  });
+  return out;
+}
+
+function buildResumenTSV(){
+  const headers = ['Dia','Vendedor','#Tarea','Tipo','Aplica','Resolucion','Tiempo(min)','Venta','AumentoMonto'];
+  let rows = [headers.join('\t')];
+  DAYS.forEach(dm=>{
+    const d = data[dm.id];
+    if(!d.tareas.length) return;
+    d.tareas.forEach((t,i)=>{
+      rows.push([dm.dow, dm.vendedor, i+1, t.tipo||'', t.aplica||'', t.resolucion||'', t.tiempo||'', t.venta||'', t.monto||''].join('\t'));
+    });
+  });
+  rows.push('');
+  rows.push(['Dia','Vendedor','ConectividadOK','ClientesMalAsignados','Objeciones','UsoCanasta','TipoCanasta','FacilidadCanasta','FeedbackCanasta','TotalTareasAsignadas','CalifGestor','TareaFaltante','Duplicadas','ProblemaPerformance','NotaCierre'].join('\t'));
+  DAYS.forEach(dm=>{
+    const d = data[dm.id];
+    if(!isDayStarted(dm.id)) return;
+    rows.push([
+      dm.dow, dm.vendedor,
+      d.conectividadProblema==='No' ? 'Si' : (d.conectividadProblema==='Sí' ? 'No' : ''),
+      (d.clientesMalAsignados||'').replace(/\n/g,' '),
+      (d.objeciones||'').replace(/\n/g,' '),
+      d.usoCanasta||'', d.canastaTipo||'', d.canastaFacilidad||'',
+      (d.canastaFeedback||'').replace(/\n/g,' '),
+      d.totalTareasAsignadas||'', d.calificacionGestor||'',
+      (d.tareaFaltante||'').replace(/\n/g,' '),
+      d.duplicadas||'',
+      d.performanceProblema||'',
+      (d.notaCierre||'').replace(/\n/g,' '),
+    ].join('\t'));
+  });
+  return rows.join('\n');
+}
+
+document.getElementById('btnSheets').addEventListener('click', async ()=>{
+  const tsv = buildResumenTSV();
+  try{
+    await navigator.clipboard.writeText(tsv);
+    showToast('Copiado — pegalo directo en una hoja de Google Sheets (Ctrl+V)');
+  }catch(e){
+    showToast('No se pudo copiar automáticamente.');
+  }
+});
+
+document.getElementById('btnCopy').addEventListener('click', async ()=>{
+  const texto = buildResumenTexto();
+  try{
+    await navigator.clipboard.writeText(texto);
+    showToast('Resumen copiado — pegalo en la minuta del Gantt');
+  }catch(e){
+    showToast('No se pudo copiar automáticamente. Mantené apretado el botón para copiar manualmente si tu navegador lo permite.');
+  }
+});
+
+document.getElementById('btnSettings').addEventListener('click', ()=>{
+  document.getElementById('sheetsUrlInput').value = getSheetsUrl();
+  document.getElementById('settingsModal').classList.add('open');
+});
+document.getElementById('btnSettingsCancel').addEventListener('click', ()=>{
+  document.getElementById('settingsModal').classList.remove('open');
+});
+document.getElementById('btnSettingsSave').addEventListener('click', ()=>{
+  setSheetsUrl(document.getElementById('sheetsUrlInput').value);
+  document.getElementById('settingsModal').classList.remove('open');
+  showToast('URL guardada. Sincronizando...');
+  syncToSheets();
+});
+
+render();
+updateSaveStatus();
+</script>
+</body>
+</html>

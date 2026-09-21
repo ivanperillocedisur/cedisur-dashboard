@@ -308,7 +308,13 @@ function emptyDay(){
   };
 }
 let data = loadAll();
-DAYS.forEach(d=>{ if(!data[d.id]) data[d.id] = emptyDay(); });
+DAYS.forEach(d=>{
+  data[d.id] = Object.assign(emptyDay(), data[d.id] || {});
+  // migracion: arrays deben existir sí o sí, nunca undefined
+  if(!Array.isArray(data[d.id].tareas)) data[d.id].tareas = [];
+  if(!Array.isArray(data[d.id].canastaVisitas)) data[d.id].canastaVisitas = [];
+  if(!Array.isArray(data[d.id].voces)) data[d.id].voces = [];
+});
 saveAll();
 
 let currentDay = DAYS[0].id;

@@ -57,6 +57,22 @@
   .f-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-light); border: 1px solid #c5d0f0; color: var(--accent); border-radius: 20px; padding: 3px 4px 3px 10px; font-size: 12px; font-weight: 600; max-width: 100%; }
   .f-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .f-chip button { border: none; background: rgba(29,58,143,0.12); color: var(--accent); border-radius: 50%; width: 18px; height: 18px; font-size: 11px; cursor: pointer; flex-shrink: 0; }
+  .f-sel { text-align: left; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.45rem 0.6rem; cursor: pointer; font-family: 'DM Sans', sans-serif; min-width: 0; }
+  .f-sel .f-lbl { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); }
+  .f-sel .f-val { display: block; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .f-sel.has { border-color: var(--accent); background: var(--accent-light); }
+  .f-sel.has .f-val { color: var(--accent); font-weight: 600; }
+  .f-sel.open { outline: 2px solid var(--accent); }
+  .f-list-wrap { grid-column: 1 / -1; border: 1px solid var(--accent); border-radius: 10px; padding: 0.6rem; }
+  .f-list-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .f-list-head strong { flex: 1; font-size: 13px; }
+  .f-list-head button { background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--accent); }
+  .f-list-head button.f-none { color: var(--negative-text); }
+  .f-search { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.55rem; font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; margin-bottom: 6px; }
+  .f-items { max-height: 240px; overflow-y: auto; }
+  .f-opt { display: flex; align-items: center; gap: 8px; padding: 6px 2px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--bg); }
+  .f-opt input { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
+  .f-empty { font-size: 12px; color: var(--text3); padding: 6px 2px; }
   @media (max-width: 360px) { .filter-panel { grid-template-columns: 1fr; } }
 
   /* TOGGLES */
@@ -299,7 +315,9 @@ const FILTER_FIELDS = [
   { key: 'categoria', label: 'Categoría' },
   { key: 'familia',   label: 'Familia' },
 ];
-const filters = { prov: '', marca: '', grupo: '', categoria: '', familia: '' };
+const filters = { prov: [], marca: [], grupo: [], categoria: [], familia: [] };
+let openField = null;
+let curOpts = [];
 let showIva      = true;
 let showKg       = true;
 let visibleCount = PAGE_SIZE;
@@ -418,51 +436,113 @@ async function loadData() {
   btn.classList.remove('spinning');
 }
 
-/* ---------- Filtros ---------- */
+/* ---------- Filtros (selección múltiple) ---------- */
 // Coincide con todos los filtros activos, salvo el campo indicado en "except"
 function matchFilters(p, except) {
-  return FILTER_FIELDS.every(f => f.key === except || !filters[f.key] || p[f.key] === filters[f.key]);
+  return FILTER_FIELDS.every(f => f.key === except || !filters[f.key].length || filters[f.key].includes(p[f.key]));
 }
 function availableFields() {
   return FILTER_FIELDS.filter(f => allProducts.some(p => p[f.key]));
 }
+function fieldSummary(key) {
+  const a = filters[key];
+  if (!a.length) return 'Todos';
+  if (a.length === 1) return a[0];
+  return a.length + ' seleccionados';
+}
+function optionsFor(key) {
+  // Valores posibles según los demás filtros activos (listas que se acotan entre sí)
+  const vals = new Set(allProducts.filter(p => matchFilters(p, key)).map(p => p[key]).filter(Boolean));
+  filters[key].forEach(v => vals.add(v));
+  return [...vals].sort((a, b) => a.localeCompare(b, 'es'));
+}
+
 function renderFilters() {
   const fields = availableFields();
   const panel = document.getElementById('filterPanel');
-  panel.innerHTML = fields.map(f => {
-    // Opciones según los demás filtros activos (listas que se acotan entre sí)
-    const vals = [...new Set(allProducts.filter(p => matchFilters(p, f.key)).map(p => p[f.key]).filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b, 'es'));
-    const cur = filters[f.key];
-    if (cur && !vals.includes(cur)) vals.unshift(cur);
-    return `<div class="f-field">
-      <label>${f.label}</label>
-      <select class="${cur ? 'active' : ''}" onchange="setFilter('${f.key}', this.value)">
-        <option value="">Todos</option>
-        ${vals.map(v => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(v)}</option>`).join('')}
-      </select>
+  let html = fields.map(f => `
+    <button class="f-sel${filters[f.key].length ? ' has' : ''}${openField === f.key ? ' open' : ''}" id="fsel-${f.key}" onclick="openFilterField('${f.key}')">
+      <span class="f-lbl">${f.label}</span>
+      <span class="f-val" id="fsum-${f.key}">${esc(fieldSummary(f.key))}</span>
+    </button>`).join('');
+  if (openField) {
+    const f = FILTER_FIELDS.find(x => x.key === openField);
+    html += `
+    <div class="f-list-wrap">
+      <div class="f-list-head">
+        <strong>${f.label}</strong>
+        <button class="f-none" onclick="clearField('${f.key}')">Ninguno</button>
+        <button onclick="openFilterField('${f.key}')">Listo</button>
+      </div>
+      <input class="f-search" id="fSearch" type="text" placeholder="Buscar ${f.label.toLowerCase()}..." autocomplete="off" oninput="renderFieldItems(this.value)">
+      <div class="f-items" id="fItems"></div>
     </div>`;
-  }).join('');
-
-  const active = fields.filter(f => filters[f.key]);
-  const n = document.getElementById('filterN');
-  n.textContent = active.length;
-  n.style.display = active.length ? 'inline-block' : 'none';
-  document.getElementById('clearFilters').style.display = active.length ? 'inline' : 'none';
-  const chips = document.getElementById('filterChips');
-  chips.style.display = active.length ? 'flex' : 'none';
-  chips.innerHTML = active.map(f =>
-    `<span class="f-chip"><span>${f.label}: ${esc(filters[f.key])}</span><button onclick="setFilter('${f.key}','')" title="Quitar">&#10005;</button></span>`
-  ).join('');
+  }
+  panel.innerHTML = html;
+  if (openField) renderFieldItems('');
+  updateFilterSummary();
 }
-function setFilter(key, val) {
-  filters[key] = val;
+
+function renderFieldItems(q) {
+  const box = document.getElementById('fItems');
+  if (!box || !openField) return;
+  const term = (q || '').toLowerCase().trim();
+  curOpts = optionsFor(openField);
+  const sel = filters[openField];
+  const html = curOpts.map((v, i) => (!term || v.toLowerCase().includes(term))
+    ? `<label class="f-opt"><input type="checkbox" ${sel.includes(v) ? 'checked' : ''} onchange="toggleFilterValue(${i}, this.checked)"><span>${esc(v)}</span></label>`
+    : '').join('');
+  box.innerHTML = html || '<div class="f-empty">Sin coincidencias.</div>';
+}
+
+function updateFilterSummary() {
+  const fields = availableFields();
+  fields.forEach(f => {
+    const sum = document.getElementById('fsum-' + f.key);
+    const btn = document.getElementById('fsel-' + f.key);
+    if (sum) sum.textContent = fieldSummary(f.key);
+    if (btn) btn.classList.toggle('has', filters[f.key].length > 0);
+  });
+  const total = fields.reduce((n, f) => n + filters[f.key].length, 0);
+  const n = document.getElementById('filterN');
+  n.textContent = total;
+  n.style.display = total ? 'inline-block' : 'none';
+  document.getElementById('clearFilters').style.display = total ? 'inline' : 'none';
+  const chips = document.getElementById('filterChips');
+  chips.style.display = total ? 'flex' : 'none';
+  chips.innerHTML = fields.map(f => filters[f.key].map((v, i) =>
+    `<span class="f-chip"><span>${f.label}: ${esc(v)}</span><button onclick="removeChip('${f.key}', ${i})" title="Quitar">&#10005;</button></span>`
+  ).join('')).join('');
+}
+
+function openFilterField(key) {
+  openField = openField === key ? null : key;
+  renderFilters();
+  if (openField) { const i = document.getElementById('fSearch'); if (i && window.innerWidth > 700) i.focus(); }
+}
+function toggleFilterValue(i, checked) {
+  const v = curOpts[i];
+  const arr = filters[openField];
+  if (checked && !arr.includes(v)) arr.push(v);
+  if (!checked) filters[openField] = arr.filter(x => x !== v);
+  visibleCount = PAGE_SIZE;
+  renderProducts();
+  updateFilterSummary();
+}
+function clearField(key) {
+  filters[key] = [];
+  visibleCount = PAGE_SIZE;
+  renderFilters();
+  renderProducts();
+}
+function removeChip(key, i) {
+  filters[key].splice(i, 1);
   visibleCount = PAGE_SIZE;
   renderFilters();
   renderProducts();
 }
 function clearFilters() {
-  Object.keys(filters).forEach(k => filters[k] = '');
+  Object.keys(filters).forEach(k => filters[k] = []);
   visibleCount = PAGE_SIZE;
   renderFilters();
   renderProducts();
@@ -471,6 +551,7 @@ function toggleFilterPanel() {
   const panel = document.getElementById('filterPanel');
   const open = panel.style.display === 'none';
   panel.style.display = open ? 'grid' : 'none';
+  if (!open) { openField = null; renderFilters(); }
   document.getElementById('filterBtn').classList.toggle('open', open);
 }
 

@@ -5,430 +5,159 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Cotizador CEDISUR</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
   :root {
-    --bg: #F5F3EF;
-    --surface: #FFFFFF;
-    --border: #D8D4CC;
-    --text: #1A1814;
-    --text2: #6B6760;
-    --text3: #9E9B97;
-    --accent: #1d3a8f;
-    --accent-light: #E8EDFB;
-    --positive-bg: #E6F7ED;
-    --positive-border: #7DC99A;
-    --positive-text: #1F7A42;
-    --negative-bg: #FDEAEA;
-    --negative-border: #E89090;
-    --negative-text: #A02020;
-    --warn-bg: #FFF8E6;
-    --warn-border: #F5C99A;
-    --warn-text: #7A4A10;
+    --bg: #F5F3EF; --surface: #FFFFFF; --border: #D8D4CC;
+    --text: #1A1814; --text2: #6B6760; --text3: #9E9B97;
+    --accent: #1d3a8f; --accent-light: #E8EDFB;
+    --positive-bg: #E6F7ED; --positive-border: #7DC99A; --positive-text: #1F7A42;
+    --negative-bg: #FDEAEA; --negative-border: #E89090; --negative-text: #A02020;
+    --warn-bg: #FFF8E6; --warn-border: #F5C99A; --warn-text: #7A4A10;
     --shadow: 0 1px 3px rgba(0,0,0,0.07);
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding-bottom: 2rem;
-  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 2rem; }
 
   /* HEADER */
-  .header {
-    background: var(--accent);
-    padding: 1.25rem 1.25rem 1rem;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
-  }
-  .app-name {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.55);
-    text-transform: uppercase;
-  }
-  .status-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.7);
-    background: rgba(255,255,255,0.12);
-    padding: 3px 10px;
-    border-radius: 20px;
-  }
-  .status-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.35);
-    flex-shrink: 0;
-    transition: background 0.3s;
-  }
+  .header { background: var(--accent); padding: 1.25rem 1.25rem 0.75rem; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+  .app-name { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: rgba(255,255,255,0.55); text-transform: uppercase; }
+  .status-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.12); padding: 3px 10px; border-radius: 20px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.35); flex-shrink: 0; }
   .status-dot.live { background: #7DC99A; }
 
+  /* VIEW TABS */
+  .view-tabs { display: flex; gap: 6px; margin-bottom: 0.75rem; }
+  .view-tab { flex: 1; padding: 6px 10px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.25); background: transparent; color: rgba(255,255,255,0.7); }
+  .view-tab.active { background: #fff; color: var(--accent); border-color: transparent; }
+  .tab-count { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: var(--accent-light); color: var(--accent); font-size: 11px; }
+  .view-tab:not(.active) .tab-count { background: rgba(255,255,255,0.2); color: #fff; }
+
   /* SEARCH */
-  .search-input-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 8px;
-    padding: 0.5rem 0.75rem;
-  }
+  .search-input-wrap { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 0.5rem 0.75rem; }
   .search-input-wrap svg { width: 14px; height: 14px; color: rgba(255,255,255,0.6); flex-shrink: 0; }
-  .search-input-wrap input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #fff;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-  }
+  .search-input-wrap input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; }
   .search-input-wrap input::placeholder { color: rgba(255,255,255,0.45); }
-  .search-mode-select {
-    background: transparent;
-    border: none;
-    border-left: 1px solid rgba(255,255,255,0.25);
-    color: rgba(255,255,255,0.75);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    outline: none;
-    padding: 0 2px 0 8px;
-    cursor: pointer;
-    flex-shrink: 0;
-    -webkit-appearance: none;
-    appearance: none;
-  }
+  .search-mode-select { background: transparent; border: none; border-left: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.75); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; outline: none; padding: 0 2px 0 8px; cursor: pointer; flex-shrink: 0; -webkit-appearance: none; appearance: none; }
   .search-mode-select option { background: #1d3a8f; color: #fff; }
 
-  /* MAIN */
   main { padding: 1rem 1.25rem 0; }
 
   /* TOGGLES */
-  .toggles-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 0.75rem;
-  }
-  .toggle-card {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0.5rem 0.75rem;
-    box-shadow: var(--shadow);
-  }
-  .toggle-card .tgl-label {
-    font-size: 13px;
-    color: var(--text2);
-    font-weight: 500;
-    flex: 1;
-  }
-  .toggle {
-    position: relative;
-    width: 40px;
-    height: 22px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
+  .toggles-row { display: flex; gap: 8px; margin-bottom: 0.75rem; }
+  .toggle-card { flex: 1; display: flex; align-items: center; gap: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 0.75rem; box-shadow: var(--shadow); }
+  .tgl-label { font-size: 13px; color: var(--text2); font-weight: 500; flex: 1; }
+  .toggle { position: relative; width: 40px; height: 22px; cursor: pointer; flex-shrink: 0; }
   .toggle input { display: none; }
-  .toggle-track {
-    width: 100%; height: 100%;
-    background: var(--border);
-    border-radius: 11px;
-    transition: background 0.2s;
-  }
+  .toggle-track { width: 100%; height: 100%; background: var(--border); border-radius: 11px; transition: background 0.2s; }
   .toggle input:checked + .toggle-track { background: var(--accent); }
-  .toggle-thumb {
-    position: absolute;
-    top: 3px; left: 3px;
-    width: 16px; height: 16px;
-    background: #fff;
-    border-radius: 50%;
-    transition: left 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  }
+  .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
   .toggle input:checked ~ .toggle-thumb { left: 21px; }
 
   /* TOP BAR */
-  .top-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-  }
-  .count-text {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text3);
-  }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+  .count-text { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
   .count-text strong { color: var(--accent); }
-  .refresh-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text2);
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    padding: 5px 10px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    box-shadow: var(--shadow);
-  }
-  .refresh-btn:active { background: var(--bg); }
+  .refresh-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; padding: 5px 10px; display: flex; align-items: center; gap: 5px; box-shadow: var(--shadow); }
   .refresh-btn.spinning svg { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* PRODUCT CARDS */
   .products-list { display: flex; flex-direction: column; gap: 8px; }
-
-  .product-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
+  .product-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
   .product-card.expanded { border-color: var(--accent); }
-
-  .card-header {
-    padding: 0.875rem 0.875rem 0.875rem 1rem;
-    cursor: pointer;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-  }
+  .card-header { padding: 0.875rem 0.875rem 0.875rem 1rem; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; -webkit-tap-highlight-color: transparent; user-select: none; }
   .card-info { flex: 1; min-width: 0; }
-  .product-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    line-height: 1.35;
-    margin-bottom: 4px;
-  }
-  .group-badge {
-    display: inline-block;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    color: var(--text3);
-    font-size: 11px;
-    font-weight: 500;
-    padding: 1px 8px;
-    margin-bottom: 5px;
-  }
+  .name-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+  .product-name { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.35; }
+  .sku-tag { flex-shrink: 0; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); padding-top: 2px; }
+  .group-badge { display: inline-block; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; color: var(--text3); font-size: 11px; font-weight: 500; padding: 1px 8px; margin-bottom: 5px; }
   .price-chips { display: flex; gap: 5px; flex-wrap: wrap; }
-  .chip {
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border: 1px solid transparent;
-  }
+  .chip { border-radius: 6px; font-size: 11px; font-weight: 600; padding: 2px 8px; border: 1px solid transparent; }
   .chip-price  { background: var(--accent-light); border-color: #c5d0f0; color: var(--accent); }
   .chip-margen { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
   .chip-iva    { background: var(--bg); border-color: var(--border); color: var(--text3); }
   .chip-iva.reduced { background: #EDF7FF; border-color: #90C4E8; color: #1A5F8A; }
-
-  .expand-icon {
-    color: var(--text3);
-    font-size: 11px;
-    flex-shrink: 0;
-    margin-top: 4px;
-    transition: transform 0.25s;
-  }
+  .chip-inq { background: var(--positive-bg); border-color: var(--positive-border); color: var(--positive-text); }
+  .expand-icon { color: var(--text3); font-size: 11px; flex-shrink: 0; margin-top: 4px; transition: transform 0.25s; }
   .expanded .expand-icon { transform: rotate(180deg); color: var(--accent); }
-
-  /* CARD BODY */
-  .card-body {
-    display: none;
-    padding: 0 1rem 1rem;
-    border-top: 1px solid var(--border);
-  }
+  .card-body { display: none; padding: 0 1rem 1rem; border-top: 1px solid var(--border); }
   .expanded .card-body { display: block; }
+  .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); margin: 0.75rem 0 0.4rem; }
 
-  .section-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin: 0.75rem 0 0.4rem;
-  }
-
-  /* DATA GRID */
-  .data-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  .data-cell {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.45rem 0.6rem;
-  }
-  .data-cell .label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 2px;
-  }
-  .data-cell .value {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text);
-  }
-  .data-cell .value.positive { color: var(--positive-text); }
-  .data-cell .value.neutral  { color: var(--warn-text); }
-
-  /* INPUT ROWS */
-  .inputs-section { display: flex; flex-direction: column; gap: 6px; }
-  .input-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.4rem 0.6rem;
-  }
-  .input-row label {
-    font-size: 13px;
-    color: var(--text2);
-    font-weight: 500;
-    flex: 1;
-  }
-  .input-row input {
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    padding: 0.3rem 0.5rem;
-    text-align: right;
-    width: 100px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .input-row input:focus { border-color: var(--accent); }
-  .input-unit {
-    font-size: 12px;
-    color: var(--text3);
-    font-weight: 600;
-    width: 16px;
-    text-align: center;
-  }
-
-  /* RESULTS GRID */
-  .results-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  .result-card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.5rem 0.6rem;
-  }
-  .result-card.highlight  { background: var(--positive-bg); border-color: var(--positive-border); }
-  .result-card.warn-card  { background: var(--negative-bg); border-color: var(--negative-border); }
-  .result-card .label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 2px;
-  }
-  .result-card.highlight .label { color: #2D8A52; }
-  .result-card.warn-card  .label { color: #A02020; }
-  .result-card .value {
-    font-family: 'DM Mono', monospace;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text);
-  }
+  .data-grid, .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .data-cell, .result-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.45rem 0.6rem; }
+  .data-cell .label, .result-card .label { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); margin-bottom: 2px; }
+  .data-cell .value { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
+  .result-card .value { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; }
+  .result-card.highlight { background: var(--positive-bg); border-color: var(--positive-border); }
+  .result-card.warn-card { background: var(--negative-bg); border-color: var(--negative-border); }
   .result-card.highlight .value { color: var(--positive-text); }
-  .result-card.warn-card  .value { color: var(--negative-text); }
+  .result-card.warn-card .value { color: var(--negative-text); }
   .value.positive { color: var(--positive-text); }
   .value.negative { color: var(--negative-text); }
   .value.neutral  { color: var(--warn-text); }
 
+  .inputs-section { display: flex; flex-direction: column; gap: 6px; }
+  .input-row { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; }
+  .input-row label { font-size: 13px; color: var(--text2); font-weight: 500; flex: 1; }
+  .input-row input { background: var(--surface); border: 1.5px solid var(--border); border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 13px; padding: 0.3rem 0.5rem; text-align: right; width: 100px; outline: none; }
+  .input-row input:focus { border-color: var(--accent); }
+  .input-unit { font-size: 12px; color: var(--text3); font-weight: 600; width: 16px; text-align: center; }
+
+  .add-quote-btn { width: 100%; margin-top: 0.75rem; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 0.65rem; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .add-quote-btn.done { background: var(--positive-text); }
+
+  .more-btn { display: block; width: 100%; margin-top: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; }
+
+  /* QUOTE VIEW */
+  .q-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; margin-bottom: 0.75rem; box-shadow: var(--shadow); }
+  .q-field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+  .q-field:last-child { margin-bottom: 0; }
+  .q-field label { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); }
+  .q-field input, .q-field textarea { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.45rem 0.6rem; font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; width: 100%; }
+  .q-field textarea { resize: vertical; min-height: 54px; }
+  .q-field input:focus, .q-field textarea:focus { border-color: var(--accent); }
+  .q-opt { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; }
+  .q-opt + .q-opt { border-top: 1px solid var(--border); }
+  .q-opt span { flex: 1; font-size: 13px; color: var(--text2); font-weight: 500; }
+
+  .q-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 0.75rem; }
+  .q-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem; display: flex; gap: 8px; }
+  .q-item.below-cost { border-color: var(--negative-border); background: #FFF7F7; }
+  .q-order { display: flex; flex-direction: column; gap: 4px; }
+  .q-order button, .q-del { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text2); font-size: 13px; cursor: pointer; }
+  .q-order button:disabled { opacity: 0.3; cursor: default; }
+  .q-del { background: var(--negative-bg); border-color: var(--negative-border); color: var(--negative-text); }
+  .q-main { flex: 1; min-width: 0; }
+  .q-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .q-meta { font-size: 11px; color: var(--text3); margin: 2px 0 6px; font-family: 'DM Mono', monospace; }
+  .q-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); }
+  .q-row input { width: 70px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.25rem 0.4rem; font-family: 'DM Mono', monospace; font-size: 13px; text-align: right; outline: none; }
+  .q-sub { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); }
+  .q-alert { font-size: 11px; font-weight: 600; color: var(--negative-text); margin-top: 4px; }
+  .q-total { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem; }
+  .q-total span:first-child { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
+  .q-total span:last-child { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 600; color: var(--accent); }
+  .q-actions { display: flex; flex-direction: column; gap: 8px; }
+  .q-btn { border: none; border-radius: 10px; padding: 0.8rem; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .q-btn.primary { background: var(--accent); color: #fff; }
+  .q-btn.secondary { background: var(--surface); border: 1px solid var(--negative-border); color: var(--negative-text); }
+  .q-btn:disabled { opacity: 0.4; cursor: default; }
+  .q-empty { text-align: center; padding: 2rem 1rem; color: var(--text3); font-size: 14px; line-height: 1.5; }
+
   /* LOADING / ERROR */
-  .loading-screen, .error-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 45vh;
-    gap: 1rem;
-    text-align: center;
-    padding: 2rem;
-  }
+  .loading-screen, .error-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 45vh; gap: 1rem; text-align: center; padding: 2rem; }
   .loading-dots { display: flex; gap: 6px; }
-  .loading-dots span {
-    width: 8px; height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    opacity: 0.3;
-    animation: bounce 1.2s infinite;
-  }
+  .loading-dots span { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; opacity: 0.3; animation: bounce 1.2s infinite; }
   .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
   .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce {
-    0%, 80%, 100% { transform: scale(0.8); opacity: 0.3; }
-    40%           { transform: scale(1.2); opacity: 1; }
-  }
+  @keyframes bounce { 0%, 80%, 100% { transform: scale(0.8); opacity: 0.3; } 40% { transform: scale(1.2); opacity: 1; } }
   .loading-text { font-size: 14px; color: var(--text3); }
-  .error-icon { font-size: 2rem; }
   .error-msg { font-size: 13px; color: var(--text2); max-width: 280px; line-height: 1.5; }
-  .retry-btn {
-    background: var(--accent);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 0.6rem 1.4rem;
-  }
-  .no-results { text-align: center; padding: 3rem 1rem; color: var(--text3); }
-  .no-results .icon { font-size: 2rem; margin-bottom: 0.5rem; }
-  .no-results p { font-size: 14px; }
+  .retry-btn { background: var(--accent); border: none; border-radius: 8px; color: #fff; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 0.6rem 1.4rem; }
+  .no-results { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 14px; }
 </style>
 </head>
 <body>
@@ -441,47 +170,39 @@
       <span id="statusText">Cargando...</span>
     </div>
   </div>
-  <div class="search-input-wrap">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/>
-    </svg>
-    <input type="text" id="searchInput" placeholder="Buscar producto..."
-      autocomplete="off" autocorrect="off" spellcheck="false">
+  <div class="view-tabs">
+    <button class="view-tab active" id="tabPrecios" onclick="showView('precios')">Precios</button>
+    <button class="view-tab" id="tabCotizacion" onclick="showView('cotizacion')">Cotización <span class="tab-count" id="quoteCount">0</span></button>
+  </div>
+  <div class="search-input-wrap" id="searchWrap">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/></svg>
+    <input type="text" id="searchInput" placeholder="Buscar producto o SKU..." autocomplete="off" autocorrect="off" spellcheck="false">
     <select id="searchModeSelect" class="search-mode-select">
       <option value="nombre">Producto</option>
+      <option value="sku">SKU</option>
       <option value="grupo">Grupo</option>
       <option value="marca">Marca</option>
     </select>
   </div>
 </div>
 
-<main>
+<!-- ===================== VISTA PRECIOS ===================== -->
+<main id="viewPrecios">
   <div class="toggles-row">
     <div class="toggle-card">
       <span class="tgl-label">Con IVA</span>
-      <label class="toggle">
-        <input type="checkbox" id="ivaToggle" checked>
-        <div class="toggle-track"></div>
-        <div class="toggle-thumb"></div>
-      </label>
+      <label class="toggle"><input type="checkbox" id="ivaToggle" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
     </div>
     <div class="toggle-card">
       <span class="tgl-label">Por Kg</span>
-      <label class="toggle">
-        <input type="checkbox" id="kgToggle" checked>
-        <div class="toggle-track"></div>
-        <div class="toggle-thumb"></div>
-      </label>
+      <label class="toggle"><input type="checkbox" id="kgToggle" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
     </div>
   </div>
 
   <div class="top-bar">
-    <span class="count-text" id="countText">—</span>
+    <span class="count-text" id="countText">-</span>
     <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-        <path d="M23 4v6h-6M1 20v-6h6"/>
-        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-      </svg>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Actualizar
     </button>
   </div>
@@ -490,22 +211,51 @@
     <div class="loading-dots"><span></span><span></span><span></span></div>
     <div class="loading-text">Cargando precios...</div>
   </div>
-
   <div id="errorScreen" class="error-screen" style="display:none">
-    <div class="error-icon">⚠️</div>
     <div class="error-msg" id="errorMsg">No se pudo cargar la lista de precios.</div>
     <button class="retry-btn" onclick="loadData()">Reintentar</button>
   </div>
 
   <div id="productsList" class="products-list" style="display:none"></div>
-  <div id="noResults" class="no-results" style="display:none">
-    <div class="icon">🔍</div>
-    <p>Sin resultados para tu búsqueda.</p>
+  <button id="moreBtn" class="more-btn" style="display:none" onclick="showMore()">Ver más</button>
+  <div id="noResults" class="no-results" style="display:none">Sin resultados para tu búsqueda.</div>
+</main>
+
+<!-- ===================== VISTA COTIZACIÓN ===================== -->
+<main id="viewCotizacion" style="display:none">
+  <div class="section-label" style="margin-top:0">Datos de la cotización</div>
+  <div class="q-panel">
+    <div class="q-field"><label>Cliente</label><input type="text" id="qCliente" oninput="saveHeader()"></div>
+    <div class="q-field"><label>Fecha</label><input type="date" id="qFecha" oninput="saveHeader()"></div>
+    <div class="q-field"><label>Observaciones</label><textarea id="qObs" oninput="saveHeader()"></textarea></div>
+  </div>
+
+  <div class="section-label">Opciones</div>
+  <div class="q-panel">
+    <div class="q-opt">
+      <span>Precios con IVA</span>
+      <label class="toggle"><input type="checkbox" id="qIva" checked onchange="saveHeader();renderQuote()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+    </div>
+    <div class="q-opt">
+      <span>Incluir datos internos en el Excel (costo, margen, competencia)</span>
+      <label class="toggle"><input type="checkbox" id="qInternos" onchange="saveHeader()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+    </div>
+  </div>
+
+  <div class="section-label">Productos</div>
+  <div id="qItems" class="q-items"></div>
+  <div class="q-total"><span>Total</span><span id="qTotal">$0</span></div>
+
+  <div class="q-actions">
+    <button class="q-btn primary" id="qExport" onclick="exportExcel()">Exportar a Excel</button>
+    <button class="q-btn secondary" id="qClear" onclick="clearQuote()">Vaciar cotización</button>
   </div>
 </main>
 
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQGFSioOghyJPoBKByRXq-QdUgJWeSZ_sLyZcGBLGg202C6VLE1XAKhg4qZ9WekD8TldPxpTjtB2LEP/pub?gid=0&single=true&output=csv';
+const PAGE_SIZE   = 50;
+const STORE_KEY   = 'cedisur_cotizacion_v1';
 
 let allProducts  = [];
 let filteredList = [];
@@ -513,109 +263,97 @@ let searchQuery  = '';
 let searchMode   = 'nombre';
 let showIva      = true;
 let showKg       = true;
+let visibleCount = PAGE_SIZE;
+const simState   = {};   // valores simulados por producto: { key: {comp, desc} }
 
-/* ── Número formato argentino "3.530,61" → 3530.61 ─────────────── */
+let quote = { items: [], cliente: '', fecha: '', obs: '', conIva: true, internos: false };
+
+/* ---------- Utilidades ---------- */
 function argNum(str) {
   if (!str) return 0;
   return parseFloat(str.toString().trim().replace(/\./g, '').replace(',', '.')) || 0;
 }
-
-/* ── Detección de tasa IVA por producto ─────────────────────────── */
 function detectIva(siva, civa) {
   if (!siva || !civa) return 0.21;
   const r = civa / siva;
   return Math.abs(r - 1.105) < Math.abs(r - 1.21) ? 0.105 : 0.21;
 }
-
-/* ── Búsqueda de columna: exacta primero, parcial después ───────── */
 function findCol(headers, candidates) {
-  for (const c of candidates) {
-    const i = headers.findIndex(h => h === c);
-    if (i >= 0) return i;
-  }
-  for (const c of candidates) {
-    const i = headers.findIndex(h => h.includes(c));
-    if (i >= 0) return i;
-  }
+  for (const c of candidates) { const i = headers.findIndex(h => h === c); if (i >= 0) return i; }
+  for (const c of candidates) { const i = headers.findIndex(h => h.includes(c)); if (i >= 0) return i; }
   return -1;
 }
-
-/* ── Parseo de CSV ──────────────────────────────────────────────── */
-function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
-
-  let hIdx = 0;
-  for (let i = 0; i < Math.min(5, lines.length); i++) {
-    const r = lines[i].toLowerCase();
-    if (r.includes('nombre') || r.includes('artículo') || r.includes('articulo') || r.includes('producto')) {
-      hIdx = i; break;
-    }
-  }
-
-  const headers = parseCSVLine(lines[hIdx]).map(h => h.trim().toLowerCase());
-  const isNew   = headers.length >= 13;
-
-  const C = {
-    nombre:   findCol(headers, ['nombre de artículo','nombre de articulo','nombre','artículo','articulo','producto']),
-    grupo:    findCol(headers, ['grupo']),
-    precioU:  findCol(headers, ['precio']),
-    peso:     findCol(headers, ['peso de venta','peso']),
-    prov:     findCol(headers, ['nombre de proveedor','proveedor']),
-    stock:    findCol(headers, ['stock']),
-    costoKg:  findCol(headers, ['costo por kilo','costo']),
-    precioKg: findCol(headers, ['precio por kilo']),
-    contKg:   findCol(headers, ['contribución por kilo','contribucion por kilo']),
-    civaU:    findCol(headers, ['precio con iva unidad','precio con iva']),
-  };
-
-  const products = [];
-  for (let i = hIdx + 1; i < lines.length; i++) {
-    const cols = parseCSVLine(lines[i]);
-    if (cols.length < 3) continue;
-
-    if (isNew) {
-      const nombre   = (cols[C.nombre]   || '').trim();
-      const grupo    = (cols[C.grupo]    || '').trim();
-      const precioU  = argNum(cols[C.precioU]);
-      const peso     = argNum(cols[C.peso]);
-      const prov     = (cols[C.prov]     || '').trim();
-      const stock    = argNum(cols[C.stock]);
-      const costoKg  = argNum(cols[C.costoKg]);
-      const precioKg = argNum(cols[C.precioKg]);
-      const contKg   = argNum(cols[C.contKg]);
-      const civaU    = argNum(cols[C.civaU]);
-      const ivaRate  = detectIva(precioU, civaU);
-      if (!nombre || precioKg === 0) continue;
-      products.push({ nombre, grupo, precioU, peso, prov, stock, costoKg, precioKg, contKg, civaU, ivaRate });
-    } else {
-      const nombre   = (cols[0] || '').trim();
-      const grupo    = (cols[1] || '').trim();
-      const costoKg  = argNum(cols[2]);
-      const precioKg = argNum(cols[3]);
-      const contKg   = argNum(cols[4]);
-      if (!nombre || precioKg === 0) continue;
-      products.push({ nombre, grupo, costoKg, precioKg, contKg,
-        precioU: precioKg, peso: 1, civaU: precioKg * 1.21,
-        ivaRate: 0.21, prov: '', stock: 0 });
-    }
-  }
-  return products;
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '-';
+  return Math.round(n).toLocaleString('es-AR');
+}
+function fmtTime(d) { return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }); }
+function todayISO() {
+  const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
 }
 
+/* ---------- CSV ---------- */
 function parseCSVLine(line) {
-  const result = [];
-  let cur = '', inQ = false;
+  const result = []; let cur = '', inQ = false;
   for (const ch of line) {
-    if (ch === '"') { inQ = !inQ; }
+    if (ch === '"') inQ = !inQ;
     else if (ch === ',' && !inQ) { result.push(cur); cur = ''; }
-    else { cur += ch; }
+    else cur += ch;
   }
   result.push(cur);
   return result;
 }
 
-/* ── Carga de datos ─────────────────────────────────────────────── */
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  let hIdx = 0;
+  for (let i = 0; i < Math.min(5, lines.length); i++) {
+    const r = lines[i].toLowerCase();
+    if (r.includes('nombre') || r.includes('artículo') || r.includes('articulo') || r.includes('producto')) { hIdx = i; break; }
+  }
+  const headers = parseCSVLine(lines[hIdx]).map(h => h.trim().toLowerCase());
+  const C = {
+    sku:      findCol(headers, ['código de artículo','codigo de articulo','código','codigo','sku']),
+    nombre:   findCol(headers, ['nombre de artículo','nombre de articulo','nombre','producto']),
+    grupo:    findCol(headers, ['grupo']),
+    precioU:  findCol(headers, ['precio']),
+    peso:     findCol(headers, ['peso de venta','peso']),
+    prov:     findCol(headers, ['nombre de proveedor','proveedor']),
+    costoKg:  findCol(headers, ['costo por kilo','costo']),
+    precioKg: findCol(headers, ['precio por kilo']),
+    contKg:   findCol(headers, ['contribución por kilo','contribucion por kilo']),
+    civaU:    findCol(headers, ['precio con iva unidad','precio con iva']),
+  };
+  const get = (cols, i) => (i >= 0 ? (cols[i] || '').trim() : '');
+
+  const products = [];
+  for (let i = hIdx + 1; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (cols.length < 3) continue;
+    const nombre   = get(cols, C.nombre);
+    const precioKg = argNum(get(cols, C.precioKg));
+    if (!nombre || precioKg === 0) continue;
+    const precioU = argNum(get(cols, C.precioU)) || precioKg;
+    const civaU   = argNum(get(cols, C.civaU));
+    const sku     = get(cols, C.sku);
+    products.push({
+      key: sku || nombre, sku, nombre,
+      grupo: get(cols, C.grupo), prov: get(cols, C.prov),
+      precioU, peso: argNum(get(cols, C.peso)) || 1,
+      costoKg: argNum(get(cols, C.costoKg)), precioKg,
+      contKg: argNum(get(cols, C.contKg)),
+      civaU, ivaRate: detectIva(precioU, civaU),
+    });
+  }
+  return products;
+}
+
+/* ---------- Carga ---------- */
 async function loadData() {
   setLoading(true);
   setStatus(false, 'Actualizando...');
@@ -623,245 +361,387 @@ async function loadData() {
   btn.classList.add('spinning');
   try {
     const res = await fetch(CSV_URL, { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    allProducts = parseCSV(text);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    allProducts = parseCSV(await res.text());
     if (!allProducts.length) throw new Error('CSV vacío o formato incorrecto');
     setLoading(false);
     renderProducts();
-    setStatus(true, `Actualizado ${fmtTime(new Date())}`);
+    setStatus(true, 'Actualizado ' + fmtTime(new Date()));
   } catch (err) {
-    showError(`Error: ${err.message}. Verificá que el Sheet esté publicado.`);
+    showError('Error: ' + err.message + '. Verificá que el Sheet esté publicado.');
     setStatus(false, 'Error al cargar');
   }
   btn.classList.remove('spinning');
 }
 
-/* ── Render de tarjetas ─────────────────────────────────────────── */
+/* ---------- Precios base según interruptores ---------- */
+function basePrices(p, kg) {
+  if (kg) return { siva: p.precioKg, civa: p.precioKg * (1 + p.ivaRate), costo: p.costoKg };
+  return { siva: p.precioU, civa: p.civaU || p.precioU * (1 + p.ivaRate), costo: p.costoKg * p.peso };
+}
+
+/* ---------- Render de la lista ---------- */
 function renderProducts() {
   const q = searchQuery.toLowerCase().trim();
   filteredList = allProducts.filter(p => {
     if (!q) return true;
+    if (searchMode === 'sku')   return p.sku.toLowerCase().includes(q);
     if (searchMode === 'grupo') return p.grupo.toLowerCase().includes(q);
     if (searchMode === 'marca') return p.prov.toLowerCase().includes(q);
-    return p.nombre.toLowerCase().includes(q);
+    return p.nombre.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
   });
 
-  const list      = document.getElementById('productsList');
-  const noResults = document.getElementById('noResults');
-  const n         = filteredList.length;
-  document.getElementById('countText').innerHTML =
-    `<strong>${n}</strong> producto${n !== 1 ? 's' : ''}`;
+  const list = document.getElementById('productsList');
+  const n = filteredList.length;
+  document.getElementById('countText').innerHTML = '<strong>' + n + '</strong> producto' + (n !== 1 ? 's' : '');
+  document.getElementById('noResults').style.display = n ? 'none' : 'block';
+  list.style.display = n ? 'flex' : 'none';
 
-  if (!n) {
-    list.style.display = 'none';
-    noResults.style.display = 'block';
-    return;
-  }
-  noResults.style.display = 'none';
-  list.style.display      = 'flex';
-  list.innerHTML          = filteredList.map((p, i) => buildCard(p, i)).join('');
+  const shown = filteredList.slice(0, visibleCount);
+  list.innerHTML = shown.map((p, i) => buildCard(p, i)).join('');
+  shown.forEach((p, i) => { if (simState[p.key]) calcCard(i); });
+
+  const more = document.getElementById('moreBtn');
+  const rest = n - shown.length;
+  more.style.display = rest > 0 ? 'block' : 'none';
+  more.textContent = 'Ver más (' + rest + ' restantes)';
 }
 
-/* ── Construcción de cada tarjeta ───────────────────────────────── */
+function showMore() {
+  visibleCount += PAGE_SIZE;
+  renderProducts();
+}
+
+function inQuote(p) { return quote.items.some(it => it.key === p.key); }
+
 function buildCard(p, idx) {
+  const b = basePrices(p, showKg);
   const ivaLabel = p.ivaRate === 0.105 ? 'IVA 10,5%' : 'IVA 21%';
-  const ivaClass = p.ivaRate === 0.105 ? 'reduced' : '';
-
-  let pSiva, pCiva, costo, contrib, modoSufijo;
-  if (showKg) {
-    pSiva      = p.precioKg;
-    pCiva      = p.precioKg * (1 + p.ivaRate);
-    costo      = p.costoKg;
-    contrib    = p.contKg;
-    modoSufijo = '/kg';
-  } else {
-    pSiva      = p.precioU;
-    pCiva      = p.civaU;
-    costo      = p.costoKg * p.peso;
-    contrib    = p.precioU - costo;
-    modoSufijo = '/u';
-  }
-
-  const precioChip = showIva ? pCiva : pSiva;
-  const ivaChipLbl = showIva ? 'c/IVA' : 's/IVA';
-  const margen     = pSiva > 0 ? ((pSiva - costo) / pSiva * 100) : 0;
+  const suf = showKg ? '/kg' : '/u';
+  const contrib = b.siva - b.costo;
+  const margen = b.siva > 0 ? (contrib / b.siva * 100) : 0;
+  const st = simState[p.key] || {};
 
   return `
   <div class="product-card" id="card-${idx}">
     <div class="card-header" onclick="toggleCard(${idx})">
       <div class="card-info">
-        <div class="product-name">${p.nombre}</div>
-        ${p.grupo ? `<div class="group-badge">${p.grupo}</div>` : ''}
+        <div class="name-row">
+          <div class="product-name">${esc(p.nombre)}</div>
+          ${p.sku ? `<span class="sku-tag">${esc(p.sku)}</span>` : ''}
+        </div>
+        ${p.grupo ? `<div class="group-badge">${esc(p.grupo)}</div>` : ''}
         <div class="price-chips">
-          <span class="chip chip-price">$${fmt(precioChip)}${modoSufijo} ${ivaChipLbl}</span>
+          <span class="chip chip-price">$${fmt(showIva ? b.civa : b.siva)}${suf} ${showIva ? 'c/IVA' : 's/IVA'}</span>
           <span class="chip chip-margen">Margen ${margen.toFixed(1)}%</span>
-          <span class="chip chip-iva ${ivaClass}">${ivaLabel}</span>
+          <span class="chip chip-iva ${p.ivaRate === 0.105 ? 'reduced' : ''}">${ivaLabel}</span>
+          ${inQuote(p) ? '<span class="chip chip-inq">En cotización</span>' : ''}
         </div>
       </div>
-      <span class="expand-icon">▼</span>
+      <span class="expand-icon">&#9660;</span>
     </div>
 
-    <div class="card-body" id="body-${idx}">
-      <div class="section-label">Precios base — ${showKg ? 'por Kg' : 'por Unidad'}</div>
+    <div class="card-body">
+      <div class="section-label">Precios base: ${showKg ? 'por Kg' : 'por Unidad'}</div>
       <div class="data-grid">
-        <div class="data-cell">
-          <div class="label">Precio s/IVA</div>
-          <div class="value">$${fmt(pSiva)}</div>
-        </div>
-        <div class="data-cell">
-          <div class="label">Precio c/IVA</div>
-          <div class="value positive">$${fmt(pCiva)}</div>
-        </div>
-        <div class="data-cell">
-          <div class="label">Costo${showKg ? '/kg' : '/u'}</div>
-          <div class="value">$${fmt(costo)}</div>
-        </div>
-        <div class="data-cell">
-          <div class="label">Contribución</div>
-          <div class="value neutral">$${fmt(contrib)}</div>
-        </div>
+        <div class="data-cell"><div class="label">Precio s/IVA</div><div class="value">$${fmt(b.siva)}</div></div>
+        <div class="data-cell"><div class="label">Precio c/IVA</div><div class="value positive">$${fmt(b.civa)}</div></div>
+        <div class="data-cell"><div class="label">Costo${suf}</div><div class="value">$${fmt(b.costo)}</div></div>
+        <div class="data-cell"><div class="label">Contribución</div><div class="value neutral">$${fmt(contrib)}</div></div>
       </div>
 
       <div class="section-label">Simulación</div>
       <div class="inputs-section">
         <div class="input-row">
           <label>Precio competencia <span style="font-weight:400;color:var(--text3)">${showIva ? '(c/IVA)' : '(s/IVA)'}</span></label>
-          <input type="number" inputmode="decimal" placeholder="0" id="comp-${idx}"
-            oninput="calcCard(${idx})">
+          <input type="number" inputmode="decimal" placeholder="0" id="comp-${idx}" value="${st.comp ?? ''}" oninput="calcCard(${idx})">
           <span class="input-unit">$</span>
         </div>
         <div class="input-row">
           <label>Descuento</label>
-          <input type="number" inputmode="decimal" placeholder="0" id="desc-${idx}" min="0" max="100"
-            oninput="calcCard(${idx})">
+          <input type="number" inputmode="decimal" placeholder="0" id="desc-${idx}" value="${st.desc ?? ''}" min="0" max="100" oninput="calcCard(${idx})">
           <span class="input-unit">%</span>
         </div>
       </div>
 
       <div class="section-label">Resultado</div>
       <div class="results-grid">
-        <div class="result-card">
-          <div class="label">Precio c/desc ${showIva ? 'c/IVA' : 's/IVA'} ${showKg ? '/kg' : '/u'}</div>
-          <div class="value" id="rs-siva-${idx}">—</div>
-        </div>
-        <div class="result-card">
-          <div class="label">% Margen c/desc</div>
-          <div class="value" id="rs-civa-${idx}">—</div>
-        </div>
-        <div class="result-card">
-          <div class="label">Contrib. c/desc</div>
-          <div class="value" id="rs-cont-${idx}">—</div>
-        </div>
-        <div class="result-card" id="rs-diff-card-${idx}">
-          <div class="label">vs Competencia</div>
-          <div class="value" id="rs-diff-${idx}">—</div>
-        </div>
+        <div class="result-card"><div class="label">Precio c/desc ${showIva ? 'c/IVA' : 's/IVA'} ${suf}</div><div class="value" id="rs-precio-${idx}">-</div></div>
+        <div class="result-card"><div class="label">% Margen c/desc</div><div class="value" id="rs-margen-${idx}">-</div></div>
+        <div class="result-card"><div class="label">Contrib. c/desc</div><div class="value" id="rs-cont-${idx}">-</div></div>
+        <div class="result-card" id="rs-diff-card-${idx}"><div class="label">vs Competencia</div><div class="value" id="rs-diff-${idx}">-</div></div>
       </div>
+
+      <button class="add-quote-btn" id="addq-${idx}" onclick="addToQuote(${idx})">${inQuote(p) ? 'Actualizar en cotización' : 'Agregar a cotización'}</button>
     </div>
   </div>`;
 }
 
 function toggleCard(idx) {
-  document.getElementById(`card-${idx}`).classList.toggle('expanded');
+  document.getElementById('card-' + idx).classList.toggle('expanded');
 }
 
-/* ── Calculadora del simulador ──────────────────────────────────── */
+/* ---------- Simulador ---------- */
+function simulate(p, kg, iva, compVal, descPct) {
+  const b = basePrices(p, kg);
+  const factor = 1 - descPct / 100;
+  const siva = b.siva * factor;
+  const civa = siva * (1 + p.ivaRate);
+  const contrib = siva - b.costo;
+  const margenPct = b.costo > 0 ? (contrib / b.costo * 100) : 0;
+  const myPrice = iva ? civa : siva;
+  const diff = compVal > 0 ? ((myPrice - compVal) / compVal * 100) : null;
+  return { b, siva, civa, contrib, margenPct, diff };
+}
+
 function calcCard(idx) {
   const p = filteredList[idx];
   if (!p) return;
+  const compRaw = document.getElementById('comp-' + idx).value;
+  const descRaw = document.getElementById('desc-' + idx).value;
 
-  const comp    = parseFloat(document.getElementById(`comp-${idx}`).value) || 0;
-  const descPct = parseFloat(document.getElementById(`desc-${idx}`).value) || 0;
-  const factor  = 1 - descPct / 100;
+  if (compRaw === '' && descRaw === '') delete simState[p.key];
+  else simState[p.key] = { comp: compRaw, desc: descRaw };
 
-  let pSiva, pCiva, costo;
-  if (showKg) {
-    pSiva = p.precioKg * factor;
-    pCiva = pSiva * (1 + p.ivaRate);
-    costo = p.costoKg;
+  const r = simulate(p, showKg, showIva, parseFloat(compRaw) || 0, parseFloat(descRaw) || 0);
+
+  document.getElementById('rs-precio-' + idx).textContent = '$' + fmt(showIva ? r.civa : r.siva);
+  const mEl = document.getElementById('rs-margen-' + idx);
+  mEl.textContent = (r.margenPct >= 0 ? '+' : '') + r.margenPct.toFixed(1) + '%';
+  mEl.className = 'value ' + (r.margenPct >= 0 ? 'positive' : 'negative');
+  const cEl = document.getElementById('rs-cont-' + idx);
+  cEl.textContent = '$' + fmt(r.contrib);
+  cEl.className = 'value ' + (r.contrib >= 0 ? 'positive' : 'negative');
+
+  const dEl = document.getElementById('rs-diff-' + idx);
+  const dCard = document.getElementById('rs-diff-card-' + idx);
+  if (r.diff !== null) {
+    dEl.textContent = (r.diff >= 0 ? '+' : '') + r.diff.toFixed(1) + '%';
+    dCard.className = 'result-card ' + (r.diff <= 0 ? 'highlight' : 'warn-card');
   } else {
-    pSiva = p.precioU * factor;
-    pCiva = pSiva * (1 + p.ivaRate);
-    costo = p.costoKg * p.peso;
-  }
-  const contrib = pSiva - costo;
-
-  // Card 1: precio según toggles
-  const displayPrice = showIva ? pCiva : pSiva;
-  document.getElementById(`rs-siva-${idx}`).textContent = `$${fmt(displayPrice)}`;
-
-  // Card 2: % margen sobre costo
-  const margenPct = costo > 0 ? ((pSiva - costo) / costo * 100) : 0;
-  const mEl = document.getElementById(`rs-civa-${idx}`);
-  mEl.textContent = `${margenPct >= 0 ? '+' : ''}${margenPct.toFixed(1)}%`;
-  mEl.className   = `value ${margenPct >= 0 ? 'positive' : 'negative'}`;
-
-  // Card 3: contribución
-  const cEl = document.getElementById(`rs-cont-${idx}`);
-  cEl.textContent = `$${fmt(contrib)}`;
-  cEl.className   = `value ${contrib >= 0 ? 'positive' : 'negative'}`;
-
-  // Card 4: vs competencia
-  const dEl   = document.getElementById(`rs-diff-${idx}`);
-  const dCard = document.getElementById(`rs-diff-card-${idx}`);
-  if (comp > 0) {
-    const myPrice = showIva ? pCiva : pSiva;
-    const diff    = ((myPrice - comp) / comp) * 100;
-    dEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
-    dEl.className   = 'value';
-    dCard.className = `result-card ${diff <= 0 ? 'highlight' : 'warn-card'}`;
-  } else {
-    dEl.textContent = '—';
-    dEl.className   = 'value';
+    dEl.textContent = '-';
     dCard.className = 'result-card';
   }
 }
 
-/* ── Helpers ────────────────────────────────────────────────────── */
-function fmt(n) {
-  if (n === null || n === undefined || isNaN(n)) return '—';
-  return Math.round(n).toLocaleString('es-AR');
+/* ---------- Cotización: guardar en el navegador ---------- */
+function saveQuote() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(quote)); } catch (e) {}
+  document.getElementById('quoteCount').textContent = quote.items.length;
 }
-function fmtTime(d) {
-  return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+function loadQuote() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) quote = Object.assign(quote, JSON.parse(raw));
+  } catch (e) {}
+  if (!quote.fecha) quote.fecha = todayISO();
+  document.getElementById('qCliente').value = quote.cliente || '';
+  document.getElementById('qFecha').value = quote.fecha;
+  document.getElementById('qObs').value = quote.obs || '';
+  document.getElementById('qIva').checked = quote.conIva !== false;
+  document.getElementById('qInternos').checked = !!quote.internos;
+  document.getElementById('quoteCount').textContent = quote.items.length;
 }
+function saveHeader() {
+  quote.cliente  = document.getElementById('qCliente').value;
+  quote.fecha    = document.getElementById('qFecha').value;
+  quote.obs      = document.getElementById('qObs').value;
+  quote.conIva   = document.getElementById('qIva').checked;
+  quote.internos = document.getElementById('qInternos').checked;
+  saveQuote();
+}
+
+/* ---------- Cotización: agregar desde una tarjeta ---------- */
+function addToQuote(idx) {
+  const p = filteredList[idx];
+  if (!p) return;
+  const st = simState[p.key] || {};
+  const comp = parseFloat(st.comp) || 0;
+  const desc = parseFloat(st.desc) || 0;
+  const r = simulate(p, showKg, showIva, comp, desc);
+
+  const line = {
+    key: p.key, sku: p.sku, nombre: p.nombre,
+    unidad: showKg ? 'kg' : 'u',
+    listaSiva: r.b.siva, listaCiva: r.b.civa,
+    desc, finalSiva: r.siva, finalCiva: r.civa,
+    costo: r.b.costo, contrib: r.contrib, margenPct: r.margenPct,
+    comp, compBase: showIva ? 'c/IVA' : 's/IVA', diff: r.diff,
+    ivaRate: p.ivaRate, qty: 1,
+  };
+
+  const i = quote.items.findIndex(it => it.key === p.key);
+  if (i >= 0) { line.qty = quote.items[i].qty; quote.items[i] = line; }
+  else quote.items.push(line);
+  saveQuote();
+
+  const btn = document.getElementById('addq-' + idx);
+  btn.textContent = i >= 0 ? 'Actualizado en cotización' : 'Agregado a cotización';
+  btn.classList.add('done');
+  setTimeout(() => { btn.textContent = 'Actualizar en cotización'; btn.classList.remove('done'); }, 1500);
+}
+
+/* ---------- Cotización: vista ---------- */
+function lineUnitPrice(it) { return quote.conIva ? it.finalCiva : it.finalSiva; }
+
+function renderQuote() {
+  const box = document.getElementById('qItems');
+  const items = quote.items;
+  document.getElementById('qExport').disabled = !items.length;
+  document.getElementById('qClear').disabled = !items.length;
+
+  if (!items.length) {
+    box.innerHTML = '<div class="q-empty">Todavía no agregaste productos.<br>Abrí una tarjeta en Precios y tocá "Agregar a cotización".</div>';
+    document.getElementById('qTotal').textContent = '$0';
+    return;
+  }
+
+  let total = 0;
+  box.innerHTML = items.map((it, i) => {
+    const pu = lineUnitPrice(it);
+    const sub = pu * it.qty;
+    total += sub;
+    const below = it.contrib < 0;
+    return `
+    <div class="q-item${below ? ' below-cost' : ''}">
+      <div class="q-order">
+        <button onclick="moveItem(${i},-1)" ${i === 0 ? 'disabled' : ''} title="Subir">&#9650;</button>
+        <button onclick="moveItem(${i},1)" ${i === items.length - 1 ? 'disabled' : ''} title="Bajar">&#9660;</button>
+      </div>
+      <div class="q-main">
+        <div class="q-name">${i + 1}. ${esc(it.nombre)}</div>
+        <div class="q-meta">${it.sku ? esc(it.sku) + ' | ' : ''}$${fmt(pu)}/${it.unidad} ${quote.conIva ? 'c/IVA' : 's/IVA'}${it.desc ? ' | Dto ' + it.desc + '%' : ''}</div>
+        <div class="q-row">
+          Cant. (${it.unidad})
+          <input type="number" inputmode="decimal" min="0" step="any" value="${it.qty}" onchange="setQty(${i}, this.value)">
+          <span class="q-sub">$${fmt(sub)}</span>
+        </div>
+        ${below ? '<div class="q-alert">Precio por debajo del costo</div>' : ''}
+      </div>
+      <button class="q-del" onclick="removeItem(${i})" title="Quitar">&#10005;</button>
+    </div>`;
+  }).join('');
+  document.getElementById('qTotal').textContent = '$' + fmt(total);
+}
+
+function moveItem(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= quote.items.length) return;
+  [quote.items[i], quote.items[j]] = [quote.items[j], quote.items[i]];
+  saveQuote(); renderQuote();
+}
+function setQty(i, v) {
+  quote.items[i].qty = Math.max(0, parseFloat(v) || 0);
+  saveQuote(); renderQuote();
+}
+function removeItem(i) {
+  quote.items.splice(i, 1);
+  saveQuote(); renderQuote();
+}
+function clearQuote() {
+  if (!confirm('¿Vaciar la cotización? Se eliminan todos los productos cargados.')) return;
+  quote.items = [];
+  saveQuote(); renderQuote();
+}
+
+function showView(v) {
+  const isQ = v === 'cotizacion';
+  document.getElementById('viewPrecios').style.display = isQ ? 'none' : 'block';
+  document.getElementById('viewCotizacion').style.display = isQ ? 'block' : 'none';
+  document.getElementById('searchWrap').style.display = isQ ? 'none' : 'flex';
+  document.getElementById('tabPrecios').classList.toggle('active', !isQ);
+  document.getElementById('tabCotizacion').classList.toggle('active', isQ);
+  if (isQ) renderQuote(); else if (allProducts.length) renderProducts();
+  window.scrollTo(0, 0);
+}
+
+/* ---------- Exportar a Excel ---------- */
+function exportExcel() {
+  if (!quote.items.length) return;
+  if (typeof XLSX === 'undefined') { alert('No se pudo cargar el generador de Excel. Revisá la conexión e intentá de nuevo.'); return; }
+  saveHeader();
+
+  const ivaTxt = quote.conIva ? 'c/IVA' : 's/IVA';
+  const fechaTxt = quote.fecha ? quote.fecha.split('-').reverse().join('/') : '';
+
+  const head = ['#', 'SKU', 'Producto', 'Unidad', 'Cantidad',
+    'Precio lista ' + ivaTxt, 'Descuento', 'Precio final ' + ivaTxt, 'Subtotal ' + ivaTxt];
+  if (quote.internos) head.push('Costo s/IVA', 'Contribución s/IVA', 'Margen s/costo', 'Precio competencia', 'Base competencia', 'Dif. vs competencia');
+
+  const rows = [
+    ['Cotización CEDISUR'],
+    ['Cliente', quote.cliente || ''],
+    ['Fecha', fechaTxt],
+    ['Observaciones', quote.obs || ''],
+    [],
+    head,
+  ];
+  const firstDataRow = rows.length;
+  let total = 0;
+  quote.items.forEach((it, i) => {
+    const lista = quote.conIva ? it.listaCiva : it.listaSiva;
+    const pu = lineUnitPrice(it);
+    const sub = pu * it.qty;
+    total += sub;
+    const r = [i + 1, it.sku, it.nombre, it.unidad, it.qty, lista, it.desc / 100, pu, sub];
+    if (quote.internos) r.push(it.costo, it.contrib, it.margenPct / 100, it.comp || '', it.comp ? it.compBase : '', it.diff !== null && it.diff !== undefined ? it.diff / 100 : '');
+    rows.push(r);
+  });
+  const totalRow = rows.length;
+  rows.push(['', '', '', '', '', '', '', 'TOTAL', total]);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const money = '"$"#,##0.00', pct = '0.0%';
+  const moneyCols = [5, 7, 8].concat(quote.internos ? [9, 10, 12] : []);
+  const pctCols = [6].concat(quote.internos ? [11, 14] : []);
+  for (let R = firstDataRow; R <= totalRow; R++) {
+    moneyCols.forEach(C => { const c = ws[XLSX.utils.encode_cell({ r: R, c: C })]; if (c && typeof c.v === 'number') c.z = money; });
+    pctCols.forEach(C => { const c = ws[XLSX.utils.encode_cell({ r: R, c: C })]; if (c && typeof c.v === 'number') c.z = pct; });
+  }
+  ws['!cols'] = [{ wch: 4 }, { wch: 14 }, { wch: 48 }, { wch: 8 }, { wch: 10 }, { wch: 16 }, { wch: 11 }, { wch: 16 }, { wch: 16 }]
+    .concat(quote.internos ? [{ wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 15 }, { wch: 18 }] : []);
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Cotización');
+  const cli = (quote.cliente || 'cliente').replace(/[^\w\- áéíóúñÁÉÍÓÚÑ]/g, '').trim().replace(/\s+/g, '_') || 'cliente';
+  XLSX.writeFile(wb, 'Cotizacion_CEDISUR_' + cli + '_' + (quote.fecha || todayISO()) + '.xlsx');
+}
+
+/* ---------- Estados de pantalla ---------- */
 function setLoading(on) {
   document.getElementById('loadingScreen').style.display = on ? 'flex' : 'none';
-  document.getElementById('errorScreen').style.display   = 'none';
-  if (!on) document.getElementById('productsList').style.display = 'flex';
+  document.getElementById('errorScreen').style.display = 'none';
+  if (on) { document.getElementById('productsList').style.display = 'none'; document.getElementById('moreBtn').style.display = 'none'; }
 }
 function showError(msg) {
   document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('errorScreen').style.display   = 'flex';
-  document.getElementById('errorMsg').textContent        = msg;
-  document.getElementById('productsList').style.display  = 'none';
+  document.getElementById('errorScreen').style.display = 'flex';
+  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('productsList').style.display = 'none';
+  document.getElementById('moreBtn').style.display = 'none';
 }
 function setStatus(ok, text) {
-  document.getElementById('statusDot').className    = `status-dot${ok ? ' live' : ''}`;
+  document.getElementById('statusDot').className = 'status-dot' + (ok ? ' live' : '');
   document.getElementById('statusText').textContent = text;
 }
 
-/* ── Eventos ────────────────────────────────────────────────────── */
+/* ---------- Eventos ---------- */
+let searchTimer;
 document.getElementById('searchInput').addEventListener('input', e => {
-  searchQuery = e.target.value;
-  renderProducts();
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { searchQuery = e.target.value; visibleCount = PAGE_SIZE; renderProducts(); }, 200);
 });
 document.getElementById('searchModeSelect').addEventListener('change', e => {
   searchMode = e.target.value;
-  const placeholders = { nombre: 'Buscar producto...', grupo: 'Buscar por grupo...', marca: 'Buscar por marca...' };
-  document.getElementById('searchInput').placeholder = placeholders[searchMode];
+  const ph = { nombre: 'Buscar producto o SKU...', sku: 'Buscar por SKU...', grupo: 'Buscar por grupo...', marca: 'Buscar por marca...' };
+  document.getElementById('searchInput').placeholder = ph[searchMode];
+  visibleCount = PAGE_SIZE;
   renderProducts();
 });
-document.getElementById('ivaToggle').addEventListener('change', e => {
-  showIva = e.target.checked;
-  renderProducts();
-});
-document.getElementById('kgToggle').addEventListener('change', e => {
-  showKg = e.target.checked;
-  renderProducts();
-});
+document.getElementById('ivaToggle').addEventListener('change', e => { showIva = e.target.checked; renderProducts(); });
+document.getElementById('kgToggle').addEventListener('change', e => { showKg = e.target.checked; renderProducts(); });
 
+loadQuote();
 loadData();
 </script>
 </body>

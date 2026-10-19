@@ -60,9 +60,9 @@
 
   /* TAB SWITCHER */
   .view-tabs { display: flex; gap: 4px; margin-top: 0.5rem; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 3px; }
-  .view-tab { flex: 1; text-align: center; padding: 5px 0; border-radius: 6px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); background: transparent; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .view-tab { flex: 1; text-align: center; position: relative; padding: 5px 2px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; color: rgba(255,255,255,0.6); background: transparent; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
   .view-tab.active { background: #fff; color: var(--accent); }
-  .view-tab .badge-count { display: inline-block; margin-left: 5px; background: var(--sup); color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 6px; }
+  .view-tab .badge-count { position: absolute; top: -7px; right: 1px; background: var(--sup); color: #fff; font-size: 9px; font-weight: 700; line-height: 14px; min-width: 14px; text-align: center; border-radius: 10px; padding: 0 4px; }
 
   /* SOLICITUDES */
   .sol-filter { padding: 0.75rem 1.25rem 0; }
@@ -224,6 +224,7 @@
   .map-legend-chip { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; cursor: pointer; border: 1.5px solid transparent; background: #fff; color: var(--text2); -webkit-tap-highlight-color: transparent; }
   .map-legend-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .map-legend-chip.off { opacity: 0.35; }
+  .map-dia-select { width: auto; flex: 1; max-width: 170px; margin: 0 8px; }
   .map-sin-coords { font-size: 11px; color: var(--text3); padding: 0 1rem 0.5rem; flex-shrink: 0; }
   #leaflet-map { flex: 1; width: 100%; }
   .map-num-marker { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; }
@@ -237,6 +238,27 @@
   .btn-cli-accion { width: 100%; padding: 0.45rem; border-radius: 7px; border: none; background: var(--sup); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: auto; }
   .btn-cli-accion.danger { background: #C0392B; }
   .btn-cli-accion.info { background: #7C3AED; }
+
+  /* PESTAÑA EQUIPO */
+  .eq-resumen { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem 1rem; margin: 0.75rem 1.25rem 0; }
+  .eq-resumen-num { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--text); line-height: 1.1; }
+  .eq-resumen-txt { font-size: 12px; color: var(--text2); margin: 2px 0 8px; }
+  .eq-bar { height: 8px; background: var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+  .eq-bar-fill { height: 100%; background: #2D8A52; border-radius: 6px; }
+  .eq-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 8px; padding: 0.75rem 1.25rem; }
+  .eq-faltan { font-size: 12px; font-weight: 600; color: #B45309; margin-bottom: 6px; }
+  .eq-ok { font-size: 12px; font-weight: 600; color: #1F7A42; margin-bottom: 6px; }
+  .eq-dias { display: grid; grid-template-columns: 1fr auto auto; column-gap: 10px; row-gap: 3px; font-size: 12px; color: var(--text2); margin: 8px 0; padding-top: 8px; border-top: 1px solid var(--border); }
+  .eq-dia-nombre { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 600; }
+  .eq-dia-nombre .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .eq-dia-num { text-align: right; font-family: 'DM Mono', monospace; }
+  .eq-nota { font-size: 11px; color: var(--text3); padding: 0.5rem 1.25rem 0; }
+  .eq-acciones { display: flex; gap: 6px; margin-top: auto; }
+  .eq-acciones .btn-cli-accion { margin-top: 0; }
+  .btn-cli-accion.sec { background: var(--accent-light); color: var(--accent); }
+  .eq-faltan-lista { display: none; font-size: 11px; color: var(--text2); background: var(--bg); border-radius: 6px; padding: 6px 8px; margin-top: 6px; line-height: 1.5; }
+  .eq-faltan-lista.open { display: block; }
+  .btn-link { background: none; border: none; color: var(--accent); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; padding: 4px 0; cursor: pointer; text-align: left; }
 </style>
 </head>
 <body>
@@ -276,6 +298,7 @@
     <button class="view-tab active" id="tab-ruteo" onclick="cambiarVista('ruteo')">Ruteo</button>
     <button class="view-tab" id="tab-solicitudes" onclick="cambiarVista('solicitudes')">Solicitudes<span class="badge-count" id="sol-badge" style="display:none">0</span></button>
     <button class="view-tab" id="tab-clientes" onclick="cambiarVista('clientes')">Clientes<span class="badge-count" id="cli-badge" style="display:none">0</span></button>
+    <button class="view-tab" id="tab-equipo" onclick="cambiarVista('equipo')">Equipo</button>
   </div>
   <div id="ruteo-controls">
     <select id="vendedor-select"></select>
@@ -444,6 +467,12 @@
 <div class="map-overlay" id="map-overlay">
   <div class="map-header">
     <div class="map-title" id="map-title">Mapa de clientes</div>
+    <select id="map-dia-select" class="map-dia-select" style="display:none" onchange="dibujarMapaZona()">
+      <option value="">Todos los días</option>
+      <option value="LUNES">Lunes</option><option value="MARTES">Martes</option>
+      <option value="MIERCOLES">Miércoles</option><option value="JUEVES">Jueves</option>
+      <option value="VIERNES">Viernes</option>
+    </select>
     <button class="map-close" onclick="cerrarMapa()">✕</button>
   </div>
   <div class="map-legend" id="map-legend"></div>
@@ -778,6 +807,7 @@ function cambiarVista(v) {
   document.getElementById('tab-ruteo').classList.toggle('active', v === 'ruteo');
   document.getElementById('tab-solicitudes').classList.toggle('active', v === 'solicitudes');
   document.getElementById('tab-clientes').classList.toggle('active', v === 'clientes');
+  document.getElementById('tab-equipo').classList.toggle('active', v === 'equipo');
   document.getElementById('ruteo-controls').style.display = v === 'ruteo' ? 'block' : 'none';
   document.getElementById('sol-controls').style.display = v === 'solicitudes' ? 'block' : 'none';
   document.getElementById('cli-controls').style.display = v === 'clientes' ? 'block' : 'none';
@@ -785,7 +815,16 @@ function cambiarVista(v) {
   if (v !== 'ruteo') { modoSeleccion = false; seleccionados = {}; }
   if (v === 'ruteo') render();
   else if (v === 'solicitudes') { renderSolicitudesView(); renderConfirmBar(); }
-  else { renderClientesView(); renderConfirmBar(); }
+  else if (v === 'clientes') { renderClientesView(); renderConfirmBar(); }
+  else { renderEquipoView(); renderConfirmBar(); }
+}
+
+function refrescarVistaActual() {
+  if (viewMode === 'ruteo') render();
+  else if (viewMode === 'solicitudes') renderSolicitudesView();
+  else if (viewMode === 'clientes') renderClientesView();
+  else renderEquipoView();
+  renderConfirmBar();
 }
 
 // ── PESTAÑA CLIENTES (Etapa 2E) ─────────────────────────────────────────────────
@@ -1780,10 +1819,7 @@ function descartarCambios() {
   if (!confirm('¿Descartar todos los cambios sin guardar?')) return;
   estadoVirtualPorVendedor = {};
   markDirty();
-  if (viewMode === 'ruteo') render();
-  else if (viewMode === 'solicitudes') renderSolicitudesView();
-  else renderClientesView();
-  renderConfirmBar();
+  refrescarVistaActual();
 }
 
 function confirmarCambiosGlobal() {
@@ -1822,10 +1858,7 @@ function confirmarCambiosGlobal() {
   Promise.all(promesas).then(function() {
     estadoVirtualPorVendedor = {};
     markDirty();
-    if (viewMode === 'ruteo') render();
-    else if (viewMode === 'solicitudes') renderSolicitudesView();
-    else renderClientesView();
-    renderConfirmBar();
+    refrescarVistaActual();
     alert('✅ Cambios guardados. Puede tardar unos minutos en reflejarse en la app por el delay de publicación de Google Sheets.');
   }).catch(function() {
     btn.disabled = false;
@@ -1872,7 +1905,7 @@ const COLOR_POR_DIA = {
 let leafletMap = null;
 let capasPorDia = {};
 
-function abrirMapa() {
+function abrirMapa(todosLosDias) {
   if (!selectedVendedor) {
     alert('Seleccioná primero un vendedor para ver su mapa.');
     return;
@@ -1885,9 +1918,10 @@ function abrirMapa() {
   const diasSet = {};
   rows.forEach(function(r) { const d = norm(r['DIA CARGA DE PEDIDO']); if (d) diasSet[d] = true; });
   const diasDisponibles = Object.keys(diasSet).sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
-  const diasAMostrar = diasDisponibles.filter(function(d) { return diasFiltro.indexOf(d) !== -1; });
+  const diasAMostrar = diasDisponibles.filter(function(d) { return todosLosDias || diasFiltro.indexOf(d) !== -1; });
 
   document.getElementById('map-title').textContent = 'Mapa · ' + selectedVendedor;
+  document.getElementById('map-dia-select').style.display = 'none';
   document.getElementById('map-overlay').classList.add('open');
 
   // Inicializar el mapa recién la primera vez (Leaflet necesita el contenedor visible)
@@ -1977,6 +2011,267 @@ function renderLeyendaMapa(dias) {
       const activo = chip.classList.toggle('off');
       if (activo) leafletMap.removeLayer(capasPorDia[dia]);
       else capasPorDia[dia].addTo(leafletMap);
+    });
+    legend.appendChild(chip);
+  });
+}
+
+// ── PESTAÑA EQUIPO ──────────────────────────────────────────────────────────────
+function nombreDia(dia) { return dia.charAt(0) + dia.slice(1).toLowerCase(); }
+
+function tieneUbicacion(row) {
+  return !!parseFloat(row['Latitud']) && !!parseFloat(row['Longitud']);
+}
+
+function distanciaKm(a, b) {
+  const R = 6371;
+  const rad = Math.PI / 180;
+  const dLat = (b[0] - a[0]) * rad;
+  const dLon = (b[1] - a[1]) * rad;
+  const s = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+// Suma la distancia en línea recta entre visitas consecutivas que tienen ubicación
+function kmRecorrido(filas) {
+  const pts = filas.filter(tieneUbicacion).map(function(r) {
+    return [parseFloat(r['Latitud']), parseFloat(r['Longitud'])];
+  });
+  if (pts.length < 2) return null;
+  let km = 0;
+  for (let i = 1; i < pts.length; i++) km += distanciaKm(pts[i - 1], pts[i]);
+  return km;
+}
+
+// Ruteo de un vendedor ya ordenado por día, incluyendo los cambios sin guardar
+function ruteoVirtualPorDia(vendedor) {
+  const rows = ruteoDelVendedor(vendedor);
+  const ev = getEstadoVirtual(vendedor);
+  const porCodigo = {};
+  rows.forEach(function(r) { porCodigo[r['CODIGO CLIENTE']] = r; });
+  Object.keys(ev.altas).forEach(function(c) {
+    if (!porCodigo[c]) {
+      porCodigo[c] = { 'CODIGO CLIENTE': c, 'NOMBRE COMERCIAL': ev.altas[c].nombre, 'LOCALIDAD': ev.altas[c].localidad,
+                       'DIRECCION': ev.altas[c].direccion, 'Latitud': '', 'Longitud': '' };
+    }
+  });
+  const diasSet = {};
+  rows.forEach(function(r) { const d = norm(r['DIA CARGA DE PEDIDO']); if (d) diasSet[d] = true; });
+  Object.keys(ev.diaVirtual).forEach(function(c) { diasSet[ev.diaVirtual[c]] = true; });
+  Object.keys(ev.ordenVirtual).forEach(function(d) { if (ev.ordenVirtual[d].length) diasSet[d] = true; });
+  const dias = Object.keys(diasSet).sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
+  const porDia = {};
+  dias.forEach(function(d) {
+    porDia[d] = listaOrdenDia(vendedor, d, rows).map(function(c) { return porCodigo[c]; }).filter(Boolean);
+  });
+  return { dias: dias, porDia: porDia };
+}
+
+function crearBoton(texto, clase, fn) {
+  const b = document.createElement('button');
+  b.className = clase;
+  b.textContent = texto;
+  if (fn) b.addEventListener('click', fn);
+  return b;
+}
+
+function seleccionarVendedorEnPanel(vendedor) {
+  selectedVendedor = vendedor;
+  const sel = document.getElementById('vendedor-select');
+  if (sel) sel.value = vendedor;
+  modoSeleccion = false;
+  seleccionados = {};
+  guardarSesionStorage();
+}
+function irARuteoDe(vendedor) { seleccionarVendedorEnPanel(vendedor); cambiarVista('ruteo'); }
+function verMapaDe(vendedor) { seleccionarVendedorEnPanel(vendedor); abrirMapa(true); }
+
+function renderEquipoView() {
+  const content = document.getElementById('app-content');
+  content.innerHTML = '';
+  if (!vendedoresZona.length) {
+    content.innerHTML = '<div class="empty"><div class="empty-text">No hay vendedores cargados en tu zona.</div></div>';
+    return;
+  }
+
+  const equipo = vendedoresZona.map(function(v) {
+    const datos = ruteoVirtualPorDia(v);
+    let total = 0;
+    const faltan = [];
+    datos.dias.forEach(function(dia) {
+      datos.porDia[dia].forEach(function(row) {
+        total++;
+        if (!tieneUbicacion(row)) faltan.push({ row: row, dia: dia });
+      });
+    });
+    return { vendedor: v, datos: datos, total: total, faltan: faltan };
+  });
+  // Primero quienes tienen más clientes sin ubicar: son los que requieren acción
+  equipo.sort(function(a, b) { return (b.faltan.length - a.faltan.length) || a.vendedor.localeCompare(b.vendedor); });
+
+  const totalZona = equipo.reduce(function(s, e) { return s + e.total; }, 0);
+  const faltanZona = equipo.reduce(function(s, e) { return s + e.faltan.length; }, 0);
+  const conUbic = totalZona - faltanZona;
+  const pct = totalZona ? Math.round(conUbic * 100 / totalZona) : 0;
+
+  const resumen = document.createElement('div');
+  resumen.className = 'eq-resumen';
+  resumen.innerHTML =
+    '<div class="eq-resumen-num">' + conUbic + ' de ' + totalZona + '</div>' +
+    '<div class="eq-resumen-txt">clientes de la zona tienen ubicación cargada (' + pct + '%)</div>' +
+    '<div class="eq-bar"><div class="eq-bar-fill" style="width:' + pct + '%"></div></div>';
+  resumen.appendChild(crearBoton('Ver mapa de toda la zona', 'btn-cli-accion', abrirMapaZona));
+  content.appendChild(resumen);
+
+  const nota = document.createElement('div');
+  nota.className = 'eq-nota';
+  nota.textContent = 'Los kilómetros son aproximados, en línea recta entre una visita y la siguiente. Con * no incluyen clientes sin ubicación.';
+  content.appendChild(nota);
+
+  const list = document.createElement('div');
+  list.className = 'eq-list';
+
+  equipo.forEach(function(e) {
+    const card = document.createElement('div');
+    card.className = 'cli-card';
+    const conU = e.total - e.faltan.length;
+    const pctV = e.total ? Math.round(conU * 100 / e.total) : 0;
+
+    let html = '<div class="cli-nombre">' + e.vendedor + '</div>' +
+               '<div class="cli-sub">' + e.total + ' cliente' + (e.total !== 1 ? 's' : '') + ' en el ruteo</div>';
+
+    if (!e.total) {
+      card.innerHTML = html + '<div class="cli-detalle">Todavía no tiene clientes ruteados.</div>';
+      list.appendChild(card);
+      return;
+    }
+
+    html += '<div class="eq-bar"><div class="eq-bar-fill" style="width:' + pctV + '%"></div></div>';
+    html += e.faltan.length
+      ? '<div class="eq-faltan">Faltan ubicar ' + e.faltan.length + ' de ' + e.total + '</div>'
+      : '<div class="eq-ok">Todos los clientes tienen ubicación</div>';
+
+    html += '<div class="eq-dias">';
+    e.datos.dias.forEach(function(dia) {
+      const filas = e.datos.porDia[dia];
+      if (!filas.length) return;
+      const km = kmRecorrido(filas);
+      const sinUbic = filas.filter(function(r) { return !tieneUbicacion(r); }).length;
+      html += '<div class="eq-dia-nombre"><span class="dot" style="background:' + (COLOR_POR_DIA[dia] || '#666') + '"></span>' + nombreDia(dia) + '</div>' +
+              '<div class="eq-dia-num">' + filas.length + (filas.length === 1 ? ' cliente' : ' clientes') + '</div>' +
+              '<div class="eq-dia-num">' + (km === null ? 'sin datos' : '~' + Math.round(km) + ' km' + (sinUbic ? '*' : '')) + '</div>';
+    });
+    html += '</div>';
+    card.innerHTML = html;
+
+    if (e.faltan.length) {
+      const lista = document.createElement('div');
+      lista.className = 'eq-faltan-lista';
+      lista.innerHTML = e.faltan.map(function(f) {
+        return f.row['NOMBRE COMERCIAL'] + ' (' + (f.row['LOCALIDAD'] || '') + ', ' + nombreDia(f.dia) + ')';
+      }).join('<br>');
+      const toggle = crearBoton('Ver cuáles faltan', 'btn-link', null);
+      toggle.addEventListener('click', function() {
+        const abierto = lista.classList.toggle('open');
+        toggle.textContent = abierto ? 'Ocultar lista' : 'Ver cuáles faltan';
+      });
+      card.appendChild(toggle);
+      card.appendChild(lista);
+    }
+
+    const acciones = document.createElement('div');
+    acciones.className = 'eq-acciones';
+    acciones.appendChild(crearBoton('Ver mapa', 'btn-cli-accion', function() { verMapaDe(e.vendedor); }));
+    acciones.appendChild(crearBoton('Ver ruteo', 'btn-cli-accion sec', function() { irARuteoDe(e.vendedor); }));
+    card.appendChild(acciones);
+
+    list.appendChild(card);
+  });
+
+  content.appendChild(list);
+}
+
+// ── MAPA DE TODA LA ZONA (un color por vendedor) ─────────────────────────────────
+const PALETA_VENDEDORES = ['#1d3a8f', '#C0392B', '#0F766E', '#7C3AED', '#C2410C', '#B45309',
+                           '#2D8A52', '#BE185D', '#0369A1', '#4D7C0F', '#6D28D9', '#9A3412'];
+let vendedoresOcultosZona = {};
+
+function colorVendedor(v) {
+  const i = vendedoresZona.indexOf(v);
+  return PALETA_VENDEDORES[(i < 0 ? 0 : i) % PALETA_VENDEDORES.length];
+}
+
+function abrirMapaZona() {
+  vendedoresOcultosZona = {};
+  document.getElementById('map-title').textContent = 'Mapa de la zona ' + (supActual['Zona'] || '');
+  const sel = document.getElementById('map-dia-select');
+  sel.style.display = 'block';
+  sel.value = '';
+  document.getElementById('map-overlay').classList.add('open');
+
+  setTimeout(function() {
+    if (!leafletMap) {
+      leafletMap = L.map('leaflet-map');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19
+      }).addTo(leafletMap);
+    }
+    leafletMap.invalidateSize();
+    dibujarMapaZona();
+  }, 50);
+}
+
+function dibujarMapaZona() {
+  const diaFiltro = document.getElementById('map-dia-select').value;
+  Object.keys(capasPorDia).forEach(function(k) { leafletMap.removeLayer(capasPorDia[k]); });
+  capasPorDia = {};
+  const bounds = [];
+  let sinCoords = 0;
+
+  vendedoresZona.forEach(function(v) {
+    const datos = ruteoVirtualPorDia(v);
+    const color = colorVendedor(v);
+    const layer = L.layerGroup();
+    datos.dias.forEach(function(dia) {
+      if (diaFiltro && dia !== diaFiltro) return;
+      datos.porDia[dia].forEach(function(row, idx) {
+        if (!tieneUbicacion(row)) { sinCoords++; return; }
+        const lat = parseFloat(row['Latitud']);
+        const lon = parseFloat(row['Longitud']);
+        L.circleMarker([lat, lon], { radius: 6, color: '#fff', weight: 1.5, fillColor: color, fillOpacity: 0.9 })
+          .bindPopup('<strong>' + (row['NOMBRE COMERCIAL'] || '') + '</strong><br>' + v + '<br>' +
+                     nombreDia(dia) + ' · visita ' + (idx + 1))
+          .addTo(layer);
+        bounds.push([lat, lon]);
+      });
+    });
+    if (!vendedoresOcultosZona[v]) layer.addTo(leafletMap);
+    capasPorDia[v] = layer;
+  });
+
+  document.getElementById('map-sin-coords').textContent =
+    sinCoords > 0 ? sinCoords + ' cliente' + (sinCoords !== 1 ? 's' : '') + ' sin ubicación cargada (no se muestran en el mapa)' : '';
+
+  renderLeyendaZona();
+  if (bounds.length) leafletMap.fitBounds(bounds, { padding: [30, 30] });
+  else leafletMap.setView([-38.95, -68.06], 7);
+}
+
+function renderLeyendaZona() {
+  const legend = document.getElementById('map-legend');
+  legend.innerHTML = '';
+  vendedoresZona.forEach(function(v) {
+    const chip = document.createElement('button');
+    chip.className = 'map-legend-chip' + (vendedoresOcultosZona[v] ? ' off' : '');
+    chip.innerHTML = '<span class="dot" style="background:' + colorVendedor(v) + '"></span>' + v;
+    chip.addEventListener('click', function() {
+      const oculto = !vendedoresOcultosZona[v];
+      vendedoresOcultosZona[v] = oculto;
+      chip.classList.toggle('off', oculto);
+      if (oculto) leafletMap.removeLayer(capasPorDia[v]);
+      else capasPorDia[v].addTo(leafletMap);
     });
     legend.appendChild(chip);
   });

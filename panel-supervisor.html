@@ -637,9 +637,43 @@ function getFechaFactura(codigo) {
   return _fechaFacturaIndex[codigo] || '';
 }
 
+// ── COORDENADAS: ruteo (BASE RUTEO) y SAP (BASE CLIENTES) ──────────────────────
+// Prioridad: la ubicación cargada en el ruteo; si no hay, la de SAP. Se descartan valores fuera de Argentina.
+function numCoord(v) {
+  const n = parseFloat(String(v == null ? '' : v).trim().replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+function coordValida(lat, lon) {
+  return lat !== null && lon !== null && lat <= -21 && lat >= -56 && lon <= -53 && lon >= -74;
+}
+let _sapIndex = null;
+function coordsSAP(codigo) {
+  if (!_sapIndex) {
+    _sapIndex = {};
+    baseClientes.forEach(function(c) {
+      const lat = numCoord(c['Latitud']);
+      const lon = numCoord(c['Longitud']);
+      if (coordValida(lat, lon)) _sapIndex[c['Código SN']] = { lat: lat, lon: lon };
+    });
+  }
+  return _sapIndex[codigo] || null;
+}
+function coordsDe(row) {
+  const lat = numCoord(row['Latitud']);
+  const lon = numCoord(row['Longitud']);
+  if (coordValida(lat, lon)) return { lat: lat, lon: lon, origen: 'ruteo' };
+  const sap = coordsSAP(row['CODIGO CLIENTE']);
+  return sap ? { lat: sap.lat, lon: sap.lon, origen: 'sap' } : null;
+}
+function textoOrigenUbicacion(row) {
+  const co = coordsDe(row);
+  if (!co) return 'Sin ubicación cargada';
+  return co.origen === 'sap' ? 'Cargada desde SAP' : 'Cargada en el ruteo';
+}
+
 function mapsUrl(c) {
-  const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
-  if (tieneCoords) return 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'];
+  const co = coordsDe(c);
+  if (co) return 'https://maps.google.com/?q=' + co.lat + ',' + co.lon;
   return 'https://maps.google.com/?q=' + encodeURIComponent((c['DIRECCION']||'') + ', ' + (c['LOCALIDAD']||'') + ', Argentina');
 }
 
@@ -1761,6 +1795,7 @@ function buildClientCardSupervisor(row, dia, ordenVisual) {
     '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + (row['DIRECCION'] || '—') + '</div></div>' +
     '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>' +
     '<div class="detail-row"><div class="detail-label">Última factura</div><div class="detail-value">' + (fechaFactura || 'Sin compras registradas') + '</div></div>' +
+    '<div class="detail-row"><div class="detail-label">Ubicación</div><div class="detail-value">' + textoOrigenUbicacion(row) + '</div></div>' +
     '<a class="btn-maps" href="' + mapsUrl(row) + '" target="_blank" onclick="event.stopPropagation()">' +
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
     'Abrir en Maps</a>';
@@ -1976,9 +2011,10 @@ function abrirMapa(todosLosDias) {
         const row = codigoToRow[codigo];
         if (!row) return;
         ordenVisual++;
-        const lat = parseFloat(row['Latitud']);
-        const lon = parseFloat(row['Longitud']);
-        if (!lat || !lon) { sinCoords++; return; }
+        const co = coordsDe(row);
+        if (!co) { sinCoords++; return; }
+        const lat = co.lat;
+        const lon = co.lon;
 
         const icon = L.divIcon({
           className: '',
@@ -2044,7 +2080,7 @@ function renderLeyendaMapa(dias) {
 function nombreDia(dia) { return dia.charAt(0) + dia.slice(1).toLowerCase(); }
 
 function tieneUbicacion(row) {
-  return !!parseFloat(row['Latitud']) && !!parseFloat(row['Longitud']);
+  return !!coordsDe(row);
 }
 
 function distanciaKm(a, b) {
@@ -2060,7 +2096,8 @@ function distanciaKm(a, b) {
 // Suma la distancia en línea recta entre visitas consecutivas que tienen ubicación
 function kmRecorrido(filas) {
   const pts = filas.filter(tieneUbicacion).map(function(r) {
-    return [parseFloat(r['Latitud']), parseFloat(r['Longitud'])];
+    const co = coordsDe(r);
+    return [co.lat, co.lon];
   });
   if (pts.length < 2) return null;
   let km = 0;
@@ -2261,9 +2298,10 @@ function dibujarMapaZona() {
     datos.dias.forEach(function(dia) {
       if (diaFiltro && dia !== diaFiltro) return;
       datos.porDia[dia].forEach(function(row, idx) {
-        if (!tieneUbicacion(row)) { sinCoords++; return; }
-        const lat = parseFloat(row['Latitud']);
-        const lon = parseFloat(row['Longitud']);
+        const co = coordsDe(row);
+        if (!co) { sinCoords++; return; }
+        const lat = co.lat;
+        const lon = co.lon;
         L.circleMarker([lat, lon], { radius: 6, color: '#fff', weight: 1.5, fillColor: color, fillOpacity: 0.9 })
           .bindPopup('<strong>' + (row['NOMBRE COMERCIAL'] || '') + '</strong><br>' + v + '<br>' +
                      nombreDia(dia) + ' · visita ' + (idx + 1))

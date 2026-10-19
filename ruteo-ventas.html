@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ruteo de Visitas</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
 <style>
   :root {
     --bg: #F5F3EF;
@@ -70,14 +73,8 @@
   /* STATS */
   .stats-bar { display: flex; gap: 8px; padding: 1rem 1.25rem 0.5rem; }
   .stat { flex: 1; background: var(--surface); border-radius: 10px; padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: center; }
-  .stat.bought { background: var(--card-bought-bg); border-color: var(--card-bought-border); }
-  .stat.notbought { background: var(--card-notbought-bg); border-color: var(--card-notbought-border); }
   .stat-num { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; color: var(--text); line-height: 1.1; }
-  .stat.bought .stat-num { color: #1F7A42; }
-  .stat.notbought .stat-num { color: #A02020; }
   .stat-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
-  .stat.bought .stat-label { color: #2D8A52; }
-  .stat.notbought .stat-label { color: #C0392B; }
 
   /* FILTROS */
   .filter-bar { display: flex; gap: 8px; padding: 0.25rem 1.25rem 0.5rem; justify-content: center; }
@@ -96,9 +93,6 @@
   .client-card.presencial { background: var(--card-presencial-bg); border: 1px solid var(--card-presencial-border); }
   .client-card.ecom { background: var(--card-ecom-bg); border: 1px solid var(--card-ecom-border); }
   .client-card.telefonico { background: var(--card-tel-bg); border: 1px solid var(--card-tel-border); }
-  .client-card.bought { background: var(--card-bought-bg) !important; border-color: var(--card-bought-border) !important; }
-  .client-card.notbought { background: var(--card-notbought-bg) !important; border-color: var(--card-notbought-border) !important; opacity: 0.75; }
-  .client-card.notbought .client-name { text-decoration: line-through; color: var(--text3); }
 
   .card-main { padding: 0.875rem 0.875rem 0.875rem 1rem; display: flex; align-items: center; gap: 10px; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
   .order-num { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text3); min-width: 22px; flex-shrink: 0; }
@@ -108,8 +102,6 @@
   .client-card.expanded .client-name { -webkit-line-clamp: unset; overflow: visible; }
 
   /* CHIP GEO EN TARJETA CERRADA */
-  .geo-pin-chip { display: none; }
-  .geo-pin-chip.visible { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: #0F766E; background: #F0FDFA; border: 1px solid #99F6E4; border-radius: 20px; padding: 1px 7px; margin-top: 4px; }
 
   /* CHIP SOLICITUD PENDIENTE */
   .sol-chip { display: none; margin-top: 5px; }
@@ -117,11 +109,6 @@
   .sol-chip svg { width: 10px; height: 10px; flex-shrink: 0; }
 
   .card-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-  .btn-action { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
-  .btn-action:active { transform: scale(0.88); }
-  .btn-action svg { width: 15px; height: 15px; pointer-events: none; }
-  .client-card.bought .btn-check { background: var(--btn-check-color); border-color: var(--btn-check-color); }
-  .client-card.notbought .btn-x { background: var(--btn-x-color); border-color: var(--btn-x-color); }
 
   /* DETALLE */
   .card-detail { display: none; padding: 0 1rem 1rem 1rem; }
@@ -143,19 +130,6 @@
   .geo-chip.pending { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
   .geo-chip svg { width: 11px; height: 11px; flex-shrink: 0; }
 
-  /* ÚLTIMAS 4 VISITAS */
-  .detail-body { display: flex; gap: 12px; align-items: flex-start; }
-  .detail-data { flex: 1; min-width: 0; }
-  .visitas-section { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-  .visitas-label { font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); white-space: nowrap; text-align: right; }
-  .visitas-row { display: flex; flex-direction: row; gap: 5px; }
-  .visita-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .visita-fecha { font-size: 8px; color: var(--text3); font-family: 'DM Mono', monospace; text-align: center; }
-  .visita-btn { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border); background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .visita-btn svg { width: 10px; height: 10px; }
-  .visita-btn.bought { background: var(--btn-check-color); border-color: var(--btn-check-color); }
-  .visita-btn.notbought { background: var(--btn-x-color); border-color: var(--btn-x-color); }
-  .visita-btn.none { background: transparent; border-color: var(--border); }
 
   /* BOTÓN SOLICITAR CAMBIO */
   .btn-solicitar { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #7C3AED; background: #F5F0FF; border: 1.5px solid #C4B5FD; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s; }
@@ -204,8 +178,52 @@
   .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
   .empty-text { font-size: 15px; }
   .loader { text-align: center; padding: 3rem; color: var(--text3); font-size: 14px; }
-  .reset-bar { padding: 0.5rem 1.25rem; display: flex; justify-content: flex-end; }
-  .btn-reset { font-size: 11px; color: var(--text3); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: underline; padding: 4px; }
+
+  /* ── ENFOQUE ADMINISTRATIVO: geolocalización y mapa ───────────────────────── */
+  .btn-mapa { display: flex; align-items: center; gap: 5px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; color: #fff; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); padding: 4px 10px; border-radius: 20px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .btn-mapa svg { width: 14px; height: 14px; }
+
+  .geo-progress { margin: 0.75rem 1.25rem 0; background: #F0FDFA; border: 1px solid #5EEAD4; border-radius: 12px; padding: 0.7rem 0.9rem; }
+  .geo-progress-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; font-weight: 600; color: #0F766E; margin-bottom: 6px; }
+  .geo-progress-top strong { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; }
+  .geo-bar { height: 8px; background: #CCFBF1; border-radius: 6px; overflow: hidden; }
+  .geo-bar-fill { height: 100%; background: #0F766E; border-radius: 6px; }
+  .geo-progress-hint { font-size: 11px; color: #115E59; margin-top: 6px; line-height: 1.35; }
+
+  button.stat { font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .stat.geo-ok { background: #F0FDFA; border-color: #5EEAD4; }
+  .stat.geo-ok .stat-num, .stat.geo-ok .stat-label { color: #0F766E; }
+  .stat.geo-falta { background: #FFF7ED; border-color: #FED7AA; }
+  .stat.geo-falta .stat-num, .stat.geo-falta .stat-label { color: #C2410C; }
+  .stat.geo-falta.activo { border-color: #C2410C; box-shadow: 0 0 0 2px #FED7AA; }
+  .geo-banner { margin: 0 1.25rem 0.25rem; font-size: 12px; color: #C2410C; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .btn-link { background: none; border: none; color: var(--accent); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; padding: 4px 0; cursor: pointer; text-decoration: underline; }
+
+  .btn-ubicar { display: flex; align-items: center; gap: 5px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700; color: #fff; background: #0F766E; border: none; padding: 8px 12px; border-radius: 20px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .btn-ubicar:active { background: #115E59; }
+  .btn-ubicar svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .pend-chip { display: inline-flex; align-items: center; margin-top: 5px; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 20px; padding: 2px 8px; font-size: 11px; font-weight: 600; color: #C2410C; }
+  .btn-geo.falta { background: #0F766E; color: #fff; border-color: #0F766E; }
+
+  .geo-aviso { font-size: 13px; color: var(--text2); line-height: 1.45; margin-bottom: 0.5rem; }
+  .geo-aviso strong { color: var(--text); }
+  .btn-geo-confirmar { flex: 2; padding: 0.75rem; border-radius: 10px; border: none; background: #0F766E; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-geo-confirmar:disabled { background: var(--border); color: var(--text3); cursor: not-allowed; }
+  .modal-status { font-size: 13px; font-weight: 600; text-align: center; padding: 0.6rem; border-radius: 8px; margin-top: 0.75rem; }
+  .modal-status.err { background: #FDEAEA; color: #A02020; }
+
+  .map-overlay { display: none; position: fixed; inset: 0; background: #fff; z-index: 600; flex-direction: column; }
+  .map-overlay.open { display: flex; }
+  .map-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--accent); flex-shrink: 0; }
+  .map-title { color: #fff; font-size: 14px; font-weight: 700; }
+  .map-close { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+  .map-legend { display: flex; gap: 6px; flex-wrap: wrap; padding: 0.5rem 1rem; background: var(--bg); flex-shrink: 0; }
+  .map-legend-chip { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 20px; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--text2); font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .map-legend-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .map-legend-chip.off { opacity: 0.4; }
+  .map-nota { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11px; color: var(--text3); padding: 0 1rem 0.5rem; flex-shrink: 0; min-height: 0; }
+  #leaflet-map { flex: 1; width: 100%; }
+  .map-num-marker { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -214,6 +232,9 @@
   <div class="header-top">
     <span class="app-name">Ruteo de visitas</span>
     <div class="header-right">
+      <button class="btn-mapa" onclick="abrirMapa()" title="Ver mi recorrido en el mapa">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 6v10l4-2 6 2 4-2V4l-4 2-6-2z"/><path d="M7 4v10M13 6v10"/></svg>Mapa
+      </button>
       <button class="btn-search" onclick="toggleSearch()" title="Buscar cliente">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/>
@@ -293,14 +314,44 @@
         <path d="M5 14l6 6L23 7"/>
       </svg>
     </div>
-    <div class="confirm-title">¡Solicitud enviada!</div>
+    <div class="confirm-title" id="confirm-title">¡Solicitud enviada!</div>
     <div class="confirm-detail" id="confirm-detail"></div>
     <button class="btn-confirm-close" onclick="cerrarConfirm()">Aceptar</button>
   </div>
 </div>
 
+
+<!-- MODAL GUARDAR UBICACIÓN -->
+<div class="modal-overlay" id="geo-modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Guardar ubicación del cliente</div>
+    <div class="modal-cliente" id="geo-modal-cliente"></div>
+    <div class="geo-aviso"><strong>Hacelo solo si estás en el local del cliente.</strong><br><span id="geo-modal-extra"></span></div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="cerrarModalGeo()">Cancelar</button>
+      <button class="btn-geo-confirmar" id="geo-btn-confirmar" onclick="confirmarGeo()">Guardar mi ubicación</button>
+    </div>
+    <div id="geo-modal-status"></div>
+  </div>
+</div>
+
+<!-- MAPA DEL RECORRIDO -->
+<div class="map-overlay" id="map-overlay">
+  <div class="map-header">
+    <div class="map-title">Mi recorrido</div>
+    <button class="map-close" onclick="cerrarMapa()">✕</button>
+  </div>
+  <div class="map-legend" id="map-legend"></div>
+  <div class="map-nota" id="map-nota"></div>
+  <div id="leaflet-map"></div>
+</div>
+
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1071989663&single=true&output=csv';
+// Ubicaciones de SAP: hoja BASE CLIENTES publicada. Solo se leen las columnas "Código SN", "Latitud" y "Longitud",
+// así que esta dirección puede apuntar a una hoja más liviana que tenga únicamente esas tres columnas.
+const URL_UBICACIONES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1835040316&single=true&output=csv';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNwnkqjWtkwVFZQMtqGCmKIgofMC0VUor35pllpNogNzU4wDTOesxA3H57qkmwDg3n7A/exec';
 
 let allData = [];
@@ -309,120 +360,93 @@ let selectedDay = '';
 let searchQuery = '';
 let modalData = null;
 let tipoSeleccionado = null;
-const solicitudes = {};
+let soloSinUbicacion = false;
 const DAYS_ORDER = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO'];
+const COLOR_POR_DIA = { LUNES: '#1d3a8f', MARTES: '#0F766E', MIERCOLES: '#C2410C', JUEVES: '#7C3AED', VIERNES: '#B45309' };
+const PIN_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg>';
 
-// ── SEMANA ACTUAL ─────────────────────────────────────────────────────────────
-// Devuelve un string "YYYY-Wnn" donde la semana empieza el lunes
-function currentWeekKey() {
-  var now = new Date();
-  // Ajustar al lunes de la semana actual
-  var day = now.getDay(); // 0=dom, 1=lun ... 6=sab
-  var diff = (day === 0) ? -6 : 1 - day; // días hasta el lunes
-  var monday = new Date(now);
-  monday.setDate(now.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
-  var year = monday.getFullYear();
-  // Número de semana ISO
-  var startOfYear = new Date(year, 0, 1);
-  var weekNum = Math.ceil(((monday - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
-  return year + '-W' + String(weekNum).padStart(2, '0');
-}
-
-// ── STORAGE ───────────────────────────────────────────────────────────────────
-function storageKey(v, d) { return 'ruteo2_' + v + '_' + d + '_' + currentWeekKey(); }
 function todayStr() { return new Date().toISOString().slice(0,10); }
-function getStateMap(v, d) {
-  try { return JSON.parse(localStorage.getItem(storageKey(v,d)) || '{}'); }
-  catch { return {}; }
-}
-function saveStateMap(v, d, map) {
-  localStorage.setItem(storageKey(v,d), JSON.stringify(map));
-}
-function setClientState(codigo, state) {
-  const map = getStateMap(selectedVendedor, selectedDay);
-  if (map[codigo] === state) delete map[codigo];
-  else map[codigo] = state;
-  saveStateMap(selectedVendedor, selectedDay, map);
-  if (searchQuery) renderSearchResults();
-  else render();
-}
+function porOrden(a, b) { return (parseInt(a['ORDEN']) || 0) - (parseInt(b['ORDEN']) || 0); }
 
-// ── HISTORIAL DE VISITAS ──────────────────────────────────────────────────────
-
-function historialKey(vendedor) { return 'historial_' + vendedor; }
-
-function getHistorial(vendedor) {
-  try { return JSON.parse(localStorage.getItem(historialKey(vendedor)) || '{}'); }
-  catch { return {}; }
+// ── UBICACIONES GUARDADAS EN EL CELULAR ──────────────────────────────────────
+// Cada ubicación capturada queda guardada acá hasta que la planilla la refleje.
+// sync=false: todavía no se pudo enviar. sync=true: enviada, esperando que aparezca en la planilla.
+let geoCache = null;
+function geoKeyDe(v) { return 'geo_local_' + v; }
+function leerGeoLocalDe(v) {
+  try { return JSON.parse(localStorage.getItem(geoKeyDe(v)) || '{}'); } catch (e) { return {}; }
 }
-
-function saveHistorial(vendedor, hist) {
-  localStorage.setItem(historialKey(vendedor), JSON.stringify(hist));
+function escribirGeoLocalDe(v, m) {
+  try { localStorage.setItem(geoKeyDe(v), JSON.stringify(m)); } catch (e) {}
 }
+function geoMap() { if (!geoCache) geoCache = leerGeoLocalDe(selectedVendedor); return geoCache; }
+function invalidarGeoCache() { geoCache = null; }
 
-// Registra el estado final del día para todos los clientes planificados
-function cerrarJornada(vendedor, dia, fecha) {
-  var hist = getHistorial(vendedor);
-  var stateMap = getStateMap(vendedor, dia);
-  var clientes = allData.filter(function(r) {
-    return r['VENDEDOR'] === vendedor && r['DIA CARGA DE PEDIDO'].toUpperCase() === dia;
-  });
-  clientes.forEach(function(c) {
-    var codigo = c['CODIGO CLIENTE'];
-    var estado = stateMap[codigo] || 'none';
-    if (!hist[codigo]) hist[codigo] = [];
-    // Evitar duplicados del mismo día
-    var yaRegistrado = hist[codigo].some(function(e) { return e.fecha === fecha; });
-    if (!yaRegistrado) {
-      hist[codigo].push({ fecha: fecha, estado: estado });
-      // Mantener solo las últimas 20 entradas por cliente
-      if (hist[codigo].length > 20) hist[codigo] = hist[codigo].slice(-20);
-    }
-  });
-  saveHistorial(vendedor, hist);
+function guardarGeoLocal(codigo, lat, lon, sync) {
+  const m = leerGeoLocalDe(selectedVendedor);
+  m[codigo] = { lat: String(lat), lon: String(lon), ts: Date.now(), sync: !!sync };
+  escribirGeoLocalDe(selectedVendedor, m);
+  invalidarGeoCache();
+}
+function marcarGeoEnviada(vendedor, codigo) {
+  const m = leerGeoLocalDe(vendedor);
+  if (m[codigo]) { m[codigo].sync = true; m[codigo].ts = Date.now(); escribirGeoLocalDe(vendedor, m); }
+  if (vendedor === selectedVendedor) invalidarGeoCache();
 }
 
-// Devuelve las últimas N visitas de un cliente
-function getUltimasVisitas(vendedor, codigo, n) {
-  var hist = getHistorial(vendedor);
-  var entradas = hist[codigo] || [];
-  return entradas.slice(-n);
+// ── COORDENADAS: celular, ruteo y SAP ──────────────────────────────────────────
+// Prioridad: 1) la recién tomada con este celular (hasta que la planilla la refleje),
+// 2) la cargada en el ruteo, 3) la de SAP. Se descartan valores fuera de Argentina.
+function numCoord(v) {
+  const n = parseFloat(String(v == null ? '' : v).trim().replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+function coordValida(lat, lon) {
+  return lat !== null && lon !== null && lat <= -21 && lat >= -56 && lon <= -53 && lon >= -74;
+}
+let sapIndex = {};
+
+function coordsDe(row) {
+  const codigo = row['CODIGO CLIENTE'];
+  const loc = geoMap()[codigo];
+  if (loc) return { lat: parseFloat(loc.lat), lon: parseFloat(loc.lon), origen: 'celular' };
+  const lat = numCoord(row['Latitud']);
+  const lon = numCoord(row['Longitud']);
+  if (coordValida(lat, lon)) return { lat: lat, lon: lon, origen: 'ruteo' };
+  const sap = sapIndex[codigo];
+  return sap ? { lat: sap.lat, lon: sap.lon, origen: 'sap' } : null;
+}
+function textoOrigenUbicacion(co) {
+  if (!co) return 'Sin ubicación cargada';
+  if (co.origen === 'celular') return 'Tomada con este celular';
+  return co.origen === 'sap' ? 'Cargada desde SAP' : 'Cargada en el ruteo';
 }
 
-// Cierre automático: se ejecuta al cargar la app y verifica si hay jornadas pasadas sin cerrar
-function verificarCierresPendientes() {
-  if (!selectedVendedor || !allData.length) return;
-  var hoy = todayStr();
-  var dias = DAYS_ORDER.filter(function(d) {
-    return allData.some(function(r) {
-      return r['VENDEDOR'] === selectedVendedor && r['DIA CARGA DE PEDIDO'].toUpperCase() === d;
+// Borra datos de versiones anteriores (compró/no compró, historial) y migra ubicaciones pendientes
+function limpiarDatosAnteriores() {
+  try {
+    const claves = [];
+    for (let i = 0; i < localStorage.length; i++) claves.push(localStorage.key(i));
+    const hoy = todayStr();
+    claves.forEach(function(k) {
+      if (k.indexOf('ruteo2_') === 0 || k.indexOf('historial_') === 0) { localStorage.removeItem(k); return; }
+      if (k.indexOf('sol_') === 0 && k.slice(-10) !== hoy) { localStorage.removeItem(k); return; }
+      if (k.indexOf('geo_pendiente_') === 0) {
+        const vendedor = k.slice('geo_pendiente_'.length);
+        const viejo = JSON.parse(localStorage.getItem(k) || '{}');
+        const nuevo = leerGeoLocalDe(vendedor);
+        Object.keys(viejo).forEach(function(c) {
+          if (!nuevo[c]) nuevo[c] = { lat: String(viejo[c].lat), lon: String(viejo[c].lon), ts: viejo[c].ts || Date.now(), sync: false };
+        });
+        escribirGeoLocalDe(vendedor, nuevo);
+        localStorage.removeItem(k);
+      }
     });
-  });
-  // Revisar los últimos 7 días (solo días anteriores, nunca hoy)
-  for (var i = 1; i <= 7; i++) {
-    var fecha = new Date();
-    fecha.setDate(fecha.getDate() - i);
-    var fechaStr = fecha.toISOString().slice(0, 10);
-    if (fechaStr >= hoy) continue; // nunca cerrar el día actual
-    var diaNombre = ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'][fecha.getDay()];
-    if (dias.indexOf(diaNombre) === -1) continue;
-    // Verificar si ya se cerró ese día
-    var hist = getHistorial(selectedVendedor);
-    var clientes = allData.filter(function(r) {
-      return r['VENDEDOR'] === selectedVendedor && r['DIA CARGA DE PEDIDO'].toUpperCase() === diaNombre;
-    });
-    if (!clientes.length) continue;
-    var primero = clientes[0]['CODIGO CLIENTE'];
-    var yaHayCierre = hist[primero] && hist[primero].some(function(e) { return e.fecha === fechaStr; });
-    if (!yaHayCierre) {
-      cerrarJornada(selectedVendedor, diaNombre, fechaStr);
-    }
-  }
+  } catch (e) {}
 }
 
-// ── CSV ────────────────────────────────────────────────────────────────────────
-function parseCSV(text) {
+
+function parseCSV(text, sinFiltro) {
   const lines = text.trim().split('\n');
   const headers = lines[0].split(',').map(function(h) { return h.trim().replace(/"/g,''); });
   return lines.slice(1).map(function(line) {
@@ -438,7 +462,7 @@ function parseCSV(text) {
     const obj = {};
     headers.forEach(function(h, i) { obj[h] = vals[i] || ''; });
     return obj;
-  }).filter(function(r) { return r['NOMBRE COMERCIAL']; });
+  }).filter(function(r) { return sinFiltro || r['NOMBRE COMERCIAL']; });
 }
 
 function mapsUrl(address, city) {
@@ -478,31 +502,6 @@ function onSearch() {
   searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
   if (searchQuery) renderSearchResults();
   else render();
-}
-function renderSearchResults() {
-  if (!selectedVendedor) return;
-  const vendRows = allData.filter(function(r) { return r['VENDEDOR'] === selectedVendedor; });
-  const matches = vendRows.filter(function(r) {
-    const q = searchQuery;
-    return r['NOMBRE COMERCIAL'].toLowerCase().includes(q) ||
-           r['DIRECCION'].toLowerCase().includes(q) ||
-           r['LOCALIDAD'].toLowerCase().includes(q);
-  });
-  const content = document.getElementById('app-content');
-  content.innerHTML = '';
-  if (!matches.length) {
-    content.innerHTML = '<div class="empty"><div class="empty-text">Sin resultados para esa búsqueda.</div></div>';
-    return;
-  }
-  const label = document.createElement('div');
-  label.className = 'search-results-label';
-  label.textContent = matches.length + ' resultado' + (matches.length !== 1 ? 's' : '');
-  content.appendChild(label);
-  const stateMap = getStateMap(selectedVendedor, selectedDay);
-  const list = document.createElement('div');
-  list.className = 'list';
-  matches.forEach(function(c) { list.appendChild(buildCard(c, stateMap, true)); });
-  content.appendChild(list);
 }
 
 // ── MODAL ──────────────────────────────────────────────────────────────────────
@@ -594,6 +593,7 @@ function enviarSolicitud() {
   else render();
 
   // 4. Mostrar pop-up DESPUÉS del render
+  document.getElementById('confirm-title').textContent = '¡Solicitud enviada!';
   document.getElementById('confirm-detail').innerHTML =
     '<strong>' + nombreCliente + '</strong><br>' +
     tipoLabel(tipoStr) + '<br>' +
@@ -612,311 +612,6 @@ function cerrarConfirm() {
   document.getElementById('confirm-overlay').classList.remove('open');
 }
 
-// ── TARJETA ────────────────────────────────────────────────────────────────────
-function buildCard(c, stateMap, isSearch) {
-  const codigo = c['CODIGO CLIENTE'];
-  const state = stateMap[codigo];
-  const cc = canalClass(c['Canal actual (Presencial / Autogestión)']);
-  const stateClass = state === 'bought' ? ' bought' : state === 'notbought' ? ' notbought' : '';
-  const checkStroke = state === 'bought' ? '#fff' : '#9E9B97';
-  const xStroke = state === 'notbought' ? '#fff' : '#9E9B97';
-  const dia = (c['DIA CARGA DE PEDIDO'] || '');
-  const diaLabel = dia.charAt(0) + dia.slice(1).toLowerCase();
-  const sol = getSolicitudes()[codigo];
-
-  const card = document.createElement('div');
-  card.className = 'client-card ' + cc + stateClass;
-  card.id = (isSearch ? 'sc-' : 'card-') + codigo;
-  card.dataset.canal = cc;
-
-  const btnCheck = document.createElement('button');
-  btnCheck.className = 'btn-action btn-check';
-  btnCheck.title = 'Compró';
-  btnCheck.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="' + checkStroke + '" stroke-width="2" stroke-linecap="round"><path d="M2.5 7l3 3 6-6"/></svg>';
-  btnCheck.addEventListener('click', function(e) { e.stopPropagation(); setClientState(codigo, 'bought'); });
-
-  const btnX = document.createElement('button');
-  btnX.className = 'btn-action btn-x';
-  btnX.title = 'No compró';
-  btnX.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="' + xStroke + '" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>';
-  btnX.addEventListener('click', function(e) { e.stopPropagation(); setClientState(codigo, 'notbought'); });
-
-  const actions = document.createElement('div');
-  actions.className = 'card-actions';
-  actions.appendChild(btnCheck);
-  actions.appendChild(btnX);
-
-  const name = document.createElement('div');
-  name.className = 'client-name';
-  const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
-  name.textContent = c['NOMBRE COMERCIAL'] + (tieneCoords ? ' 📍' : '');
-
-  const chip = document.createElement('div');
-  chip.className = 'sol-chip' + (sol ? ' visible' : '');
-  if (sol) {
-    chip.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="5" r="4"/><path d="M5 3v2.5l1.5 1"/></svg>' + tipoLabel(sol.tipo);
-  }
-
-  const info = document.createElement('div');
-  info.className = 'client-info';
-  info.appendChild(name);
-  info.appendChild(chip);
-
-  if (isSearch) {
-    const sub = document.createElement('div');
-    sub.className = 'client-subtext';
-    sub.textContent = diaLabel + ' · ' + c['LOCALIDAD'];
-    info.appendChild(sub);
-  }
-
-  const main = document.createElement('div');
-  main.className = 'card-main';
-  const num = document.createElement('div');
-  num.className = 'order-num';
-  num.textContent = c['ORDEN'];
-  main.appendChild(num);
-  main.appendChild(info);
-  main.appendChild(actions);
-  main.addEventListener('click', function() { card.classList.toggle('expanded'); });
-
-  const detail = document.createElement('div');
-  detail.className = 'card-detail';
-
-  const divider = document.createElement('div');
-  divider.className = 'detail-divider';
-  detail.appendChild(divider);
-
-  // Contenedor de dos columnas
-  const body = document.createElement('div');
-  body.className = 'detail-body';
-
-  // Columna izquierda: datos
-  const dataCol = document.createElement('div');
-  dataCol.className = 'detail-data';
-  dataCol.innerHTML =
-    '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + c['DIRECCION'] + '</div></div>' +
-    '<div class="detail-row"><div class="detail-label">Localidad</div><div class="detail-value">' + c['LOCALIDAD'] + '</div></div>' +
-    (isSearch ? '<div class="detail-row"><div class="detail-label">Día</div><div class="detail-value">' + diaLabel + '</div></div>' : '') +
-    '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>';
-
-  body.appendChild(dataCol);
-  detail.appendChild(body);
-
-  // Botón maps va debajo del body, full width
-  const mapsLink = document.createElement('a');
-  mapsLink.className = 'btn-maps';
-  mapsLink.href = tieneCoords ? 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'] : mapsUrl(c['DIRECCION'], c['LOCALIDAD']);
-  mapsLink.target = '_blank';
-  mapsLink.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>Abrir en Maps';
-  detail.appendChild(mapsLink);
-
-  // Últimas 4 visitas — columna derecha del body
-  const ultimasVisitas = getUltimasVisitas(selectedVendedor, codigo, 4);
-  const visitasSection = document.createElement('div');
-  visitasSection.className = 'visitas-section';
-  const visitasLabel = document.createElement('div');
-  visitasLabel.className = 'visitas-label';
-  visitasLabel.textContent = 'Últimas 4 visitas';
-  visitasSection.appendChild(visitasLabel);
-  const visitasRow = document.createElement('div');
-  visitasRow.className = 'visitas-row';
-
-  // Incluir el estado de hoy en tiempo real (sin esperar al cierre)
-  var todayStateMap = getStateMap(selectedVendedor, selectedDay);
-  var estadoHoy = todayStateMap[codigo] || 'none';
-  var entradaHoy = { fecha: todayStr(), estado: estadoHoy };
-
-  // Combinar historial pasado + entrada de hoy
-  var todasVisitas = ultimasVisitas.filter(function(v) { return v.fecha !== todayStr(); });
-  todasVisitas.push(entradaHoy);
-  todasVisitas = todasVisitas.slice(-4);
-
-  var slots = [{fecha:'',estado:'none'},{fecha:'',estado:'none'},{fecha:'',estado:'none'},{fecha:'',estado:'none'}];
-  for (var vi = 0; vi < todasVisitas.length; vi++) {
-    slots[4 - todasVisitas.length + vi] = todasVisitas[vi];
-  }
-
-  slots.forEach(function(v) {
-    var item = document.createElement('div');
-    item.className = 'visita-item';
-    var btn = document.createElement('div');
-    btn.className = 'visita-btn ' + v.estado;
-    if (v.estado === 'bought') {
-      btn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M2.5 7l3 3 6-6"/></svg>';
-    } else if (v.estado === 'notbought') {
-      btn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>';
-    } else {
-      btn.innerHTML = '<svg viewBox="0 0 14 14" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h6"/></svg>';
-    }
-    item.appendChild(btn);
-    visitasRow.appendChild(item);
-  });
-
-  visitasSection.appendChild(visitasRow);
-  body.appendChild(visitasSection);
-
-  const btnSol = document.createElement('button');
-  btnSol.className = 'btn-solicitar';
-  btnSol.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v5l3 3"/><circle cx="8" cy="8" r="6.5"/></svg> Solicitar cambio en el ruteo';
-  btnSol.addEventListener('click', function() { abrirModal(codigo); });
-  detail.appendChild(btnSol);
-
-  // Botón geolocalizar
-  const geoGuardada = getGeoLocal(codigo);
-  const btnGeo = document.createElement('button');
-  btnGeo.className = 'btn-geo';
-  btnGeo.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg> ' + (tieneCoords ? 'Actualizar ubicación' : 'Geolocalizar cliente');
-  btnGeo.addEventListener('click', function() { capturarGeo(codigo, c['NOMBRE COMERCIAL'], btnGeo); });
-  detail.appendChild(btnGeo);
-
-  // Chip de estado geo
-  const geoChip = document.createElement('div');
-  if (geoGuardada) {
-    geoChip.className = 'geo-chip pending';
-    geoChip.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="5"/><path d="M6 3.5v2.5l1.5 1"/></svg> Ubicación pendiente de sincronizar';
-  } else if (tieneCoords) {
-    geoChip.className = 'geo-chip ok';
-    geoChip.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 6l2.5 2.5L10 3.5"/></svg> Ubicación registrada';
-  }
-  if (geoGuardada) detail.appendChild(geoChip);
-
-  card.appendChild(main);
-  card.appendChild(detail);
-  return card;
-}
-
-// ── GEOLOCALIZACIÓN ───────────────────────────────────────────────────────────
-
-function geoKey() { return 'geo_pendiente_' + selectedVendedor; }
-
-function getGeoLocal(codigo) {
-  try {
-    var map = JSON.parse(localStorage.getItem(geoKey()) || '{}');
-    return map[codigo] || null;
-  } catch(e) { return null; }
-}
-
-function saveGeoLocal(codigo, lat, lon) {
-  try {
-    var map = JSON.parse(localStorage.getItem(geoKey()) || '{}');
-    map[codigo] = { lat: lat, lon: lon, ts: Date.now() };
-    localStorage.setItem(geoKey(), JSON.stringify(map));
-  } catch(e) {}
-}
-
-function removeGeoLocal(codigo) {
-  try {
-    var map = JSON.parse(localStorage.getItem(geoKey()) || '{}');
-    delete map[codigo];
-    localStorage.setItem(geoKey(), JSON.stringify(map));
-  } catch(e) {}
-}
-
-function capturarGeo(codigo, nombre, btnEl) {
-  if (!navigator.geolocation) {
-    alert('Tu dispositivo no soporta geolocalización.');
-    return;
-  }
-  btnEl.disabled = true;
-  btnEl.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg> Obteniendo ubicación...';
-
-  navigator.geolocation.getCurrentPosition(
-    function(pos) {
-      var lat = pos.coords.latitude.toFixed(6);
-      var lon = pos.coords.longitude.toFixed(6);
-      enviarGeo(codigo, nombre, lat, lon, btnEl);
-    },
-    function(err) {
-      btnEl.disabled = false;
-      btnEl.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg> Error al obtener ubicación. Reintentar';
-      alert('No se pudo obtener la ubicación: ' + err.message);
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
-}
-
-function enviarGeo(codigo, nombre, lat, lon, btnEl) {
-  var payload = {
-    accion:    'geolocalizar',
-    codigo:    codigo,
-    cliente:   nombre,
-    vendedor:  selectedVendedor,
-    lat:       lat,
-    lon:       lon
-  };
-
-  fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }).then(function() {
-    // Con no-cors no podemos leer la respuesta, asumimos éxito
-    removeGeoLocal(codigo);
-    mostrarGeoConfirm(nombre, lat, lon);
-    if (searchQuery) renderSearchResults();
-    else render();
-  }).catch(function() {
-    // Sin señal: guardar localmente
-    saveGeoLocal(codigo, lat, lon);
-    mostrarGeoConfirm(nombre, lat, lon, true);
-    if (searchQuery) renderSearchResults();
-    else render();
-  });
-}
-
-function mostrarGeoConfirm(nombre, lat, lon, pendiente) {
-  var detail = document.getElementById('confirm-detail');
-  var titulo = document.getElementById('confirm-title') || document.querySelector('.confirm-title');
-  if (titulo) titulo.textContent = pendiente ? '📍 Guardado sin conexión' : '📍 Ubicación registrada';
-  detail.innerHTML =
-    '<strong>' + nombre + '</strong><br>' +
-    'Lat: ' + lat + ' | Lon: ' + lon + '<br>' +
-    (pendiente ? '<span style="color:#C2410C">Se sincronizará cuando haya conexión.</span>'
-               : '<span style="color:#0F766E">Datos enviados al sistema.</span>');
-  document.getElementById('confirm-overlay').classList.add('open');
-}
-
-function sincronizarGeoPendientes() {
-  try {
-    var map = JSON.parse(localStorage.getItem(geoKey()) || '{}');
-    var codigos = Object.keys(map);
-    if (!codigos.length) return;
-
-    codigos.forEach(function(codigo) {
-      var geo = map[codigo];
-      var row = allData.find(function(r) { return r['CODIGO CLIENTE'] === codigo; });
-      var nombre = row ? row['NOMBRE COMERCIAL'] : codigo;
-      var payload = {
-        accion:   'geolocalizar',
-        codigo:   codigo,
-        cliente:  nombre,
-        vendedor: selectedVendedor,
-        lat:      geo.lat,
-        lon:      geo.lon
-      };
-      var delay = Math.floor(Math.random() * 25000) + 5000; // 5-30 seg aleatorio
-      setTimeout(function() {
-        fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).then(function() {
-          removeGeoLocal(codigo);
-          console.log('Geo sincronizada: ' + codigo);
-        }).catch(function() {
-          console.log('Reintento fallido para: ' + codigo);
-        });
-      }, delay);
-    });
-  } catch(e) {}
-}
-
-// Escuchar reconexión y sincronizar pendientes automáticamente
-window.addEventListener('online', function() {
-  setTimeout(sincronizarGeoPendientes, 2000);
-});
 
 // ── FILTRO ─────────────────────────────────────────────────────────────────────
 function applyFilter() {
@@ -946,29 +641,478 @@ function renderDayTabs(days) {
   });
 }
 
-function resetDay() {
-  if (!confirm('¿Borrar todos los registros de hoy?')) return;
-  localStorage.removeItem(storageKey(selectedVendedor, selectedDay));
-  render();
+
+
+function refrescar() {
+  if (searchQuery) renderSearchResults();
+  else render();
 }
 
-// ── RENDER ─────────────────────────────────────────────────────────────────────
-function renderList(clients) {
-  const stateMap = getStateMap(selectedVendedor, selectedDay);
-  const boughtCount = clients.filter(function(c) { return stateMap[c['CODIGO CLIENTE']] === 'bought'; }).length;
-  const notBoughtCount = clients.filter(function(c) { return stateMap[c['CODIGO CLIENTE']] === 'notbought'; }).length;
-  const total = clients.length;
-
+function renderSearchResults() {
+  if (!selectedVendedor) return;
+  invalidarGeoCache();
+  const vendRows = allData.filter(function(r) { return r['VENDEDOR'] === selectedVendedor; });
+  const matches = vendRows.filter(function(r) {
+    const q = searchQuery;
+    return r['NOMBRE COMERCIAL'].toLowerCase().includes(q) ||
+           r['DIRECCION'].toLowerCase().includes(q) ||
+           r['LOCALIDAD'].toLowerCase().includes(q);
+  });
   const content = document.getElementById('app-content');
   content.innerHTML = '';
+  if (!matches.length) {
+    content.innerHTML = '<div class="empty"><div class="empty-text">Sin resultados para esa búsqueda.</div></div>';
+    return;
+  }
+  const label = document.createElement('div');
+  label.className = 'search-results-label';
+  label.textContent = matches.length + ' resultado' + (matches.length !== 1 ? 's' : '');
+  content.appendChild(label);
+  const list = document.createElement('div');
+  list.className = 'list';
+  matches.forEach(function(c) { list.appendChild(buildCard(c, true)); });
+  content.appendChild(list);
+}
 
+// ── TARJETA ────────────────────────────────────────────────────────────────────
+function buildCard(c, isSearch) {
+  const codigo = c['CODIGO CLIENTE'];
+  const nombre = c['NOMBRE COMERCIAL'];
+  const cc = canalClass(c['Canal actual (Presencial / Autogestión)']);
+  const dia = (c['DIA CARGA DE PEDIDO'] || '');
+  const diaLabel = dia.charAt(0) + dia.slice(1).toLowerCase();
+  const sol = getSolicitudes()[codigo];
+  const coords = coordsDe(c);
+  const geoLocal = geoMap()[codigo];
+  const sinEnviar = !!(geoLocal && !geoLocal.sync);
+
+  const card = document.createElement('div');
+  card.className = 'client-card ' + cc;
+  card.id = (isSearch ? 'sc-' : 'card-') + codigo;
+  card.dataset.canal = cc;
+
+  // Botón "Ubicar" visible sin desplegar, solo para clientes sin ubicación
+  const actions = document.createElement('div');
+  actions.className = 'card-actions';
+  if (!coords) {
+    const btnUbicar = document.createElement('button');
+    btnUbicar.className = 'btn-ubicar';
+    btnUbicar.innerHTML = PIN_SVG + 'Ubicar';
+    btnUbicar.addEventListener('click', function(e) { e.stopPropagation(); pedirGeolocalizar(codigo, nombre, false); });
+    actions.appendChild(btnUbicar);
+  }
+
+  const name = document.createElement('div');
+  name.className = 'client-name';
+  name.textContent = nombre + (coords ? ' 📍' : '');
+
+  const chip = document.createElement('div');
+  chip.className = 'sol-chip' + (sol ? ' visible' : '');
+  if (sol) {
+    chip.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="5" r="4"/><path d="M5 3v2.5l1.5 1"/></svg>' + tipoLabel(sol.tipo);
+  }
+
+  const info = document.createElement('div');
+  info.className = 'client-info';
+  info.appendChild(name);
+  info.appendChild(chip);
+  if (sinEnviar) {
+    const pend = document.createElement('div');
+    pend.className = 'pend-chip';
+    pend.textContent = 'Ubicación guardada, falta enviarla';
+    info.appendChild(pend);
+  }
+  if (isSearch) {
+    const sub = document.createElement('div');
+    sub.className = 'client-subtext';
+    sub.textContent = diaLabel + ' · ' + c['LOCALIDAD'];
+    info.appendChild(sub);
+  }
+
+  const main = document.createElement('div');
+  main.className = 'card-main';
+  const num = document.createElement('div');
+  num.className = 'order-num';
+  num.textContent = c['ORDEN'];
+  main.appendChild(num);
+  main.appendChild(info);
+  main.appendChild(actions);
+  main.addEventListener('click', function() { card.classList.toggle('expanded'); });
+
+  const detail = document.createElement('div');
+  detail.className = 'card-detail';
+  const divider = document.createElement('div');
+  divider.className = 'detail-divider';
+  detail.appendChild(divider);
+
+  const dataCol = document.createElement('div');
+  dataCol.innerHTML =
+    '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + c['DIRECCION'] + '</div></div>' +
+    '<div class="detail-row"><div class="detail-label">Localidad</div><div class="detail-value">' + c['LOCALIDAD'] + '</div></div>' +
+    (isSearch ? '<div class="detail-row"><div class="detail-label">Día</div><div class="detail-value">' + diaLabel + '</div></div>' : '') +
+    '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>' +
+    '<div class="detail-row"><div class="detail-label">Ubicación</div><div class="detail-value">' + textoOrigenUbicacion(coords) + '</div></div>';
+  detail.appendChild(dataCol);
+
+  const mapsLink = document.createElement('a');
+  mapsLink.className = 'btn-maps';
+  mapsLink.href = coords ? 'https://maps.google.com/?q=' + coords.lat + ',' + coords.lon : mapsUrl(c['DIRECCION'], c['LOCALIDAD']);
+  mapsLink.target = '_blank';
+  mapsLink.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>Abrir en Maps';
+  detail.appendChild(mapsLink);
+
+  const btnGeo = document.createElement('button');
+  btnGeo.className = 'btn-geo' + (coords ? '' : ' falta');
+  btnGeo.innerHTML = PIN_SVG + ' ' + (coords ? (coords.origen === 'sap' ? 'Corregir ubicación' : 'Actualizar ubicación') : 'Geolocalizar cliente');
+  btnGeo.addEventListener('click', function() { pedirGeolocalizar(codigo, nombre, !!coords); });
+  detail.appendChild(btnGeo);
+
+  const btnSol = document.createElement('button');
+  btnSol.className = 'btn-solicitar';
+  btnSol.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v5l3 3"/><circle cx="8" cy="8" r="6.5"/></svg> Solicitar cambio en el ruteo';
+  btnSol.addEventListener('click', function() { abrirModal(codigo); });
+  detail.appendChild(btnSol);
+
+  card.appendChild(main);
+  card.appendChild(detail);
+  return card;
+}
+
+// ── GEOLOCALIZACIÓN ───────────────────────────────────────────────────────────
+let geoPedido = null; // { codigo, nombre, actualizar }
+
+function pedirGeolocalizar(codigo, nombre, actualizar) {
+  geoPedido = { codigo: codigo, nombre: nombre, actualizar: actualizar };
+  document.getElementById('geo-modal-cliente').textContent = nombre;
+  document.getElementById('geo-modal-extra').textContent = actualizar
+    ? 'Este cliente ya tiene una ubicación. Se va a reemplazar por tu posición actual.'
+    : 'Se va a guardar tu posición actual como la ubicación de este cliente.';
+  document.getElementById('geo-modal-status').innerHTML = '';
+  const btn = document.getElementById('geo-btn-confirmar');
+  btn.disabled = false;
+  btn.textContent = 'Guardar mi ubicación';
+  document.getElementById('geo-modal-overlay').classList.add('open');
+}
+function cerrarModalGeo() {
+  document.getElementById('geo-modal-overlay').classList.remove('open');
+  geoPedido = null;
+}
+function errorModalGeo(msg) {
+  document.getElementById('geo-modal-status').innerHTML = '<div class="modal-status err">' + msg + '</div>';
+  const btn = document.getElementById('geo-btn-confirmar');
+  btn.disabled = false;
+  btn.textContent = 'Reintentar';
+}
+
+function confirmarGeo() {
+  if (!geoPedido) return;
+  if (!navigator.geolocation) { errorModalGeo('Tu dispositivo no permite obtener la ubicación.'); return; }
+  const btn = document.getElementById('geo-btn-confirmar');
+  btn.disabled = true;
+  btn.textContent = 'Obteniendo ubicación...';
+  document.getElementById('geo-modal-status').innerHTML = '';
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      if (!geoPedido) return;
+      const lat = pos.coords.latitude.toFixed(6);
+      const lon = pos.coords.longitude.toFixed(6);
+      const precision = Math.round(pos.coords.accuracy || 0);
+      if (precision > 100 && !confirm('La precisión es baja (aproximadamente ' + precision + ' metros). Conviene salir a un lugar abierto y reintentar. ¿Guardar igual?')) {
+        btn.disabled = false;
+        btn.textContent = 'Guardar mi ubicación';
+        return;
+      }
+      const pedido = geoPedido;
+      cerrarModalGeo();
+      guardarYEnviarGeo(pedido.codigo, pedido.nombre, lat, lon, precision);
+    },
+    function(err) {
+      const mensajes = {
+        1: 'No diste permiso para usar la ubicación. Activalo en los ajustes del navegador y reintentá.',
+        2: 'No se pudo determinar tu ubicación. Probá en un lugar con mejor señal de GPS.',
+        3: 'Tardó demasiado en obtener la ubicación. Reintentá.'
+      };
+      errorModalGeo(mensajes[err.code] || 'No se pudo obtener la ubicación.');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function enviarGeoAlSistema(codigo, nombre, vendedor, lat, lon) {
+  return fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accion: 'geolocalizar', codigo: codigo, cliente: nombre, vendedor: vendedor, lat: lat, lon: lon })
+  }).then(function() { return true; }).catch(function() { return false; });
+}
+
+function guardarYEnviarGeo(codigo, nombre, lat, lon, precision) {
+  const vendedor = selectedVendedor;
+  guardarGeoLocal(codigo, lat, lon, false); // el cliente pasa a figurar como ubicado al instante
+  refrescar();
+  enviarGeoAlSistema(codigo, nombre, vendedor, lat, lon).then(function(ok) {
+    if (ok) marcarGeoEnviada(vendedor, codigo);
+    mostrarGeoConfirm(nombre, lat, lon, precision, !ok);
+    if (vendedor === selectedVendedor) refrescar();
+  });
+}
+
+function mostrarGeoConfirm(nombre, lat, lon, precision, pendiente) {
+  document.getElementById('confirm-title').textContent = pendiente ? 'Ubicación guardada sin conexión' : 'Ubicación registrada';
+  document.getElementById('confirm-detail').innerHTML =
+    '<strong>' + nombre + '</strong><br>' +
+    'Lat: ' + lat + ' | Lon: ' + lon + (precision ? '<br>Precisión aproximada: ' + precision + ' m' : '') + '<br>' +
+    (pendiente ? '<span style="color:#C2410C">Se enviará sola cuando haya conexión.</span>'
+               : '<span style="color:#0F766E">Enviada al sistema.</span>');
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+// Compara lo guardado en el celular con la planilla y reenvía lo que haga falta
+function conciliarGeoLocal() {
+  const m = leerGeoLocalDe(selectedVendedor);
+  const ahora = Date.now();
+  let cambio = false;
+  Object.keys(m).forEach(function(codigo) {
+    const g = m[codigo];
+    const fila = allData.find(function(r) { return r['CODIGO CLIENTE'] === codigo && r['VENDEDOR'] === selectedVendedor; });
+    if (!fila) { delete m[codigo]; cambio = true; return; }
+    if (!g.sync) return;
+    const lat = numCoord(fila['Latitud']);
+    const lon = numCoord(fila['Longitud']);
+    const coincide = lat !== null && lon !== null && Math.abs(lat - parseFloat(g.lat)) < 0.00001 && Math.abs(lon - parseFloat(g.lon)) < 0.00001;
+    if (coincide) { delete m[codigo]; cambio = true; }
+    else if (ahora - g.ts > 30 * 60 * 1000) { g.sync = false; cambio = true; }
+  });
+  if (cambio) escribirGeoLocalDe(selectedVendedor, m);
+  invalidarGeoCache();
+  if (navigator.onLine !== false) sincronizarGeoPendientes();
+}
+
+const geoEnviando = {};
+function sincronizarGeoPendientes() {
+  const vendedor = selectedVendedor;
+  if (!vendedor) return;
+  const m = leerGeoLocalDe(vendedor);
+  Object.keys(m).forEach(function(codigo) {
+    const g = m[codigo];
+    const clave = vendedor + '|' + codigo;
+    if (g.sync || geoEnviando[clave]) return;
+    geoEnviando[clave] = true;
+    const fila = allData.find(function(r) { return r['CODIGO CLIENTE'] === codigo; });
+    const nombre = fila ? fila['NOMBRE COMERCIAL'] : codigo;
+    const demora = 5000 + Math.floor(Math.random() * 25000); // reparte los envíos entre vendedores
+    setTimeout(function() {
+      enviarGeoAlSistema(codigo, nombre, vendedor, g.lat, g.lon).then(function(ok) {
+        delete geoEnviando[clave];
+        if (ok) {
+          marcarGeoEnviada(vendedor, codigo);
+          if (vendedor === selectedVendedor) refrescar();
+        }
+      });
+    }, demora);
+  });
+}
+
+window.addEventListener('online', function() {
+  setTimeout(sincronizarGeoPendientes, 2000);
+});
+
+// ── MAPA DEL RECORRIDO ─────────────────────────────────────────────────────────
+let leafletMap = null;
+let capasPorDia = {};
+let puntosPorDia = {};
+let sinUbicPorDia = {};
+let diasActivosMapa = {};
+
+function abrirMapa() {
+  if (!selectedVendedor) { alert('Seleccioná primero tu nombre.'); return; }
+  if (typeof L === 'undefined') { alert('El mapa necesita conexión a internet. Probá de nuevo cuando tengas señal.'); return; }
+  document.getElementById('map-overlay').classList.add('open');
+  setTimeout(dibujarMapa, 50);
+}
+
+function cerrarMapa() {
+  document.getElementById('map-overlay').classList.remove('open');
+}
+
+function dibujarMapa() {
+  if (!leafletMap) {
+    leafletMap = L.map('leaflet-map');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(leafletMap);
+  }
+  leafletMap.invalidateSize();
+  Object.keys(capasPorDia).forEach(function(d) { leafletMap.removeLayer(capasPorDia[d]); });
+  capasPorDia = {}; puntosPorDia = {}; sinUbicPorDia = {}; diasActivosMapa = {};
+  invalidarGeoCache();
+
+  const vendRows = allData.filter(function(r) { return r['VENDEDOR'] === selectedVendedor; });
+  const dias = [];
+  vendRows.forEach(function(r) {
+    const d = r['DIA CARGA DE PEDIDO'].toUpperCase();
+    if (d && dias.indexOf(d) === -1) dias.push(d);
+  });
+  dias.sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
+  const diaInicial = dias.indexOf(selectedDay) !== -1 ? selectedDay : dias[0];
+
+  dias.forEach(function(dia) {
+    const filas = vendRows.filter(function(r) { return r['DIA CARGA DE PEDIDO'].toUpperCase() === dia; }).sort(porOrden);
+    const color = COLOR_POR_DIA[dia] || '#666';
+    const layer = L.layerGroup();
+    const pts = [];
+    let sin = 0;
+
+    filas.forEach(function(row, idx) {
+      const co = coordsDe(row);
+      if (!co) { sin++; return; }
+      const orden = idx + 1; // el número cuenta también a los clientes sin ubicación, para respetar el orden real
+      const icon = L.divIcon({
+        className: '',
+        html: '<div class="map-num-marker" style="background:' + color + '">' + orden + '</div>',
+        iconSize: [24, 24], iconAnchor: [12, 12]
+      });
+      L.marker([co.lat, co.lon], { icon: icon }).bindPopup(
+        '<strong>' + orden + '. ' + (row['NOMBRE COMERCIAL'] || '') + '</strong><br>' + (row['DIRECCION'] || '') +
+        '<br><a href="https://maps.google.com/?q=' + co.lat + ',' + co.lon + '" target="_blank">Abrir en Maps</a>'
+      ).addTo(layer);
+      pts.push([co.lat, co.lon]);
+    });
+
+    if (pts.length > 1) {
+      const linea = L.polyline(pts, { color: color, weight: 2.5, opacity: 0.6, dashArray: '6,6' });
+      layer.addLayer(linea);
+      if (typeof L.polylineDecorator === 'function') {
+        layer.addLayer(L.polylineDecorator(linea, {
+          patterns: [{ offset: '5%', repeat: '12%',
+            symbol: L.Symbol.arrowHead({ pixelSize: 9, polygon: false, pathOptions: { color: color, weight: 2.5, opacity: 0.9 } }) }]
+        }));
+      }
+    }
+
+    capasPorDia[dia] = layer;
+    puntosPorDia[dia] = pts;
+    sinUbicPorDia[dia] = sin;
+    diasActivosMapa[dia] = (dia === diaInicial);
+    if (diasActivosMapa[dia]) layer.addTo(leafletMap);
+  });
+
+  renderLeyendaMapa(dias);
+  actualizarNotaMapa();
+  ajustarVistaMapa();
+}
+
+function renderLeyendaMapa(dias) {
+  const legend = document.getElementById('map-legend');
+  legend.innerHTML = '';
+  dias.forEach(function(dia) {
+    const chip = document.createElement('button');
+    chip.className = 'map-legend-chip' + (diasActivosMapa[dia] ? '' : ' off');
+    chip.innerHTML = '<span class="dot" style="background:' + (COLOR_POR_DIA[dia] || '#666') + '"></span>' + dia.charAt(0) + dia.slice(1).toLowerCase();
+    chip.addEventListener('click', function() {
+      diasActivosMapa[dia] = !diasActivosMapa[dia];
+      chip.classList.toggle('off', !diasActivosMapa[dia]);
+      if (diasActivosMapa[dia]) capasPorDia[dia].addTo(leafletMap);
+      else leafletMap.removeLayer(capasPorDia[dia]);
+      actualizarNotaMapa();
+      ajustarVistaMapa();
+    });
+    legend.appendChild(chip);
+  });
+}
+
+function actualizarNotaMapa() {
+  let sin = 0, con = 0;
+  Object.keys(diasActivosMapa).forEach(function(d) {
+    if (!diasActivosMapa[d]) return;
+    sin += sinUbicPorDia[d] || 0;
+    con += (puntosPorDia[d] || []).length;
+  });
+  const nota = document.getElementById('map-nota');
+  if (sin > 0) {
+    nota.innerHTML = '<span>' + sin + ' cliente' + (sin !== 1 ? 's' : '') + ' sin ubicación (no se muestran)</span>' +
+                     '<button class="btn-link" onclick="verFaltantesDesdeMapa()">Ver cuáles</button>';
+  } else if (con === 0) {
+    nota.textContent = 'No hay días seleccionados o ninguno tiene clientes.';
+  } else {
+    nota.textContent = '';
+  }
+}
+
+function ajustarVistaMapa() {
+  let pts = [];
+  Object.keys(diasActivosMapa).forEach(function(d) { if (diasActivosMapa[d]) pts = pts.concat(puntosPorDia[d] || []); });
+  if (pts.length) leafletMap.fitBounds(pts, { padding: [30, 30] });
+  else leafletMap.setView([-38.95, -68.06], 7);
+}
+
+function verFaltantesDesdeMapa() {
+  const dia = Object.keys(diasActivosMapa).filter(function(d) { return diasActivosMapa[d] && sinUbicPorDia[d] > 0; })
+    .sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); })[0];
+  cerrarMapa();
+  if (dia) selectedDay = dia;
+  soloSinUbicacion = true;
+  refrescar();
+}
+
+// ── LISTA ──────────────────────────────────────────────────────────────────────
+function toggleSoloSinUbicacion() {
+  soloSinUbicacion = !soloSinUbicacion;
+  refrescar();
+}
+
+function renderList(clients, vendRows) {
+  const content = document.getElementById('app-content');
+  content.innerHTML = '';
+  clients.sort(porOrden);
+
+  // Avance de ubicaciones sobre todos los clientes del vendedor
+  const vistos = {};
+  let totalV = 0, conV = 0;
+  vendRows.forEach(function(r) {
+    const c = r['CODIGO CLIENTE'];
+    if (vistos[c]) return;
+    vistos[c] = true;
+    totalV++;
+    if (coordsDe(r)) conV++;
+  });
+  const pct = totalV ? Math.round(conV * 100 / totalV) : 0;
+  const progreso = document.createElement('div');
+  progreso.className = 'geo-progress';
+  progreso.innerHTML =
+    '<div class="geo-progress-top"><span>Ubicaciones cargadas</span><strong>' + conV + ' de ' + totalV + '</strong></div>' +
+    '<div class="geo-bar"><div class="geo-bar-fill" style="width:' + pct + '%"></div></div>' +
+    '<div class="geo-progress-hint">' + (conV < totalV
+      ? 'Los clientes con el botón "Ubicar" todavía no tienen ubicación. Guardala cuando estés en el local.'
+      : 'Todos tus clientes tienen ubicación.') + '</div>';
+  content.appendChild(progreso);
+
+  // Resumen del día
+  const total = clients.length;
+  const sinU = clients.filter(function(c) { return !coordsDe(c); }).length;
   const stats = document.createElement('div');
   stats.className = 'stats-bar';
   stats.innerHTML =
     '<div class="stat"><div class="stat-num">' + total + '</div><div class="stat-label">Total del día</div></div>' +
-    '<div class="stat bought"><div class="stat-num">' + boughtCount + '</div><div class="stat-label">Compraron</div></div>' +
-    '<div class="stat notbought"><div class="stat-num">' + notBoughtCount + '</div><div class="stat-label">No compraron</div></div>';
+    '<div class="stat geo-ok"><div class="stat-num">' + (total - sinU) + '</div><div class="stat-label">Con ubicación</div></div>';
+  const tileFalta = document.createElement('button');
+  tileFalta.className = 'stat geo-falta' + (soloSinUbicacion ? ' activo' : '');
+  tileFalta.innerHTML = '<div class="stat-num">' + sinU + '</div><div class="stat-label">Sin ubicación</div>';
+  tileFalta.addEventListener('click', toggleSoloSinUbicacion);
+  stats.appendChild(tileFalta);
   content.appendChild(stats);
+
+  if (soloSinUbicacion) {
+    const banner = document.createElement('div');
+    banner.className = 'geo-banner';
+    banner.innerHTML = '<span>Viendo solo los clientes sin ubicación.</span>';
+    const ver = document.createElement('button');
+    ver.className = 'btn-link';
+    ver.textContent = 'Ver todos';
+    ver.addEventListener('click', toggleSoloSinUbicacion);
+    banner.appendChild(ver);
+    content.appendChild(banner);
+  }
 
   const filterBar = document.createElement('div');
   filterBar.className = 'filter-bar';
@@ -978,21 +1122,19 @@ function renderList(clients) {
     '<label class="filter-chip telefonico"><input type="checkbox" id="filter-telefonico" checked onchange="applyFilter()"> Telefónico</label>';
   content.appendChild(filterBar);
 
-  if (boughtCount + notBoughtCount > 0) {
-    const resetBar = document.createElement('div');
-    resetBar.className = 'reset-bar';
-    resetBar.innerHTML = '<button class="btn-reset" onclick="resetDay()">Limpiar registros de hoy</button>';
-    content.appendChild(resetBar);
-  }
-
+  const visibles = soloSinUbicacion ? clients.filter(function(c) { return !coordsDe(c); }) : clients;
   const list = document.createElement('div');
   list.className = 'list';
-  clients.sort(function(a,b) { return parseInt(a['ORDEN']||0) - parseInt(b['ORDEN']||0); });
-  clients.forEach(function(c) { list.appendChild(buildCard(c, stateMap, false)); });
+  if (!visibles.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-text">Todos los clientes de este día ya tienen ubicación.</div></div>';
+  } else {
+    visibles.forEach(function(c) { list.appendChild(buildCard(c, false)); });
+  }
   content.appendChild(list);
 }
 
 function render() {
+  invalidarGeoCache();
   if (!selectedVendedor) {
     document.getElementById('app-content').innerHTML =
       '<div class="empty"><div class="empty-icon">👋</div><div class="empty-text">Seleccioná tu nombre para ver tu ruteo</div></div>';
@@ -1006,7 +1148,7 @@ function render() {
     const d = r['DIA CARGA DE PEDIDO'].toUpperCase();
     if (!seen[d]) { seen[d] = true; days.push(d); }
   });
-  days.sort(function(a,b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
+  days.sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
   if (!selectedDay || !days.includes(selectedDay)) {
     const today = todayDayName();
     selectedDay = days.includes(today) ? today : days[0];
@@ -1018,10 +1160,11 @@ function render() {
       '<div class="empty"><div class="empty-text">Sin visitas planificadas para este día.</div></div>';
     return;
   }
-  renderList(clients);
+  renderList(clients, vendRows);
 }
 
 function init(csvText) {
+  limpiarDatosAnteriores();
   allData = parseCSV(csvText);
   const seen = {};
   const vendedores = [];
@@ -1035,12 +1178,34 @@ function init(csvText) {
     opt.value = v; opt.textContent = v;
     sel.appendChild(opt);
   });
-  sel.onchange = function() { selectedVendedor = sel.value; selectedDay = ''; render(); setTimeout(verificarCierresPendientes, 500); };
+  sel.onchange = function() {
+    selectedVendedor = sel.value;
+    selectedDay = '';
+    soloSinUbicacion = false;
+    invalidarGeoCache();
+    if (selectedVendedor) conciliarGeoLocal();
+    render();
+  };
 
   const d = new Date();
   document.getElementById('today-label').textContent =
     d.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
   render();
+}
+
+async function cargarUbicacionesSAP() {
+  try {
+    const res = await fetch(URL_UBICACIONES);
+    if (!res.ok) return;
+    const idx = {};
+    parseCSV(await res.text(), true).forEach(function(r) {
+      const lat = numCoord(r['Latitud']);
+      const lon = numCoord(r['Longitud']);
+      if (coordValida(lat, lon)) idx[r['Código SN']] = { lat: lat, lon: lon };
+    });
+    sapIndex = idx;
+    if (selectedVendedor) refrescar();
+  } catch (e) { /* sin las ubicaciones de SAP la app sigue funcionando con las del ruteo */ }
 }
 
 async function loadData() {
@@ -1051,13 +1216,18 @@ async function loadData() {
   } catch(e) {
     document.getElementById('app-content').innerHTML =
       '<div class="loader">No se pudo cargar la planilla. Verificá tu conexión.</div>';
+    return;
   }
+  cargarUbicacionesSAP();
 }
 
 loadData();
 
 document.getElementById('modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModal();
+});
+document.getElementById('geo-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModalGeo();
 });
 document.getElementById('confirm-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarConfirm();

@@ -224,6 +224,9 @@
   .map-legend-chip { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; cursor: pointer; border: 1.5px solid transparent; background: #fff; color: var(--text2); -webkit-tap-highlight-color: transparent; }
   .map-legend-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .map-legend-chip.off { opacity: 0.35; }
+  .cli-search { display: block; width: 100%; margin-top: 0.4rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 16px; padding: 0.2rem 0.65rem; border-radius: 7px; outline: none; -webkit-appearance: none; appearance: none; }
+  .cli-search::placeholder { color: rgba(255,255,255,0.55); }
+  .cli-search:focus { border-color: rgba(255,255,255,0.5); }
   .map-dia-select { width: auto; flex: 1; max-width: 170px; margin: 0 8px; }
   .map-sin-coords { font-size: 11px; color: var(--text3); padding: 0 1rem 0.5rem; flex-shrink: 0; }
   #leaflet-map { flex: 1; width: 100%; }
@@ -318,6 +321,7 @@
       <option value="baja">🚫 Clientes a dar de baja</option>
       <option value="razonSocial">🔄 Cambios de razón social</option>
     </select>
+    <input type="search" id="cli-search" class="cli-search" placeholder="Buscar por nombre o código" autocomplete="off">
     <select id="cli-vendedor-filter"></select>
     <select id="cli-localidad-filter"></select>
   </div>
@@ -504,6 +508,7 @@ let solVendedorFiltro = '';
 let solProcesadas = {};
 let cliVendedorFiltro = '';
 let cliLocalidadFiltro = '';
+let cliBusqueda = '';
 let editModalData = null; // {codigo, dia, nombre}
 let tipoEditSeleccionado = null;
 
@@ -746,6 +751,9 @@ function logout() {
   zonaSeleccionada = '';
   viewMode = 'ruteo';
   solVendedorFiltro = '';
+  cliBusqueda = '';
+  const buscadorCli = document.getElementById('cli-search');
+  if (buscadorCli) buscadorCli.value = '';
   modoSeleccion = false;
   seleccionados = {};
   estadoVirtualPorVendedor = {};
@@ -899,6 +907,14 @@ function vendedorDeItem(sub, item) {
   if (sub === 'baja') return item['VENDEDOR'] || '';
   return item.filaVieja['VENDEDOR'] || '';
 }
+function textoBusquedaDeItem(sub, item) {
+  let partes;
+  if (sub === 'sinRutear') partes = [item['Nombre SN'], item['Código SN']];
+  else if (sub === 'baja') partes = [item['NOMBRE COMERCIAL'], item['CODIGO CLIENTE']];
+  else partes = [item.clienteNuevo['Nombre SN'], item.clienteNuevo['Código SN'], item.codigoViejo, item.filaVieja['NOMBRE COMERCIAL']];
+  return norm(partes.join(' '));
+}
+
 function localidadDeItem(sub, item) {
   if (sub === 'sinRutear') return item['Localidad'] || '';
   if (sub === 'baja') return item['LOCALIDAD'] || '';
@@ -964,9 +980,17 @@ function renderClientesView() {
 
   poblarFiltrosClientes(sub, itemsCrudos);
 
+  const buscador = document.getElementById('cli-search');
+  buscador.oninput = function() { cliBusqueda = buscador.value; renderClientesView(); };
+  const palabras = norm(cliBusqueda).split(' ').filter(Boolean);
+
   const items = itemsCrudos.filter(function(it) {
     if (cliVendedorFiltro && normTokens(vendedorDeItem(sub, it)) !== normTokens(cliVendedorFiltro)) return false;
     if (cliLocalidadFiltro && localidadDeItem(sub, it) !== cliLocalidadFiltro) return false;
+    if (palabras.length) {
+      const texto = textoBusquedaDeItem(sub, it);
+      if (!palabras.every(function(w) { return texto.indexOf(w) !== -1; })) return false;
+    }
     return true;
   });
 

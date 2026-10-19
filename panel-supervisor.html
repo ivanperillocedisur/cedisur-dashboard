@@ -1,0 +1,2005 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Supervisor</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
+<style>
+  :root {
+    --bg: #F5F3EF;
+    --surface: #FFFFFF;
+    --border: #D8D4CC;
+    --text: #1A1814;
+    --text2: #6B6760;
+    --text3: #9E9B97;
+    --accent: #1d3a8f;
+    --accent-light: #E8EDFB;
+    --sup: #0F766E;
+    --sup-light: #F0FDFA;
+    --sup-border: #5EEAD4;
+    --card-presencial-bg: #FFF5ED;
+    --card-presencial-border: #F5C99A;
+    --card-ecom-bg: #EAF5FB;
+    --card-ecom-border: #90CDE8;
+    --card-tel-bg: #F3EEFB;
+    --card-tel-border: #C3A8E8;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 2rem; }
+
+  /* PANTALLA PIN */
+  .pin-screen { position: fixed; inset: 0; background: var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; z-index: 500; }
+  .pin-screen.hidden { display: none; }
+  .pin-logo { font-size: 12px; font-weight: 700; letter-spacing: 0.15em; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-bottom: 0.5rem; }
+  .pin-title { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 0.5rem; text-align: center; }
+  .pin-sub { font-size: 14px; color: rgba(255,255,255,0.65); margin-bottom: 2.5rem; text-align: center; }
+  .pin-dots { display: flex; gap: 12px; margin-bottom: 2rem; }
+  .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); transition: all 0.15s; }
+  .pin-dot.filled { background: #fff; border-color: #fff; }
+  .pin-error { color: #FCA5A5; font-size: 13px; font-weight: 600; height: 20px; margin-bottom: 1rem; text-align: center; }
+  .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: 100%; max-width: 280px; }
+  .pin-key { aspect-ratio: 1.4; border: none; background: rgba(255,255,255,0.12); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 24px; font-weight: 500; border-radius: 14px; cursor: pointer; transition: background 0.12s; -webkit-tap-highlight-color: transparent; }
+  .pin-key:active { background: rgba(255,255,255,0.28); }
+  .pin-key.action { font-size: 14px; font-weight: 600; background: transparent; }
+  .pin-key.enter { background: var(--sup); }
+  .pin-key.enter:active { background: #0d5f58; }
+
+  /* PANTALLA SELECCIÓN DE ZONA */
+  .zona-screen { position: fixed; inset: 0; background: var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; z-index: 510; }
+  .zona-screen.hidden { display: none; }
+  .zona-list { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; margin-top: 1.5rem; }
+  .zona-btn { padding: 1rem 1.25rem; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; transition: background 0.12s; -webkit-tap-highlight-color: transparent; display: flex; align-items: center; justify-content: space-between; }
+  .zona-btn:active { background: rgba(255,255,255,0.22); }
+  .zona-btn svg { width: 16px; height: 16px; opacity: 0.6; }
+
+  /* TAB SWITCHER */
+  .view-tabs { display: flex; gap: 4px; margin-top: 0.5rem; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 3px; }
+  .view-tab { flex: 1; text-align: center; padding: 5px 0; border-radius: 6px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); background: transparent; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .view-tab.active { background: #fff; color: var(--accent); }
+  .view-tab .badge-count { display: inline-block; margin-left: 5px; background: var(--sup); color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 6px; }
+
+  /* SOLICITUDES */
+  .sol-filter { padding: 0.75rem 1.25rem 0; }
+  .sol-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 8px; }
+  .sol-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+  .sol-cliente { font-size: 14px; font-weight: 700; color: var(--text); }
+  .sol-vendedor { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .sol-tipo-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; background: #F5F0FF; color: #7C3AED; border: 1px solid #C4B5FD; padding: 3px 9px; border-radius: 20px; flex-shrink: 0; white-space: nowrap; }
+  .sol-detalle { font-size: 13px; color: var(--text2); margin-bottom: 0.75rem; line-height: 1.4; }
+  .sol-meta { font-size: 11px; color: var(--text3); margin-bottom: 0.75rem; }
+  .sol-actions { display: flex; gap: 8px; }
+  .btn-sol-aplicar { flex: 1; padding: 0.65rem; border-radius: 8px; border: none; background: var(--btn-check-color, #2D8A52); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-sol-rechazar { flex: 1; padding: 0.65rem; border-radius: 8px; border: 1.5px solid var(--border); background: transparent; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .sol-status { font-size: 12px; font-weight: 700; text-align: center; padding: 0.6rem; border-radius: 8px; }
+  .sol-status.ok { background: #E6F7ED; color: #1F7A42; }
+  .sol-status.err { background: #FDEAEA; color: #A02020; }
+
+  /* HEADER */
+  .header { background: var(--accent); padding: 0.65rem 1rem 0.6rem; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem; }
+  .app-name { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: rgba(255,255,255,0.55); text-transform: uppercase; }
+  .sup-badge { font-size: 9px; font-weight: 700; color: var(--accent); background: var(--sup-border); padding: 1px 6px; border-radius: 20px; letter-spacing: 0.05em; }
+  .btn-logout { background: none; border: none; cursor: pointer; padding: 4px; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 4px; font-family: 'DM Sans', sans-serif; font-size: 12px; -webkit-tap-highlight-color: transparent; }
+  .btn-logout svg { width: 15px; height: 15px; }
+
+  .sup-info { color: #fff; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+  .sup-nombre { font-size: 14px; font-weight: 700; }
+  .sup-zona { font-size: 11px; color: rgba(255,255,255,0.65); }
+
+  /* SELECTOR VENDEDOR */
+  select {
+    width: 100%; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    padding: 0.4rem 0.65rem; border-radius: 7px; appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.6)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; margin-top: 0.4rem;
+  }
+  select option { background: #1d3a8f; color: #fff; }
+  select:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+
+  /* (day-tab ahora se usa dentro del dropdown de filtro) */
+  .day-tab { flex-shrink: 0; padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); background: transparent; font-family: 'DM Sans', sans-serif; }
+  .day-tab.active { background: #fff; color: var(--accent); border-color: transparent; font-weight: 600; }
+
+  /* STATS */
+  .stats-bar { display: flex; gap: 8px; padding: 1rem 1.25rem 0.5rem; }
+  .stat { flex: 1; background: var(--surface); border-radius: 10px; padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: center; }
+  .stat-num { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; color: var(--text); line-height: 1.1; }
+  .stat-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* LISTA */
+  .list { padding: 0.5rem 1.25rem; display: flex; flex-direction: column; gap: 8px; }
+
+  .client-card { border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+  .client-card.presencial { background: var(--card-presencial-bg); border: 1px solid var(--card-presencial-border); }
+  .client-card.ecom { background: var(--card-ecom-bg); border: 1px solid var(--card-ecom-border); }
+  .client-card.telefonico { background: var(--card-tel-bg); border: 1px solid var(--card-tel-border); }
+
+  .card-main { padding: 0.875rem 1rem; display: flex; align-items: center; gap: 10px; }
+  .order-num { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text3); min-width: 22px; }
+  .client-info { flex: 1; min-width: 0; }
+  .client-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.35; }
+  .client-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .canal-tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.03em; flex-shrink: 0; }
+  .canal-tag.presencial { background: #FCE4CC; color: #B45309; }
+  .canal-tag.ecom { background: #CCE7F5; color: #075985; }
+  .canal-tag.telefonico { background: #E9D8FB; color: #6D28D9; }
+
+  .client-card { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .card-detail { display: none; padding: 0 1rem 1rem 1rem; }
+  .client-card.expanded .card-detail { display: block; }
+  .detail-divider { height: 1px; background: rgba(0,0,0,0.08); margin-bottom: 0.75rem; }
+  .detail-row { margin-bottom: 0.5rem; }
+  .detail-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); margin-bottom: 2px; }
+  .detail-value { font-size: 13px; color: var(--text); line-height: 1.4; }
+  .btn-maps { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 0.75rem; font-size: 13px; font-weight: 600; color: var(--accent); background: var(--accent-light); border: none; padding: 9px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; font-family: 'DM Sans', sans-serif; }
+  .btn-maps svg { width: 13px; height: 13px; }
+
+  /* BOTÓN EDITAR CLIENTE (supervisor) */
+  .btn-editar { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--sup); background: var(--sup-light); border: 1.5px solid var(--sup-border); padding: 9px 12px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-editar svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  /* MODAL EDICIÓN */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 400; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 20px 20px 0 0; padding: 1.5rem 1.25rem 2rem; width: 100%; max-width: 480px; }
+  .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 1.25rem; }
+  .modal-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .modal-cliente { font-size: 12px; color: var(--text3); margin-bottom: 1.25rem; font-weight: 500; }
+  .tipo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+  .tipo-btn { padding: 0.75rem 0.4rem; border-radius: 10px; border: 2px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text2); cursor: pointer; text-align: center; line-height: 1.4; }
+  .tipo-btn .tipo-icon { display: block; font-size: 18px; margin-bottom: 4px; }
+  .tipo-btn.selected { border-color: var(--sup); background: var(--sup-light); color: var(--sup); }
+  .modal-field { margin-bottom: 1rem; }
+  .modal-field label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
+  .modal-field input, .modal-field select { width: 100%; padding: 0.6rem 0.75rem; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); background: #fff; outline: none; }
+  .modal-field input:focus, .modal-field select:focus { border-color: var(--sup); }
+  .modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
+  .btn-cancelar { flex: 1; padding: 0.75rem; border-radius: 10px; border: 1.5px solid var(--border); background: transparent; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--text2); cursor: pointer; }
+  .btn-confirmar { flex: 2; padding: 0.75rem; border-radius: 10px; border: none; background: var(--sup); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-confirmar:disabled { background: var(--border); color: var(--text3); cursor: not-allowed; }
+  .modal-status { font-size: 13px; font-weight: 600; text-align: center; padding: 0.6rem; border-radius: 8px; margin-top: 0.75rem; }
+  .modal-status.ok { background: #E6F7ED; color: #1F7A42; }
+  .modal-status.err { background: #FDEAEA; color: #A02020; }
+
+  /* SELECCIÓN MÚLTIPLE */
+  .sel-toolbar { padding: 0.75rem 1.25rem 0.25rem; display: flex; justify-content: flex-end; }
+  .btn-sel-toggle { font-size: 12px; font-weight: 600; color: var(--sup); background: var(--sup-light); border: 1.5px solid var(--sup-border); padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-sel-toggle.active { background: #FDEAEA; color: #A02020; border-color: #E89090; }
+  .day-group-header { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text2); padding: 1rem 1.25rem 0.4rem; }
+  .sel-checkbox { width: 18px; height: 18px; accent-color: var(--sup); cursor: pointer; flex-shrink: 0; margin-right: 2px; }
+
+  .bulk-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--accent); padding: 0.75rem 1.25rem; box-shadow: 0 -2px 12px rgba(0,0,0,0.15); z-index: 250; display: flex; flex-direction: column; gap: 8px; }
+  .bulk-count { color: #fff; font-size: 13px; font-weight: 600; }
+  .bulk-actions { display: flex; gap: 8px; }
+  .bulk-btn { flex: 1; padding: 0.6rem 0.5rem; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .bulk-btn.danger { background: #C0392B; }
+
+  .empty { text-align: center; padding: 3rem 1.5rem; color: var(--text3); }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .empty-text { font-size: 15px; }
+  .loader { text-align: center; padding: 3rem; color: var(--text3); font-size: 14px; }
+
+  /* FILTRO DE DÍAS (dropdown multiselect) */
+  .day-filter-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 0.4rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 0.4rem 0.65rem; border-radius: 7px; cursor: pointer; }
+  .day-filter-btn svg { width: 12px; height: 12px; flex-shrink: 0; transition: transform 0.15s; }
+  .day-filter-btn.open svg { transform: rotate(180deg); }
+  .day-filter-panel { display: none; background: #fff; border-radius: 10px; padding: 0.75rem; margin-top: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+  .day-filter-panel.open { display: block; }
+  .day-filter-row { display: flex; align-items: center; gap: 8px; padding: 6px 4px; font-size: 14px; color: var(--text); cursor: pointer; }
+  .day-filter-row input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+  .day-filter-divider { height: 1px; background: var(--border); margin: 4px 0; }
+  .day-filter-todos { font-weight: 700; color: var(--accent); }
+
+  /* ENCABEZADO DE DÍA STICKY */
+  .day-group-header { position: sticky; background: var(--bg); z-index: 50; }
+
+  /* CAMBIO PENDIENTE (sin guardar) */
+  /* El borde punteado se retiró; el aviso queda solo en el tag "Sin guardar" */
+  .pending-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #B45309; background: #FEF3C7; border-radius: 10px; padding: 1px 6px; margin-left: 6px; }
+
+  /* BARRA DE CONFIRMACIÓN DE CAMBIOS */
+  .confirm-changes-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1A3D28; padding: 0.75rem 1.25rem; box-shadow: 0 -2px 12px rgba(0,0,0,0.2); z-index: 260; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .confirm-changes-count { color: #fff; font-size: 13px; font-weight: 600; }
+  .confirm-changes-actions { display: flex; gap: 8px; }
+  .btn-confirm-changes { padding: 0.55rem 1rem; border-radius: 8px; border: none; background: #2D8A52; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn-discard-changes { padding: 0.55rem 0.9rem; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.3); background: transparent; color: rgba(255,255,255,0.8); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* BOTÓN VER MAPA */
+  .btn-ver-mapa { display: block; width: 100%; margin-top: 0.5rem; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 0.45rem 0.65rem; border-radius: 7px; cursor: pointer; }
+
+  /* MODAL MAPA */
+  .map-overlay { display: none; position: fixed; inset: 0; background: #fff; z-index: 600; flex-direction: column; }
+  .map-overlay.open { display: flex; }
+  .map-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--accent); flex-shrink: 0; }
+  .map-title { color: #fff; font-size: 14px; font-weight: 700; }
+  .map-close { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+  .map-legend { display: flex; gap: 6px; flex-wrap: wrap; padding: 0.5rem 1rem; background: var(--bg); flex-shrink: 0; }
+  .map-legend-chip { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; cursor: pointer; border: 1.5px solid transparent; background: #fff; color: var(--text2); -webkit-tap-highlight-color: transparent; }
+  .map-legend-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .map-legend-chip.off { opacity: 0.35; }
+  .map-sin-coords { font-size: 11px; color: var(--text3); padding: 0 1rem 0.5rem; flex-shrink: 0; }
+  #leaflet-map { flex: 1; width: 100%; }
+  .map-num-marker { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; }
+
+  /* PESTAÑA CLIENTES */
+  .cli-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; padding: 0.75rem 1.25rem; }
+  .cli-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; }
+  .cli-nombre { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.25; }
+  .cli-sub { font-size: 10px; color: var(--text3); margin-top: 2px; margin-bottom: 0.4rem; line-height: 1.3; }
+  .cli-detalle { font-size: 11px; color: var(--text2); margin-bottom: 0.5rem; line-height: 1.35; background: var(--bg); border-radius: 6px; padding: 5px 8px; }
+  .btn-cli-accion { width: 100%; padding: 0.45rem; border-radius: 7px; border: none; background: var(--sup); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: auto; }
+  .btn-cli-accion.danger { background: #C0392B; }
+  .btn-cli-accion.info { background: #7C3AED; }
+</style>
+</head>
+<body>
+
+<!-- PANTALLA DE SELECCIÓN DE ZONA -->
+<div class="zona-screen" id="zona-screen">
+  <div class="pin-logo">Cedisur</div>
+  <div class="pin-title">Panel de Supervisor</div>
+  <div class="pin-sub">Seleccioná tu zona</div>
+  <div class="zona-list" id="zona-list"></div>
+</div>
+
+<!-- PANTALLA DE PIN -->
+<div class="pin-screen hidden" id="pin-screen">
+  <div class="pin-logo">Cedisur</div>
+  <div class="pin-title">Panel de Supervisor</div>
+  <div class="pin-sub" id="pin-sub">Ingresá tu PIN de acceso</div>
+  <div class="pin-dots" id="pin-dots"></div>
+  <div class="pin-error" id="pin-error"></div>
+  <div class="pin-pad" id="pin-pad"></div>
+</div>
+
+<!-- HEADER (oculto hasta login) -->
+<div class="header" id="header" style="display:none">
+  <div class="header-top">
+    <span class="app-name">Ruteo · <span class="sup-badge">Supervisor</span></span>
+    <button class="btn-logout" onclick="logout()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2H3v12h3M10 11l3-3-3-3M13 8H6"/></svg>
+      Salir
+    </button>
+  </div>
+  <div class="sup-info">
+    <div class="sup-nombre" id="sup-nombre">—</div>
+    <div class="sup-zona" id="sup-zona">—</div>
+  </div>
+  <div class="view-tabs">
+    <button class="view-tab active" id="tab-ruteo" onclick="cambiarVista('ruteo')">Ruteo</button>
+    <button class="view-tab" id="tab-solicitudes" onclick="cambiarVista('solicitudes')">Solicitudes<span class="badge-count" id="sol-badge" style="display:none">0</span></button>
+    <button class="view-tab" id="tab-clientes" onclick="cambiarVista('clientes')">Clientes<span class="badge-count" id="cli-badge" style="display:none">0</span></button>
+  </div>
+  <div id="ruteo-controls">
+    <select id="vendedor-select"></select>
+    <button class="day-filter-btn" id="day-filter-btn" onclick="toggleDayFilterPanel()">
+      <span id="day-filter-label">Todos los días</span>
+      <svg viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 1l5 5 5-5"/></svg>
+    </button>
+    <div class="day-filter-panel" id="day-filter-panel"></div>
+    <button class="btn-ver-mapa" onclick="abrirMapa()">🗺️ Ver mapa de clientes</button>
+  </div>
+  <div id="sol-controls" style="display:none">
+    <select id="sol-vendedor-filter"></select>
+  </div>
+  <div id="cli-controls" style="display:none">
+    <select id="cli-subvista">
+      <option value="sinRutear">📋 Clientes sin rutear</option>
+      <option value="baja">🚫 Clientes a dar de baja</option>
+      <option value="razonSocial">🔄 Cambios de razón social</option>
+    </select>
+    <select id="cli-vendedor-filter"></select>
+    <select id="cli-localidad-filter"></select>
+  </div>
+</div>
+
+<div id="app-content"></div>
+
+<!-- MODAL EDICIÓN DE CLIENTE (supervisor) -->
+<div class="modal-overlay" id="edit-modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Editar cliente</div>
+    <div class="modal-cliente" id="edit-modal-cliente"></div>
+    <div class="tipo-grid">
+      <button class="tipo-btn" data-tipo="posicion" onclick="selectTipoEdit(this)"><span class="tipo-icon">📋</span>MOVER<br>POSICIÓN</button>
+      <button class="tipo-btn" data-tipo="canal" onclick="selectTipoEdit(this)"><span class="tipo-icon">🔀</span>CAMBIAR<br>CANAL</button>
+      <button class="tipo-btn" data-tipo="eliminar" onclick="selectTipoEdit(this)"><span class="tipo-icon">🗑️</span>ELIMINAR<br>DEL RUTEO</button>
+    </div>
+    <div id="edit-campo-posicion" style="display:none">
+      <div class="modal-field">
+        <label>Día de destino</label>
+        <select id="edit-input-dia" onchange="onEditDiaChange()">
+          <option value="">— Seleccioná —</option>
+          <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
+          <option>JUEVES</option><option>VIERNES</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Ubicar</label>
+        <select id="edit-input-posicion" onchange="validarEnvioEdit()">
+          <option value="final">Al final del día</option>
+          <option value="antes">Antes de...</option>
+          <option value="despues">Después de...</option>
+        </select>
+      </div>
+      <div class="modal-field" id="edit-campo-referencia" style="display:none">
+        <label>Cliente de referencia</label>
+        <select id="edit-input-referencia" onchange="validarEnvioEdit()">
+          <option value="">— Seleccioná —</option>
+        </select>
+      </div>
+    </div>
+    <div id="edit-campo-canal" class="modal-field" style="display:none">
+      <label>Nuevo canal</label>
+      <select id="edit-input-canal" onchange="validarEnvioEdit()">
+        <option value="">— Seleccioná —</option>
+        <option value="Presencial">Presencial</option>
+        <option value="Telefónico">Telefónico</option>
+        <option value="Ecommerce">Ecommerce</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="cerrarModalEdit()">Cancelar</button>
+      <button class="btn-confirmar" id="edit-btn-confirmar" disabled onclick="confirmarEdicion()">Aplicar cambio</button>
+    </div>
+    <div id="edit-modal-status"></div>
+  </div>
+</div>
+
+<!-- MODAL ACCIÓN EN LOTE (supervisor) -->
+<div class="modal-overlay" id="bulk-modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="bulk-modal-title">Aplicar a varios clientes</div>
+    <div class="modal-cliente" id="bulk-modal-sub"></div>
+    <div id="bulk-campo-dia-wrap" style="display:none">
+      <div class="modal-field">
+        <label>Día de destino</label>
+        <select id="bulk-input-dia" onchange="onBulkDiaChange()">
+          <option value="">— Seleccioná —</option>
+          <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
+          <option>JUEVES</option><option>VIERNES</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Ubicar</label>
+        <select id="bulk-input-posicion" onchange="validarBulk()">
+          <option value="final">Al final del día</option>
+          <option value="antes">Antes de...</option>
+          <option value="despues">Después de...</option>
+        </select>
+      </div>
+      <div class="modal-field" id="bulk-campo-referencia" style="display:none">
+        <label>Cliente de referencia</label>
+        <select id="bulk-input-referencia" onchange="validarBulk()">
+          <option value="">— Seleccioná —</option>
+        </select>
+      </div>
+    </div>
+    <div id="bulk-campo-canal" class="modal-field" style="display:none">
+      <label>Nuevo canal</label>
+      <select id="bulk-input-canal" onchange="validarBulk()">
+        <option value="">— Seleccioná —</option>
+        <option value="Presencial">Presencial</option>
+        <option value="Telefónico">Telefónico</option>
+        <option value="Ecommerce">Ecommerce</option>
+      </select>
+    </div>
+    <div id="bulk-campo-eliminar" class="modal-field" style="display:none">
+      <div class="detail-value">Esta acción marcará para eliminar del ruteo a los clientes seleccionados.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="cerrarModalLote()">Cancelar</button>
+      <button class="btn-confirmar" id="bulk-btn-confirmar" disabled onclick="confirmarLote()">Aplicar a todos</button>
+    </div>
+    <div id="bulk-modal-status"></div>
+  </div>
+</div>
+
+<!-- MODAL AGREGAR CLIENTE AL RUTEO (supervisor) -->
+<div class="modal-overlay" id="alta-modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Rutear cliente</div>
+    <div class="modal-cliente" id="alta-modal-cliente"></div>
+    <div class="modal-field">
+      <label>Día de visita</label>
+      <select id="alta-input-dia" onchange="onAltaDiaChange()">
+        <option value="">— Seleccioná —</option>
+        <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
+        <option>JUEVES</option><option>VIERNES</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Ubicar</label>
+      <select id="alta-input-posicion" onchange="validarAlta()">
+        <option value="final">Al final del día</option>
+        <option value="antes">Antes de...</option>
+        <option value="despues">Después de...</option>
+      </select>
+    </div>
+    <div class="modal-field" id="alta-campo-referencia" style="display:none">
+      <label>Cliente de referencia</label>
+      <select id="alta-input-referencia" onchange="validarAlta()">
+        <option value="">— Seleccioná —</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="cerrarModalAlta()">Cancelar</button>
+      <button class="btn-confirmar" id="alta-btn-confirmar" disabled onclick="confirmarAlta()">Agregar al ruteo</button>
+    </div>
+    <div id="alta-modal-status"></div>
+  </div>
+</div>
+
+<!-- MODAL MAPA DE CLIENTES (supervisor) -->
+<div class="map-overlay" id="map-overlay">
+  <div class="map-header">
+    <div class="map-title" id="map-title">Mapa de clientes</div>
+    <button class="map-close" onclick="cerrarMapa()">✕</button>
+  </div>
+  <div class="map-legend" id="map-legend"></div>
+  <div class="map-sin-coords" id="map-sin-coords"></div>
+  <div id="leaflet-map"></div>
+</div>
+
+<script>
+const URL_SUPERVISORES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1122468659&single=true&output=csv';
+const URL_BASE_CLIENTES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1835040316&single=true&output=csv';
+const URL_BASE_RUTEO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=1071989663&single=true&output=csv';
+const URL_SOLICITUDES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRz7pc6dt5hMfSNJV48kQqcTIDTFDvevOO0TIM6oN6KA0HUG3igoG3zoSqWB_uJQMbdqpgc2c_M1azd/pub?gid=431847994&single=true&output=csv';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNwnkqjWtkwVFZQMtqGCmKIgofMC0VUor35pllpNogNzU4wDTOesxA3H57qkmwDg3n7A/exec';
+
+const ZONAS_VALIDAS = ['RIO NEGRO','NEUQUEN','CORDILLERA SUR','CORDILLERA NORTE','ATLANTICA'];
+const DAYS_ORDER = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO'];
+
+let supervisores = [];
+let baseClientes = [];
+let baseRuteo = [];
+let supActual = null;
+let vendedoresZona = [];
+let selectedVendedor = '';
+let pinActual = '';
+let zonaSeleccionada = '';
+let viewMode = 'ruteo';
+let solicitudes = [];
+let solVendedorFiltro = '';
+let solProcesadas = {};
+let cliVendedorFiltro = '';
+let cliLocalidadFiltro = '';
+let editModalData = null; // {codigo, dia, nombre}
+let tipoEditSeleccionado = null;
+
+let diasFiltro = DAYS_ORDER.slice(0, 5); // LUNES..VIERNES activos por defecto
+let modoSeleccion = false;
+let seleccionados = {}; // clave "dia|codigo" -> {codigo, dia, nombre}
+
+// ── ESTADO VIRTUAL (cambios pendientes de confirmar) ────────────────────────────
+// Por vendedor: { diaVirtual: {codigo:dia}, ordenVirtual: {dia:[codigo,...]}, canalVirtual: {codigo:canal}, eliminados: {codigo:true} }
+let estadoVirtualPorVendedor = {};
+
+function SS_KEY() { return 'panelSup_session_v1'; }
+
+function guardarSesionStorage() {
+  try {
+    sessionStorage.setItem(SS_KEY(), JSON.stringify({
+      supActual: supActual,
+      zonaSeleccionada: zonaSeleccionada,
+      selectedVendedor: selectedVendedor,
+      diasFiltro: diasFiltro,
+      estadoVirtualPorVendedor: estadoVirtualPorVendedor
+    }));
+  } catch (e) {}
+}
+
+function restaurarSesionStorage() {
+  try {
+    const raw = sessionStorage.getItem(SS_KEY());
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    if (!s.supActual) return false;
+    supActual = s.supActual;
+    zonaSeleccionada = s.zonaSeleccionada || '';
+    selectedVendedor = s.selectedVendedor || '';
+    diasFiltro = s.diasFiltro || DAYS_ORDER.slice(0, 5);
+    estadoVirtualPorVendedor = s.estadoVirtualPorVendedor || {};
+    return true;
+  } catch (e) { return false; }
+}
+
+function getEstadoVirtual(vendedor) {
+  const key = normTokens(vendedor);
+  if (!estadoVirtualPorVendedor[key]) {
+    estadoVirtualPorVendedor[key] = { diaVirtual: {}, ordenVirtual: {}, canalVirtual: {}, eliminados: {}, pendientes: {}, altas: {} };
+  }
+  const ev = estadoVirtualPorVendedor[key];
+  if (!ev.pendientes) {
+    ev.pendientes = {};
+    Object.keys(ev.diaVirtual || {}).forEach(function(c) { ev.pendientes[c] = true; });
+    Object.keys(ev.canalVirtual || {}).forEach(function(c) { ev.pendientes[c] = true; });
+    Object.keys(ev.eliminados || {}).forEach(function(c) { ev.pendientes[c] = true; });
+  }
+  if (!ev.altas) ev.altas = {};
+  return estadoVirtualPorVendedor[key];
+}
+
+function hayCambiosPendientes() {
+  return Object.keys(estadoVirtualPorVendedor).some(function(key) {
+    return Object.keys(estadoVirtualPorVendedor[key].pendientes || {}).length > 0;
+  });
+}
+
+function contarCambiosPendientes() {
+  let n = 0;
+  Object.keys(estadoVirtualPorVendedor).forEach(function(key) {
+    n += Object.keys(estadoVirtualPorVendedor[key].pendientes || {}).length;
+  });
+  return n;
+}
+
+function markDirty() {
+  guardarSesionStorage();
+}
+
+// ── UTILIDADES ────────────────────────────────────────────────────────────────
+function norm(s) {
+  return String(s || '').trim().toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(function(h) { return h.trim().replace(/"/g,''); });
+  return lines.slice(1).map(function(line) {
+    const vals = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach(function(h, i) { obj[h] = vals[i] || ''; });
+    return obj;
+  });
+}
+
+function canalClass(canal) {
+  const c = norm(canal).toLowerCase();
+  if (c.includes('ecom') || c.includes('auto')) return 'ecom';
+  if (c.includes('telef')) return 'telefonico';
+  return 'presencial';
+}
+function canalLabel(clase) {
+  if (clase === 'ecom') return 'Ecommerce';
+  if (clase === 'telefonico') return 'Telefónico';
+  return 'Presencial';
+}
+function todayDayName() {
+  return ['DOMINGO','LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'][new Date().getDay()];
+}
+function normTokens(s) {
+  return norm(s).split(' ').filter(Boolean).sort().join(' ');
+}
+function solicitudKey(s) {
+  return [s['COD. CLIENTE'], normTokens(s['VENDEDOR']), (s['DETALLE']||'').trim()].join('|');
+}
+let _fechaFacturaIndex = null;
+function getFechaFactura(codigo) {
+  if (!_fechaFacturaIndex) {
+    _fechaFacturaIndex = {};
+    baseClientes.forEach(function(c) { _fechaFacturaIndex[c['Código SN']] = c['Fecha Última Factura'] || ''; });
+  }
+  return _fechaFacturaIndex[codigo] || '';
+}
+
+function mapsUrl(c) {
+  const tieneCoords = c['Latitud'] && c['Longitud'] && String(c['Latitud']).trim() !== '' && String(c['Longitud']).trim() !== '';
+  if (tieneCoords) return 'https://maps.google.com/?q=' + c['Latitud'] + ',' + c['Longitud'];
+  return 'https://maps.google.com/?q=' + encodeURIComponent((c['DIRECCION']||'') + ', ' + (c['LOCALIDAD']||'') + ', Argentina');
+}
+
+// ── SELECCIÓN DE ZONA ─────────────────────────────────────────────────────────
+function renderZonas() {
+  const cont = document.getElementById('zona-list');
+  cont.innerHTML = '';
+  ZONAS_VALIDAS.forEach(function(z) {
+    const btn = document.createElement('button');
+    btn.className = 'zona-btn';
+    btn.innerHTML = '<span>' + z + '</span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg>';
+    btn.onclick = function() { seleccionarZona(z); };
+    cont.appendChild(btn);
+  });
+}
+
+function seleccionarZona(z) {
+  zonaSeleccionada = z;
+  pinActual = '';
+  document.getElementById('pin-sub').textContent = 'Zona ' + z + ' · Ingresá tu PIN';
+  document.getElementById('zona-screen').classList.add('hidden');
+  document.getElementById('pin-screen').classList.remove('hidden');
+  renderPinPad();
+  guardarSesionStorage();
+}
+
+function volverAZonas() {
+  pinActual = '';
+  document.getElementById('pin-error').textContent = '';
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('zona-screen').classList.remove('hidden');
+}
+
+// ── PIN ───────────────────────────────────────────────────────────────────────
+function renderPinPad() {
+  const pad = document.getElementById('pin-pad');
+  const keys = ['1','2','3','4','5','6','7','8','9','borrar','0','enter'];
+  // nota: 'volver' se accede con el botón Salir-a-zonas del encabezado de PIN
+  pad.innerHTML = '';
+  keys.forEach(function(k) {
+    const btn = document.createElement('button');
+    if (k === 'volver') {
+      btn.className = 'pin-key action';
+      btn.innerHTML = '‹ Zona';
+      btn.onclick = volverAZonas;
+    } else if (k === 'borrar') {
+      btn.className = 'pin-key action';
+      btn.innerHTML = '⌫';
+      btn.onclick = pinBorrar;
+    } else if (k === 'enter') {
+      btn.className = 'pin-key enter';
+      btn.innerHTML = '<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M4 10l4 4 8-8"/></svg>';
+      btn.onclick = pinConfirmar;
+    } else {
+      btn.className = 'pin-key';
+      btn.textContent = k;
+      btn.onclick = function() { pinAgregar(k); };
+    }
+    pad.appendChild(btn);
+  });
+  renderPinDots();
+}
+
+function renderPinDots() {
+  const dots = document.getElementById('pin-dots');
+  dots.innerHTML = '';
+  const len = Math.max(pinActual.length, 4);
+  for (let i = 0; i < len; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'pin-dot' + (i < pinActual.length ? ' filled' : '');
+    dots.appendChild(dot);
+  }
+}
+
+function pinAgregar(n) {
+  if (pinActual.length >= 6) return;
+  pinActual += n;
+  document.getElementById('pin-error').textContent = '';
+  renderPinDots();
+}
+function pinBorrar() {
+  pinActual = pinActual.slice(0, -1);
+  renderPinDots();
+}
+function pinConfirmar() {
+  if (pinActual.length < 4) {
+    document.getElementById('pin-error').textContent = 'El PIN debe tener al menos 4 dígitos';
+    return;
+  }
+  const sup = supervisores.find(function(s) {
+    return String(s['PIN']).trim() === pinActual && norm(s['Zona']) === norm(zonaSeleccionada);
+  });
+  if (!sup) {
+    document.getElementById('pin-error').textContent = 'PIN incorrecto para esta zona';
+    pinActual = '';
+    renderPinDots();
+    return;
+  }
+  supActual = sup;
+  guardarSesionStorage();
+  iniciarSesion();
+}
+
+function logout() {
+  if (hayCambiosPendientes() && !confirm('Tenés cambios sin guardar que se perderán. ¿Salir igual?')) return;
+  supActual = null;
+  pinActual = '';
+  selectedVendedor = '';
+  zonaSeleccionada = '';
+  viewMode = 'ruteo';
+  solVendedorFiltro = '';
+  modoSeleccion = false;
+  seleccionados = {};
+  estadoVirtualPorVendedor = {};
+  try { sessionStorage.removeItem(SS_KEY()); } catch (e) {}
+  const bar = document.getElementById('bulk-bar');
+  if (bar) bar.remove();
+  const cbar = document.getElementById('confirm-bar');
+  if (cbar) cbar.remove();
+  document.getElementById('header').style.display = 'none';
+  document.getElementById('app-content').innerHTML = '';
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('zona-screen').classList.remove('hidden');
+}
+
+// ── SESIÓN ──────────────────────────────────────────────────────────────────────
+function iniciarSesion() {
+  const zona = norm(supActual['Zona']);
+  document.getElementById('sup-nombre').textContent = supActual['Nombre'] || 'Supervisor';
+  document.getElementById('sup-zona').textContent = '· ' + (supActual['Zona'] || '—');
+
+  // Vendedores de la zona desde BASE CLIENTES
+  const set = {};
+  vendedoresZona = [];
+  baseClientes.forEach(function(c) {
+    if (norm(c['Nombre Territorio']) === zona) {
+      const v = (c['Vendedor'] || '').trim();
+      if (v && !set[v]) { set[v] = true; vendedoresZona.push(v); }
+    }
+  });
+  vendedoresZona.sort();
+
+  const sel = document.getElementById('vendedor-select');
+  sel.innerHTML = '<option value="">— Seleccioná un vendedor —</option>';
+  vendedoresZona.forEach(function(v) {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+  sel.onchange = function() { selectedVendedor = sel.value; modoSeleccion = false; seleccionados = {}; guardarSesionStorage(); render(); };
+
+  if (selectedVendedor && vendedoresZona.indexOf(selectedVendedor) !== -1) {
+    sel.value = selectedVendedor;
+  }
+
+  renderSolFiltro();
+  actualizarBadgeSolicitudes();
+  actualizarBadgeClientes();
+
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('zona-screen').classList.add('hidden');
+  document.getElementById('header').style.display = 'block';
+  cambiarVista('ruteo');
+  guardarSesionStorage();
+}
+
+// ── VISTAS (Ruteo / Solicitudes) ───────────────────────────────────────────────
+function cambiarVista(v) {
+  viewMode = v;
+  document.getElementById('tab-ruteo').classList.toggle('active', v === 'ruteo');
+  document.getElementById('tab-solicitudes').classList.toggle('active', v === 'solicitudes');
+  document.getElementById('tab-clientes').classList.toggle('active', v === 'clientes');
+  document.getElementById('ruteo-controls').style.display = v === 'ruteo' ? 'block' : 'none';
+  document.getElementById('sol-controls').style.display = v === 'solicitudes' ? 'block' : 'none';
+  document.getElementById('cli-controls').style.display = v === 'clientes' ? 'block' : 'none';
+  const bar = document.getElementById('bulk-bar'); if (bar) bar.remove();
+  if (v !== 'ruteo') { modoSeleccion = false; seleccionados = {}; }
+  if (v === 'ruteo') render();
+  else if (v === 'solicitudes') { renderSolicitudesView(); renderConfirmBar(); }
+  else { renderClientesView(); renderConfirmBar(); }
+}
+
+// ── PESTAÑA CLIENTES (Etapa 2E) ─────────────────────────────────────────────────
+
+function codigosRuteadosZona() {
+  const set = {};
+  baseRuteo.forEach(function(r) {
+    if (vendedoresZona.some(function(v) { return normTokens(v) === normTokens(r['VENDEDOR']); })) {
+      set[r['CODIGO CLIENTE']] = r;
+    }
+  });
+  return set;
+}
+
+function codigoYaPendienteEnAlgunVendedor(codigo) {
+  return Object.keys(estadoVirtualPorVendedor).some(function(key) {
+    return !!estadoVirtualPorVendedor[key].altas[codigo];
+  });
+}
+
+function codigoYaEliminadoEnAlgunVendedor(codigo) {
+  return Object.keys(estadoVirtualPorVendedor).some(function(key) {
+    return !!estadoVirtualPorVendedor[key].eliminados[codigo];
+  });
+}
+
+function clientesSinRutear() {
+  const ruteados = codigosRuteadosZona();
+  return baseClientes.filter(function(c) {
+    return norm(c['Nombre Territorio']) === norm(supActual['Zona']) &&
+           !ruteados[c['Código SN']] &&
+           !codigoYaPendienteEnAlgunVendedor(c['Código SN']);
+  });
+}
+
+function clientesParaDarDeBaja() {
+  const activos = {};
+  baseClientes.forEach(function(c) { activos[c['Código SN']] = true; });
+  const ruteados = codigosRuteadosZona();
+  return Object.keys(ruteados).map(function(codigo) { return ruteados[codigo]; })
+    .filter(function(r) {
+      return !activos[r['CODIGO CLIENTE']] && !codigoYaEliminadoEnAlgunVendedor(r['CODIGO CLIENTE']);
+    });
+}
+
+function cambiosRazonSocial() {
+  const ruteados = codigosRuteadosZona();
+  const resultado = [];
+  baseClientes.forEach(function(c) {
+    if (norm(c['Nombre Territorio']) !== norm(supActual['Zona'])) return;
+    const comentarios = c['Comentarios'] || '';
+    const match = comentarios.match(/Cambio RS de\s*(C\d+)/i);
+    if (!match) return;
+    const codigoViejo = match[1];
+    const filaVieja = ruteados[codigoViejo];
+    if (filaVieja && !codigoYaEliminadoEnAlgunVendedor(codigoViejo) && !codigoYaPendienteEnAlgunVendedor(c['Código SN'])) {
+      resultado.push({ clienteNuevo: c, filaVieja: filaVieja, codigoViejo: codigoViejo });
+    }
+  });
+  return resultado;
+}
+
+function actualizarBadgeClientes() {
+  const badge = document.getElementById('cli-badge');
+  const n = clientesSinRutear().length + clientesParaDarDeBaja().length + cambiosRazonSocial().length;
+  if (n > 0) { badge.style.display = 'inline-block'; badge.textContent = n; }
+  else { badge.style.display = 'none'; }
+}
+
+function vendedorDeItem(sub, item) {
+  if (sub === 'sinRutear') return item['Vendedor'] || '';
+  if (sub === 'baja') return item['VENDEDOR'] || '';
+  return item.filaVieja['VENDEDOR'] || '';
+}
+function localidadDeItem(sub, item) {
+  if (sub === 'sinRutear') return item['Localidad'] || '';
+  if (sub === 'baja') return item['LOCALIDAD'] || '';
+  return item.filaVieja['LOCALIDAD'] || '';
+}
+
+function poblarFiltrosClientes(sub, itemsSinFiltrar) {
+  const selV = document.getElementById('cli-vendedor-filter');
+  const selL = document.getElementById('cli-localidad-filter');
+
+  const vendedoresUnicos = [];
+  const seenV = {};
+  itemsSinFiltrar.forEach(function(it) {
+    const v = vendedorDeItem(sub, it);
+    if (v && !seenV[v]) { seenV[v] = true; vendedoresUnicos.push(v); }
+  });
+  vendedoresUnicos.sort();
+
+  const valorVActual = selV.value;
+  selV.innerHTML = '<option value="">Todos los vendedores</option>';
+  vendedoresUnicos.forEach(function(v) {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    selV.appendChild(opt);
+  });
+  if (vendedoresUnicos.indexOf(valorVActual) !== -1) selV.value = valorVActual;
+  else cliVendedorFiltro = '';
+
+  const localidadesUnicas = [];
+  const seenL = {};
+  itemsSinFiltrar.forEach(function(it) {
+    const l = localidadDeItem(sub, it);
+    if (l && !seenL[l]) { seenL[l] = true; localidadesUnicas.push(l); }
+  });
+  localidadesUnicas.sort();
+
+  const valorLActual = selL.value;
+  selL.innerHTML = '<option value="">Todas las localidades</option>';
+  localidadesUnicas.forEach(function(l) {
+    const opt = document.createElement('option');
+    opt.value = l; opt.textContent = l;
+    selL.appendChild(opt);
+  });
+  if (localidadesUnicas.indexOf(valorLActual) !== -1) selL.value = valorLActual;
+  else cliLocalidadFiltro = '';
+
+  selV.onchange = function() { cliVendedorFiltro = selV.value; renderClientesView(); };
+  selL.onchange = function() { cliLocalidadFiltro = selL.value; renderClientesView(); };
+}
+
+function renderClientesView() {
+  const sel = document.getElementById('cli-subvista');
+  sel.onchange = renderClientesView;
+  const sub = sel.value;
+  const content = document.getElementById('app-content');
+  content.innerHTML = '';
+  actualizarBadgeClientes();
+
+  let itemsCrudos;
+  if (sub === 'sinRutear') itemsCrudos = clientesSinRutear();
+  else if (sub === 'baja') itemsCrudos = clientesParaDarDeBaja();
+  else itemsCrudos = cambiosRazonSocial();
+
+  poblarFiltrosClientes(sub, itemsCrudos);
+
+  const items = itemsCrudos.filter(function(it) {
+    if (cliVendedorFiltro && normTokens(vendedorDeItem(sub, it)) !== normTokens(cliVendedorFiltro)) return false;
+    if (cliLocalidadFiltro && localidadDeItem(sub, it) !== cliLocalidadFiltro) return false;
+    return true;
+  });
+
+  const list = document.createElement('div');
+  list.className = 'cli-list';
+
+  if (sub === 'sinRutear') {
+    if (!items.length) {
+      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay clientes activos sin rutear que coincidan con el filtro.</div></div>';
+      return;
+    }
+    items.forEach(function(c) {
+      const card = document.createElement('div');
+      card.className = 'cli-card';
+      card.innerHTML =
+        '<div class="cli-nombre">' + (c['Nombre SN'] || '') + '</div>' +
+        '<div class="cli-sub">' + (c['Localidad'] || '') + ' · ' + c['Código SN'] + ' · Vendedor: ' + (c['Vendedor'] || '—') + '</div>' +
+        '<div class="cli-detalle">' + (c['Dirección entrega'] || '—') + '<br>Última factura: ' + (c['Fecha Última Factura'] || 'Sin compras registradas') + '</div>';
+      const btn = document.createElement('button');
+      btn.className = 'btn-cli-accion';
+      btn.textContent = '📋 Rutear cliente';
+      btn.addEventListener('click', function() { abrirModalAlta(c); });
+      card.appendChild(btn);
+      list.appendChild(card);
+    });
+
+  } else if (sub === 'baja') {
+    if (!items.length) {
+      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay clientes para dar de baja que coincidan con el filtro.</div></div>';
+      return;
+    }
+    items.forEach(function(r) {
+      const card = document.createElement('div');
+      card.className = 'cli-card';
+      card.innerHTML =
+        '<div class="cli-nombre">' + (r['NOMBRE COMERCIAL'] || '') + '</div>' +
+        '<div class="cli-sub">' + (r['LOCALIDAD'] || '') + ' · ' + r['CODIGO CLIENTE'] + ' · ' + (r['VENDEDOR'] || '') + '</div>' +
+        '<div class="cli-detalle">Este código ya no figura como cliente activo. Día actual: ' + (r['DIA CARGA DE PEDIDO'] || '—') + '</div>';
+      const btn = document.createElement('button');
+      btn.className = 'btn-cli-accion danger';
+      btn.textContent = '🚫 Dar de baja del ruteo';
+      btn.addEventListener('click', function() {
+        eliminarClienteVirtual(r['VENDEDOR'], r['CODIGO CLIENTE'], norm(r['DIA CARGA DE PEDIDO']));
+        renderClientesView();
+      });
+      card.appendChild(btn);
+      list.appendChild(card);
+    });
+
+  } else {
+    if (!items.length) {
+      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay cambios de razón social que coincidan con el filtro.</div></div>';
+      return;
+    }
+    items.forEach(function(it) {
+      const card = document.createElement('div');
+      card.className = 'cli-card';
+      card.innerHTML =
+        '<div class="cli-nombre">' + it.codigoViejo + ' → ' + it.clienteNuevo['Código SN'] + '</div>' +
+        '<div class="cli-sub">' + (it.filaVieja['NOMBRE COMERCIAL'] || '') + ' · ' + (it.filaVieja['VENDEDOR'] || '') + '</div>' +
+        '<div class="cli-detalle">Nuevo nombre: ' + (it.clienteNuevo['Nombre SN'] || '') + '<br>Mantiene día (' + it.filaVieja['DIA CARGA DE PEDIDO'] + ') y orden actual.<br>Última factura: ' + (it.clienteNuevo['Fecha Última Factura'] || 'Sin compras registradas') + '</div>';
+      const btn = document.createElement('button');
+      btn.className = 'btn-cli-accion info';
+      btn.textContent = '🔄 Aplicar reemplazo';
+      btn.addEventListener('click', function() {
+        const clienteNuevo = {
+          codigo: it.clienteNuevo['Código SN'],
+          nombre: it.clienteNuevo['Nombre SN'],
+          localidad: it.clienteNuevo['Localidad'],
+          direccion: it.clienteNuevo['Dirección entrega']
+        };
+        reemplazarPorCambioRS(it.filaVieja['VENDEDOR'], it.codigoViejo, clienteNuevo, norm(it.filaVieja['DIA CARGA DE PEDIDO']));
+        renderClientesView();
+      });
+      card.appendChild(btn);
+      list.appendChild(card);
+    });
+  }
+
+  content.appendChild(list);
+}
+
+// ── MODAL RUTEAR CLIENTE NUEVO ───────────────────────────────────────────────────
+let altaClienteActual = null;
+
+function abrirModalAlta(clienteBaseClientes) {
+  altaClienteActual = clienteBaseClientes;
+  document.getElementById('alta-modal-cliente').textContent =
+    (clienteBaseClientes['Nombre SN'] || '') + ' · ' + (clienteBaseClientes['Vendedor'] || '');
+  document.getElementById('alta-input-dia').value = '';
+  document.getElementById('alta-input-posicion').value = 'final';
+  document.getElementById('alta-campo-referencia').style.display = 'none';
+  document.getElementById('alta-btn-confirmar').disabled = true;
+  document.getElementById('alta-btn-confirmar').textContent = 'Agregar al ruteo';
+  document.getElementById('alta-modal-status').innerHTML = '';
+  document.getElementById('alta-modal-overlay').classList.add('open');
+}
+function cerrarModalAlta() {
+  document.getElementById('alta-modal-overlay').classList.remove('open');
+  altaClienteActual = null;
+}
+function onAltaDiaChange() {
+  const dia = document.getElementById('alta-input-dia').value;
+  if (dia && altaClienteActual) {
+    poblarReferencia(document.getElementById('alta-input-referencia'), dia, null, altaClienteActual['Vendedor']);
+  }
+  validarAlta();
+}
+function validarAlta() {
+  const dia = document.getElementById('alta-input-dia').value;
+  const pos = document.getElementById('alta-input-posicion').value;
+  document.getElementById('alta-campo-referencia').style.display = (pos !== 'final') ? 'block' : 'none';
+  const ok = !!dia && (pos === 'final' || document.getElementById('alta-input-referencia').value !== '');
+  document.getElementById('alta-btn-confirmar').disabled = !ok;
+}
+function confirmarAlta() {
+  if (!altaClienteActual) return;
+  const dia = document.getElementById('alta-input-dia').value;
+  const posicion = document.getElementById('alta-input-posicion').value;
+  const refCodigo = posicion !== 'final' ? document.getElementById('alta-input-referencia').value : null;
+
+  const cliente = {
+    codigo: altaClienteActual['Código SN'],
+    nombre: altaClienteActual['Nombre SN'],
+    localidad: altaClienteActual['Localidad'],
+    direccion: altaClienteActual['Dirección entrega']
+  };
+  agregarClienteVirtual(altaClienteActual['Vendedor'], cliente, dia, refCodigo, posicion);
+
+  document.getElementById('alta-modal-status').innerHTML = '<div class="modal-status ok">✅ Agregado a la cola. Confirmá los cambios para guardar en el Sheet.</div>';
+  setTimeout(function() { cerrarModalAlta(); renderClientesView(); }, 900);
+}
+
+function solicitudesDeLaZona() {
+  return solicitudes.filter(function(s) {
+    if (norm(s['ESTADO']) !== 'PENDIENTE') return false;
+    if (solProcesadas[solicitudKey(s)]) return false; // ya procesada en esta sesión
+    return vendedoresZona.some(function(v) { return normTokens(v) === normTokens(s['VENDEDOR']); });
+  });
+}
+
+function renderSolFiltro() {
+  const sel = document.getElementById('sol-vendedor-filter');
+  sel.innerHTML = '<option value="">Todos los vendedores</option>';
+  vendedoresZona.forEach(function(v) {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+  sel.onchange = function() { solVendedorFiltro = sel.value; renderSolicitudesView(); };
+}
+
+function actualizarBadgeSolicitudes() {
+  const badge = document.getElementById('sol-badge');
+  const n = solicitudesDeLaZona().length;
+  if (n > 0) { badge.style.display = 'inline-block'; badge.textContent = n; }
+  else { badge.style.display = 'none'; }
+}
+
+function tipoLabelPanel(tipo) {
+  const t = norm(tipo);
+  if (t.indexOf('ORDEN') !== -1) return '📋 Cambio de orden';
+  if (t.indexOf('DIA') !== -1 || t.indexOf('DÍA') !== -1) return '📅 Cambio de día';
+  return '🗑️ Eliminar del ruteo';
+}
+
+function renderSolicitudesView() {
+  const content = document.getElementById('app-content');
+  let lista = solicitudesDeLaZona();
+  if (solVendedorFiltro) {
+    lista = lista.filter(function(s) { return normTokens(s['VENDEDOR']) === normTokens(solVendedorFiltro); });
+  }
+  actualizarBadgeSolicitudes();
+
+  content.innerHTML = '';
+  if (!lista.length) {
+    content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay solicitudes pendientes' + (solVendedorFiltro ? ' de ' + solVendedorFiltro : ' en tu zona') + '.</div></div>';
+    return;
+  }
+
+  const list = document.createElement('div');
+  list.className = 'list';
+  list.style.padding = '0.75rem 1.25rem';
+
+  lista.forEach(function(s) {
+    const key = solicitudKey(s);
+    const card = document.createElement('div');
+    card.className = 'sol-card';
+    card.id = 'sol-' + key.replace(/[^a-zA-Z0-9]/g, '');
+
+    card.innerHTML =
+      '<div class="sol-top">' +
+        '<div><div class="sol-cliente">' + (s['CLIENTE']||'') + '</div>' +
+        '<div class="sol-vendedor">' + (s['VENDEDOR']||'') + ' · ' + (s['LOCALIDAD']||'') + '</div></div>' +
+        '<div class="sol-tipo-tag">' + tipoLabelPanel(s['TIPO DE CAMBIO']) + '</div>' +
+      '</div>' +
+      '<div class="sol-detalle">' + (s['DETALLE']||'') + '</div>' +
+      '<div class="sol-meta">Día actual: ' + (s['DÍA ACTUAL']||'—') + ' · ' + (s['FECHA']||'') + ' ' + (s['HORA']||'') + '</div>' +
+      '<div class="sol-actions" id="acciones-' + card.id + '">' +
+        '<button class="btn-sol-aplicar">Aplicar</button>' +
+        '<button class="btn-sol-rechazar">Rechazar</button>' +
+      '</div>';
+
+    card.querySelector('.btn-sol-aplicar').addEventListener('click', function() { aplicarSolicitud(s, card); });
+    card.querySelector('.btn-sol-rechazar').addEventListener('click', function() { rechazarSolicitudUI(s, card); });
+
+    list.appendChild(card);
+  });
+
+  content.appendChild(list);
+}
+
+function mostrarResultadoSolicitud(card, ok, mensaje) {
+  const acciones = card.querySelector('.sol-actions');
+  const status = document.createElement('div');
+  status.className = 'sol-status ' + (ok ? 'ok' : 'err');
+  status.textContent = mensaje;
+  acciones.replaceWith(status);
+}
+
+function aplicarSolicitud(s, card) {
+  const btn = card.querySelector('.btn-sol-aplicar');
+  btn.disabled = true;
+  btn.textContent = 'Aplicando...';
+
+  const payload = {
+    accion: 'ejecutarSolicitud',
+    codigo: s['COD. CLIENTE'], vendedor: s['VENDEDOR'], detalle: s['DETALLE'],
+    zonaSupervisor: supActual['Zona']
+  };
+
+  fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+    .then(function() {
+      solProcesadas[solicitudKey(s)] = 'aplicada';
+      mostrarResultadoSolicitud(card, true, '✅ Solicitud aplicada');
+      actualizarBadgeSolicitudes();
+    })
+    .catch(function() {
+      // no-cors no permite leer error real; asumimos que puede haber fallado
+      mostrarResultadoSolicitud(card, false, '❌ Error al aplicar. Reintentá.');
+    });
+}
+
+function rechazarSolicitudUI(s, card) {
+  const motivo = prompt('Motivo del rechazo (opcional):', '') || '';
+  const btn = card.querySelector('.btn-sol-rechazar');
+  btn.disabled = true;
+  btn.textContent = 'Rechazando...';
+
+  const payload = {
+    accion: 'rechazarSolicitud',
+    codigo: s['COD. CLIENTE'], vendedor: s['VENDEDOR'], detalle: s['DETALLE'],
+    zonaSupervisor: supActual['Zona'], motivo: motivo
+  };
+
+  fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+    .then(function() {
+      solProcesadas[solicitudKey(s)] = 'rechazada';
+      mostrarResultadoSolicitud(card, true, '🚫 Solicitud rechazada' + (motivo ? ': ' + motivo : ''));
+      actualizarBadgeSolicitudes();
+    })
+    .catch(function() {
+      mostrarResultadoSolicitud(card, false, '❌ Error al rechazar. Reintentá.');
+    });
+}
+
+// ── MODAL ACCIÓN EN LOTE (supervisor) ───────────────────────────────────────────
+let bulkTipoActual = null;
+
+function poblarReferencia(selectEl, dia, excluirCodigo, vendedorParam) {
+  const vendedor = vendedorParam || selectedVendedor;
+  const rows = ruteoDelVendedor(vendedor);
+  const ev = getEstadoVirtual(vendedor);
+  const codigoToRow = {};
+  rows.forEach(function(r) { codigoToRow[r['CODIGO CLIENTE']] = r; });
+  Object.keys(ev.altas).forEach(function(c) { codigoToRow[c] = { 'NOMBRE COMERCIAL': ev.altas[c].nombre + ' (nuevo)' }; });
+  const codigos = listaOrdenDia(vendedor, dia, rows).filter(function(c) { return c !== excluirCodigo; });
+  selectEl.innerHTML = '<option value="">— Seleccioná —</option>';
+  codigos.forEach(function(codigo) {
+    const row = codigoToRow[codigo];
+    const opt = document.createElement('option');
+    opt.value = codigo;
+    opt.textContent = row ? row['NOMBRE COMERCIAL'] : codigo;
+    selectEl.appendChild(opt);
+  });
+}
+
+function abrirModalLote(tipo) {
+  bulkTipoActual = tipo;
+  const n = Object.keys(seleccionados).length;
+  document.getElementById('bulk-modal-sub').textContent = n + ' cliente' + (n !== 1 ? 's' : '') + ' seleccionado' + (n !== 1 ? 's' : '');
+  document.getElementById('bulk-campo-dia-wrap').style.display = tipo === 'dia' ? 'block' : 'none';
+  document.getElementById('bulk-campo-canal').style.display = tipo === 'canal' ? 'block' : 'none';
+  document.getElementById('bulk-campo-eliminar').style.display = tipo === 'eliminar' ? 'block' : 'none';
+  document.getElementById('bulk-input-dia').value = '';
+  document.getElementById('bulk-input-posicion').value = 'final';
+  document.getElementById('bulk-campo-referencia').style.display = 'none';
+  document.getElementById('bulk-input-canal').value = '';
+  document.getElementById('bulk-modal-title').textContent =
+    tipo === 'dia' ? 'Mover de día' : tipo === 'canal' ? 'Cambiar canal' : 'Eliminar del ruteo';
+  document.getElementById('bulk-modal-status').innerHTML = '';
+  document.getElementById('bulk-btn-confirmar').textContent = 'Aplicar a todos';
+  document.getElementById('bulk-btn-confirmar').disabled = (tipo !== 'eliminar');
+  document.getElementById('bulk-modal-overlay').classList.add('open');
+}
+function onBulkDiaChange() {
+  const dia = document.getElementById('bulk-input-dia').value;
+  if (dia) poblarReferencia(document.getElementById('bulk-input-referencia'), dia, null);
+  validarBulk();
+}
+function cerrarModalLote() {
+  document.getElementById('bulk-modal-overlay').classList.remove('open');
+  bulkTipoActual = null;
+}
+function validarBulk() {
+  let ok = false;
+  if (bulkTipoActual === 'dia') {
+    const dia = document.getElementById('bulk-input-dia').value;
+    const pos = document.getElementById('bulk-input-posicion').value;
+    document.getElementById('bulk-campo-referencia').style.display = (pos !== 'final') ? 'block' : 'none';
+    ok = !!dia && (pos === 'final' || document.getElementById('bulk-input-referencia').value !== '');
+  } else if (bulkTipoActual === 'canal') {
+    ok = document.getElementById('bulk-input-canal').value !== '';
+  } else if (bulkTipoActual === 'eliminar') {
+    ok = true;
+  }
+  document.getElementById('bulk-btn-confirmar').disabled = !ok;
+}
+function confirmarLote() {
+  const btn = document.getElementById('bulk-btn-confirmar');
+  btn.disabled = true;
+  btn.textContent = 'Aplicando...';
+
+  let items = Object.values(seleccionados); // {dia, codigo, nombre}
+  const rowsVendedor = ruteoDelVendedor(selectedVendedor);
+  items.sort(function(a, b) {
+    const da = DAYS_ORDER.indexOf(a.dia), db = DAYS_ORDER.indexOf(b.dia);
+    if (da !== db) return da - db;
+    const listaA = listaOrdenDia(selectedVendedor, a.dia, rowsVendedor);
+    return listaA.indexOf(a.codigo) - listaA.indexOf(b.codigo);
+  });
+
+  if (bulkTipoActual === 'canal') {
+    const nuevoCanal = document.getElementById('bulk-input-canal').value;
+    items.forEach(function(it) { setCanalVirtual(selectedVendedor, it.codigo, nuevoCanal); });
+
+  } else if (bulkTipoActual === 'eliminar') {
+    items.forEach(function(it) { eliminarClienteVirtual(selectedVendedor, it.codigo, it.dia); });
+
+  } else if (bulkTipoActual === 'dia') {
+    const nuevoDia = document.getElementById('bulk-input-dia').value;
+    const posicion = document.getElementById('bulk-input-posicion').value;
+    let refActual = posicion !== 'final' ? document.getElementById('bulk-input-referencia').value : null;
+    let posActual = posicion;
+    items.forEach(function(it) {
+      moverClienteVirtual(selectedVendedor, it.codigo, it.dia, nuevoDia, refActual, posActual);
+      refActual = it.codigo;
+      posActual = 'despues';
+    });
+  }
+
+  seleccionados = {};
+  modoSeleccion = false;
+  document.getElementById('bulk-modal-status').innerHTML = '<div class="modal-status ok">✅ Cambios agregados a la cola. Confirmá al final para guardar en el Sheet.</div>';
+  btn.textContent = 'Aplicado';
+  setTimeout(function() { cerrarModalLote(); render(); }, 1000);
+}
+
+// ── MODAL DE EDICIÓN DIRECTA (supervisor) ──────────────────────────────────────
+function abrirModalEdit(codigo, dia, nombre) {
+  editModalData = { codigo: codigo, dia: dia, nombre: nombre };
+  tipoEditSeleccionado = null;
+  document.getElementById('edit-modal-cliente').textContent = nombre;
+  document.querySelectorAll('#edit-modal-overlay .tipo-btn').forEach(function(b) { b.classList.remove('selected'); });
+  document.getElementById('edit-campo-posicion').style.display = 'none';
+  document.getElementById('edit-campo-canal').style.display = 'none';
+  document.getElementById('edit-input-dia').value = '';
+  document.getElementById('edit-input-posicion').value = 'final';
+  document.getElementById('edit-campo-referencia').style.display = 'none';
+  document.getElementById('edit-input-canal').value = '';
+  document.getElementById('edit-btn-confirmar').disabled = true;
+  document.getElementById('edit-btn-confirmar').textContent = 'Aplicar cambio';
+  document.getElementById('edit-modal-status').innerHTML = '';
+  document.getElementById('edit-modal-overlay').classList.add('open');
+}
+function cerrarModalEdit() {
+  document.getElementById('edit-modal-overlay').classList.remove('open');
+  editModalData = null;
+  tipoEditSeleccionado = null;
+}
+function selectTipoEdit(btn) {
+  document.querySelectorAll('#edit-modal-overlay .tipo-btn').forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  tipoEditSeleccionado = btn.dataset.tipo;
+  document.getElementById('edit-campo-posicion').style.display = tipoEditSeleccionado === 'posicion' ? 'block' : 'none';
+  document.getElementById('edit-campo-canal').style.display = tipoEditSeleccionado === 'canal' ? 'block' : 'none';
+  validarEnvioEdit();
+}
+function onEditDiaChange() {
+  const dia = document.getElementById('edit-input-dia').value;
+  if (dia && editModalData) poblarReferencia(document.getElementById('edit-input-referencia'), dia, editModalData.codigo);
+  validarEnvioEdit();
+}
+function validarEnvioEdit() {
+  let ok = false;
+  if (tipoEditSeleccionado === 'posicion') {
+    const dia = document.getElementById('edit-input-dia').value;
+    const pos = document.getElementById('edit-input-posicion').value;
+    document.getElementById('edit-campo-referencia').style.display = (pos !== 'final') ? 'block' : 'none';
+    ok = !!dia && (pos === 'final' || document.getElementById('edit-input-referencia').value !== '');
+  } else if (tipoEditSeleccionado === 'canal') {
+    ok = document.getElementById('edit-input-canal').value !== '';
+  } else if (tipoEditSeleccionado === 'eliminar') {
+    ok = true;
+  }
+  document.getElementById('edit-btn-confirmar').disabled = !ok;
+}
+function confirmarEdicion() {
+  if (!editModalData || !tipoEditSeleccionado) return;
+
+  if (tipoEditSeleccionado === 'posicion') {
+    const nuevoDia = document.getElementById('edit-input-dia').value;
+    const posicion = document.getElementById('edit-input-posicion').value;
+    const refCodigo = posicion !== 'final' ? document.getElementById('edit-input-referencia').value : null;
+    moverClienteVirtual(selectedVendedor, editModalData.codigo, editModalData.dia, nuevoDia, refCodigo, posicion);
+  } else if (tipoEditSeleccionado === 'canal') {
+    setCanalVirtual(selectedVendedor, editModalData.codigo, document.getElementById('edit-input-canal').value);
+  } else if (tipoEditSeleccionado === 'eliminar') {
+    eliminarClienteVirtual(selectedVendedor, editModalData.codigo, editModalData.dia);
+  }
+
+  document.getElementById('edit-modal-status').innerHTML = '<div class="modal-status ok">✅ Cambio agregado a la cola. Confirmá al final para guardar en el Sheet.</div>';
+  setTimeout(function() { cerrarModalEdit(); render(); }, 900);
+}
+
+// ── ESTADO VIRTUAL: helpers de lectura ──────────────────────────────────────────
+function ruteoDelVendedor(vendedor) {
+  const objetivo = normTokens(vendedor);
+  return baseRuteo.filter(function(r) { return normTokens(r['VENDEDOR']) === objetivo; });
+}
+
+function obtenerDiaEfectiva(vendedor, codigo, diaOriginal) {
+  const ev = getEstadoVirtual(vendedor);
+  return ev.diaVirtual[codigo] || diaOriginal;
+}
+
+function listaOrdenDia(vendedor, dia, rows) {
+  const ev = getEstadoVirtual(vendedor);
+  if (ev.ordenVirtual[dia]) return ev.ordenVirtual[dia].filter(function(c) { return !ev.eliminados[c]; });
+  const arr = rows.filter(function(r) {
+    const codigo = r['CODIGO CLIENTE'];
+    if (ev.eliminados[codigo]) return false;
+    const diaOriginal = norm(r['DIA CARGA DE PEDIDO']);
+    return obtenerDiaEfectiva(vendedor, codigo, diaOriginal) === dia;
+  });
+  arr.sort(function(a, b) { return (parseInt(a['ORDEN']) || 0) - (parseInt(b['ORDEN']) || 0); });
+  return arr.map(function(r) { return r['CODIGO CLIENTE']; });
+}
+
+function materializarDia(vendedor, dia, rows) {
+  const ev = getEstadoVirtual(vendedor);
+  if (!ev.ordenVirtual[dia]) ev.ordenVirtual[dia] = listaOrdenDia(vendedor, dia, rows);
+}
+
+// ── ESTADO VIRTUAL: mutaciones ───────────────────────────────────────────────────
+function moverClienteVirtual(vendedor, codigo, diaOrigen, diaDestino, refCodigo, posicion) {
+  const rows = ruteoDelVendedor(vendedor);
+  const ev = getEstadoVirtual(vendedor);
+  materializarDia(vendedor, diaOrigen, rows);
+  materializarDia(vendedor, diaDestino, rows);
+
+  const idxOrig = ev.ordenVirtual[diaOrigen].indexOf(codigo);
+  if (idxOrig !== -1) ev.ordenVirtual[diaOrigen].splice(idxOrig, 1);
+
+  const row = rows.find(function(r) { return r['CODIGO CLIENTE'] === codigo; });
+  const diaOriginalReal = row ? norm(row['DIA CARGA DE PEDIDO']) : diaOrigen;
+  if (diaDestino !== diaOriginalReal) ev.diaVirtual[codigo] = diaDestino;
+  else delete ev.diaVirtual[codigo];
+
+  let idx = ev.ordenVirtual[diaDestino].length;
+  if (refCodigo) {
+    const refIdx = ev.ordenVirtual[diaDestino].indexOf(refCodigo);
+    if (refIdx !== -1) idx = posicion === 'antes' ? refIdx : refIdx + 1;
+  }
+  ev.ordenVirtual[diaDestino].splice(idx, 0, codigo);
+  ev.pendientes[codigo] = true;
+  markDirty();
+}
+
+function setCanalVirtual(vendedor, codigo, nuevoCanal) {
+  const ev = getEstadoVirtual(vendedor);
+  ev.canalVirtual[codigo] = nuevoCanal;
+  ev.pendientes[codigo] = true;
+  markDirty();
+}
+
+function eliminarClienteVirtual(vendedor, codigo, dia) {
+  const rows = ruteoDelVendedor(vendedor);
+  const ev = getEstadoVirtual(vendedor);
+  materializarDia(vendedor, dia, rows);
+  const idx = ev.ordenVirtual[dia].indexOf(codigo);
+  if (idx !== -1) ev.ordenVirtual[dia].splice(idx, 1);
+  ev.eliminados[codigo] = true;
+  ev.pendientes[codigo] = true;
+  delete ev.diaVirtual[codigo];
+  delete ev.canalVirtual[codigo];
+  delete ev.altas[codigo];
+  markDirty();
+}
+
+// ── ALTAS Y REEMPLAZOS (Etapa 2E) ───────────────────────────────────────────────
+function calcularIndiceInsercion(vendedor, dia, refCodigo, posicion) {
+  const ev = getEstadoVirtual(vendedor);
+  const arr = ev.ordenVirtual[dia] || [];
+  if (!refCodigo || posicion === 'final') return arr.length;
+  const idx = arr.indexOf(refCodigo);
+  return idx === -1 ? arr.length : (posicion === 'antes' ? idx : idx + 1);
+}
+
+function agregarClienteVirtual(vendedor, cliente, dia, refCodigo, posicion) {
+  const rows = ruteoDelVendedor(vendedor);
+  const ev = getEstadoVirtual(vendedor);
+  materializarDia(vendedor, dia, rows);
+  const idx = calcularIndiceInsercion(vendedor, dia, refCodigo, posicion);
+  ev.ordenVirtual[dia].splice(idx, 0, cliente.codigo);
+  ev.altas[cliente.codigo] = cliente;
+  ev.pendientes[cliente.codigo] = true;
+  markDirty();
+}
+
+function reemplazarPorCambioRS(vendedor, codigoViejo, clienteNuevo, dia) {
+  const rows = ruteoDelVendedor(vendedor);
+  const ev = getEstadoVirtual(vendedor);
+  materializarDia(vendedor, dia, rows);
+  const idx = ev.ordenVirtual[dia].indexOf(codigoViejo);
+  if (idx !== -1) ev.ordenVirtual[dia].splice(idx, 1);
+  ev.eliminados[codigoViejo] = true;
+  ev.pendientes[codigoViejo] = true;
+  const insertIdx = idx === -1 ? ev.ordenVirtual[dia].length : idx;
+  ev.ordenVirtual[dia].splice(insertIdx, 0, clienteNuevo.codigo);
+  ev.altas[clienteNuevo.codigo] = clienteNuevo;
+  ev.pendientes[clienteNuevo.codigo] = true;
+  markDirty();
+}
+
+// ── SELECCIÓN MÚLTIPLE ───────────────────────────────────────────────────────────
+function claveSel(dia, codigo) { return dia + '|' + codigo; }
+
+function toggleModoSeleccion() {
+  modoSeleccion = !modoSeleccion;
+  seleccionados = {};
+  render();
+}
+
+function toggleSeleccionCliente(dia, codigo, nombre, checked) {
+  const key = claveSel(dia, codigo);
+  if (checked) seleccionados[key] = { dia: dia, codigo: codigo, nombre: nombre };
+  else delete seleccionados[key];
+  renderBarraAcciones();
+}
+
+// ── FILTRO DE DÍAS (dropdown multiselect) ───────────────────────────────────────
+function toggleDayFilterPanel() {
+  const panel = document.getElementById('day-filter-panel');
+  const btn = document.getElementById('day-filter-btn');
+  const abierto = panel.classList.toggle('open');
+  btn.classList.toggle('open', abierto);
+  requestAnimationFrame(actualizarStickyOffsets);
+}
+
+function renderDayFilterPanel(diasDisponibles) {
+  const panel = document.getElementById('day-filter-panel');
+  panel.innerHTML = '';
+
+  const todosRow = document.createElement('div');
+  todosRow.className = 'day-filter-row day-filter-todos';
+  const todosChk = document.createElement('input');
+  todosChk.type = 'checkbox';
+  todosChk.checked = diasDisponibles.length > 0 && diasDisponibles.every(function(d) { return diasFiltro.indexOf(d) !== -1; });
+  todosChk.addEventListener('change', function() {
+    diasFiltro = todosChk.checked ? diasDisponibles.slice() : [];
+    guardarSesionStorage();
+    render();
+  });
+  todosRow.appendChild(todosChk);
+  todosRow.appendChild(document.createTextNode('Todos los días'));
+  panel.appendChild(todosRow);
+
+  const div = document.createElement('div');
+  div.className = 'day-filter-divider';
+  panel.appendChild(div);
+
+  diasDisponibles.forEach(function(dia) {
+    const row = document.createElement('div');
+    row.className = 'day-filter-row';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.checked = diasFiltro.indexOf(dia) !== -1;
+    chk.addEventListener('change', function() {
+      const idx = diasFiltro.indexOf(dia);
+      if (chk.checked && idx === -1) diasFiltro.push(dia);
+      else if (!chk.checked && idx !== -1) diasFiltro.splice(idx, 1);
+      guardarSesionStorage();
+      render();
+    });
+    row.appendChild(chk);
+    row.appendChild(document.createTextNode(dia.charAt(0) + dia.slice(1).toLowerCase()));
+    panel.appendChild(row);
+  });
+}
+
+function actualizarDayFilterLabel(diasDisponibles) {
+  const label = document.getElementById('day-filter-label');
+  if (diasDisponibles.length > 0 && diasDisponibles.every(function(d) { return diasFiltro.indexOf(d) !== -1; })) {
+    label.textContent = 'Todos los días';
+  } else if (diasFiltro.length === 0) {
+    label.textContent = 'Ningún día seleccionado';
+  } else if (diasFiltro.length === 1) {
+    label.textContent = diasFiltro[0].charAt(0) + diasFiltro[0].slice(1).toLowerCase();
+  } else {
+    label.textContent = diasFiltro.length + ' días seleccionados';
+  }
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────────
+function render() {
+  const content = document.getElementById('app-content');
+  if (!selectedVendedor) {
+    document.getElementById('day-filter-panel').innerHTML = '';
+    content.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Seleccioná un vendedor de tu equipo para ver su ruteo</div></div>';
+    return;
+  }
+
+  const rows = ruteoDelVendedor(selectedVendedor);
+  const ev = getEstadoVirtual(selectedVendedor);
+  const hayAltas = Object.keys(ev.altas).length > 0;
+  if (!rows.length && !hayAltas) {
+    content.innerHTML = '<div class="empty"><div class="empty-text">Este vendedor no tiene clientes ruteados.</div></div>';
+    return;
+  }
+
+  const codigoToRow = {};
+  rows.forEach(function(r) { codigoToRow[r['CODIGO CLIENTE']] = r; });
+  Object.keys(ev.altas).forEach(function(codigo) {
+    if (!codigoToRow[codigo]) {
+      const alta = ev.altas[codigo];
+      codigoToRow[codigo] = {
+        'CODIGO CLIENTE': codigo,
+        'NOMBRE COMERCIAL': alta.nombre + ' (nuevo)',
+        'LOCALIDAD': alta.localidad,
+        'DIRECCION': alta.direccion,
+        'Canal actual (Presencial / Autogestión)': 'Presencial',
+        'Latitud': '', 'Longitud': ''
+      };
+    }
+  });
+
+  const diasSet = {};
+  rows.forEach(function(r) { const d = norm(r['DIA CARGA DE PEDIDO']); if (d) diasSet[d] = true; });
+  Object.keys(ev.diaVirtual).forEach(function(c) { diasSet[ev.diaVirtual[c]] = true; });
+  Object.keys(ev.ordenVirtual).forEach(function(d) { if (ev.ordenVirtual[d].length) diasSet[d] = true; });
+  const diasDisponibles = Object.keys(diasSet).sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
+
+  renderDayFilterPanel(diasDisponibles);
+  actualizarDayFilterLabel(diasDisponibles);
+
+  const diasAMostrar = diasDisponibles.filter(function(d) { return diasFiltro.indexOf(d) !== -1; });
+
+  content.innerHTML = '';
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'sel-toolbar';
+  toolbar.innerHTML =
+    '<button class="btn-sel-toggle' + (modoSeleccion ? ' active' : '') + '" id="btn-sel-toggle">' +
+      (modoSeleccion ? '✕ Cancelar selección' : '☑ Seleccionar clientes') +
+    '</button>';
+  toolbar.querySelector('#btn-sel-toggle').addEventListener('click', toggleModoSeleccion);
+  content.appendChild(toolbar);
+
+  if (!diasAMostrar.length) {
+    content.innerHTML += '<div class="empty"><div class="empty-text">No hay días seleccionados en el filtro.</div></div>';
+    renderBarraAcciones();
+    renderConfirmBar();
+    return;
+  }
+
+  diasAMostrar.forEach(function(dia) {
+    const codigos = listaOrdenDia(selectedVendedor, dia, rows);
+    if (!codigos.length) return;
+
+    const dayHeader = document.createElement('div');
+    dayHeader.className = 'day-group-header';
+    dayHeader.textContent = dia.charAt(0) + dia.slice(1).toLowerCase() + ' · ' + codigos.length + ' cliente' + (codigos.length !== 1 ? 's' : '');
+    content.appendChild(dayHeader);
+
+    const list = document.createElement('div');
+    list.className = 'list';
+    list.dataset.dia = dia;
+    codigos.forEach(function(codigo, idx) {
+      const row = codigoToRow[codigo];
+      if (!row) return;
+      list.appendChild(buildClientCardSupervisor(row, dia, idx + 1));
+    });
+    content.appendChild(list);
+  });
+
+  actualizarStickyOffsets();
+  renderBarraAcciones();
+  renderConfirmBar();
+}
+
+function actualizarStickyOffsets() {
+  const headerEl = document.getElementById('header');
+  if (!headerEl) return;
+  const headerH = headerEl.offsetHeight;
+  document.querySelectorAll('.day-group-header').forEach(function(h) { h.style.top = headerH + 'px'; });
+}
+
+function buildClientCardSupervisor(row, dia, ordenVisual) {
+  const ev = getEstadoVirtual(selectedVendedor);
+  const codigo = row['CODIGO CLIENTE'];
+  const canalReal = ev.canalVirtual[codigo] || row['Canal actual (Presencial / Autogestión)'];
+  const cc = canalClass(canalReal);
+  const esPendiente = !!ev.pendientes[codigo];
+
+  const card = document.createElement('div');
+  card.className = 'client-card ' + cc + (esPendiente ? ' pending-change' : '');
+  card.dataset.codigo = codigo;
+
+  const main = document.createElement('div');
+  main.className = 'card-main';
+
+  if (modoSeleccion) {
+    const key = claveSel(dia, codigo);
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.className = 'sel-checkbox';
+    chk.checked = !!seleccionados[key];
+    chk.addEventListener('click', function(e) { e.stopPropagation(); });
+    chk.addEventListener('change', function() {
+      toggleSeleccionCliente(dia, codigo, row['NOMBRE COMERCIAL'], chk.checked);
+    });
+    main.appendChild(chk);
+  }
+
+  const numDiv = document.createElement('div');
+  numDiv.className = 'order-num';
+  numDiv.textContent = ordenVisual;
+  main.appendChild(numDiv);
+
+  const info = document.createElement('div');
+  info.className = 'client-info';
+  info.innerHTML =
+    '<div class="client-name">' + (row['NOMBRE COMERCIAL'] || '') + (esPendiente ? '<span class="pending-tag">Sin guardar</span>' : '') + '</div>' +
+    '<div class="client-sub">' + (row['LOCALIDAD'] || '') + ' · ' + codigo + '</div>';
+  main.appendChild(info);
+
+  const tag = document.createElement('div');
+  tag.className = 'canal-tag ' + cc;
+  tag.textContent = canalLabel(cc);
+  main.appendChild(tag);
+
+  const detail = document.createElement('div');
+  detail.className = 'card-detail';
+  const fechaFactura = getFechaFactura(codigo);
+  detail.innerHTML =
+    '<div class="detail-divider"></div>' +
+    '<div class="detail-row"><div class="detail-label">Dirección</div><div class="detail-value">' + (row['DIRECCION'] || '—') + '</div></div>' +
+    '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>' +
+    '<div class="detail-row"><div class="detail-label">Última factura</div><div class="detail-value">' + (fechaFactura || 'Sin compras registradas') + '</div></div>' +
+    '<a class="btn-maps" href="' + mapsUrl(row) + '" target="_blank" onclick="event.stopPropagation()">' +
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1C5.8 1 4 2.8 4 5c0 3.5 4 9 4 9s4-5.5 4-9c0-2.2-1.8-4-4-4z"/><circle cx="8" cy="5" r="1.5"/></svg>' +
+    'Abrir en Maps</a>';
+
+  const btnEditar = document.createElement('button');
+  btnEditar.className = 'btn-editar';
+  btnEditar.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg> Editar cliente';
+  btnEditar.addEventListener('click', function(e) {
+    e.stopPropagation();
+    abrirModalEdit(codigo, dia, row['NOMBRE COMERCIAL']);
+  });
+  detail.appendChild(btnEditar);
+
+  main.addEventListener('click', function() {
+    if (modoSeleccion) {
+      const chk = main.querySelector('.sel-checkbox');
+      chk.checked = !chk.checked;
+      chk.dispatchEvent(new Event('change'));
+    } else {
+      card.classList.toggle('expanded');
+    }
+  });
+
+  card.appendChild(main);
+  card.appendChild(detail);
+  return card;
+}
+
+// ── BARRA DE ACCIONES EN LOTE (durante selección) ───────────────────────────────
+function renderBarraAcciones() {
+  let bar = document.getElementById('bulk-bar');
+  const n = Object.keys(seleccionados).length;
+  if (!modoSeleccion || n === 0) {
+    if (bar) bar.remove();
+    return;
+  }
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'bulk-bar';
+    bar.className = 'bulk-bar';
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML =
+    '<div class="bulk-count">' + n + ' seleccionado' + (n !== 1 ? 's' : '') + '</div>' +
+    '<div class="bulk-actions">' +
+      '<button class="bulk-btn" id="bulk-dia">📅 Mover de día</button>' +
+      '<button class="bulk-btn" id="bulk-canal">🔀 Canal</button>' +
+      '<button class="bulk-btn danger" id="bulk-eliminar">🗑️ Eliminar</button>' +
+    '</div>';
+  bar.querySelector('#bulk-dia').addEventListener('click', function() { abrirModalLote('dia'); });
+  bar.querySelector('#bulk-canal').addEventListener('click', function() { abrirModalLote('canal'); });
+  bar.querySelector('#bulk-eliminar').addEventListener('click', function() { abrirModalLote('eliminar'); });
+}
+
+// ── BARRA DE CONFIRMACIÓN DE CAMBIOS PENDIENTES ─────────────────────────────────
+function renderConfirmBar() {
+  let bar = document.getElementById('confirm-bar');
+  const n = contarCambiosPendientes();
+  if (modoSeleccion || n === 0) {
+    if (bar) bar.remove();
+    return;
+  }
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'confirm-bar';
+    bar.className = 'confirm-changes-bar';
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML =
+    '<div class="confirm-changes-count">' + n + ' cambio' + (n !== 1 ? 's' : '') + ' sin guardar</div>' +
+    '<div class="confirm-changes-actions">' +
+      '<button class="btn-discard-changes" id="btn-discard">Descartar</button>' +
+      '<button class="btn-confirm-changes" id="btn-confirm">Confirmar cambios</button>' +
+    '</div>';
+  bar.querySelector('#btn-discard').addEventListener('click', descartarCambios);
+  bar.querySelector('#btn-confirm').addEventListener('click', confirmarCambiosGlobal);
+}
+
+function descartarCambios() {
+  if (!confirm('¿Descartar todos los cambios sin guardar?')) return;
+  estadoVirtualPorVendedor = {};
+  markDirty();
+  if (viewMode === 'ruteo') render();
+  else if (viewMode === 'solicitudes') renderSolicitudesView();
+  else renderClientesView();
+  renderConfirmBar();
+}
+
+function confirmarCambiosGlobal() {
+  const bar = document.getElementById('confirm-bar');
+  const btn = bar.querySelector('#btn-confirm');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  const vendedoresConCambios = Object.keys(estadoVirtualPorVendedor).filter(function(key) {
+    const ev = estadoVirtualPorVendedor[key];
+    return Object.keys(ev.diaVirtual).length || Object.keys(ev.ordenVirtual).length ||
+           Object.keys(ev.canalVirtual).length || Object.keys(ev.eliminados).length ||
+           Object.keys(ev.altas).length;
+  });
+
+  const promesas = vendedoresConCambios.map(function(key) {
+    const ev = estadoVirtualPorVendedor[key];
+    const filaVendedor = baseRuteo.find(function(r) { return normTokens(r['VENDEDOR']) === key; }) ||
+                          baseClientes.find(function(c) { return normTokens(c['Vendedor']) === key; });
+    const vendedorReal = filaVendedor ? (filaVendedor['VENDEDOR'] || filaVendedor['Vendedor']) : selectedVendedor;
+
+    const payload = {
+      accion: 'aplicarPlanRuteo',
+      vendedor: vendedorReal,
+      zonaSupervisor: supActual['Zona'],
+      dias: ev.ordenVirtual,
+      canal: ev.canalVirtual,
+      eliminar: Object.keys(ev.eliminados),
+      altas: ev.altas
+    };
+    return fetch(APPS_SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+  });
+
+  Promise.all(promesas).then(function() {
+    estadoVirtualPorVendedor = {};
+    markDirty();
+    if (viewMode === 'ruteo') render();
+    else if (viewMode === 'solicitudes') renderSolicitudesView();
+    else renderClientesView();
+    renderConfirmBar();
+    alert('✅ Cambios guardados. Puede tardar unos minutos en reflejarse en la app por el delay de publicación de Google Sheets.');
+  }).catch(function() {
+    btn.disabled = false;
+    btn.textContent = 'Confirmar cambios';
+    alert('❌ Hubo un error al guardar. Reintentá.');
+  });
+}
+
+// ── CARGA INICIAL ─────────────────────────────────────────────────────────────
+async function cargarDatos() {
+  try {
+    const [sup, cli, rut, sol] = await Promise.all([
+      fetch(URL_SUPERVISORES).then(function(r) { return r.text(); }),
+      fetch(URL_BASE_CLIENTES).then(function(r) { return r.text(); }),
+      fetch(URL_BASE_RUTEO).then(function(r) { return r.text(); }),
+      fetch(URL_SOLICITUDES).then(function(r) { return r.text(); })
+    ]);
+    supervisores = parseCSV(sup);
+    baseClientes = parseCSV(cli).filter(function(c) {
+      return ZONAS_VALIDAS.indexOf(norm(c['Nombre Territorio'])) !== -1;
+    });
+    baseRuteo = parseCSV(rut).filter(function(r) { return r['NOMBRE COMERCIAL']; });
+    solicitudes = parseCSV(sol).filter(function(s) { return s['COD. CLIENTE']; });
+
+    if (restaurarSesionStorage() && supActual) {
+      iniciarSesion();
+    } else {
+      renderZonas();
+    }
+  } catch (e) {
+    document.getElementById('zona-screen').innerHTML = '<div class="pin-title">Error al cargar datos</div><div class="pin-sub">Recargá la página</div>';
+  }
+}
+
+// ── MAPA DE CLIENTES (supervisor) ───────────────────────────────────────────────
+const COLOR_POR_DIA = {
+  LUNES: '#1d3a8f',
+  MARTES: '#0F766E',
+  MIERCOLES: '#C2410C',
+  JUEVES: '#7C3AED',
+  VIERNES: '#B45309'
+};
+
+let leafletMap = null;
+let capasPorDia = {};
+
+function abrirMapa() {
+  if (!selectedVendedor) {
+    alert('Seleccioná primero un vendedor para ver su mapa.');
+    return;
+  }
+
+  const rows = ruteoDelVendedor(selectedVendedor);
+  const codigoToRow = {};
+  rows.forEach(function(r) { codigoToRow[r['CODIGO CLIENTE']] = r; });
+
+  const diasSet = {};
+  rows.forEach(function(r) { const d = norm(r['DIA CARGA DE PEDIDO']); if (d) diasSet[d] = true; });
+  const diasDisponibles = Object.keys(diasSet).sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
+  const diasAMostrar = diasDisponibles.filter(function(d) { return diasFiltro.indexOf(d) !== -1; });
+
+  document.getElementById('map-title').textContent = 'Mapa · ' + selectedVendedor;
+  document.getElementById('map-overlay').classList.add('open');
+
+  // Inicializar el mapa recién la primera vez (Leaflet necesita el contenedor visible)
+  setTimeout(function() {
+    if (!leafletMap) {
+      leafletMap = L.map('leaflet-map');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19
+      }).addTo(leafletMap);
+    } else {
+      Object.keys(capasPorDia).forEach(function(d) { leafletMap.removeLayer(capasPorDia[d]); });
+    }
+    leafletMap.invalidateSize();
+
+    capasPorDia = {};
+    const bounds = [];
+    let sinCoords = 0;
+
+    diasAMostrar.forEach(function(dia) {
+      const codigos = listaOrdenDia(selectedVendedor, dia, rows);
+      const layer = L.layerGroup();
+      const color = COLOR_POR_DIA[dia] || '#666';
+      const puntosOrdenados = [];
+      let ordenVisual = 0;
+
+      codigos.forEach(function(codigo) {
+        const row = codigoToRow[codigo];
+        if (!row) return;
+        ordenVisual++;
+        const lat = parseFloat(row['Latitud']);
+        const lon = parseFloat(row['Longitud']);
+        if (!lat || !lon) { sinCoords++; return; }
+
+        const icon = L.divIcon({
+          className: '',
+          html: '<div class="map-num-marker" style="background:' + color + '">' + ordenVisual + '</div>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+        const marker = L.marker([lat, lon], { icon: icon }).bindPopup(
+          '<strong>' + ordenVisual + '. ' + (row['NOMBRE COMERCIAL'] || '') + '</strong><br>' +
+          (row['DIRECCION'] || '') + '<br>' +
+          '<span style="color:' + color + '">' + dia.charAt(0) + dia.slice(1).toLowerCase() + '</span> · ' + codigo
+        );
+        layer.addLayer(marker);
+        puntosOrdenados.push([lat, lon]);
+        bounds.push([lat, lon]);
+      });
+
+      // Línea de recorrido con flechas de dirección, dentro de la misma capa del día
+      if (puntosOrdenados.length > 1) {
+        const linea = L.polyline(puntosOrdenados, { color: color, weight: 2.5, opacity: 0.6, dashArray: '6,6' });
+        layer.addLayer(linea);
+        const flechas = L.polylineDecorator(linea, {
+          patterns: [{
+            offset: '5%', repeat: '12%',
+            symbol: L.Symbol.arrowHead({ pixelSize: 9, polygon: false, pathOptions: { color: color, weight: 2.5, opacity: 0.9 } })
+          }]
+        });
+        layer.addLayer(flechas);
+      }
+
+      layer.addTo(leafletMap);
+      capasPorDia[dia] = layer;
+    });
+
+    document.getElementById('map-sin-coords').textContent =
+      sinCoords > 0 ? sinCoords + ' cliente' + (sinCoords !== 1 ? 's' : '') + ' sin ubicación cargada (no se muestran en el mapa)' : '';
+
+    renderLeyendaMapa(diasAMostrar);
+
+    if (bounds.length) leafletMap.fitBounds(bounds, { padding: [30, 30] });
+    else leafletMap.setView([-38.95, -68.06], 7); // fallback: centro aproximado de Patagonia norte
+  }, 50);
+}
+
+function renderLeyendaMapa(dias) {
+  const legend = document.getElementById('map-legend');
+  legend.innerHTML = '';
+  dias.forEach(function(dia) {
+    const color = COLOR_POR_DIA[dia] || '#666';
+    const chip = document.createElement('button');
+    chip.className = 'map-legend-chip';
+    chip.innerHTML = '<span class="dot" style="background:' + color + '"></span>' + dia.charAt(0) + dia.slice(1).toLowerCase();
+    chip.addEventListener('click', function() {
+      const activo = chip.classList.toggle('off');
+      if (activo) leafletMap.removeLayer(capasPorDia[dia]);
+      else capasPorDia[dia].addTo(leafletMap);
+    });
+    legend.appendChild(chip);
+  });
+}
+
+function cerrarMapa() {
+  document.getElementById('map-overlay').classList.remove('open');
+}
+
+cargarDatos();
+
+window.addEventListener('resize', function() { actualizarStickyOffsets(); });
+
+document.getElementById('edit-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModalEdit();
+});
+document.getElementById('bulk-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModalLote();
+});
+
+document.getElementById('alta-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModalAlta();
+});
+</script>
+</body>
+</html>

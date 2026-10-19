@@ -361,11 +361,15 @@ let searchQuery = '';
 let modalData = null;
 let tipoSeleccionado = null;
 let soloSinUbicacion = false;
+let soloPresencialSinUbic = false; // al venir del mapa, la lista se limita a los presenciales sin ubicación
 const DAYS_ORDER = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO','DOMINGO'];
 const COLOR_POR_DIA = { LUNES: '#1d3a8f', MARTES: '#0F766E', MIERCOLES: '#C2410C', JUEVES: '#7C3AED', VIERNES: '#B45309' };
 const PIN_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg>';
 
 function todayStr() { return new Date().toISOString().slice(0,10); }
+function esPresencial(row) {
+  return canalClass(row['Canal actual (Presencial / Autogestión)']) === 'presencial';
+}
 function porOrden(a, b) { return (parseInt(a['ORDEN']) || 0) - (parseInt(b['ORDEN']) || 0); }
 
 // ── UBICACIONES GUARDADAS EN EL CELULAR ──────────────────────────────────────
@@ -957,7 +961,9 @@ function dibujarMapa() {
   const diaInicial = dias.indexOf(selectedDay) !== -1 ? selectedDay : dias[0];
 
   dias.forEach(function(dia) {
-    const filas = vendRows.filter(function(r) { return r['DIA CARGA DE PEDIDO'].toUpperCase() === dia; }).sort(porOrden);
+    // Solo los clientes presenciales se visitan en persona: son los únicos del recorrido
+    const filas = vendRows.filter(function(r) { return r['DIA CARGA DE PEDIDO'].toUpperCase() === dia; }).sort(porOrden)
+      .filter(function(r) { return esPresencial(r); });
     const color = COLOR_POR_DIA[dia] || '#666';
     const layer = L.layerGroup();
     const pts = [];
@@ -966,7 +972,7 @@ function dibujarMapa() {
     filas.forEach(function(row, idx) {
       const co = coordsDe(row);
       if (!co) { sin++; return; }
-      const orden = idx + 1; // el número cuenta también a los clientes sin ubicación, para respetar el orden real
+      const orden = idx + 1; // el número cuenta a todos los presenciales, tengan o no ubicación, para respetar el orden de visita
       const icon = L.divIcon({
         className: '',
         html: '<div class="map-num-marker" style="background:' + color + '">' + orden + '</div>',
@@ -1029,13 +1035,14 @@ function actualizarNotaMapa() {
     con += (puntosPorDia[d] || []).length;
   });
   const nota = document.getElementById('map-nota');
+  const base = 'Solo se muestran los clientes presenciales.';
   if (sin > 0) {
-    nota.innerHTML = '<span>' + sin + ' cliente' + (sin !== 1 ? 's' : '') + ' sin ubicación (no se muestran)</span>' +
+    nota.innerHTML = '<span>' + base + ' ' + sin + ' sin ubicación.</span>' +
                      '<button class="btn-link" onclick="verFaltantesDesdeMapa()">Ver cuáles</button>';
   } else if (con === 0) {
-    nota.textContent = 'No hay días seleccionados o ninguno tiene clientes.';
+    nota.textContent = 'No hay días seleccionados o ninguno tiene clientes presenciales.';
   } else {
-    nota.textContent = '';
+    nota.textContent = base;
   }
 }
 
@@ -1052,12 +1059,14 @@ function verFaltantesDesdeMapa() {
   cerrarMapa();
   if (dia) selectedDay = dia;
   soloSinUbicacion = true;
+  soloPresencialSinUbic = true;
   refrescar();
 }
 
 // ── LISTA ──────────────────────────────────────────────────────────────────────
 function toggleSoloSinUbicacion() {
   soloSinUbicacion = !soloSinUbicacion;
+  soloPresencialSinUbic = false;
   refrescar();
 }
 
@@ -1105,7 +1114,7 @@ function renderList(clients, vendRows) {
   if (soloSinUbicacion) {
     const banner = document.createElement('div');
     banner.className = 'geo-banner';
-    banner.innerHTML = '<span>Viendo solo los clientes sin ubicación.</span>';
+    banner.innerHTML = '<span>' + (soloPresencialSinUbic ? 'Viendo solo los clientes presenciales sin ubicación.' : 'Viendo solo los clientes sin ubicación.') + '</span>';
     const ver = document.createElement('button');
     ver.className = 'btn-link';
     ver.textContent = 'Ver todos';
@@ -1122,7 +1131,9 @@ function renderList(clients, vendRows) {
     '<label class="filter-chip telefonico"><input type="checkbox" id="filter-telefonico" checked onchange="applyFilter()"> Telefónico</label>';
   content.appendChild(filterBar);
 
-  const visibles = soloSinUbicacion ? clients.filter(function(c) { return !coordsDe(c); }) : clients;
+  const visibles = soloSinUbicacion
+    ? clients.filter(function(c) { return !coordsDe(c) && (!soloPresencialSinUbic || esPresencial(c)); })
+    : clients;
   const list = document.createElement('div');
   list.className = 'list';
   if (!visibles.length) {
@@ -1182,6 +1193,7 @@ function init(csvText) {
     selectedVendedor = sel.value;
     selectedDay = '';
     soloSinUbicacion = false;
+    soloPresencialSinUbic = false;
     invalidarGeoCache();
     if (selectedVendedor) conciliarGeoLocal();
     render();

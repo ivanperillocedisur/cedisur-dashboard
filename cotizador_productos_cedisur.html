@@ -182,6 +182,8 @@
   .q-actions { display: flex; flex-direction: column; gap: 8px; }
   .q-btn { border: none; border-radius: 10px; padding: 0.8rem; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
   .q-btn.primary { background: var(--accent); color: #fff; }
+  .q-btn.wpp { background: #25D366; color: #fff; }
+  .q-btn.wpp.done { background: var(--positive-text); }
   .q-btn.secondary { background: var(--surface); border: 1px solid var(--negative-border); color: var(--negative-text); }
   .q-btn:disabled { opacity: 0.4; cursor: default; }
   .q-empty { text-align: center; padding: 2rem 1rem; color: var(--text3); font-size: 14px; line-height: 1.5; }
@@ -295,6 +297,7 @@
   </div>
 
   <div class="q-actions">
+    <button class="q-btn wpp" id="qWpp" onclick="copyWhatsApp()">Copiar para WhatsApp</button>
     <button class="q-btn primary" id="qExport" onclick="exportExcel()">Exportar a Excel</button>
     <button class="q-btn secondary" id="qClear" onclick="clearQuote()">Vaciar cotización</button>
   </div>
@@ -812,6 +815,7 @@ function renderQuote() {
   const kg = quote.porKg !== false, iva = quote.conIva !== false;
   const u = kg ? 'kg' : 'u';
   document.getElementById('qExport').disabled = !items.length;
+  document.getElementById('qWpp').disabled = !items.length;
   document.getElementById('qClear').disabled = !items.length;
 
   if (!items.length) {
@@ -899,6 +903,60 @@ function showView(v) {
   document.getElementById('tabCotizacion').classList.toggle('active', isQ);
   if (isQ) renderQuote(); else if (allProducts.length) renderProducts();
   window.scrollTo(0, 0);
+}
+
+/* ---------- Copiar para WhatsApp ---------- */
+function fmtQty(n) {
+  return (Math.round(n * 100) / 100).toLocaleString('es-AR');
+}
+function buildWhatsAppText() {
+  const kg = quote.porKg !== false, iva = quote.conIva !== false;
+  const u = kg ? 'kg' : 'u';
+  const fechaTxt = quote.fecha ? quote.fecha.split('-').reverse().join('/') : '';
+  const lines = ['*Cotización CEDISUR*'];
+  if (quote.cliente) lines.push('Cliente: ' + quote.cliente);
+  if (fechaTxt) lines.push('Fecha: ' + fechaTxt);
+  lines.push('');
+
+  let total = 0;
+  quote.items.forEach((it, i) => {
+    const c = lineCalc(it, kg, iva);
+    total += c.sub;
+    lines.push((i + 1) + '. ' + it.nombre);
+    lines.push('   ' + fmtQty(c.qty) + ' ' + u + ' x $' + fmt(c.pu) + ' = *$' + fmt(c.sub) + '*' + (it.desc ? ' (dto. ' + fmtQty(it.desc) + '%)' : ''));
+  });
+
+  lines.push('');
+  lines.push('*Total: $' + fmt(total) + '*');
+  lines.push('_Precios ' + (iva ? 'con' : 'sin') + ' IVA, por ' + (kg ? 'kilo' : 'unidad') + '._');
+  if (quote.obs && quote.obs.trim()) { lines.push(''); lines.push('Observaciones: ' + quote.obs.trim()); }
+  return lines.join('\n');
+}
+async function copyWhatsApp() {
+  if (!quote.items.length) return;
+  saveHeader();
+  const text = buildWhatsAppText();
+  let ok = false;
+  try {
+    if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); ok = true; }
+  } catch (e) {}
+  if (!ok) {
+    // Alternativa para navegadores que no permiten el portapapeles moderno
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  const btn = document.getElementById('qWpp');
+  if (ok) {
+    btn.textContent = 'Copiado. Pegalo en el chat de WhatsApp';
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = 'Copiar para WhatsApp'; btn.classList.remove('done'); }, 2500);
+  } else {
+    alert('No se pudo copiar automáticamente. Copiá este texto manualmente:\n\n' + text);
+  }
 }
 
 /* ---------- Exportar a Excel ---------- */

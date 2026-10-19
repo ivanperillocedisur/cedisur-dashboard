@@ -39,10 +39,25 @@
   .search-input-wrap svg { width: 14px; height: 14px; color: rgba(255,255,255,0.6); flex-shrink: 0; }
   .search-input-wrap input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; }
   .search-input-wrap input::placeholder { color: rgba(255,255,255,0.45); }
-  .search-mode-select { background: transparent; border: none; border-left: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.75); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; outline: none; padding: 0 2px 0 8px; cursor: pointer; flex-shrink: 0; -webkit-appearance: none; appearance: none; }
-  .search-mode-select option { background: #1d3a8f; color: #fff; }
 
   main { padding: 1rem 1.25rem 0; }
+
+  /* FILTROS */
+  .filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 0.6rem; flex-wrap: wrap; }
+  .filter-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; box-shadow: var(--shadow); }
+  .filter-btn.open { border-color: var(--accent); }
+  .filter-n { display: inline-block; min-width: 18px; margin-left: 4px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: #fff; font-size: 11px; text-align: center; }
+  .clear-btn { background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; color: var(--negative-text); cursor: pointer; text-decoration: underline; }
+  .filter-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; margin-bottom: 0.75rem; box-shadow: var(--shadow); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .f-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .f-field label { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text3); }
+  .f-field select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.45rem 0.5rem; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); outline: none; }
+  .f-field select.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); font-weight: 600; }
+  .f-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .f-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-light); border: 1px solid #c5d0f0; color: var(--accent); border-radius: 20px; padding: 3px 4px 3px 10px; font-size: 12px; font-weight: 600; max-width: 100%; }
+  .f-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .f-chip button { border: none; background: rgba(29,58,143,0.12); color: var(--accent); border-radius: 50%; width: 18px; height: 18px; font-size: 11px; cursor: pointer; flex-shrink: 0; }
+  @media (max-width: 360px) { .filter-panel { grid-template-columns: 1fr; } }
 
   /* TOGGLES */
   .toggles-row { display: flex; gap: 8px; margin-bottom: 0.75rem; }
@@ -185,17 +200,18 @@
   <div class="search-input-wrap" id="searchWrap">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/></svg>
     <input type="text" id="searchInput" placeholder="Buscar producto o SKU..." autocomplete="off" autocorrect="off" spellcheck="false">
-    <select id="searchModeSelect" class="search-mode-select">
-      <option value="nombre">Producto</option>
-      <option value="sku">SKU</option>
-      <option value="grupo">Grupo</option>
-      <option value="marca">Marca</option>
-    </select>
   </div>
 </div>
 
 <!-- ===================== VISTA PRECIOS ===================== -->
 <main id="viewPrecios">
+  <div class="filter-bar">
+    <button class="filter-btn" id="filterBtn" onclick="toggleFilterPanel()">Filtros <span class="filter-n" id="filterN" style="display:none">0</span></button>
+    <button class="clear-btn" id="clearFilters" style="display:none" onclick="clearFilters()">Limpiar filtros</button>
+  </div>
+  <div class="filter-panel" id="filterPanel" style="display:none"></div>
+  <div class="f-chips" id="filterChips" style="display:none"></div>
+
   <div class="toggles-row">
     <div class="toggle-card">
       <span class="tgl-label">Con IVA</span>
@@ -276,7 +292,14 @@ const STORE_KEY   = 'cedisur_cotizacion_v2';
 let allProducts  = [];
 let filteredList = [];
 let searchQuery  = '';
-let searchMode   = 'nombre';
+const FILTER_FIELDS = [
+  { key: 'prov',      label: 'Proveedor' },
+  { key: 'marca',     label: 'Marca' },
+  { key: 'grupo',     label: 'Grupo' },
+  { key: 'categoria', label: 'Categoría' },
+  { key: 'familia',   label: 'Familia' },
+];
+const filters = { prov: '', marca: '', grupo: '', categoria: '', familia: '' };
 let showIva      = true;
 let showKg       = true;
 let visibleCount = PAGE_SIZE;
@@ -337,6 +360,9 @@ function parseCSV(text) {
     sku:      findCol(headers, ['código de artículo','codigo de articulo','código','codigo','sku']),
     nombre:   findCol(headers, ['nombre de artículo','nombre de articulo','nombre','producto']),
     grupo:    findCol(headers, ['grupo']),
+    categoria: findCol(headers, ['categoría','categoria']),
+    familia:  findCol(headers, ['familia']),
+    marca:    findCol(headers, ['marca']),
     precioU:  findCol(headers, ['precio']),
     peso:     findCol(headers, ['peso de venta','peso']),
     prov:     findCol(headers, ['nombre de proveedor','proveedor']),
@@ -360,6 +386,7 @@ function parseCSV(text) {
     products.push({
       key: sku || nombre, sku, nombre,
       grupo: get(cols, C.grupo), prov: get(cols, C.prov),
+      categoria: get(cols, C.categoria), familia: get(cols, C.familia), marca: get(cols, C.marca),
       precioU, peso: argNum(get(cols, C.peso)) || 1,
       costoKg: argNum(get(cols, C.costoKg)), precioKg,
       contKg: argNum(get(cols, C.contKg)),
@@ -381,6 +408,7 @@ async function loadData() {
     allProducts = parseCSV(await res.text());
     if (!allProducts.length) throw new Error('CSV vacío o formato incorrecto');
     setLoading(false);
+    renderFilters();
     renderProducts();
     setStatus(true, 'Actualizado ' + fmtTime(new Date()));
   } catch (err) {
@@ -388,6 +416,62 @@ async function loadData() {
     setStatus(false, 'Error al cargar');
   }
   btn.classList.remove('spinning');
+}
+
+/* ---------- Filtros ---------- */
+// Coincide con todos los filtros activos, salvo el campo indicado en "except"
+function matchFilters(p, except) {
+  return FILTER_FIELDS.every(f => f.key === except || !filters[f.key] || p[f.key] === filters[f.key]);
+}
+function availableFields() {
+  return FILTER_FIELDS.filter(f => allProducts.some(p => p[f.key]));
+}
+function renderFilters() {
+  const fields = availableFields();
+  const panel = document.getElementById('filterPanel');
+  panel.innerHTML = fields.map(f => {
+    // Opciones según los demás filtros activos (listas que se acotan entre sí)
+    const vals = [...new Set(allProducts.filter(p => matchFilters(p, f.key)).map(p => p[f.key]).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'es'));
+    const cur = filters[f.key];
+    if (cur && !vals.includes(cur)) vals.unshift(cur);
+    return `<div class="f-field">
+      <label>${f.label}</label>
+      <select class="${cur ? 'active' : ''}" onchange="setFilter('${f.key}', this.value)">
+        <option value="">Todos</option>
+        ${vals.map(v => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(v)}</option>`).join('')}
+      </select>
+    </div>`;
+  }).join('');
+
+  const active = fields.filter(f => filters[f.key]);
+  const n = document.getElementById('filterN');
+  n.textContent = active.length;
+  n.style.display = active.length ? 'inline-block' : 'none';
+  document.getElementById('clearFilters').style.display = active.length ? 'inline' : 'none';
+  const chips = document.getElementById('filterChips');
+  chips.style.display = active.length ? 'flex' : 'none';
+  chips.innerHTML = active.map(f =>
+    `<span class="f-chip"><span>${f.label}: ${esc(filters[f.key])}</span><button onclick="setFilter('${f.key}','')" title="Quitar">&#10005;</button></span>`
+  ).join('');
+}
+function setFilter(key, val) {
+  filters[key] = val;
+  visibleCount = PAGE_SIZE;
+  renderFilters();
+  renderProducts();
+}
+function clearFilters() {
+  Object.keys(filters).forEach(k => filters[k] = '');
+  visibleCount = PAGE_SIZE;
+  renderFilters();
+  renderProducts();
+}
+function toggleFilterPanel() {
+  const panel = document.getElementById('filterPanel');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'grid' : 'none';
+  document.getElementById('filterBtn').classList.toggle('open', open);
 }
 
 /* ---------- Precios base según interruptores ---------- */
@@ -399,13 +483,9 @@ function basePrices(p, kg) {
 /* ---------- Render de la lista ---------- */
 function renderProducts() {
   const q = searchQuery.toLowerCase().trim();
-  filteredList = allProducts.filter(p => {
-    if (!q) return true;
-    if (searchMode === 'sku')   return p.sku.toLowerCase().includes(q);
-    if (searchMode === 'grupo') return p.grupo.toLowerCase().includes(q);
-    if (searchMode === 'marca') return p.prov.toLowerCase().includes(q);
-    return p.nombre.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
-  });
+  filteredList = allProducts.filter(p =>
+    matchFilters(p, null) && (!q || p.nombre.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q))
+  );
 
   const list = document.getElementById('productsList');
   const n = filteredList.length;
@@ -816,13 +896,6 @@ let searchTimer;
 document.getElementById('searchInput').addEventListener('input', e => {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => { searchQuery = e.target.value; visibleCount = PAGE_SIZE; renderProducts(); }, 200);
-});
-document.getElementById('searchModeSelect').addEventListener('change', e => {
-  searchMode = e.target.value;
-  const ph = { nombre: 'Buscar producto o SKU...', sku: 'Buscar por SKU...', grupo: 'Buscar por grupo...', marca: 'Buscar por marca...' };
-  document.getElementById('searchInput').placeholder = ph[searchMode];
-  visibleCount = PAGE_SIZE;
-  renderProducts();
 });
 document.getElementById('ivaToggle').addEventListener('change', e => { showIva = e.target.checked; renderProducts(); });
 document.getElementById('kgToggle').addEventListener('change', e => { showKg = e.target.checked; renderProducts(); });

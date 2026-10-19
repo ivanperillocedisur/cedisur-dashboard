@@ -67,7 +67,11 @@
   .products-list { display: flex; flex-direction: column; gap: 8px; }
   .product-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
   .product-card.expanded { border-color: var(--accent); }
-  .card-header { padding: 0.875rem 0.875rem 0.875rem 1rem; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; -webkit-tap-highlight-color: transparent; user-select: none; }
+  .card-header { padding: 0.875rem 0.875rem 0.875rem 1rem; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; -webkit-tap-highlight-color: transparent; }
+  .card-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+  .hq-btn { background: var(--accent-light); border: 1px solid #c5d0f0; color: var(--accent); border-radius: 6px; padding: 4px 9px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .hq-btn.inq { background: var(--positive-bg); border-color: var(--positive-border); color: var(--positive-text); }
+  .product-name, .sku-tag { user-select: text; -webkit-user-select: text; cursor: text; }
   .card-info { flex: 1; min-width: 0; }
   .name-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
   .product-name { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.35; }
@@ -135,11 +139,15 @@
   .q-meta { font-size: 11px; color: var(--text3); margin: 2px 0 6px; font-family: 'DM Mono', monospace; }
   .q-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); }
   .q-row input { width: 70px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.25rem 0.4rem; font-family: 'DM Mono', monospace; font-size: 13px; text-align: right; outline: none; }
+  .q-row + .q-row { margin-top: 6px; }
+  .q-kpi { font-family: 'DM Mono', monospace; font-size: 12px; }
   .q-sub { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); }
   .q-alert { font-size: 11px; font-weight: 600; color: var(--negative-text); margin-top: 4px; }
-  .q-total { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem; }
-  .q-total span:first-child { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
-  .q-total span:last-child { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 600; color: var(--accent); }
+  .q-total { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.6rem 0.9rem; margin-bottom: 0.75rem; }
+  .q-trow { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; }
+  .q-trow span:first-child { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
+  .q-trow span:last-child { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 600; }
+  .q-trow.main span:last-child { font-size: 17px; color: var(--accent); }
   .q-actions { display: flex; flex-direction: column; gap: 8px; }
   .q-btn { border: none; border-radius: 10px; padding: 0.8rem; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
   .q-btn.primary { background: var(--accent); color: #fff; }
@@ -237,14 +245,22 @@
       <label class="toggle"><input type="checkbox" id="qIva" checked onchange="saveHeader();renderQuote()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
     </div>
     <div class="q-opt">
-      <span>Incluir datos internos en el Excel (costo, margen, competencia)</span>
+      <span>Precios por Kg</span>
+      <label class="toggle"><input type="checkbox" id="qKg" checked onchange="saveHeader();renderQuote()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+    </div>
+    <div class="q-opt">
+      <span>Incluir datos internos en el Excel (costo, contribución, competencia)</span>
       <label class="toggle"><input type="checkbox" id="qInternos" onchange="saveHeader()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
     </div>
   </div>
 
   <div class="section-label">Productos</div>
   <div id="qItems" class="q-items"></div>
-  <div class="q-total"><span>Total</span><span id="qTotal">$0</span></div>
+  <div class="q-total">
+    <div class="q-trow main"><span>Total</span><span id="qTotal">$0</span></div>
+    <div class="q-trow"><span>Contribución s/IVA</span><span id="qContrib">$0</span></div>
+    <div class="q-trow"><span>Margen de contribución</span><span id="qMargen">-</span></div>
+  </div>
 
   <div class="q-actions">
     <button class="q-btn primary" id="qExport" onclick="exportExcel()">Exportar a Excel</button>
@@ -255,7 +271,7 @@
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQGFSioOghyJPoBKByRXq-QdUgJWeSZ_sLyZcGBLGg202C6VLE1XAKhg4qZ9WekD8TldPxpTjtB2LEP/pub?gid=0&single=true&output=csv';
 const PAGE_SIZE   = 50;
-const STORE_KEY   = 'cedisur_cotizacion_v1';
+const STORE_KEY   = 'cedisur_cotizacion_v2';
 
 let allProducts  = [];
 let filteredList = [];
@@ -266,7 +282,7 @@ let showKg       = true;
 let visibleCount = PAGE_SIZE;
 const simState   = {};   // valores simulados por producto: { key: {comp, desc} }
 
-let quote = { items: [], cliente: '', fecha: '', obs: '', conIva: true, internos: false };
+let quote = { items: [], cliente: '', fecha: '', obs: '', conIva: true, porKg: true, internos: false };
 
 /* ---------- Utilidades ---------- */
 function argNum(str) {
@@ -435,10 +451,12 @@ function buildCard(p, idx) {
           <span class="chip chip-price">$${fmt(showIva ? b.civa : b.siva)}${suf} ${showIva ? 'c/IVA' : 's/IVA'}</span>
           <span class="chip chip-margen">Margen ${margen.toFixed(1)}%</span>
           <span class="chip chip-iva ${p.ivaRate === 0.105 ? 'reduced' : ''}">${ivaLabel}</span>
-          ${inQuote(p) ? '<span class="chip chip-inq">En cotización</span>' : ''}
         </div>
       </div>
-      <span class="expand-icon">&#9660;</span>
+      <div class="card-side">
+        <button class="hq-btn${inQuote(p) ? ' inq' : ''}" id="hq-${idx}" onclick="event.stopPropagation();addToQuote(${idx})">${inQuote(p) ? 'En cotización' : '+ Cotizar'}</button>
+        <span class="expand-icon">&#9660;</span>
+      </div>
     </div>
 
     <div class="card-body">
@@ -477,16 +495,24 @@ function buildCard(p, idx) {
   </div>`;
 }
 
+let toggleTimer = null;
 function toggleCard(idx) {
-  document.getElementById('card-' + idx).classList.toggle('expanded');
+  clearTimeout(toggleTimer);
+  toggleTimer = setTimeout(() => {
+    const sel = window.getSelection ? window.getSelection().toString() : '';
+    if (sel.trim()) return;   // hay texto seleccionado: no abrir ni cerrar
+    const card = document.getElementById('card-' + idx);
+    if (card) card.classList.toggle('expanded');
+  }, 230);
 }
+document.addEventListener('dblclick', () => clearTimeout(toggleTimer));
 
 /* ---------- Simulador ---------- */
 function simulate(p, kg, iva, compVal, descPct) {
   const b = basePrices(p, kg);
   const factor = 1 - descPct / 100;
   const siva = b.siva * factor;
-  const civa = siva * (1 + p.ivaRate);
+  const civa = b.civa * factor;
   const contrib = siva - b.costo;
   const margenPct = b.costo > 0 ? (contrib / b.costo * 100) : 0;
   const myPrice = iva ? civa : siva;
@@ -539,6 +565,7 @@ function loadQuote() {
   document.getElementById('qFecha').value = quote.fecha;
   document.getElementById('qObs').value = quote.obs || '';
   document.getElementById('qIva').checked = quote.conIva !== false;
+  document.getElementById('qKg').checked = quote.porKg !== false;
   document.getElementById('qInternos').checked = !!quote.internos;
   document.getElementById('quoteCount').textContent = quote.items.length;
 }
@@ -547,6 +574,7 @@ function saveHeader() {
   quote.fecha    = document.getElementById('qFecha').value;
   quote.obs      = document.getElementById('qObs').value;
   quote.conIva   = document.getElementById('qIva').checked;
+  quote.porKg    = document.getElementById('qKg').checked;
   quote.internos = document.getElementById('qInternos').checked;
   saveQuote();
 }
@@ -556,52 +584,89 @@ function addToQuote(idx) {
   const p = filteredList[idx];
   if (!p) return;
   const st = simState[p.key] || {};
-  const comp = parseFloat(st.comp) || 0;
-  const desc = parseFloat(st.desc) || 0;
-  const r = simulate(p, showKg, showIva, comp, desc);
-
-  const line = {
+  const data = {
     key: p.key, sku: p.sku, nombre: p.nombre,
-    unidad: showKg ? 'kg' : 'u',
-    listaSiva: r.b.siva, listaCiva: r.b.civa,
-    desc, finalSiva: r.siva, finalCiva: r.civa,
-    costo: r.b.costo, contrib: r.contrib, margenPct: r.margenPct,
-    comp, compBase: showIva ? 'c/IVA' : 's/IVA', diff: r.diff,
-    ivaRate: p.ivaRate, qty: 1,
+    prod: { precioKg: p.precioKg, precioU: p.precioU, civaU: p.civaU, costoKg: p.costoKg, peso: p.peso, ivaRate: p.ivaRate },
+    desc: parseFloat(st.desc) || 0,
+    comp: parseFloat(st.comp) || 0, compIva: showIva, compKg: showKg,
   };
-
   const i = quote.items.findIndex(it => it.key === p.key);
-  if (i >= 0) { line.qty = quote.items[i].qty; quote.items[i] = line; }
-  else quote.items.push(line);
+  if (i >= 0) { data.qtyKg = quote.items[i].qtyKg; quote.items[i] = data; }
+  else { data.qtyKg = showKg ? 1 : p.peso; quote.items.push(data); }
   saveQuote();
+  refreshCard(idx, i >= 0 ? 'Actualizado' : 'Agregado');
+}
 
-  const btn = document.getElementById('addq-' + idx);
-  btn.textContent = i >= 0 ? 'Actualizado en cotización' : 'Agregado a cotización';
-  btn.classList.add('done');
-  setTimeout(() => { btn.textContent = 'Actualizar en cotización'; btn.classList.remove('done'); }, 1500);
+function refreshCard(idx, flash) {
+  const old = document.getElementById('card-' + idx);
+  if (!old) return;
+  const wasOpen = old.classList.contains('expanded');
+  const tmp = document.createElement('div');
+  tmp.innerHTML = buildCard(filteredList[idx], idx).trim();
+  const card = tmp.firstChild;
+  if (wasOpen) card.classList.add('expanded');
+  old.replaceWith(card);
+  if (simState[filteredList[idx].key]) calcCard(idx);
+  if (flash) {
+    const hb = document.getElementById('hq-' + idx);
+    const bb = document.getElementById('addq-' + idx);
+    if (hb) hb.textContent = flash;
+    if (bb) { bb.textContent = flash + ' en cotización'; bb.classList.add('done'); }
+    setTimeout(() => {
+      if (hb) hb.textContent = 'En cotización';
+      if (bb) { bb.textContent = 'Actualizar en cotización'; bb.classList.remove('done'); }
+    }, 1300);
+  }
+}
+
+/* ---------- Cotización: cálculo de cada línea según opciones ---------- */
+function lineCalc(it, kg, iva) {
+  const p = it.prod;
+  const peso = p.peso || 1;
+  const b = basePrices(p, kg);
+  const f = 1 - (it.desc || 0) / 100;
+  const siva = b.siva * f;
+  const civa = b.civa * f;
+  const qty = kg ? it.qtyKg : it.qtyKg / peso;
+  const lista = iva ? b.civa : b.siva;
+  const pu = iva ? civa : siva;
+  const contribU = siva - b.costo;
+  let comp = 0, diff = null;
+  if (it.comp > 0) {
+    const kgSiva = it.comp / (it.compIva ? 1 + p.ivaRate : 1) / (it.compKg ? 1 : peso);
+    comp = kgSiva * (kg ? 1 : peso) * (iva ? 1 + p.ivaRate : 1);
+    diff = (pu - comp) / comp;
+  }
+  return {
+    qty, lista, pu, sub: pu * qty, costoU: b.costo,
+    ventaSiva: siva * qty, contribT: contribU * qty,
+    margen: siva > 0 ? contribU / siva : 0, comp, diff,
+  };
 }
 
 /* ---------- Cotización: vista ---------- */
-function lineUnitPrice(it) { return quote.conIva ? it.finalCiva : it.finalSiva; }
-
 function renderQuote() {
   const box = document.getElementById('qItems');
   const items = quote.items;
+  const kg = quote.porKg !== false, iva = quote.conIva !== false;
+  const u = kg ? 'kg' : 'u';
   document.getElementById('qExport').disabled = !items.length;
   document.getElementById('qClear').disabled = !items.length;
 
   if (!items.length) {
-    box.innerHTML = '<div class="q-empty">Todavía no agregaste productos.<br>Abrí una tarjeta en Precios y tocá "Agregar a cotización".</div>';
+    box.innerHTML = '<div class="q-empty">Todavía no agregaste productos.<br>En Precios, tocá "+ Cotizar" en cualquier producto.</div>';
     document.getElementById('qTotal').textContent = '$0';
+    document.getElementById('qContrib').textContent = '$0';
+    document.getElementById('qMargen').textContent = '-';
     return;
   }
 
-  let total = 0;
+  let total = 0, venta = 0, contrib = 0;
   box.innerHTML = items.map((it, i) => {
-    const pu = lineUnitPrice(it);
-    const sub = pu * it.qty;
-    total += sub;
-    const below = it.contrib < 0;
+    const c = lineCalc(it, kg, iva);
+    total += c.sub; venta += c.ventaSiva; contrib += c.contribT;
+    const below = c.contribT < 0 || (c.qty === 0 && c.margen < 0);
+    const qtyShow = Math.round(c.qty * 1000) / 1000;
     return `
     <div class="q-item${below ? ' below-cost' : ''}">
       <div class="q-order">
@@ -610,18 +675,32 @@ function renderQuote() {
       </div>
       <div class="q-main">
         <div class="q-name">${i + 1}. ${esc(it.nombre)}</div>
-        <div class="q-meta">${it.sku ? esc(it.sku) + ' | ' : ''}$${fmt(pu)}/${it.unidad} ${quote.conIva ? 'c/IVA' : 's/IVA'}${it.desc ? ' | Dto ' + it.desc + '%' : ''}</div>
+        <div class="q-meta">${it.sku ? esc(it.sku) + ' | ' : ''}Lista $${fmt(c.lista)}/${u} | Final $${fmt(c.pu)}/${u} ${iva ? 'c/IVA' : 's/IVA'}</div>
         <div class="q-row">
-          Cant. (${it.unidad})
-          <input type="number" inputmode="decimal" min="0" step="any" value="${it.qty}" onchange="setQty(${i}, this.value)">
-          <span class="q-sub">$${fmt(sub)}</span>
+          Dto %
+          <input type="number" inputmode="decimal" min="0" max="100" step="any" value="${it.desc || 0}" onchange="setDesc(${i}, this.value)">
+          Cant. (${u})
+          <input type="number" inputmode="decimal" min="0" step="any" value="${qtyShow}" onchange="setQty(${i}, this.value)">
+        </div>
+        <div class="q-row">
+          <span class="q-kpi ${c.contribT >= 0 ? 'value positive' : 'value negative'}">Contrib. $${fmt(c.contribT)}</span>
+          <span class="q-kpi ${c.margen >= 0 ? 'value positive' : 'value negative'}">${(c.margen * 100).toFixed(1)}%</span>
+          <span class="q-sub">$${fmt(c.sub)}</span>
         </div>
         ${below ? '<div class="q-alert">Precio por debajo del costo</div>' : ''}
       </div>
       <button class="q-del" onclick="removeItem(${i})" title="Quitar">&#10005;</button>
     </div>`;
   }).join('');
-  document.getElementById('qTotal').textContent = '$' + fmt(total);
+
+  document.getElementById('qTotal').textContent = '$' + fmt(total) + (iva ? ' c/IVA' : ' s/IVA');
+  const cEl = document.getElementById('qContrib');
+  cEl.textContent = '$' + fmt(contrib);
+  cEl.style.color = contrib >= 0 ? 'var(--positive-text)' : 'var(--negative-text)';
+  const mEl = document.getElementById('qMargen');
+  const m = venta > 0 ? contrib / venta * 100 : 0;
+  mEl.textContent = m.toFixed(1) + '%';
+  mEl.style.color = m >= 0 ? 'var(--positive-text)' : 'var(--negative-text)';
 }
 
 function moveItem(i, dir) {
@@ -631,7 +710,13 @@ function moveItem(i, dir) {
   saveQuote(); renderQuote();
 }
 function setQty(i, v) {
-  quote.items[i].qty = Math.max(0, parseFloat(v) || 0);
+  const q = Math.max(0, parseFloat(v) || 0);
+  const kg = quote.porKg !== false;
+  quote.items[i].qtyKg = kg ? q : q * (quote.items[i].prod.peso || 1);
+  saveQuote(); renderQuote();
+}
+function setDesc(i, v) {
+  quote.items[i].desc = Math.min(100, Math.max(0, parseFloat(v) || 0));
   saveQuote(); renderQuote();
 }
 function removeItem(i) {
@@ -660,13 +745,13 @@ function exportExcel() {
   if (!quote.items.length) return;
   if (typeof XLSX === 'undefined') { alert('No se pudo cargar el generador de Excel. Revisá la conexión e intentá de nuevo.'); return; }
   saveHeader();
-
-  const ivaTxt = quote.conIva ? 'c/IVA' : 's/IVA';
+  const kg = quote.porKg !== false, iva = quote.conIva !== false;
+  const ivaTxt = iva ? 'c/IVA' : 's/IVA';
   const fechaTxt = quote.fecha ? quote.fecha.split('-').reverse().join('/') : '';
 
   const head = ['#', 'SKU', 'Producto', 'Unidad', 'Cantidad',
     'Precio lista ' + ivaTxt, 'Descuento', 'Precio final ' + ivaTxt, 'Subtotal ' + ivaTxt];
-  if (quote.internos) head.push('Costo s/IVA', 'Contribución s/IVA', 'Margen s/costo', 'Precio competencia', 'Base competencia', 'Dif. vs competencia');
+  if (quote.internos) head.push('Costo unit. s/IVA', 'Contribución s/IVA', 'Margen contrib.', 'Precio competencia ' + ivaTxt, 'Dif. vs competencia');
 
   const rows = [
     ['Cotización CEDISUR'],
@@ -677,29 +762,30 @@ function exportExcel() {
     head,
   ];
   const firstDataRow = rows.length;
-  let total = 0;
+  let total = 0, venta = 0, contrib = 0;
   quote.items.forEach((it, i) => {
-    const lista = quote.conIva ? it.listaCiva : it.listaSiva;
-    const pu = lineUnitPrice(it);
-    const sub = pu * it.qty;
-    total += sub;
-    const r = [i + 1, it.sku, it.nombre, it.unidad, it.qty, lista, it.desc / 100, pu, sub];
-    if (quote.internos) r.push(it.costo, it.contrib, it.margenPct / 100, it.comp || '', it.comp ? it.compBase : '', it.diff !== null && it.diff !== undefined ? it.diff / 100 : '');
+    const c = lineCalc(it, kg, iva);
+    total += c.sub; venta += c.ventaSiva; contrib += c.contribT;
+    const r = [i + 1, it.sku, it.nombre, kg ? 'kg' : 'u', Math.round(c.qty * 1000) / 1000,
+      c.lista, (it.desc || 0) / 100, c.pu, c.sub];
+    if (quote.internos) r.push(c.costoU, c.contribT, c.margen, c.comp || '', c.diff !== null ? c.diff : '');
     rows.push(r);
   });
   const totalRow = rows.length;
-  rows.push(['', '', '', '', '', '', '', 'TOTAL', total]);
+  const tr = ['', '', '', '', '', '', '', 'TOTAL', total];
+  if (quote.internos) tr.push('', contrib, venta > 0 ? contrib / venta : 0);
+  rows.push(tr);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
   const money = '"$"#,##0.00', pct = '0.0%';
   const moneyCols = [5, 7, 8].concat(quote.internos ? [9, 10, 12] : []);
-  const pctCols = [6].concat(quote.internos ? [11, 14] : []);
+  const pctCols = [6].concat(quote.internos ? [11, 13] : []);
   for (let R = firstDataRow; R <= totalRow; R++) {
-    moneyCols.forEach(C => { const c = ws[XLSX.utils.encode_cell({ r: R, c: C })]; if (c && typeof c.v === 'number') c.z = money; });
-    pctCols.forEach(C => { const c = ws[XLSX.utils.encode_cell({ r: R, c: C })]; if (c && typeof c.v === 'number') c.z = pct; });
+    moneyCols.forEach(C => { const x = ws[XLSX.utils.encode_cell({ r: R, c: C })]; if (x && typeof x.v === 'number') x.z = money; });
+    pctCols.forEach(C => { const x = ws[XLSX.utils.encode_cell({ r: R, c: C })]; if (x && typeof x.v === 'number') x.z = pct; });
   }
   ws['!cols'] = [{ wch: 4 }, { wch: 14 }, { wch: 48 }, { wch: 8 }, { wch: 10 }, { wch: 16 }, { wch: 11 }, { wch: 16 }, { wch: 16 }]
-    .concat(quote.internos ? [{ wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 15 }, { wch: 18 }] : []);
+    .concat(quote.internos ? [{ wch: 15 }, { wch: 17 }, { wch: 14 }, { wch: 22 }, { wch: 18 }] : []);
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Cotización');

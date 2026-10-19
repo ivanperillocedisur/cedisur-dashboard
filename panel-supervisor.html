@@ -665,6 +665,15 @@ function coordsDe(row) {
   const sap = coordsSAP(row['CODIGO CLIENTE']);
   return sap ? { lat: sap.lat, lon: sap.lon, origen: 'sap' } : null;
 }
+// Solo los clientes presenciales se visitan en persona: son los únicos que forman parte del recorrido
+function esPresencial(vendedor, row) {
+  const ev = getEstadoVirtual(vendedor);
+  const canal = ev.canalVirtual[row['CODIGO CLIENTE']] || row['Canal actual (Presencial / Autogestión)'];
+  return canalClass(canal) === 'presencial';
+}
+function textoNotaMapa(sin) {
+  return 'Solo se muestran los clientes presenciales.' + (sin > 0 ? ' ' + sin + ' sin ubicación cargada.' : '');
+}
 function textoOrigenUbicacion(row) {
   const co = coordsDe(row);
   if (!co) return 'Sin ubicación cargada';
@@ -1970,13 +1979,8 @@ function abrirMapa(todosLosDias) {
     return;
   }
 
-  const rows = ruteoDelVendedor(selectedVendedor);
-  const codigoToRow = {};
-  rows.forEach(function(r) { codigoToRow[r['CODIGO CLIENTE']] = r; });
-
-  const diasSet = {};
-  rows.forEach(function(r) { const d = norm(r['DIA CARGA DE PEDIDO']); if (d) diasSet[d] = true; });
-  const diasDisponibles = Object.keys(diasSet).sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); });
+  const datos = ruteoVirtualPorDia(selectedVendedor);
+  const diasDisponibles = datos.dias;
   const diasAMostrar = diasDisponibles.filter(function(d) { return todosLosDias || diasFiltro.indexOf(d) !== -1; });
 
   document.getElementById('map-title').textContent = 'Mapa · ' + selectedVendedor;
@@ -2001,16 +2005,15 @@ function abrirMapa(todosLosDias) {
     let sinCoords = 0;
 
     diasAMostrar.forEach(function(dia) {
-      const codigos = listaOrdenDia(selectedVendedor, dia, rows);
+      const presenciales = datos.porDia[dia].filter(function(r) { return esPresencial(selectedVendedor, r); });
       const layer = L.layerGroup();
       const color = COLOR_POR_DIA[dia] || '#666';
       const puntosOrdenados = [];
       let ordenVisual = 0;
 
-      codigos.forEach(function(codigo) {
-        const row = codigoToRow[codigo];
-        if (!row) return;
-        ordenVisual++;
+      presenciales.forEach(function(row) {
+        const codigo = row['CODIGO CLIENTE'];
+        ordenVisual++; // el número cuenta a todos los presenciales, tengan o no ubicación, para respetar el orden de visita
         const co = coordsDe(row);
         if (!co) { sinCoords++; return; }
         const lat = co.lat;
@@ -2050,7 +2053,7 @@ function abrirMapa(todosLosDias) {
     });
 
     document.getElementById('map-sin-coords').textContent =
-      sinCoords > 0 ? sinCoords + ' cliente' + (sinCoords !== 1 ? 's' : '') + ' sin ubicación cargada (no se muestran en el mapa)' : '';
+      textoNotaMapa(sinCoords);
 
     renderLeyendaMapa(diasAMostrar);
 
@@ -2187,7 +2190,7 @@ function renderEquipoView() {
 
   const nota = document.createElement('div');
   nota.className = 'eq-nota';
-  nota.textContent = 'Los kilómetros son aproximados, en línea recta entre una visita y la siguiente. Con * no incluyen clientes sin ubicación.';
+  nota.textContent = 'Cada día cuenta solo los clientes presenciales. Los kilómetros son aproximados, en línea recta entre una visita y la siguiente. Con * no incluyen clientes sin ubicación.';
   content.appendChild(nota);
 
   const list = document.createElement('div');
@@ -2215,12 +2218,13 @@ function renderEquipoView() {
 
     html += '<div class="eq-dias">';
     e.datos.dias.forEach(function(dia) {
-      const filas = e.datos.porDia[dia];
-      if (!filas.length) return;
+      const todas = e.datos.porDia[dia];
+      if (!todas.length) return;
+      const filas = todas.filter(function(r) { return esPresencial(e.vendedor, r); });
       const km = kmRecorrido(filas);
       const sinUbic = filas.filter(function(r) { return !tieneUbicacion(r); }).length;
       html += '<div class="eq-dia-nombre"><span class="dot" style="background:' + (COLOR_POR_DIA[dia] || '#666') + '"></span>' + nombreDia(dia) + '</div>' +
-              '<div class="eq-dia-num">' + filas.length + (filas.length === 1 ? ' cliente' : ' clientes') + '</div>' +
+              '<div class="eq-dia-num">' + filas.length + (filas.length === 1 ? ' presencial' : ' presenciales') + '</div>' +
               '<div class="eq-dia-num">' + (km === null ? 'sin datos' : '~' + Math.round(km) + ' km' + (sinUbic ? '*' : '')) + '</div>';
     });
     html += '</div>';
@@ -2297,7 +2301,7 @@ function dibujarMapaZona() {
     const layer = L.layerGroup();
     datos.dias.forEach(function(dia) {
       if (diaFiltro && dia !== diaFiltro) return;
-      datos.porDia[dia].forEach(function(row, idx) {
+      datos.porDia[dia].filter(function(r) { return esPresencial(v, r); }).forEach(function(row, idx) {
         const co = coordsDe(row);
         if (!co) { sinCoords++; return; }
         const lat = co.lat;
@@ -2314,7 +2318,7 @@ function dibujarMapaZona() {
   });
 
   document.getElementById('map-sin-coords').textContent =
-    sinCoords > 0 ? sinCoords + ' cliente' + (sinCoords !== 1 ? 's' : '') + ' sin ubicación cargada (no se muestran en el mapa)' : '';
+    textoNotaMapa(sinCoords);
 
   renderLeyendaZona();
   if (bounds.length) leafletMap.fitBounds(bounds, { padding: [30, 30] });

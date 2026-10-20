@@ -102,7 +102,10 @@
   .card-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
   .hq-btn { background: var(--accent-light); border: 1px solid #c5d0f0; color: var(--accent); border-radius: 6px; padding: 4px 9px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
   .hq-btn.inq { background: var(--positive-bg); border-color: var(--positive-border); color: var(--positive-text); }
-  .product-name, .sku-tag { user-select: text; -webkit-user-select: text; cursor: text; }
+  .card-header, .card-header * { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  @media (hover: hover) and (pointer: fine) {
+    .product-name, .sku-tag { user-select: text; -webkit-user-select: text; cursor: text; }
+  }
   .card-info { flex: 1; min-width: 0; }
   .name-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
   .product-name { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.35; }
@@ -117,6 +120,7 @@
   .chip-inq { background: var(--positive-bg); border-color: var(--positive-border); color: var(--positive-text); }
   .expand-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--positive-bg); border: 1.5px solid var(--positive-border); color: var(--positive-text); font-size: 16px; line-height: 1; flex-shrink: 0; transition: transform 0.25s; }
   .expanded .expand-icon { transform: rotate(180deg); }
+  .expand-icon svg { width: 20px; height: 20px; display: block; pointer-events: none; }
   .card-body { display: none; padding: 0 1rem 1rem; border-top: 1px solid var(--border); }
   .expanded .card-body { display: block; }
   .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); margin: 0.75rem 0 0.4rem; }
@@ -192,6 +196,17 @@
   .q-btn.primary { background: var(--accent); color: #fff; }
   .q-btn.wpp { background: #25D366; color: #fff; }
   .q-btn.wpp.done { background: var(--positive-text); }
+  .q-btn.save { background: var(--positive-text); color: #fff; }
+  .q-btn.save.done { background: var(--accent); }
+  .qs-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem; margin-bottom: 8px; }
+  .qs-item.current { border-color: var(--accent); }
+  .qs-top { display: flex; align-items: flex-start; gap: 8px; }
+  .qs-name { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.3; min-width: 0; overflow-wrap: anywhere; }
+  .qs-tag { flex-shrink: 0; font-size: 10px; font-weight: 700; color: var(--accent); background: var(--accent-light); border-radius: 10px; padding: 2px 8px; }
+  .qs-meta { font-size: 12px; color: var(--text3); margin: 3px 0 8px; line-height: 1.4; }
+  .qs-actions { display: flex; gap: 8px; }
+  .qs-btn { flex: 1; border-radius: 8px; padding: 0.5rem; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--accent); }
+  .qs-btn.del { flex: 0 0 auto; padding: 0.5rem 0.9rem; color: var(--negative-text); border-color: var(--negative-border); background: var(--negative-bg); }
   .q-btn.secondary { background: var(--surface); border: 1px solid var(--negative-border); color: var(--negative-text); }
   .q-btn:disabled { opacity: 0.4; cursor: default; }
   .q-empty { text-align: center; padding: 2rem 1rem; color: var(--text3); font-size: 14px; line-height: 1.5; }
@@ -306,16 +321,23 @@
   </div>
 
   <div class="q-actions">
+    <button class="q-btn save" id="qSave" onclick="saveCurrentQuote()">Guardar cotización</button>
     <button class="q-btn wpp" id="qWpp" onclick="copyWhatsApp()">Copiar para WhatsApp</button>
     <button class="q-btn primary" id="qExport" onclick="exportExcel()">Exportar a Excel</button>
-    <button class="q-btn secondary" id="qClear" onclick="clearQuote()">Vaciar cotización</button>
+    <button class="q-btn secondary" id="qNew" onclick="newQuote()">Nueva cotización</button>
   </div>
+
+  <div class="q-title"><span class="q-step">5</span>Cotizaciones guardadas<span class="q-hint" id="qsHint"></span></div>
+  <div id="qSaved"></div>
 </main>
 
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQGFSioOghyJPoBKByRXq-QdUgJWeSZ_sLyZcGBLGg202C6VLE1XAKhg4qZ9WekD8TldPxpTjtB2LEP/pub?gid=0&single=true&output=csv';
 const PAGE_SIZE   = 50;
 const STORE_KEY   = 'cedisur_cotizacion_v2';
+const SAVED_KEY   = 'cedisur_cotizaciones_guardadas_v1';
+// Pegar entre las comillas la URL de la aplicación web de Apps Script (devuelve la última modificación del Sheet)
+const LAST_UPDATE_URL = '';
 
 let allProducts  = [];
 let filteredList = [];
@@ -362,6 +384,20 @@ function fmt(n) {
 function fmtNum(n, dec) {
   if (!n) return '-';
   return n.toLocaleString('es-AR', { maximumFractionDigits: dec });
+}
+function fmtDateTime(d) {
+  const p = n => String(n).padStart(2, '0');
+  return p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+async function fetchLastUpdate() {
+  if (!LAST_UPDATE_URL) return null;
+  try {
+    const r = await fetch(LAST_UPDATE_URL + (LAST_UPDATE_URL.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const d = new Date(j.lastUpdated);
+    return isNaN(d.getTime()) ? null : d;
+  } catch (e) { return null; }
 }
 function fmtTime(d) { return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }); }
 function todayISO() {
@@ -438,14 +474,16 @@ async function loadData() {
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('spinning');
   try {
-    const res = await fetch(CSV_URL, { cache: 'no-cache' });
+    const [res, upd] = await Promise.all([fetch(CSV_URL, { cache: 'no-cache' }), fetchLastUpdate()]);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     allProducts = parseCSV(await res.text());
     if (!allProducts.length) throw new Error('CSV vacío o formato incorrecto');
+    // Orden alfabético por nombre
+    allProducts.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base', numeric: true }));
     setLoading(false);
     renderFilters();
     renderProducts();
-    setStatus(true, 'Actualizado ' + fmtTime(new Date()));
+    setStatus(true, upd ? 'Actualizado ' + fmtDateTime(upd) : 'Cargado ' + fmtTime(new Date()));
   } catch (err) {
     showError('Error: ' + err.message + '. Verificá que el Sheet esté publicado.');
     setStatus(false, 'Error al cargar');
@@ -633,7 +671,7 @@ function buildCard(p, idx) {
       </div>
       <div class="card-side">
         <button class="hq-btn${inQuote(p) ? ' inq' : ''}" id="hq-${idx}" onclick="event.stopPropagation();addToQuote(${idx})">${inQuote(p) ? 'En cotización' : '+ Cotizar'}</button>
-        <span class="expand-icon">&#9660;</span>
+        <span class="expand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
       </div>
     </div>
 
@@ -762,20 +800,24 @@ function saveQuote() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(quote)); } catch (e) {}
   document.getElementById('quoteCount').textContent = quote.items.length;
 }
-function loadQuote() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) quote = Object.assign(quote, JSON.parse(raw));
-  } catch (e) {}
-  if (!quote.fecha) quote.fecha = todayISO();
+function syncQuoteForm() {
   document.getElementById('qCliente').value = quote.cliente || '';
-  document.getElementById('qFecha').value = quote.fecha;
+  document.getElementById('qFecha').value = quote.fecha || todayISO();
   document.getElementById('qObs').value = quote.obs || '';
   document.getElementById('qIva').checked = quote.conIva !== false;
   document.getElementById('qKg').checked = quote.porKg !== false;
   document.getElementById('qInternos').checked = !!quote.internos;
   document.getElementById('quoteCount').textContent = quote.items.length;
 }
+function loadQuote() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) quote = Object.assign(quote, JSON.parse(raw));
+  } catch (e) {}
+  if (!quote.fecha) quote.fecha = todayISO();
+  syncQuoteForm();
+}
+
 function saveHeader() {
   quote.cliente  = document.getElementById('qCliente').value;
   quote.fecha    = document.getElementById('qFecha').value;
@@ -858,9 +900,9 @@ function renderQuote() {
   const kg = quote.porKg !== false, iva = quote.conIva !== false;
   const u = kg ? 'kg' : 'u';
   document.getElementById('qExport').disabled = !items.length;
+  document.getElementById('qSave').disabled = !items.length;
   document.getElementById('qWpp').disabled = !items.length;
   document.getElementById('qHint').textContent = items.length ? items.length + ' producto' + (items.length !== 1 ? 's' : '') : '';
-  document.getElementById('qClear').disabled = !items.length;
 
   if (!items.length) {
     box.innerHTML = '<div class="q-empty">Todavía no agregaste productos.<br>En Precios, tocá "+ Cotizar" en cualquier producto.</div>';
@@ -932,10 +974,99 @@ function removeItem(i) {
   quote.items.splice(i, 1);
   saveQuote(); renderQuote();
 }
-function clearQuote() {
-  if (!confirm('¿Vaciar la cotización? Se eliminan todos los productos cargados.')) return;
-  quote.items = [];
-  saveQuote(); renderQuote();
+/* ---------- Cotizaciones guardadas (solo en este dispositivo) ---------- */
+let savedQuotes = [];
+function loadSaved() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
+    savedQuotes = Array.isArray(arr) ? arr : [];
+  } catch (e) { savedQuotes = []; }
+}
+function persistSaved() {
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify(savedQuotes)); return true; } catch (e) { return false; }
+}
+function sameAsSaved() {
+  if (!quote.id) return false;
+  const sv = savedQuotes.find(x => x.id === quote.id);
+  if (!sv) return false;
+  // Comparación sin importar el orden interno de los datos ni la fecha de guardado
+  const canon = o => JSON.stringify(o, (k, v) =>
+    (v && typeof v === 'object' && !Array.isArray(v)) ? Object.keys(v).sort().reduce((r, key) => (r[key] = v[key], r), {}) : v);
+  const strip = o => { const c = Object.assign({}, o); delete c.savedAt; return canon(c); };
+  return strip(sv) === strip(quote);
+}
+function hasUnsavedWork() {
+  const has = quote.items.length || (quote.cliente && quote.cliente.trim()) || (quote.obs && quote.obs.trim());
+  return !!has && !sameAsSaved();
+}
+function saveCurrentQuote() {
+  if (!quote.items.length) { alert('Agregá al menos un producto antes de guardar.'); return; }
+  saveHeader();
+  const snap = JSON.parse(JSON.stringify(quote));
+  snap.savedAt = new Date().toISOString();
+  if (!snap.id) snap.id = 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const i = savedQuotes.findIndex(x => x.id === snap.id);
+  if (i >= 0) savedQuotes[i] = snap; else savedQuotes.push(snap);
+  if (!persistSaved()) { alert('No se pudo guardar. Revisá que el navegador permita guardar datos y que haya espacio.'); return; }
+  quote.id = snap.id; quote.savedAt = snap.savedAt;
+  saveQuote();
+  renderSaved();
+  const btn = document.getElementById('qSave');
+  btn.textContent = 'Guardada';
+  btn.classList.add('done');
+  setTimeout(() => { btn.textContent = 'Guardar cotización'; btn.classList.remove('done'); }, 1500);
+}
+function renderSaved() {
+  const box = document.getElementById('qSaved');
+  if (!box) return;
+  document.getElementById('qsHint').textContent = savedQuotes.length ? savedQuotes.length + ' guardada' + (savedQuotes.length !== 1 ? 's' : '') : '';
+  if (!savedQuotes.length) {
+    box.innerHTML = '<div class="q-empty">Todavía no guardaste ninguna.<br>Usá "Guardar cotización" para verla otro día.</div>';
+    return;
+  }
+  const list = savedQuotes.slice().sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)));
+  box.innerHTML = list.map(q => {
+    const kg = q.porKg !== false, iva = q.conIva !== false;
+    let total = 0;
+    q.items.forEach(it => { total += lineCalc(it, kg, iva).sub; });
+    const fechaTxt = q.fecha ? q.fecha.split('-').reverse().join('/') : '';
+    const n = q.items.length;
+    const sd = new Date(q.savedAt);
+    return `
+    <div class="qs-item${q.id === quote.id ? ' current' : ''}">
+      <div class="qs-top">
+        <div class="qs-name">${esc(q.cliente || 'Sin cliente')}</div>
+        ${q.id === quote.id ? '<span class="qs-tag">Abierta</span>' : ''}
+      </div>
+      <div class="qs-meta">${esc(fechaTxt)} | ${n} producto${n !== 1 ? 's' : ''} | $${fmt(total)} ${iva ? 'c/IVA' : 's/IVA'}<br>Guardada ${isNaN(sd.getTime()) ? '' : fmtDateTime(sd)}</div>
+      <div class="qs-actions">
+        <button class="qs-btn" onclick="openSaved('${q.id}')">Abrir</button>
+        <button class="qs-btn del" onclick="deleteSaved('${q.id}')">Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openSaved(id) {
+  const q = savedQuotes.find(x => x.id === id);
+  if (!q) return;
+  if (quote.id !== id && hasUnsavedWork() && !confirm('La cotización actual no está guardada y se va a reemplazar. ¿Continuar?')) return;
+  quote = JSON.parse(JSON.stringify(q));
+  saveQuote(); syncQuoteForm(); renderQuote(); renderSaved();
+  window.scrollTo(0, 0);
+}
+function deleteSaved(id) {
+  const q = savedQuotes.find(x => x.id === id);
+  if (!q) return;
+  if (!confirm('¿Eliminar la cotización guardada de "' + (q.cliente || 'Sin cliente') + '"?')) return;
+  savedQuotes = savedQuotes.filter(x => x.id !== id);
+  persistSaved();
+  if (quote.id === id) { delete quote.id; delete quote.savedAt; saveQuote(); }
+  renderSaved();
+}
+function newQuote() {
+  if (hasUnsavedWork() && !confirm('¿Empezar una cotización nueva? Lo que no guardaste se pierde.')) return;
+  quote = { items: [], cliente: '', fecha: todayISO(), obs: '', conIva: quote.conIva, porKg: quote.porKg, internos: quote.internos };
+  saveQuote(); syncQuoteForm(); renderQuote(); renderSaved();
 }
 
 function showView(v) {
@@ -945,7 +1076,7 @@ function showView(v) {
   document.getElementById('searchWrap').style.display = isQ ? 'none' : 'flex';
   document.getElementById('tabPrecios').classList.toggle('active', !isQ);
   document.getElementById('tabCotizacion').classList.toggle('active', isQ);
-  if (isQ) renderQuote(); else if (allProducts.length) renderProducts();
+  if (isQ) { renderQuote(); renderSaved(); } else if (allProducts.length) renderProducts();
   window.scrollTo(0, 0);
 }
 
@@ -1083,7 +1214,9 @@ document.getElementById('searchInput').addEventListener('input', e => {
 document.getElementById('ivaToggle').addEventListener('change', e => { showIva = e.target.checked; renderProducts(); });
 document.getElementById('kgToggle').addEventListener('change', e => { showKg = e.target.checked; renderProducts(); });
 
+loadSaved();
 loadQuote();
+renderSaved();
 loadData();
 </script>
 </body>

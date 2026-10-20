@@ -115,8 +115,8 @@
   .chip-iva    { background: var(--bg); border-color: var(--border); color: var(--text3); }
   .chip-iva.reduced { background: #EDF7FF; border-color: #90C4E8; color: #1A5F8A; }
   .chip-inq { background: var(--positive-bg); border-color: var(--positive-border); color: var(--positive-text); }
-  .expand-icon { color: var(--text3); font-size: 11px; flex-shrink: 0; margin-top: 4px; transition: transform 0.25s; }
-  .expanded .expand-icon { transform: rotate(180deg); color: var(--accent); }
+  .expand-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--positive-bg); border: 1.5px solid var(--positive-border); color: var(--positive-text); font-size: 16px; line-height: 1; flex-shrink: 0; transition: transform 0.25s; }
+  .expanded .expand-icon { transform: rotate(180deg); }
   .card-body { display: none; padding: 0 1rem 1rem; border-top: 1px solid var(--border); }
   .expanded .card-body { display: block; }
   .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text3); margin: 0.75rem 0 0.4rem; }

@@ -336,8 +336,8 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQGFSioOghyJPoB
 const PAGE_SIZE   = 50;
 const STORE_KEY   = 'cedisur_cotizacion_v2';
 const SAVED_KEY   = 'cedisur_cotizaciones_guardadas_v1';
-// Pegar entre las comillas la URL de la aplicación web de Apps Script (devuelve la última modificación del Sheet)
-const LAST_UPDATE_URL = '1zUR-ciTvdeWei7BV6sS_kdCTIdxqldo7j5xTDGHHAIs';
+// URL de la aplicación web de Apps Script (devuelve la última modificación del Sheet)
+const LAST_UPDATE_URL = 'https://script.google.com/macros/s/AKfycbwoIGYkWROUnqk6fRRZCW1sgY1Pejg_wO3IIfD5Arh5a74o931EeF1-CUrVQw1-OrPz/exec';
 
 let allProducts  = [];
 let filteredList = [];
@@ -393,11 +393,11 @@ async function fetchLastUpdate() {
   if (!LAST_UPDATE_URL) return null;
   try {
     const r = await fetch(LAST_UPDATE_URL + (LAST_UPDATE_URL.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
-    if (!r.ok) return null;
+    if (!r.ok) { console.warn('Fecha del Sheet: HTTP ' + r.status); return null; }
     const j = await r.json();
     const d = new Date(j.lastUpdated);
     return isNaN(d.getTime()) ? null : d;
-  } catch (e) { return null; }
+  } catch (e) { console.warn('Fecha del Sheet: no se pudo leer', e); return null; }
 }
 function fmtTime(d) { return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }); }
 function todayISO() {
@@ -483,7 +483,7 @@ async function loadData() {
     setLoading(false);
     renderFilters();
     renderProducts();
-    setStatus(true, upd ? 'Actualizado ' + fmtDateTime(upd) : 'Cargado ' + fmtTime(new Date()));
+    setStatus(true, upd ? 'Actualizado ' + fmtDateTime(upd) : 'Fecha no disponible');
   } catch (err) {
     showError('Error: ' + err.message + '. Verificá que el Sheet esté publicado.');
     setStatus(false, 'Error al cargar');

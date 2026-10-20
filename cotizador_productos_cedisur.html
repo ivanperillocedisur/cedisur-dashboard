@@ -139,6 +139,8 @@
   .input-row label { font-size: 13px; color: var(--text2); font-weight: 500; flex: 1; }
   .input-row input { background: var(--surface); border: 1.5px solid var(--border); border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 13px; padding: 0.3rem 0.5rem; text-align: right; width: 100px; outline: none; }
   .input-row input:focus { border-color: var(--accent); }
+  .match-btn { flex-shrink: 0; background: var(--accent-light); border: 1px solid #c5d0f0; color: var(--accent); border-radius: 6px; padding: 0.3rem 0.55rem; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .match-btn.done { background: var(--positive-bg); border-color: var(--positive-border); color: var(--positive-text); }
   .input-unit { font-size: 12px; color: var(--text3); font-weight: 600; width: 16px; text-align: center; }
 
   .add-quote-btn { width: 100%; margin-top: 0.75rem; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 0.65rem; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -147,6 +149,12 @@
   .more-btn { display: block; width: 100%; margin-top: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; }
 
   /* QUOTE VIEW */
+  .q-title { display: flex; align-items: center; gap: 8px; margin: 1.4rem 0 0.6rem; padding-bottom: 6px; border-bottom: 2px solid var(--accent); font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 0.02em; }
+  .q-title:first-child { margin-top: 0; }
+  .q-step { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .q-title .q-hint { margin-left: auto; font-size: 11px; font-weight: 500; color: var(--text3); }
+  .q-total { background: var(--accent-light) !important; border-color: #c5d0f0 !important; }
+  .q-actions { margin-top: 0.25rem; }
   .q-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem; margin-bottom: 0.75rem; box-shadow: var(--shadow); }
   .q-field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
   .q-field:last-child { margin-bottom: 0; }
@@ -265,14 +273,14 @@
 
 <!-- ===================== VISTA COTIZACIÓN ===================== -->
 <main id="viewCotizacion" style="display:none">
-  <div class="section-label" style="margin-top:0">Datos de la cotización</div>
+  <div class="q-title"><span class="q-step">1</span>Datos de la cotización</div>
   <div class="q-panel">
     <div class="q-field"><label>Cliente</label><input type="text" id="qCliente" oninput="saveHeader()"></div>
     <div class="q-field"><label>Fecha</label><input type="date" id="qFecha" oninput="saveHeader()"></div>
     <div class="q-field"><label>Observaciones</label><textarea id="qObs" oninput="saveHeader()"></textarea></div>
   </div>
 
-  <div class="section-label">Opciones</div>
+  <div class="q-title"><span class="q-step">2</span>Opciones de precio</div>
   <div class="q-panel">
     <div class="q-opt">
       <span>Precios con IVA</span>
@@ -288,8 +296,9 @@
     </div>
   </div>
 
-  <div class="section-label">Productos</div>
+  <div class="q-title"><span class="q-step">3</span>Productos<span class="q-hint" id="qHint"></span></div>
   <div id="qItems" class="q-items"></div>
+  <div class="q-title"><span class="q-step">4</span>Resumen y envío</div>
   <div class="q-total">
     <div class="q-trow main"><span>Total</span><span id="qTotal">$0</span></div>
     <div class="q-trow"><span>Contribución s/IVA</span><span id="qContrib">$0</span></div>
@@ -350,6 +359,10 @@ function fmt(n) {
   if (n === null || n === undefined || isNaN(n)) return '-';
   return Math.round(n).toLocaleString('es-AR');
 }
+function fmtNum(n, dec) {
+  if (!n) return '-';
+  return n.toLocaleString('es-AR', { maximumFractionDigits: dec });
+}
 function fmtTime(d) { return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }); }
 function todayISO() {
   const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -386,6 +399,7 @@ function parseCSV(text) {
     marca:    findCol(headers, ['marca']),
     precioU:  findCol(headers, ['precio']),
     peso:     findCol(headers, ['peso de venta','peso']),
+    factor:   findCol(headers, ['factor']),
     prov:     findCol(headers, ['nombre de proveedor','proveedor']),
     costoKg:  findCol(headers, ['costo por kilo','costo']),
     precioKg: findCol(headers, ['precio por kilo']),
@@ -408,7 +422,7 @@ function parseCSV(text) {
       key: sku || nombre, sku, nombre,
       grupo: get(cols, C.grupo), prov: get(cols, C.prov),
       categoria: get(cols, C.categoria), familia: get(cols, C.familia), marca: get(cols, C.marca),
-      precioU, peso: argNum(get(cols, C.peso)) || 1,
+      precioU, peso: argNum(get(cols, C.peso)) || 1, factor: argNum(get(cols, C.factor)),
       costoKg: argNum(get(cols, C.costoKg)), precioKg,
       contKg: argNum(get(cols, C.contKg)),
       civaU, ivaRate: detectIva(precioU, civaU),
@@ -630,12 +644,15 @@ function buildCard(p, idx) {
         <div class="data-cell"><div class="label">Precio c/IVA</div><div class="value positive">$${fmt(b.civa)}</div></div>
         <div class="data-cell"><div class="label">Costo${suf}</div><div class="value">$${fmt(b.costo)}</div></div>
         <div class="data-cell"><div class="label">Contribución</div><div class="value neutral">$${fmt(contrib)}</div></div>
+        <div class="data-cell"><div class="label">Factor</div><div class="value">${fmtNum(p.factor, 2)}</div></div>
+        <div class="data-cell"><div class="label">Peso prom. por unidad</div><div class="value">${p.peso ? fmtNum(p.peso, 3) + ' kg' : '-'}</div></div>
       </div>
 
       <div class="section-label">Simulación</div>
       <div class="inputs-section">
         <div class="input-row">
           <label>Precio competencia <span style="font-weight:400;color:var(--text3)">${showIva ? '(c/IVA)' : '(s/IVA)'}</span></label>
+          <button class="match-btn" id="match-${idx}" style="${st.comp ? '' : 'display:none'}" onclick="matchComp(${idx})" title="Calcular el descuento que iguala el precio de la competencia">Igualar</button>
           <input type="number" inputmode="decimal" placeholder="0" id="comp-${idx}" value="${st.comp ?? ''}" oninput="calcCard(${idx})">
           <span class="input-unit">$</span>
         </div>
@@ -690,6 +707,9 @@ function calcCard(idx) {
   const compRaw = document.getElementById('comp-' + idx).value;
   const descRaw = document.getElementById('desc-' + idx).value;
 
+  const mb = document.getElementById('match-' + idx);
+  if (mb) mb.style.display = compRaw !== '' ? '' : 'none';
+
   if (compRaw === '' && descRaw === '') delete simState[p.key];
   else simState[p.key] = { comp: compRaw, desc: descRaw };
 
@@ -712,6 +732,29 @@ function calcCard(idx) {
     dEl.textContent = '-';
     dCard.className = 'result-card';
   }
+}
+
+/* ---------- Igualar precio de la competencia ---------- */
+function matchComp(idx) {
+  const p = filteredList[idx];
+  if (!p) return;
+  const comp = parseFloat(document.getElementById('comp-' + idx).value) || 0;
+  if (comp <= 0) return;
+  const b = basePrices(p, showKg);
+  const lista = showIva ? b.civa : b.siva;   // misma base que el precio de competencia ingresado
+  const btn = document.getElementById('match-' + idx);
+  let desc = (1 - comp / lista) * 100;
+  if (desc <= 0) {
+    desc = 0;
+    btn.textContent = 'Ya es menor';
+  } else {
+    desc = Math.round(desc * 100) / 100;
+    btn.textContent = 'Igualado';
+  }
+  document.getElementById('desc-' + idx).value = desc;
+  calcCard(idx);
+  btn.classList.add('done');
+  setTimeout(() => { btn.textContent = 'Igualar'; btn.classList.remove('done'); }, 1500);
 }
 
 /* ---------- Cotización: guardar en el navegador ---------- */
@@ -816,6 +859,7 @@ function renderQuote() {
   const u = kg ? 'kg' : 'u';
   document.getElementById('qExport').disabled = !items.length;
   document.getElementById('qWpp').disabled = !items.length;
+  document.getElementById('qHint').textContent = items.length ? items.length + ' producto' + (items.length !== 1 ? 's' : '') : '';
   document.getElementById('qClear').disabled = !items.length;
 
   if (!items.length) {
@@ -840,7 +884,7 @@ function renderQuote() {
       </div>
       <div class="q-main">
         <div class="q-name">${i + 1}. ${esc(it.nombre)}</div>
-        <div class="q-meta">${it.sku ? esc(it.sku) + ' | ' : ''}Lista $${fmt(c.lista)}/${u} | Final $${fmt(c.pu)}/${u} ${iva ? 'c/IVA' : 's/IVA'}</div>
+        <div class="q-meta">${it.sku ? esc(it.sku) + ' | ' : ''}Lista $${fmt(c.lista)}/${u} | Final $${fmt(c.pu)}/${u} ${iva ? 'c/IVA' : 's/IVA'} | Peso prom. ${fmtNum(it.prod.peso, 3)} kg/u</div>
         <div class="q-row">
           Dto %
           <input type="number" inputmode="decimal" min="0" max="100" step="any" value="${it.desc || 0}" onchange="setDesc(${i}, this.value)">

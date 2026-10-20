@@ -212,7 +212,8 @@
   .mq-f > span { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text3); white-space: nowrap; user-select: none; -webkit-user-select: none; }
   .mq-f input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem 0.4rem; font-family: 'DM Mono', monospace; font-size: 14px; text-align: right; outline: none; user-select: text; -webkit-user-select: text; }
   .mq-f input:focus { border-color: var(--accent); }
-  .mq-val { font-family: 'DM Mono', monospace; font-size: 14px; text-align: right; padding: 0.35rem 0; user-select: none; -webkit-user-select: none; }
+  .mq-r > span { text-align: right; }
+  .mq-val { font-family: 'DM Mono', monospace; font-size: 14px; text-align: right; padding: 0.35rem 0; border-top: 1px solid transparent; border-bottom: 1px solid transparent; user-select: none; -webkit-user-select: none; }
   .mq-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 8px; margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--border); }
   .mq-kpi { font-size: 12px; font-weight: 600; user-select: none; -webkit-user-select: none; }
   .mq-sub { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 600; color: var(--accent); white-space: nowrap; user-select: none; -webkit-user-select: none; }
@@ -945,7 +946,7 @@ function mobileItemHtml(it, i, c, o) {
         <input type="number" inputmode="decimal" min="0" step="any" value="${o.qtyShow}" onchange="setQty(${i}, this.value)"></label>
       <label class="mq-f"><span>Dto %</span>
         <input type="number" inputmode="decimal" min="0" max="100" step="any" value="${it.desc || 0}" onchange="setDesc(${i}, this.value)"></label>
-      <div class="mq-f"><span>Precio/${o.u}</span><div class="mq-val">$${fmt(c.pu)}</div></div>
+      <div class="mq-f mq-r"><span>Precio uni.</span><div class="mq-val">$${fmt(c.pu)}</div></div>
     </div>
     <div class="mq-foot">
       <span class="mq-kpi ${c.contribT >= 0 ? 'value positive' : 'value negative'}">Margen ${m}% · Contrib. $${fmt(c.contribT)}</span>

@@ -196,6 +196,27 @@
   .q-btn.primary { background: var(--accent); color: #fff; }
   .q-btn.wpp { background: #25D366; color: #fff; }
   .q-btn.wpp.done { background: var(--positive-text); }
+  /* Línea de cotización compacta (celular) */
+  .mq-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.6rem 0.65rem; }
+  .mq-item.below-cost { border-color: var(--negative-border); background: #FFF7F7; }
+  .mq-top { display: flex; gap: 8px; align-items: stretch; }
+  .mq-order { display: flex; flex-direction: column; gap: 4px; }
+  .mq-order button, .mq-del { width: 28px; height: 28px; padding: 0; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text2); font-size: 12px; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  .mq-order button:disabled { opacity: 0.3; cursor: default; }
+  .mq-del { align-self: flex-start; background: var(--negative-bg); border-color: var(--negative-border); color: var(--negative-text); }
+  .mq-id { flex: 1; min-width: 0; }
+  .mq-name { font-size: 13px; font-weight: 600; line-height: 1.3; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  .mq-meta { margin-top: 2px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); user-select: none; -webkit-user-select: none; }
+  .mq-grid { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 6px; margin-top: 8px; align-items: end; }
+  .mq-f { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .mq-f > span { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text3); white-space: nowrap; user-select: none; -webkit-user-select: none; }
+  .mq-f input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem 0.4rem; font-family: 'DM Mono', monospace; font-size: 14px; text-align: right; outline: none; user-select: text; -webkit-user-select: text; }
+  .mq-f input:focus { border-color: var(--accent); }
+  .mq-val { font-family: 'DM Mono', monospace; font-size: 14px; text-align: right; padding: 0.35rem 0; user-select: none; -webkit-user-select: none; }
+  .mq-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 8px; margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--border); }
+  .mq-kpi { font-size: 12px; font-weight: 600; user-select: none; -webkit-user-select: none; }
+  .mq-sub { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 600; color: var(--accent); white-space: nowrap; user-select: none; -webkit-user-select: none; }
+  .mq-alert { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--negative-text); }
   .q-btn.save { background: var(--positive-text); color: #fff; }
   .q-btn.save.done { background: var(--accent); }
   .qs-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem; margin-bottom: 8px; }
@@ -841,7 +862,11 @@ function addToQuote(idx) {
   };
   const i = quote.items.findIndex(it => it.key === p.key);
   if (i >= 0) { data.qtyKg = quote.items[i].qtyKg; quote.items[i] = data; }
-  else { data.qtyKg = showKg ? 1 : p.peso; quote.items.push(data); }
+  else {
+    // Cantidad inicial: 1 kg si la cotización está en kilos, 1 unidad entera si está en unidades
+    data.qtyKg = quote.porKg !== false ? 1 : p.peso;
+    quote.items.push(data);
+  }
   saveQuote();
   refreshCard(idx, i >= 0 ? 'Actualizado' : 'Agregado');
 }
@@ -894,6 +919,42 @@ function lineCalc(it, kg, iva) {
 }
 
 /* ---------- Cotización: vista ---------- */
+function isMobileQuote() {
+  return !!(window.matchMedia && window.matchMedia('(max-width: 600px)').matches);
+}
+
+function mobileItemHtml(it, i, c, o) {
+  const m = (c.margen * 100).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const peso = it.prod.peso ? fmtNum(it.prod.peso, 3) + ' kg/u' : '';
+  const meta = [it.sku ? esc(it.sku) : '', peso].filter(Boolean).join(' · ');
+  return `
+  <div class="mq-item${o.below ? ' below-cost' : ''}">
+    <div class="mq-top">
+      <div class="mq-order">
+        <button onclick="moveItem(${i},-1)" ${i === 0 ? 'disabled' : ''} title="Subir">&#9650;</button>
+        <button onclick="moveItem(${i},1)" ${i === o.n - 1 ? 'disabled' : ''} title="Bajar">&#9660;</button>
+      </div>
+      <div class="mq-id">
+        <div class="mq-name">${i + 1}. ${esc(it.nombre)}</div>
+        ${meta ? `<div class="mq-meta">${meta}</div>` : ''}
+      </div>
+      <button class="mq-del" onclick="removeItem(${i})" title="Quitar">&#10005;</button>
+    </div>
+    <div class="mq-grid">
+      <label class="mq-f"><span>Cant. (${o.u})</span>
+        <input type="number" inputmode="decimal" min="0" step="any" value="${o.qtyShow}" onchange="setQty(${i}, this.value)"></label>
+      <label class="mq-f"><span>Dto %</span>
+        <input type="number" inputmode="decimal" min="0" max="100" step="any" value="${it.desc || 0}" onchange="setDesc(${i}, this.value)"></label>
+      <div class="mq-f"><span>Precio/${o.u}</span><div class="mq-val">$${fmt(c.pu)}</div></div>
+    </div>
+    <div class="mq-foot">
+      <span class="mq-kpi ${c.contribT >= 0 ? 'value positive' : 'value negative'}">Margen ${m}% · Contrib. $${fmt(c.contribT)}</span>
+      <span class="mq-sub">$${fmt(c.sub)}</span>
+    </div>
+    ${o.below ? '<div class="mq-alert">Precio por debajo del costo</div>' : ''}
+  </div>`;
+}
+
 function renderQuote() {
   const box = document.getElementById('qItems');
   const items = quote.items;
@@ -918,6 +979,7 @@ function renderQuote() {
     total += c.sub; venta += c.ventaSiva; contrib += c.contribT;
     const below = c.contribT < 0 || (c.qty === 0 && c.margen < 0);
     const qtyShow = Math.round(c.qty * 1000) / 1000;
+    if (isMobileQuote()) return mobileItemHtml(it, i, c, { u, below, qtyShow, n: items.length });
     return `
     <div class="q-item${below ? ' below-cost' : ''}">
       <div class="q-order">
@@ -1213,6 +1275,12 @@ document.getElementById('searchInput').addEventListener('input', e => {
 });
 document.getElementById('ivaToggle').addEventListener('change', e => { showIva = e.target.checked; renderProducts(); });
 document.getElementById('kgToggle').addEventListener('change', e => { showKg = e.target.checked; renderProducts(); });
+
+if (window.matchMedia) {
+  const mql = window.matchMedia('(max-width: 600px)');
+  const onChange = () => { if (document.getElementById('viewCotizacion').style.display !== 'none') renderQuote(); };
+  if (mql.addEventListener) mql.addEventListener('change', onChange);
+}
 
 loadSaved();
 loadQuote();

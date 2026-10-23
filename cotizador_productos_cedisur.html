@@ -218,6 +218,7 @@
   .mq-kpi { font-size: 12px; font-weight: 600; user-select: none; -webkit-user-select: none; }
   .mq-sub { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 600; color: var(--accent); white-space: nowrap; user-select: none; -webkit-user-select: none; }
   .mq-alert { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--negative-text); }
+  .q-note { font-size: 12px; line-height: 1.4; color: var(--text3); padding: 8px 2px 2px; border-top: 1px solid var(--border); }
   .q-btn.save { background: var(--positive-text); color: #fff; }
   .q-btn.save.done { background: var(--accent); }
   .qs-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem; margin-bottom: 8px; }
@@ -328,9 +329,14 @@
       <label class="toggle"><input type="checkbox" id="qKg" checked onchange="saveHeader();renderQuote()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
     </div>
     <div class="q-opt">
+      <span>Mostrar descuento y precio sin descuento (Excel y WhatsApp)</span>
+      <label class="toggle"><input type="checkbox" id="qDto" checked onchange="saveHeader()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+    </div>
+    <div class="q-opt">
       <span>Incluir datos internos en el Excel (costo, contribución, competencia)</span>
       <label class="toggle"><input type="checkbox" id="qInternos" onchange="saveHeader()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
     </div>
+    <div class="q-note" id="qDtoNote" style="display:none">El Excel y el texto de WhatsApp van a mostrar solo el precio final. Los descuentos siguen visibles en esta pantalla.</div>
   </div>
 
   <div class="q-title"><span class="q-step">3</span>Productos<span class="q-hint" id="qHint"></span></div>
@@ -379,7 +385,7 @@ let showKg       = true;
 let visibleCount = PAGE_SIZE;
 const simState   = {};   // valores simulados por producto: { key: {comp, desc} }
 
-let quote = { items: [], cliente: '', fecha: '', obs: '', conIva: true, porKg: true, internos: false };
+let quote = { items: [], cliente: '', fecha: '', obs: '', conIva: true, porKg: true, mostrarDto: true, internos: false };
 
 /* ---------- Utilidades ---------- */
 function argNum(str) {
@@ -828,8 +834,14 @@ function syncQuoteForm() {
   document.getElementById('qObs').value = quote.obs || '';
   document.getElementById('qIva').checked = quote.conIva !== false;
   document.getElementById('qKg').checked = quote.porKg !== false;
+  document.getElementById('qDto').checked = quote.mostrarDto !== false;
   document.getElementById('qInternos').checked = !!quote.internos;
   document.getElementById('quoteCount').textContent = quote.items.length;
+  updateDtoNote();
+}
+function updateDtoNote() {
+  const n = document.getElementById('qDtoNote');
+  if (n) n.style.display = quote.mostrarDto === false ? 'block' : 'none';
 }
 function loadQuote() {
   try {
@@ -846,8 +858,10 @@ function saveHeader() {
   quote.obs      = document.getElementById('qObs').value;
   quote.conIva   = document.getElementById('qIva').checked;
   quote.porKg    = document.getElementById('qKg').checked;
+  quote.mostrarDto = document.getElementById('qDto').checked;
   quote.internos = document.getElementById('qInternos').checked;
   saveQuote();
+  updateDtoNote();
 }
 
 /* ---------- Cotización: agregar desde una tarjeta ---------- */
@@ -1128,7 +1142,7 @@ function deleteSaved(id) {
 }
 function newQuote() {
   if (hasUnsavedWork() && !confirm('¿Empezar una cotización nueva? Lo que no guardaste se pierde.')) return;
-  quote = { items: [], cliente: '', fecha: todayISO(), obs: '', conIva: quote.conIva, porKg: quote.porKg, internos: quote.internos };
+  quote = { items: [], cliente: '', fecha: todayISO(), obs: '', conIva: quote.conIva, porKg: quote.porKg, mostrarDto: quote.mostrarDto, internos: quote.internos };
   saveQuote(); syncQuoteForm(); renderQuote(); renderSaved();
 }
 
@@ -1161,7 +1175,7 @@ function buildWhatsAppText() {
     const c = lineCalc(it, kg, iva);
     total += c.sub;
     lines.push((i + 1) + '. ' + it.nombre);
-    lines.push('   ' + fmtQty(c.qty) + ' ' + u + ' x $' + fmt(c.pu) + ' = *$' + fmt(c.sub) + '*' + (it.desc ? ' (dto. ' + fmtQty(it.desc) + '%)' : ''));
+    lines.push('   ' + fmtQty(c.qty) + ' ' + u + ' x $' + fmt(c.pu) + ' = *$' + fmt(c.sub) + '*' + (it.desc && quote.mostrarDto !== false ? ' (dto. ' + fmtQty(it.desc) + '%)' : ''));
   });
 
   lines.push('');
@@ -1217,20 +1231,40 @@ function ddmmyyyy(d) {
 // Arma el libro de Excel. No usa la pantalla, así se puede probar por separado.
 function buildQuoteWorkbook(ExcelJSLib) {
   const kg = quote.porKg !== false, iva = quote.conIva !== false, internos = !!quote.internos;
+  const showDto = quote.mostrarDto !== false;   // si es false: sin columnas de precio de lista ni descuento
   const ivaTxt = iva ? 'c/IVA' : 's/IVA';
-  const NCOL = internos ? 14 : 9;
-  const LAST = xlCol(NCOL);
   const F = XL.FONT;
   const thin = argb => (argb ? { style: 'thin', color: { argb } } : { style: 'thin' });
   const solid = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
+
+  // Columnas según las opciones elegidas
+  const cols = [
+    { k: 'n', head: '#', w: 5 },
+    { k: 'sku', head: 'SKU', w: 14 },
+    { k: 'prod', head: 'Producto', w: 46 },
+    { k: 'qty', head: kg ? 'Kilos Totales' : 'Unidades', w: 10 },
+    { k: 'peso', head: 'Peso Promedio en Kg', w: 24 },
+  ];
+  if (showDto) cols.push({ k: 'lista', head: 'Precio lista\n' + ivaTxt, w: 17.71 }, { k: 'dto', head: 'Dto.', w: 10 });
+  cols.push({ k: 'final', head: 'Precio final\n' + ivaTxt, w: 17.71 }, { k: 'sub', head: 'Subtotal\n' + ivaTxt, w: 17.71 });
+  if (internos) cols.push(
+    { k: 'costo', head: 'Costo ' + (kg ? 'x kg' : 'unit.') + '\ns/IVA', w: 16 },
+    { k: 'contrib', head: 'Contribución\ns/IVA', w: 17 },
+    { k: 'margen', head: 'Margen\ncontrib.', w: 13 },
+    { k: 'comp', head: 'Precio\ncompetencia ' + ivaTxt, w: 20 },
+    { k: 'dif', head: 'Dif. vs\ncompetencia', w: 16 });
+  const NCOL = cols.length;
+  const LAST = xlCol(NCOL);
+  const L = {};
+  cols.forEach((c, i) => { L[c.k] = xlCol(i + 1); });            // letra de cada columna
+  const SUB = cols.findIndex(c => c.k === 'sub') + 1;             // posición de la columna Subtotal
 
   const wb = new ExcelJSLib.Workbook();
   wb.creator = 'Cotizador CEDISUR';
   const ws = wb.addWorksheet('Cotización', { views: [{ showGridLines: false }] });
   const merge = range => ws.mergeCellsWithoutStyle(range);   // cada celda conserva su propio formato
   const at = ref => ws.getCell(ref);
-  [5, 14, 46, 10, 24, 17.71, 10, 17.71, 17.71].concat(internos ? [16, 17, 13, 20, 16] : [])
-    .forEach((w, i) => { ws.getColumn(i + 1).width = w; });
+  cols.forEach((c, i) => { ws.getColumn(i + 1).width = c.w; });
 
   // 1) Banda azul con logo y título
   [9.75, 25.5, 15.75, 9.75].forEach((h, i) => {
@@ -1281,14 +1315,10 @@ function buildQuoteWorkbook(ExcelJSLib) {
 
   // 3) Tabla de productos
   const HR = 11;
-  const heads = ['#', 'SKU', 'Producto', kg ? 'Kilos Totales' : 'Unidades', 'Peso Promedio en Kg',
-    'Precio lista\n' + ivaTxt, 'Dto.', 'Precio final\n' + ivaTxt, 'Subtotal\n' + ivaTxt];
-  if (internos) heads.push('Costo ' + (kg ? 'x kg' : 'unit.') + '\ns/IVA', 'Contribución\ns/IVA', 'Margen\ncontrib.',
-    'Precio\ncompetencia ' + ivaTxt, 'Dif. vs\ncompetencia');
   ws.getRow(HR).height = 30;
-  heads.forEach((h, i) => {
+  cols.forEach((col, i) => {
     const x = ws.getCell(HR, i + 1);
-    x.value = h;
+    x.value = col.head;
     x.font = { name: F, size: 10, bold: true, color: { argb: XL.BLANCO } };
     x.fill = solid(XL.AZUL);
     x.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
@@ -1307,37 +1337,43 @@ function buildQuoteWorkbook(ExcelJSLib) {
     const sub = c.pu * qty;
     total += sub;
     ws.getRow(rr).height = Math.max(18, 13 * Math.ceil(it.nombre.length / 44) + 5);
-    const vals = [k + 1, it.sku || '', it.nombre, qty, peso, c.lista, dto,
-      { formula: `F${rr}*(1-G${rr})`, result: c.pu },
-      { formula: `D${rr}*H${rr}`, result: sub }];
+
+    const row = { n: k + 1, sku: it.sku || '', prod: it.nombre, qty, peso, lista: c.lista, dto };
+    // Con descuento visible el precio final se calcula desde la lista; si no, queda como valor fijo (sin rastro del descuento)
+    row.final = showDto ? { formula: `${L.lista}${rr}*(1-${L.dto}${rr})`, result: c.pu } : c.pu;
+    row.sub = { formula: `${L.qty}${rr}*${L.final}${rr}`, result: sub };
     if (internos) {
       const div = iva ? 1 + it.prod.ivaRate : 1;            // para pasar el precio final a s/IVA
-      const dv = div === 1 ? `H${rr}` : `(H${rr}/${+div.toFixed(4)})`;
+      const fin = `${L.final}${rr}`;
+      const dv = div === 1 ? fin : `(${fin}/${+div.toFixed(4)})`;
       const sivaU = c.pu / div;
       const cont = qty * (sivaU - c.costoU);
       contribT += cont; ventaT += qty * sivaU;
-      ventaTerms.push(`D${rr}*${dv}`);
-      vals.push(c.costoU,
-        { formula: `D${rr}*(${dv}-J${rr})`, result: cont },
-        { formula: `IFERROR((${dv}-J${rr})/${dv},0)`, result: sivaU > 0 ? (sivaU - c.costoU) / sivaU : 0 },
-        c.comp ? c.comp : '',
-        c.comp ? { formula: `H${rr}/M${rr}-1`, result: c.pu / c.comp - 1 } : '');
+      ventaTerms.push(`${L.qty}${rr}*${dv}`);
+      row.costo = c.costoU;
+      row.contrib = { formula: `${L.qty}${rr}*(${dv}-${L.costo}${rr})`, result: cont };
+      row.margen = { formula: `IFERROR((${dv}-${L.costo}${rr})/${dv},0)`, result: sivaU > 0 ? (sivaU - c.costoU) / sivaU : 0 };
+      row.comp = c.comp ? c.comp : '';
+      row.dif = c.comp ? { formula: `${fin}/${L.comp}${rr}-1`, result: c.pu / c.comp - 1 } : '';
     }
-    vals.forEach((v, i) => {
+    cols.forEach((col, i) => {
       const x = ws.getCell(rr, i + 1);
-      x.value = v;
-      x.font = { name: F, size: 10, bold: i === 8 };
-      x.alignment = { vertical: 'middle', horizontal: (i === 1 || i === 2) ? 'left' : 'center', wrapText: i === 2 };
+      x.value = row[col.k];
+      x.font = { name: F, size: 10, bold: col.k === 'sub' };
+      x.alignment = { vertical: 'middle', horizontal: (col.k === 'sku' || col.k === 'prod') ? 'left' : 'center', wrapText: col.k === 'prod' };
       x.border = { left: thin(XL.GRIS), right: thin(XL.GRIS), bottom: thin(XL.GRIS) };
       if (k % 2) x.fill = solid(XL.ZEBRA);
     });
-    at(`D${rr}`).numFmt = Number.isInteger(qty) ? '#,##0' : '#,##0.00';
-    at(`E${rr}`).numFmt = Number.isInteger(peso) ? '#,##0' : '#,##0.00#';
-    at(`G${rr}`).numFmt = Number.isInteger(it.desc || 0) ? '0%;\\-0%;\\-' : '0.00%';
-    ['F', 'H', 'I'].forEach(col => { at(`${col}${rr}`).numFmt = XL.MONEY; });
+    at(`${L.qty}${rr}`).numFmt = Number.isInteger(qty) ? '#,##0' : '#,##0.00';
+    at(`${L.peso}${rr}`).numFmt = Number.isInteger(peso) ? '#,##0' : '#,##0.00#';
+    if (showDto) {
+      at(`${L.lista}${rr}`).numFmt = XL.MONEY;
+      at(`${L.dto}${rr}`).numFmt = Number.isInteger(it.desc || 0) ? '0%;\\-0%;\\-' : '0.00%';
+    }
+    [L.final, L.sub].forEach(col => { at(`${col}${rr}`).numFmt = XL.MONEY; });
     if (internos) {
-      ['J', 'K', 'M'].forEach(col => { at(`${col}${rr}`).numFmt = XL.MONEY; });
-      ['L', 'N'].forEach(col => { at(`${col}${rr}`).numFmt = '0.0%'; });
+      [L.costo, L.contrib, L.comp].forEach(col => { at(`${col}${rr}`).numFmt = XL.MONEY; });
+      [L.margen, L.dif].forEach(col => { at(`${col}${rr}`).numFmt = '0.0%'; });
     }
   });
   const last = first + quote.items.length - 1;
@@ -1345,9 +1381,9 @@ function buildQuoteWorkbook(ExcelJSLib) {
   // 4) Total
   const TR = last + 1;
   ws.getRow(TR).height = 24;
-  merge(`A${TR}:H${TR}`);
+  merge(`A${TR}:${xlCol(SUB - 1)}${TR}`);
   for (let c = 1; c <= NCOL; c++) {
-    if (c === 9) continue;
+    if (c === SUB) continue;
     const x = ws.getCell(TR, c);
     x.fill = solid(XL.AZUL_CLARO);
     x.border = { top: thin(XL.AZUL), bottom: thin(XL.AZUL) };
@@ -1357,18 +1393,18 @@ function buildQuoteWorkbook(ExcelJSLib) {
   at(`A${TR}`).value = 'TOTAL ' + ivaTxt;
   at(`A${TR}`).font = { name: F, size: 11, bold: true, color: { argb: XL.AZUL } };
   at(`A${TR}`).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
-  const tot = at(`I${TR}`);
-  tot.value = { formula: `SUM(I${first}:I${last})`, result: total };
+  const tot = at(`${L.sub}${TR}`);
+  tot.value = { formula: `SUM(${L.sub}${first}:${L.sub}${last})`, result: total };
   tot.font = { name: F, size: 12, bold: true, color: { argb: XL.BLANCO } };
   tot.fill = solid(XL.AZUL);
   tot.numFmt = XL.MONEY;
   tot.alignment = { horizontal: 'center', vertical: 'middle' };
   tot.border = { top: thin(XL.AZUL), bottom: thin(XL.AZUL), left: thin(XL.AZUL), right: thin(XL.AZUL) };
   if (internos) {
-    at(`K${TR}`).value = { formula: `SUM(K${first}:K${last})`, result: contribT };
-    at(`K${TR}`).numFmt = XL.MONEY;
-    at(`L${TR}`).value = { formula: `IFERROR(K${TR}/(${ventaTerms.join('+')}),0)`, result: ventaT > 0 ? contribT / ventaT : 0 };
-    at(`L${TR}`).numFmt = '0.0%';
+    at(`${L.contrib}${TR}`).value = { formula: `SUM(${L.contrib}${first}:${L.contrib}${last})`, result: contribT };
+    at(`${L.contrib}${TR}`).numFmt = XL.MONEY;
+    at(`${L.margen}${TR}`).value = { formula: `IFERROR(${L.contrib}${TR}/(${ventaTerms.join('+')}),0)`, result: ventaT > 0 ? contribT / ventaT : 0 };
+    at(`${L.margen}${TR}`).numFmt = '0.0%';
   }
 
   // 5) Aviso importante

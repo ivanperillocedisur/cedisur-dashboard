@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1.0" name="viewport"/>
-<title>Combo PDV Ferrero — Septiembre 2026</title>
+<title>Desafío Ferrero</title>
 <style>
 :root{
   --fg:#1A6B35;--fg2:#0D4422;--fg3:#E8F5E9;
@@ -386,6 +386,61 @@ table.heat thead th.rowhead{text-align:left;padding-left:14px;min-width:210px}
   .filter-row{width:100%;overflow-x:auto;padding-bottom:2px}
   .fbtn{flex-shrink:0}
 }
+/* ===== Desafío Ferrero (categorías) ===== */
+.dz-aviso{background:var(--red2);border:1.5px solid var(--red);color:#7B1010;border-radius:var(--r);padding:12px 14px;margin-bottom:14px;font-size:13px;font-weight:600}
+.dz-intro{margin:4px 0 16px}
+.dz-intro h2{font-size:26px;font-weight:900;color:var(--fg2);letter-spacing:-.3px;line-height:1.15}
+.dz-intro p{font-size:14px;color:var(--muted);margin-top:4px;max-width:70ch}
+.dz-reglas{background:var(--card);border:1.5px solid var(--border);border-left:5px solid var(--gold);border-radius:var(--r);padding:14px 18px;margin-bottom:22px}
+.dz-reglas h3{font-size:15px;font-weight:800;color:var(--fg2);margin-bottom:6px}
+.dz-reglas ol{padding-left:20px;font-size:13.5px;line-height:1.65;max-width:80ch}
+.dz-reglas li::marker{color:var(--gold3);font-weight:800}
+.dz-h3{font-size:17px;font-weight:800;color:var(--fg2);margin:6px 0 4px}
+.dz-sub{font-size:12.5px;color:var(--muted);margin-bottom:10px}
+section+section{margin-top:22px}
+.dz-podio{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.dz-puesto{background:linear-gradient(160deg,var(--gold2),#fff);border:2px solid var(--gold);border-radius:var(--r);padding:14px;text-align:center}
+.dz-puesto.vacante{background:var(--card);border:2px dashed var(--border)}
+.dz-medalla{font-size:30px;line-height:1}
+.dz-premio{font-size:12.5px;font-weight:700;color:var(--gold3);margin-top:4px}
+.dz-ganador{font-size:17px;font-weight:900;color:var(--brown);margin-top:8px}
+.dz-dato{font-size:11.5px;color:var(--muted);margin-top:3px}
+.dz-tarjeta{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px}
+.dz-tarjeta.compite{border-color:var(--fg)}
+.dz-cabecera{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;width:100%;cursor:pointer}
+.dz-cabecera:focus-visible{outline:2px solid var(--fg);outline-offset:4px;border-radius:6px}
+.dz-pos{width:30px;height:30px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);flex-shrink:0}
+.dz-pos.medalla{background:none;font-size:22px}
+.dz-pos.fuera{color:var(--border)}
+.dz-nombre{font-size:15px;font-weight:800;color:var(--text);flex:1;min-width:0}
+.dz-cuenta{text-align:right;font-size:13px;color:var(--muted);line-height:1.1;white-space:nowrap}
+.dz-cuenta strong{font-size:22px;font-weight:900;color:var(--fg2)}
+.dz-cuenta small{display:block;font-size:10.5px}
+.dz-casilleros{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:5px;margin-top:10px}
+.dz-casillero{border-radius:7px;padding:6px 4px;text-align:center;border:1.5px solid transparent;line-height:1.2}
+.dz-casillero .dz-cn{display:block;font-size:10.5px;font-weight:600;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dz-casillero .dz-cp{display:block;font-size:13px;font-weight:800}
+.dz-casillero.ok{background:#2E7D32;color:#fff}
+.dz-casillero.cerca{background:#FFF4D1;color:#7A5500;border-color:#F9A825}
+.dz-casillero.lejos{background:#FDECEC;color:#8E1B1B;border-color:#F3B4B4}
+.dz-casillero.sinobj{background:var(--bg);color:var(--muted)}
+.dz-total{font-size:12px;color:var(--muted);margin-top:8px}
+.dz-total strong{color:var(--text)}
+.dz-detalle{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+.dz-tarjeta.abierta .dz-detalle{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 18px}
+.dz-fila-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+.dz-fila-cat{font-weight:700;color:var(--text)}
+.dz-barra{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:4px 0}
+.dz-relleno{height:100%;border-radius:3px}
+.dz-relleno.ok{background:#2E7D32}.dz-relleno.cerca{background:#F9A825}.dz-relleno.lejos{background:#C62828}
+.dz-fila-pie{font-size:11.5px;color:var(--muted)}
+@media(max-width:760px){
+  .dz-podio{grid-template-columns:1fr}
+  .dz-intro h2{font-size:21px}
+  .dz-casilleros{grid-template-columns:repeat(3,1fr)}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
 </style>
 </head>
 <body>
@@ -407,8 +462,8 @@ table.heat thead th.rowhead{text-align:left;padding-left:14px;min-width:210px}
 <div class="hdr-inner">
 <img alt="Ferrero" class="logo-img" src="data:image/png;base64,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"/>
 <div class="hdr-mid">
-<h1>COMBO PDV FERRERO</h1>
-<p>Cedisur × Ferrero — Septiembre 2026</p>
+<h1>DESAFÍO FERRERO</h1>
+<p id="hdrPeriodo">Cedisur y Ferrero</p>
 </div>
 <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0">
   <span id="last-updated" style="font-size:10px;color:rgba(255,255,255,.4);white-space:nowrap"></span>
@@ -416,95 +471,86 @@ table.heat thead th.rowhead{text-align:left;padding-left:14px;min-width:210px}
 </div>
 </div>
 </header>
+
 <div class="main">
+<div id="avisoConfig" class="dz-aviso" hidden></div>
 
-<!-- ===== COMBO PDV FERRERO — SEPTIEMBRE 2026 ===== -->
-<div class="tab-panel active" id="tab-pdvferrero">
-<div class="bt-hero" style="background:linear-gradient(135deg,var(--score) 0%,#7A1F1F 100%)">
-<h2>🎯 COMBO PDV FERRERO — SEP 2026</h2>
-<p>Incentivo del proveedor <strong>Ferrero</strong>: colocar el combo completo en cada PDV, del 25 de agosto al 30 de septiembre.</p>
-</div>
-<div class="spec-box" style="margin-top:0;margin-bottom:16px">
-<div class="st">⚡ OBJETIVO DEL PROVEEDOR — 25/8 AL 30/9</div>
-<p>En cada PDV, el vendedor debe colocar (acumulado en cualquier momento del mes, no hace falta que sea en la misma visita): <strong>1 display de Rocher Tira x3</strong> + <strong>1 caja de Kinder Bueno Regular (15 u.)</strong> + <strong>2 unidades de Nutella 140g</strong>. El objetivo es <strong>estandarizado</strong> (igual para todos, no configurable por vendedor).</p>
-</div>
-<div class="rsec" style="margin-bottom:16px">
-<div class="rh"><div class="ricon" style="background:var(--gold2)">💰</div><h3>Escala de premio por vendedor (no acumulativo entre tramos)</h3></div>
-<div class="rb">
-<table class="ptbl">
-<thead><tr><th>Cantidad de PDV logrados</th><th>Premio total</th></tr></thead>
-<tbody>
-<tr><td>De 0 a 14</td><td>$0</td></tr>
-<tr><td>De 15 a 29</td><td>$30.000</td></tr>
-<tr><td>De 30 a 39</td><td>$75.000</td></tr>
-<tr><td>40 o más</td><td>$150.000</td></tr>
-</tbody>
-</table>
-</div>
-</div>
-<h3 class="bt-secttl">📊 PDV logrados por vendedor</h3>
-<div id="pdvList"></div>
-<h3 class="bt-secttl" style="margin-top:18px">👔 Premio de supervisor — $200.000 si ≥80% del equipo llega a 40 PDV</h3>
-<div id="pdvSupervisorList"></div>
+<section class="dz-intro">
+  <h2 id="titulo">Desafío Ferrero</h2>
+  <p id="bajada">Cada vendedor tiene un objetivo propio en kilos para cada categoría.</p>
+</section>
+
+<section class="dz-reglas" aria-labelledby="hReglas">
+  <h3 id="hReglas">Cómo se gana</h3>
+  <ol id="reglas"></ol>
+</section>
+
+<section aria-labelledby="hPodio">
+  <h3 class="dz-h3" id="hPodio">Premios</h3>
+  <div class="dz-podio" id="podio"></div>
+</section>
+
+<section aria-labelledby="hCompiten">
+  <h3 class="dz-h3" id="hCompiten">Compiten por el premio</h3>
+  <p class="dz-sub" id="subCompiten"></p>
+  <div id="listaCompiten"></div>
+</section>
+
+<section aria-labelledby="hNoCompiten">
+  <h3 class="dz-h3" id="hNoCompiten">Todavía no compiten</h3>
+  <p class="dz-sub" id="subNoCompiten"></p>
+  <div id="listaNoCompiten"></div>
+</section>
 </div>
 
-</div>
 <script>
-// ── URL Google Sheets (CSV publicado) ───────────────────────────────────────
-const URL_PDV_FERRERO  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=806740444&single=true&output=csv";
-const URL_PDV_DETALLE  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub?gid=2057495250&single=true&output=csv";
-
-// Vendedores participantes del combo
-const VENDEDORES = ["Guillermo Alderete", "David Bertran", "Alberto Castillo", "Leonardo Chiesa", "Dario Macaya", "Miguel Escales", "Pablo Figueroa", "Alejandro Fragnul", "Samuel Arenas", "Julian Jensen", "Hugo Lezana", "Jonatan Lozano", "Guillermo Madrid", "Jose Martinez", "Sebastian Ponce de Leon", "Horacio Ulloa", "Luis Velazquez", "Pablo Zangari"];
-
-let DATA_PDV = {}; // { vendedor: cantidadPdvLogrados } — se llena desde PDV_FERRERO_RESUMEN
-let DATA_PDV_CLIENTES = {}; // { vendedor: [nombresDeClientes con LOGRADO=1] } — se llena desde PDV_DISPLAY_FERRERO
-
-// Escala de premio por vendedor (no acumulativo entre tramos)
-const PDV_META = 40;
-const PDV_TRAMOS = [
-  { min: 0,  max: 14,       premio: 0 },
-  { min: 15, max: 29,       premio: 30000 },
-  { min: 30, max: 39,       premio: 75000 },
-  { min: 40, max: Infinity, premio: 150000 },
-];
-
-// Supervisor de cada vendedor (coincide 1:1 con las 5 zonas)
-const SUPERVISOR_DE_VENDEDOR = {
-  "Guillermo Alderete":"Diego Baraldo","Hugo Lezana":"Diego Baraldo","Horacio Ulloa":"Diego Baraldo",
-  "David Bertran":"Herman Kneeteman","Miguel Escales":"Herman Kneeteman","Pablo Figueroa":"Herman Kneeteman",
-  "Alejandro Fragnul":"Herman Kneeteman","Pablo Zangari":"Herman Kneeteman",
-  "Alberto Castillo":"Guillermo Piuma","Dario Macaya":"Guillermo Piuma","Samuel Arenas":"Guillermo Piuma",
-  "Jonatan Lozano":"Guillermo Piuma","Jose Martinez":"Guillermo Piuma",
-  "Leonardo Chiesa":"Diego Suzanne","Guillermo Madrid":"Diego Suzanne","Luis Velazquez":"Diego Suzanne",
-  "Julian Jensen":"Andres Navarro","Sebastian Ponce de Leon":"Andres Navarro",
+// ── Google Sheets (CSV publicado). Pegá acá el gid de cada pestaña ──────────
+// El gid es el número que aparece después de "gid=" en la barra del navegador
+// al hacer clic en la pestaña. El documento tiene que estar publicado en la web.
+const BASE_PUB = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjsLl_u1HUqwkIQMDBVHjuxAko1XtrwywUM12Eqh1xhZF0WLObmQCZkk9is448RYpmYRuYId-pMtTE/pub";
+const GID = {
+  CONFIG:    "PEGAR_GID_FNOV_CONFIG",
+  OBJETIVOS: "PEGAR_GID_FNOV_OBJETIVOS",
+  VENTAS:    "PEGAR_GID_FNOV_VENTAS",
 };
-const PDV_PREMIO_SUPERVISOR = 200000, PDV_UMBRAL_SUPERVISOR = 0.8;
+const urlDe = gid => `${BASE_PUB}?gid=${gid}&single=true&output=csv`;
 
-// Gradiente rojo→amarillo→verde para las barras de progreso
-const PDV_GRADIENTE = "linear-gradient(90deg,#C62828 0%,#F9A825 50%,#2E7D32 100%)";
-function pdvBgSize(pct){ return pct>0 ? Math.round(10000/pct) : 10000; }
-function heatColor(p){return p>=100?"#2E7D32":(p>=80?"#F9A825":"#C62828");}
-function pdvPremio(cant){
-  const t=PDV_TRAMOS.find(t=>cant>=t.min && cant<=t.max);
-  return t?t.premio:0;
+// ── Estado ───────────────────────────────────────────────────────────────────
+let CFG = {};            // { CLAVE: valor (texto) }
+let CATEGORIAS = [];     // nombres tal cual el encabezado de FNOV_OBJETIVOS
+let OBJ = [];            // [{vend, obj:{cat:kg}, total}]
+let VENTA = {};          // { VEND: { catNorm: kg } }
+let ABIERTA = null;      // tarjeta desplegada
+
+const CORTOS = {"kinder bueno + white":"K. Bueno","kinder choco + maxi":"K. Choco","kinder huevo":"K. Huevo","nutella":"Nutella","pralinas":"Pralinas","tic tac":"Tic Tac"};
+const norm = s => String(s||"").toLowerCase().replace(/\s+/g," ").trim();
+const corto = c => CORTOS[norm(c)] || c;
+const fmtKg = n => Math.round(n).toLocaleString("es-AR");
+// Trunca (no redondea): 99,96% se muestra 99% para no parecer lograda sin estarlo
+const fmtPct = p => Math.floor(p*100 + 1e-9) + "%";
+const MEDALLAS = ["🥇","🥈","🥉"];
+const PREP = new Set(["de","del","la","las","los","y"]);
+function nombreLindo(s){
+  return String(s).toLowerCase().split(/\s+/).map((w,i)=> (i>0 && PREP.has(w)) ? w : w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
 }
+function heat(p){ return p>=1 ? "ok" : (p>=0.8 ? "cerca" : "lejos"); }
 
-// ── Helpers CSV ──────────────────────────────────────────────────────────────
+// ── CSV ─────────────────────────────────────────────────────────────────────
 function csvRow(row){
   const res=[];let cur='';let inQ=false;
   for(let i=0;i<row.length;i++){
     const c=row[i];
-    if(c==='"'){inQ=!inQ;}
+    if(c==='"'){ if(inQ && row[i+1]==='"'){cur+='"';i++;} else inQ=!inQ; }
     else if(c===','&&!inQ){res.push(cur);cur='';}
     else{cur+=c;}
   }
   res.push(cur);return res;
 }
+function filasCsv(texto){ return texto.replace(/\r/g,"").trim().split("\n").filter(r=>r.trim()).map(csvRow); }
 function numCol(v){
   let s=(v==null?'':String(v)).trim();
   if(!s)return 0;
-  s=s.replace(/\s/g,'');
+  s=s.replace(/\s/g,'').replace('%','');
   const hasDot=s.indexOf('.')>=0, hasComma=s.indexOf(',')>=0;
   if(hasDot&&hasComma){
     if(s.lastIndexOf(',')>s.lastIndexOf('.')){ s=s.replace(/\./g,'').replace(',', '.'); }
@@ -522,121 +568,163 @@ function numCol(v){
   return isNaN(n)?0:n;
 }
 
-// ── Conexión a Google Sheets ─────────────────────────────────────────────────
+// ── Carga ───────────────────────────────────────────────────────────────────
 async function fetchSheets(){
   const btn=document.querySelector('.btn-actualizar');
+  const faltan = Object.entries(GID).filter(([,g])=>!/^\d+$/.test(g)).map(([k])=>"FNOV_"+k);
+  const aviso = document.getElementById("avisoConfig");
+  if(faltan.length){
+    aviso.hidden=false;
+    aviso.textContent = "Falta configurar el gid de: " + faltan.join(", ") + ". Editá la constante GID al principio del script.";
+    return;
+  }
   if(btn){btn.disabled=true;btn.textContent='Cargando...';}
   try{
-    const [rPdv,rDet]=await Promise.all([
-      fetch(URL_PDV_FERRERO),
-      fetch(URL_PDV_DETALLE),
-    ]);
-    // Estructura: VENDEDOR | CANT_PDV_LOGRADOS
-    if(rPdv.ok){
-      const obj={};
-      (await rPdv.text()).trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
-        const c=csvRow(r);
-        const vendedor=(c[0]||'').trim();
-        if(!vendedor)return;
-        obj[vendedor]=numCol(c[1]);
-      });
-      DATA_PDV=obj;
-    }
-    // Estructura: VENDEDOR | CODIGO_CLIENTE | NOMBRE_CLIENTE | ROCHER | KBUENO | NUTELLA | LOGRADO
-    if(rDet.ok){
-      const clientesObj={};
-      (await rDet.text()).trim().split('\n').slice(1).filter(r=>r.trim()).forEach(r=>{
-        const c=csvRow(r);
-        const vendedor=(c[0]||'').trim();
-        const nombre=(c[2]||'').trim();
-        const logrado=numCol(c[6]);
-        if(!vendedor || logrado!==1)return;
-        if(!clientesObj[vendedor])clientesObj[vendedor]=[];
-        clientesObj[vendedor].push(nombre||'(sin nombre)');
-      });
-      Object.keys(clientesObj).forEach(v=>clientesObj[v].sort((a,b)=>a.localeCompare(b,'es')));
-      DATA_PDV_CLIENTES=clientesObj;
-    }
-    const ts=new Date().toLocaleString('es-AR');
-    const lu=document.getElementById('last-updated');
-    if(lu)lu.textContent='Actualizado: '+ts;
-    renderPdvFerrero();
+    const [rC,rO,rV] = await Promise.all([fetch(urlDe(GID.CONFIG)), fetch(urlDe(GID.OBJETIVOS)), fetch(urlDe(GID.VENTAS))]);
+    if(!rC.ok || !rO.ok || !rV.ok) throw new Error("No se pudo leer alguna pestaña del Sheets (¿está publicada?).");
+    const [tC,tO,tV] = await Promise.all([rC.text(), rO.text(), rV.text()]);
+
+    CFG = {};
+    filasCsv(tC).slice(1).forEach(r=>{ const k=(r[0]||"").trim().toUpperCase(); if(k) CFG[k]=(r[1]||"").trim(); });
+
+    const fo = filasCsv(tO), h = fo[0].map(x=>x.trim());
+    const iTot = h.findIndex((x,i)=> i>0 && /^total/i.test(x));
+    const iCats = h.map((x,i)=>i).filter(i=> i>0 && i!==iTot && h[i]);
+    CATEGORIAS = iCats.map(i=>h[i]);
+    OBJ = fo.slice(1).filter(r=>(r[0]||"").trim()).map(r=>{
+      const obj={}; iCats.forEach(i=> obj[h[i]] = numCol(r[i]));
+      const suma = Object.values(obj).reduce((a,b)=>a+b,0);
+      const total = iTot>=0 && numCol(r[iTot])>0 ? numCol(r[iTot]) : suma;
+      return {vend: r[0].trim().toUpperCase(), obj, total};
+    });
+
+    VENTA = {};
+    filasCsv(tV).slice(1).forEach(r=>{
+      const v=(r[0]||"").trim().toUpperCase(), c=norm(r[1]); if(!v||!c) return;
+      (VENTA[v] ||= {})[c] = (VENTA[v][c]||0) + numCol(r[2]);
+    });
+
+    aviso.hidden = true;
+    document.getElementById('last-updated').textContent='Actualizado: '+new Date().toLocaleString('es-AR');
+    render();
   }catch(e){
-    console.error('Error al cargar datos:',e);
-    renderPdvFerrero();
+    console.error(e);
+    aviso.hidden=false; aviso.textContent = e.message;
   }finally{
     if(btn){btn.disabled=false;btn.textContent='🔄 Actualizar';}
   }
 }
 
-// ── Combo PDV Ferrero: lista de vendedores con progreso ──────────────────────
-function renderPdvFerrero(){
-  const cont=document.getElementById("pdvList");
-  if(!cont)return;
-  const filas=VENDEDORES.map(s=>({seller:s, cant:DATA_PDV[s]||0, clientes:DATA_PDV_CLIENTES[s]||[]}))
-    .sort((a,b)=>b.cant-a.cant);
-  if(!filas.some(f=>f.cant>0)){
-    cont.innerHTML=`<p style="color:var(--muted);font-size:13px;font-style:italic">Todavía no hay datos cargados de PDV logrados (PDV_FERRERO_RESUMEN).</p>`;
-  } else {
-    cont.innerHTML=`<div class="dgrid" style="grid-template-columns:1fr">` + filas.map((f,i)=>{
-      const alcanzado=f.cant>=PDV_META;
-      const pct=Math.min(Math.round(f.cant/PDV_META*100),100);
-      const textColor=heatColor(pct);
-      const bgSize=pdvBgSize(pct);
-      const premio=pdvPremio(f.cant);
-      const tieneClientes=f.clientes.length>0;
-      return `<div class="dprod" style="margin-bottom:6px">
-        <div class="ds" style="margin-bottom:6px;font-size:15px;cursor:${tieneClientes?"pointer":"default"}" ${tieneClientes?`onclick="togglePdvClientes(${i})"`:""}>
-          <span style="font-weight:800;color:var(--text)">${alcanzado?"✅ ":""}${f.seller}${tieneClientes?` <span id="pdvchev${i}" style="font-size:11px;color:var(--muted);transition:transform .2s;display:inline-block">▾</span>`:""}</span>
-          <span style="font-weight:800;color:${textColor}">${f.cant} / ${PDV_META} PDV</span>
-        </div>
-        <div class="dt"><div class="df" style="width:${pct}%;background-image:${PDV_GRADIENTE};background-size:${bgSize}% 100%;background-position:0 0"></div></div>
-        <div class="dg" style="font-size:12px;font-weight:600;color:${premio>0?'#2E7D32':'var(--muted)'}">${premio>0?`🏆 Premio actual: $${premio.toLocaleString("es-AR")}`:"Sin premio todavía (menos de 15 PDV)"}</div>
-        ${tieneClientes?`<div id="pdvnames${i}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:11.5px;color:var(--muted);line-height:1.7">${f.clientes.map(n=>`<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:2px 9px;margin:2px 3px 2px 0">${n}</span>`).join("")}</div>`:""}
-      </div>`;
-    }).join("") + `</div>`;
-  }
-  renderPdvSupervisores();
-}
-
-function togglePdvClientes(i){
-  const el=document.getElementById("pdvnames"+i);
-  const chev=document.getElementById("pdvchev"+i);
-  if(!el)return;
-  const open=el.style.display==="block";
-  el.style.display=open?"none":"block";
-  if(chev)chev.style.transform=open?"rotate(0deg)":"rotate(180deg)";
-}
-
-function renderPdvSupervisores(){
-  const cont=document.getElementById("pdvSupervisorList");
-  if(!cont)return;
-  const equipos={};
-  Object.keys(SUPERVISOR_DE_VENDEDOR).forEach(v=>{
-    const sup=SUPERVISOR_DE_VENDEDOR[v];
-    if(!equipos[sup])equipos[sup]=[];
-    equipos[sup].push(v);
+// ── Cálculo del ranking ─────────────────────────────────────────────────────
+function calcular(){
+  const umbral = (numCol(CFG.UMBRAL_CATEGORIA_PCT)||100)/100;
+  const minCat = numCol(CFG.MIN_CATEGORIAS)||4;
+  const filas = OBJ.map(o=>{
+    const real = VENTA[o.vend] || {};
+    const cats = CATEGORIAS.map(c=>{
+      const obj=o.obj[c]||0, kg=real[norm(c)]||0;
+      return {c, obj, kg, pct: obj>0 ? kg/obj : null};
+    });
+    const conObj = cats.filter(x=>x.obj>0);
+    const logradas = conObj.filter(x=>x.pct>=umbral).length;
+    const realTotal = cats.reduce((a,x)=>a+x.kg,0);
+    return {vend:o.vend, cats, logradas, nCats:conObj.length, realTotal, objTotal:o.total,
+            pctTotal: o.total>0 ? realTotal/o.total : 0, compite: logradas>=minCat};
   });
-  const filas=Object.keys(equipos).sort().map(sup=>{
-    const equipo=equipos[sup];
-    const logrados=equipo.filter(v=>(DATA_PDV[v]||0)>=PDV_META).length;
-    const pct=Math.round(logrados/equipo.length*100);
-    const gana=pct>=PDV_UMBRAL_SUPERVISOR*100;
-    return {sup, equipo, logrados, pct, gana};
-  }).sort((a,b)=>b.pct-a.pct);
+  // Orden: más categorías logradas; desempate por % sobre el objetivo total en kg
+  filas.sort((a,b)=> b.logradas-a.logradas || b.pctTotal-a.pctTotal || a.vend.localeCompare(b.vend));
+  return {filas, umbral, minCat};
+}
 
-  cont.innerHTML=`<div class="dgrid" style="grid-template-columns:1fr">` + filas.map(f=>{
-    const textColor=f.gana?"#2E7D32":heatColor(f.pct);
-    const bgSize=pdvBgSize(Math.max(f.pct,1));
-    return `<div class="dprod" style="margin-bottom:6px">
-      <div class="ds" style="margin-bottom:6px;font-size:15px">
-        <span style="font-weight:800;color:var(--text)">${f.gana?"✅ ":""}${f.sup} <span style="font-weight:400;color:var(--muted);font-size:11px">(${f.equipo.length} vendedores)</span></span>
-        <span style="font-weight:800;color:${textColor}">${f.logrados} / ${f.equipo.length} en meta (${f.pct}%)</span>
-      </div>
-      <div class="dt"><div class="df" style="width:${Math.min(f.pct,100)}%;background-image:${PDV_GRADIENTE};background-size:${bgSize}% 100%;background-position:0 0"></div></div>
-      <div class="dg" style="font-size:12px;font-weight:600;color:${f.gana?'#2E7D32':'var(--muted)'}">${f.gana?`🏆 Gana premio de supervisor: $${PDV_PREMIO_SUPERVISOR.toLocaleString("es-AR")}`:`Necesita ${Math.ceil(PDV_UMBRAL_SUPERVISOR*f.equipo.length)-f.logrados} vendedor(es) más en la meta para ganar`}</div>
+// ── Render ──────────────────────────────────────────────────────────────────
+function render(){
+  const {filas, umbral, minCat} = calcular();
+  const pctU = Math.round(umbral*100);
+  const n = CATEGORIAS.length;
+  const ini = CFG.FECHA_INICIO||"", fin = CFG.FECHA_FIN||"";
+
+  document.title = CFG.TITULO || "Desafío Ferrero";
+  document.getElementById("titulo").textContent = CFG.TITULO || "Desafío Ferrero";
+  document.getElementById("hdrPeriodo").textContent = ini && fin ? `Del ${ini} al ${fin}` : "Cedisur y Ferrero";
+  document.getElementById("bajada").textContent =
+    `Cada vendedor tiene un objetivo propio en kilos para cada una de las ${n} categorías. Gana quien complete más categorías.`;
+
+  const premios = [CFG.PREMIO_1, CFG.PREMIO_2, CFG.PREMIO_3].map(p=>p||"A definir");
+  document.getElementById("reglas").innerHTML = [
+    `Una categoría está lograda cuando llegás al <strong>${pctU}%</strong> de tu objetivo en kilos.`,
+    `Compiten por el premio quienes logren <strong>al menos ${minCat} de las ${n} categorías</strong>.`,
+    `Queda primero quien tenga <strong>más categorías logradas</strong>, sin importar por cuánto las superó.`,
+    `Si hay empate, gana quien tenga el <strong>mayor % de cumplimiento sobre su objetivo total en kilos</strong>.`,
+    `Premios para los 3 primeros: ${premios.map((p,i)=>`${i+1}° ${p}`).join(", ")}.`,
+  ].map(t=>`<li>${t}</li>`).join("");
+
+  const compiten = filas.filter(f=>f.compite), noCompiten = filas.filter(f=>!f.compite);
+
+  document.getElementById("podio").innerHTML = [0,1,2].map(i=>{
+    const f = compiten[i];
+    return `<div class="dz-puesto ${f?'':'vacante'}">
+      <div class="dz-medalla" aria-hidden="true">${MEDALLAS[i]}</div>
+      <div class="dz-premio">${i+1}° puesto: ${premios[i]}</div>
+      ${f ? `<div class="dz-ganador">${nombreLindo(f.vend)}</div>
+             <div class="dz-dato">${f.logradas} de ${f.nCats} categorías, ${fmtPct(f.pctTotal)} del total</div>`
+          : `<div class="dz-dato">Vacante: nadie logró ${minCat} categorías todavía</div>`}
     </div>`;
-  }).join("") + `</div>`;
+  }).join("");
+
+  document.getElementById("subCompiten").textContent = compiten.length
+    ? `${compiten.length} vendedor${compiten.length>1?'es':''} con ${minCat} o más categorías logradas.`
+    : `Nadie llegó todavía a ${minCat} categorías logradas.`;
+  document.getElementById("subNoCompiten").textContent =
+    `Necesitan lograr al menos ${minCat} categorías. Ordenados por cercanía.`;
+  document.getElementById("hNoCompiten").parentElement.hidden = !noCompiten.length;
+
+  document.getElementById("listaCompiten").innerHTML = compiten.map((f,i)=>tarjeta(f, i+1, minCat)).join("");
+  document.getElementById("listaNoCompiten").innerHTML = noCompiten.map(f=>tarjeta(f, null, minCat)).join("");
+  if(ABIERTA){ const el=document.getElementById(ABIERTA); if(el) el.classList.add("abierta"); }
+}
+
+function tarjeta(f, pos, minCat){
+  const id = "t_"+f.vend.replace(/[^A-Z]/g,"");
+  const insignia = pos && pos<=3 ? `<span class="dz-pos medalla" aria-label="Puesto ${pos}">${MEDALLAS[pos-1]}</span>`
+                 : pos ? `<span class="dz-pos">${pos}</span>` : `<span class="dz-pos fuera" aria-hidden="true">·</span>`;
+  const casilleros = f.cats.map(x=>{
+    const est = x.pct==null ? "sinobj" : heat(x.pct);
+    const txt = x.pct==null ? "s/obj" : fmtPct(x.pct);
+    return `<div class="dz-casillero ${est}" title="${x.c}: ${fmtKg(x.kg)} de ${fmtKg(x.obj)} kg">
+      <span class="dz-cn">${corto(x.c)}</span><span class="dz-cp">${est==="ok"?"✓ ":""}${txt}</span></div>`;
+  }).join("");
+  const detalle = f.cats.map(x=>{
+    const p = x.pct||0, ancho = Math.min(p,1)*100;
+    const falta = x.obj - x.kg;
+    return `<div class="dz-fila">
+      <div class="dz-fila-top"><span class="dz-fila-cat">${x.c}</span>
+        <span>${fmtKg(x.kg)} / ${fmtKg(x.obj)} kg</span></div>
+      <div class="dz-barra"><div class="dz-relleno ${heat(p)}" style="width:${ancho}%"></div></div>
+      <div class="dz-fila-pie">${x.obj<=0 ? "Sin objetivo en esta categoría"
+          : (falta>0 ? `${fmtPct(p)}, faltan ${fmtKg(falta)} kg` : `${fmtPct(p)}, lograda`)}</div>
+    </div>`;
+  }).join("");
+  const faltanCats = Math.max(minCat - f.logradas, 0);
+  return `<article class="dz-tarjeta ${f.compite?'compite':''}" id="${id}">
+    <button class="dz-cabecera" onclick="toggle('${id}')" aria-expanded="false" aria-controls="${id}_d">
+      ${insignia}
+      <span class="dz-nombre">${nombreLindo(f.vend)}</span>
+      <span class="dz-cuenta"><strong>${f.logradas}</strong> de ${f.nCats}<small>categorías</small></span>
+    </button>
+    <div class="dz-casilleros">${casilleros}</div>
+    <div class="dz-total">Total ${fmtKg(f.realTotal)} de ${fmtKg(f.objTotal)} kg, <strong>${fmtPct(f.pctTotal)}</strong>
+      ${faltanCats ? ` · le falta${faltanCats>1?'n':''} ${faltanCats} categoría${faltanCats>1?'s':''} para competir` : ''}</div>
+    <div class="dz-detalle" id="${id}_d">${detalle}</div>
+  </article>`;
+}
+
+function toggle(id){
+  const el=document.getElementById(id); if(!el) return;
+  const abrir = !el.classList.contains("abierta");
+  if(ABIERTA && ABIERTA!==id){ const p=document.getElementById(ABIERTA); if(p){p.classList.remove("abierta"); p.querySelector(".dz-cabecera").setAttribute("aria-expanded","false");} }
+  el.classList.toggle("abierta", abrir);
+  el.querySelector(".dz-cabecera").setAttribute("aria-expanded", String(abrir));
+  ABIERTA = abrir ? id : null;
 }
 
 fetchSheets();

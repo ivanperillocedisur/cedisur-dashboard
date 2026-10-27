@@ -439,6 +439,30 @@ section+section{margin-top:22px}
   .dz-intro h2{font-size:21px}
   .dz-casilleros{grid-template-columns:repeat(3,1fr)}
 }
+
+/* ===== Reglas replegables, condición de pago y vista empresa ===== */
+details.dz-reglas{padding:0}
+details.dz-reglas>summary{cursor:pointer;list-style:none;padding:13px 18px;font-size:15px;font-weight:800;color:var(--fg2);display:flex;align-items:center;gap:8px}
+details.dz-reglas>summary::-webkit-details-marker{display:none}
+details.dz-reglas>summary::after{content:"▾";margin-left:auto;color:var(--muted);transition:transform .2s}
+details.dz-reglas[open]>summary::after{transform:rotate(180deg)}
+details.dz-reglas>summary:focus-visible{outline:2px solid var(--fg);outline-offset:-2px;border-radius:6px}
+details.dz-reglas ol{padding:0 18px 14px 38px}
+.tabs-nav{margin-bottom:4px}
+.dz-condicion{border-radius:var(--r);padding:11px 14px;font-size:13px;line-height:1.5;margin-bottom:16px}
+.dz-condicion.pendiente{background:var(--gold2);border:1.5px solid var(--gold);color:var(--gold3)}
+.dz-condicion.ok{background:var(--fg3);border:1.5px solid var(--fg);color:var(--fg2)}
+.dz-empresa{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:900px){.dz-empresa{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.dz-empresa{grid-template-columns:1fr}}
+.dz-ecat{background:var(--card);border:1.5px solid var(--border);border-top:4px solid #C62828;border-radius:var(--r);padding:12px 14px}
+.dz-ecat.cerca{border-top-color:#F9A825}.dz-ecat.ok{border-top-color:#2E7D32}.dz-ecat.sinobj{border-top-color:var(--border)}
+.dz-ecat-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dz-ecat-n{font-size:14px;font-weight:800;color:var(--text)}
+.dz-ecat-p{font-size:20px;font-weight:900;color:var(--fg2);white-space:nowrap}
+.dz-ecat.lejos .dz-ecat-p{color:#C62828}.dz-ecat.cerca .dz-ecat-p{color:#7A5500}
+.dz-zcount{font-size:11px;font-weight:600;color:var(--muted);margin-left:6px}
+.hrow-zone:focus-visible{outline:2px solid var(--fg);outline-offset:-2px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 
 </style>
@@ -480,11 +504,18 @@ section+section{margin-top:22px}
   <p id="bajada">Cada vendedor tiene un objetivo propio en kilos para cada categoría.</p>
 </section>
 
-<section class="dz-reglas" aria-labelledby="hReglas">
-  <h3 id="hReglas">Cómo se gana</h3>
+<details class="dz-reglas">
+  <summary>Cómo se gana</summary>
   <ol id="reglas"></ol>
-</section>
+</details>
 
+<nav class="tabs-nav" role="tablist">
+  <button class="tbtn active" role="tab" aria-selected="true" onclick="verTab('ranking',this)">🏆 Ranking</button>
+  <button class="tbtn" role="tab" aria-selected="false" onclick="verTab('empresa',this)">🏢 Cedisur y zonas</button>
+</nav>
+
+<div class="tab-panel active" id="tab-ranking">
+<div class="dz-condicion" id="condicionPremio"></div>
 <section aria-labelledby="hPodio">
   <h3 class="dz-h3" id="hPodio">Premios</h3>
   <div class="dz-podio" id="podio"></div>
@@ -501,6 +532,21 @@ section+section{margin-top:22px}
   <p class="dz-sub" id="subNoCompiten"></p>
   <div id="listaNoCompiten"></div>
 </section>
+</div>
+
+<div class="tab-panel" id="tab-empresa">
+<section aria-labelledby="hEmpresa">
+  <h3 class="dz-h3" id="hEmpresa">Cedisur</h3>
+  <p class="dz-sub" id="subEmpresa"></p>
+  <div class="dz-empresa" id="empresaCats"></div>
+</section>
+<section aria-labelledby="hZonas">
+  <h3 class="dz-h3" id="hZonas">Zonas</h3>
+  <p class="dz-sub">% de cumplimiento del objetivo en kilos. Tocá una zona para ver a sus vendedores.</p>
+  <div class="heat-wrap heat-desktop"><table class="heat" id="tablaZonas"></table></div>
+  <div class="heat-mobile" id="cardsZonas"></div>
+</section>
+</div>
 </div>
 
 <script>
@@ -521,6 +567,21 @@ let CATEGORIAS = [];     // nombres tal cual el encabezado de FNOV_OBJETIVOS
 let OBJ = [];            // [{vend, obj:{cat:kg}, total}]
 let VENTA = {};          // { VEND: { catNorm: kg } }
 let ABIERTA = null;      // tarjeta desplegada
+let ZONAS_ABIERTAS = {}; // zonas desplegadas en la tabla
+
+// Zona por vendedor si FNOV_OBJETIVOS no trae columna ZONA (la columna del Sheets tiene prioridad)
+const ZONA_DEFECTO = {
+  "CHIESA LEONARDO":"ATLANTICA","MADRID GUILLERMO":"ATLANTICA","VELAZQUEZ LUIS":"ATLANTICA",
+  "ALDERETE GUILLERMO":"CORDILLERA NORTE","LEZANA HUGO":"CORDILLERA NORTE","ULLOA HORACIO":"CORDILLERA NORTE",
+  "JENSEN JULIAN":"CORDILLERA SUR","PONCE DE LEON SEBASTIAN":"CORDILLERA SUR",
+  "CASTILLO ALBERTO":"NEUQUEN","DARIO MACAYA":"NEUQUEN","ARENAS SAMUEL":"NEUQUEN","LOZANO JONATAN":"NEUQUEN","MARTINEZ JOSE":"NEUQUEN",
+  "BERTRAN DAVID":"RIO NEGRO","ESCALES MIGUEL":"RIO NEGRO","FIGUEROA PABLO":"RIO NEGRO","FRAGNUL ALEJANDRO":"RIO NEGRO","ZANGARI PABLO":"RIO NEGRO",
+  "FUENTES KARINA":"ACTIVACION COMERCIAL",
+};
+const ZONA_NOMBRE = {"ATLANTICA":"Atlántica","CORDILLERA NORTE":"Cordillera Norte","CORDILLERA SUR":"Cordillera Sur",
+  "NEUQUEN":"Neuquén","RIO NEGRO":"Río Negro","ACTIVACION COMERCIAL":"Activación Comercial"};
+const sinTilde = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().trim();
+const zonaLinda = z => ZONA_NOMBRE[sinTilde(z)] || nombreLindo(z);
 
 const CORTOS = {"kinder bueno + white":"K. Bueno","kinder choco + maxi":"K. Choco","kinder huevo":"K. Huevo","nutella":"Nutella","pralinas":"Pralinas","tic tac":"Tic Tac"};
 const norm = s => String(s||"").toLowerCase().replace(/\s+/g," ").trim();
@@ -589,13 +650,16 @@ async function fetchSheets(){
 
     const fo = filasCsv(tO), h = fo[0].map(x=>x.trim());
     const iTot = h.findIndex((x,i)=> i>0 && /^total/i.test(x));
-    const iCats = h.map((x,i)=>i).filter(i=> i>0 && i!==iTot && h[i]);
+    const iZona = h.findIndex((x,i)=> i>0 && /^zona$/i.test(x));
+    const iCats = h.map((x,i)=>i).filter(i=> i>0 && i!==iTot && i!==iZona && h[i]);
     CATEGORIAS = iCats.map(i=>h[i]);
     OBJ = fo.slice(1).filter(r=>(r[0]||"").trim()).map(r=>{
       const obj={}; iCats.forEach(i=> obj[h[i]] = numCol(r[i]));
       const suma = Object.values(obj).reduce((a,b)=>a+b,0);
       const total = iTot>=0 && numCol(r[iTot])>0 ? numCol(r[iTot]) : suma;
-      return {vend: r[0].trim().toUpperCase(), obj, total};
+      const vend = r[0].trim().toUpperCase();
+      const zona = sinTilde((iZona>=0 && r[iZona]) || ZONA_DEFECTO[vend] || "SIN ZONA");
+      return {vend, zona, obj, total};
     });
 
     VENTA = {};
@@ -628,17 +692,34 @@ function calcular(){
     const conObj = cats.filter(x=>x.obj>0);
     const logradas = conObj.filter(x=>x.pct>=umbral).length;
     const realTotal = cats.reduce((a,x)=>a+x.kg,0);
-    return {vend:o.vend, cats, logradas, nCats:conObj.length, realTotal, objTotal:o.total,
+    return {vend:o.vend, zona:o.zona, cats, logradas, nCats:conObj.length, realTotal, objTotal:o.total,
             pctTotal: o.total>0 ? realTotal/o.total : 0, compite: logradas>=minCat};
   });
+  // Agregado (empresa o zona): suma objetivos y reales de sus vendedores
+  const umbralEmp = (numCol(CFG.CONDICION_EMPRESA_PCT)||100)/100;
+  const agregar = lista => {
+    const cats = CATEGORIAS.map((c,i)=>{
+      const obj = lista.reduce((a,f)=>a+f.cats[i].obj,0), kg = lista.reduce((a,f)=>a+f.cats[i].kg,0);
+      return {c, obj, kg, pct: obj>0 ? kg/obj : null};
+    });
+    const objTotal = lista.reduce((a,f)=>a+f.objTotal,0), realTotal = lista.reduce((a,f)=>a+f.realTotal,0);
+    const conObj = cats.filter(x=>x.obj>0);
+    return {cats, objTotal, realTotal, pctTotal: objTotal>0 ? realTotal/objTotal : 0,
+            nCats: conObj.length, logradas: conObj.filter(x=>x.pct>=umbralEmp).length, vendedores: lista};
+  };
+  const empresa = agregar(filas);
+  const zonas = [...new Set(filas.map(f=>f.zona))].map(z=>({zona:z, ...agregar(filas.filter(f=>f.zona===z))}))
+    .sort((a,b)=> b.pctTotal-a.pctTotal || a.zona.localeCompare(b.zona));
   // Orden: más categorías logradas; desempate por % sobre el objetivo total en kg
   filas.sort((a,b)=> b.logradas-a.logradas || b.pctTotal-a.pctTotal || a.vend.localeCompare(b.vend));
-  return {filas, umbral, minCat};
+  return {filas, umbral, minCat, empresa, zonas, umbralEmp};
 }
 
 // ── Render ──────────────────────────────────────────────────────────────────
 function render(){
-  const {filas, umbral, minCat} = calcular();
+  const {filas, umbral, minCat, empresa, zonas, umbralEmp} = calcular();
+  const premiosActivos = empresa.nCats>0 && empresa.logradas===empresa.nCats;
+  const pctE = Math.round(umbralEmp*100);
   const pctU = Math.round(umbral*100);
   const n = CATEGORIAS.length;
   const ini = CFG.FECHA_INICIO||"", fin = CFG.FECHA_FIN||"";
@@ -656,9 +737,19 @@ function render(){
     `Queda primero quien tenga <strong>más categorías logradas</strong>, sin importar por cuánto las superó.`,
     `Si hay empate, gana quien tenga el <strong>mayor % de cumplimiento sobre su objetivo total en kilos</strong>.`,
     `Premios para los 3 primeros: ${premios.map((p,i)=>`${i+1}° ${p}`).join(", ")}.`,
+    `Los premios se pagan <strong>solo si Cedisur alcanza el ${pctE}% del objetivo en kilos en cada una de las ${n} categorías</strong>. Podés seguirlo en la pestaña "Cedisur y zonas".`,
   ].map(t=>`<li>${t}</li>`).join("");
 
   const compiten = filas.filter(f=>f.compite), noCompiten = filas.filter(f=>!f.compite);
+
+  const faltanEmp = empresa.cats.filter(x=>x.obj>0 && x.pct<umbralEmp);
+  document.getElementById("condicionPremio").className = "dz-condicion " + (premiosActivos ? "ok" : "pendiente");
+  document.getElementById("condicionPremio").innerHTML = premiosActivos
+    ? `<strong>Premios habilitados.</strong> Cedisur alcanzó el ${pctE}% del objetivo en las ${empresa.nCats} categorías.`
+    : `<strong>Premios sujetos a que Cedisur alcance el ${pctE}% en las ${empresa.nCats} categorías.</strong>
+       Hoy lleva ${empresa.logradas} de ${empresa.nCats}. Faltan: ${faltanEmp.map(x=>`${x.c} (${fmtPct(x.pct||0)})`).join(", ")}.`;
+
+  renderEmpresa(empresa, zonas, umbralEmp);
 
   document.getElementById("podio").innerHTML = [0,1,2].map(i=>{
     const f = compiten[i];
@@ -726,6 +817,70 @@ function toggle(id){
   el.querySelector(".dz-cabecera").setAttribute("aria-expanded", String(abrir));
   ABIERTA = abrir ? id : null;
 }
+
+// ── Pestañas ────────────────────────────────────────────────────────────────
+function verTab(nombre, btn){
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tabs-nav .tbtn").forEach(b=>{b.classList.remove("active"); b.setAttribute("aria-selected","false");});
+  document.getElementById("tab-"+nombre).classList.add("active");
+  btn.classList.add("active"); btn.setAttribute("aria-selected","true");
+}
+
+// ── Pestaña Cedisur y zonas ─────────────────────────────────────────────────
+const heatBg = p => p==null ? "#9E9E9E" : (p>=1 ? "#2E7D32" : (p>=0.8 ? "#F9A825" : "#C62828"));
+function celda(x, extra){
+  const txt = x.pct==null ? "s/obj" : fmtPct(x.pct);
+  return `<td class="hcell${extra||""}" style="background:${heatBg(x.pct)}">${txt}<span class="rvo">Real ${fmtKg(x.kg)} / Obj ${fmtKg(x.obj)} kg</span></td>`;
+}
+const totalComoCat = a => ({kg:a.realTotal, obj:a.objTotal, pct: a.objTotal>0 ? a.realTotal/a.objTotal : null});
+
+function renderEmpresa(empresa, zonas, umbralEmp){
+  const pctE = Math.round(umbralEmp*100);
+  document.getElementById("subEmpresa").textContent =
+    `${empresa.logradas} de ${empresa.nCats} categorías al ${pctE}%. Total ${fmtKg(empresa.realTotal)} de ${fmtKg(empresa.objTotal)} kg (${fmtPct(empresa.pctTotal)}).`;
+
+  document.getElementById("empresaCats").innerHTML = empresa.cats.map(x=>{
+    const p = x.pct||0, est = x.pct==null ? "sinobj" : heat(p), falta = x.obj - x.kg;
+    return `<div class="dz-ecat ${est}">
+      <div class="dz-ecat-top"><span class="dz-ecat-n">${x.c}</span><span class="dz-ecat-p">${est==="ok"?"✓ ":""}${x.pct==null?"s/obj":fmtPct(p)}</span></div>
+      <div class="dz-barra"><div class="dz-relleno ${heat(p)}" style="width:${Math.min(p,1)*100}%"></div></div>
+      <div class="dz-fila-pie">${fmtKg(x.kg)} de ${fmtKg(x.obj)} kg${falta>0 ? `, faltan ${fmtKg(falta)} kg` : ", lograda"}</div>
+    </div>`;
+  }).join("");
+
+  // Tabla (escritorio)
+  const cab = `<thead><tr><th class="rowhead">Zona / Vendedor</th>${CATEGORIAS.map(cn=>`<th title="${cn}">${corto(cn)}</th>`).join("")}<th>Total</th></tr></thead>`;
+  let cuerpo = `<tr class="hrow-total"><td class="tname">Total Cedisur</td>${empresa.cats.map(x=>celda(x," z")).join("")}${celda(totalComoCat(empresa)," z")}</tr>`;
+  zonas.forEach(z=>{
+    const ab = !!ZONAS_ABIERTAS[z.zona];
+    cuerpo += `<tr class="hrow-zone ${ab?'':'col'}" onclick="toggleZonaTabla('${z.zona}')" tabindex="0" onkeydown="if(event.key==='Enter')toggleZonaTabla('${z.zona}')">
+      <td class="zname"><span class="zchev">&#9660;</span>${zonaLinda(z.zona)} <small class="dz-zcount">${z.logradas} de ${z.nCats}</small></td>
+      ${z.cats.map(x=>celda(x," z")).join("")}${celda(totalComoCat(z)," z")}</tr>`;
+    z.vendedores.slice().sort((a,b)=>b.pctTotal-a.pctTotal).forEach(f=>{
+      cuerpo += `<tr class="hrow-seller ${ab?'show':''}"><td class="sname-c">${nombreLindo(f.vend)}</td>${f.cats.map(x=>celda(x)).join("")}${celda(totalComoCat(f))}</tr>`;
+    });
+  });
+  document.getElementById("tablaZonas").innerHTML = cab + `<tbody>${cuerpo}</tbody>`;
+
+  // Tarjetas (celular)
+  const fila = (nombre, x, cls) => `<div class="hc-row ${cls||""}"><span class="hc-mk">${nombre}</span>
+    <span class="hc-pct" style="background:${heatBg(x.pct)}">${x.pct==null?"s/obj":fmtPct(x.pct)}</span>
+    <span class="hc-rvo">${fmtKg(x.kg)} / ${fmtKg(x.obj)}</span></div>`;
+  let cards = `<div class="hcard hcard-total"><div class="hc-head">Total Cedisur <span>${empresa.logradas} de ${empresa.nCats}</span></div><div class="hc-rows">
+    ${fila("Total", totalComoCat(empresa), "hc-tot-row")}${empresa.cats.map(x=>fila(corto(x.c), x)).join("")}</div></div>`;
+  zonas.forEach(z=>{
+    const t = totalComoCat(z);
+    cards += `<div class="hcard"><div class="hc-head zonehead" onclick="this.closest('.hcard').classList.toggle('open')">
+      <span>${zonaLinda(z.zona)} <small class="dz-zcount">${z.logradas} de ${z.nCats}</small></span>
+      <span class="hc-pct" style="background:${heatBg(t.pct)}">${t.pct==null?"s/obj":fmtPct(t.pct)}</span></div>
+      <div class="hc-rows">${z.cats.map(x=>fila(corto(x.c), x)).join("")}
+      <div class="hc-vermas" onclick="this.closest('.hcard').classList.toggle('open')"><span class="vm-txt">Ver ${z.vendedores.length} vendedor${z.vendedores.length>1?'es':''}</span><span class="vm-chv">&#9662;</span></div>
+      <div class="hc-sellers">${z.vendedores.slice().sort((a,b)=>b.pctTotal-a.pctTotal).map(f=>fila(nombreLindo(f.vend), totalComoCat(f), "hc-seller")).join("")}</div>
+      </div></div>`;
+  });
+  document.getElementById("cardsZonas").innerHTML = cards;
+}
+function toggleZonaTabla(z){ ZONAS_ABIERTAS[z] = !ZONAS_ABIERTAS[z]; render(); }
 
 fetchSheets();
 </script>

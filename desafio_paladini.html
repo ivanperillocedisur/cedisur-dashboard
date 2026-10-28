@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<title>Desafío Paladini</title>
+<style>
+:root{
+  --fg:#1A6B35;--fg2:#0D4422;--fg3:#E8F5E9;
+  --cel:#74ACDF;--cel2:#4A7FAB;--cel3:#E3F2FD;
+  --brown:#3D1C02;--brown2:#6B3410;--brown3:#FFF3E0;
+  --gold:#C8960C;--gold2:#FFF8DC;--gold3:#7A5500;
+  --silver:#9E9E9E;--silver2:#F5F5F5;
+  --bronze:#8D4E00;--bronze2:#FFF3E0;
+  --score:#0D1117;
+  --red:#C62828;--red2:#FFEBEE;
+  --bg:#F0F4F8;--card:#fff;
+  --text:#1A1A1A;--muted:#6B7280;--border:#DDE3EC;
+  --r:10px;--rs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ---- FLAG STRIPE ---- */
+.flag{height:7px;background:linear-gradient(90deg,var(--cel) 33.3%,#fff 33.3% 66.6%,var(--cel) 66.6%)}
+
+/* ---- HEADER FIELD ---- */
+header{
+  background:var(--fg2);
+  background-image:repeating-linear-gradient(90deg,transparent 0,transparent 90px,rgba(255,255,255,.04) 90px,rgba(255,255,255,.04) 180px);
+  position:sticky;top:0;z-index:200;box-shadow:0 3px 16px #0007;
+  overflow:hidden;
+}
+.field-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.18}
+.hdr-inner{position:relative;z-index:2;display:flex;align-items:center;gap:14px;max-width:1300px;margin:0 auto;padding:12px 18px;flex-wrap:wrap}
+.logo-img{height:44px;filter:brightness(0) invert(1) drop-shadow(0 0 1px rgba(255,255,255,0.3));flex-shrink:0}
+.hdr-mid{flex:1;min-width:160px}
+.hdr-mid h1{font-size:20px;font-weight:900;color:#fff;letter-spacing:3px;text-shadow:0 2px 6px #0009;line-height:1}
+.hdr-mid p{font-size:10px;color:var(--cel);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+.week-sel{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.week-sel>span{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;margin-right:2px}
+.wbtn{border:none;border-radius:var(--rs);padding:5px 9px;font-size:12px;font-weight:800;cursor:pointer;
+  background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);transition:all .15s;font-family:inherit;letter-spacing:.5px}
+.wbtn:hover{background:rgba(255,255,255,.25);color:#fff}
+.wbtn.active{background:var(--gold);color:#fff;box-shadow:0 0 0 2px rgba(200,150,12,.5)}
+.wbtn.spec{border:1px solid rgba(200,150,12,.4)}
+.wbtn.spec.active{box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(200,150,12,.4)}
+
+/* ---- SCOREBOARD BAR ---- */
+.score-bar{background:var(--score);border-bottom:2px solid var(--fg)}
+.score-inner{max-width:1300px;margin:0 auto;padding:0 18px;display:grid;grid-template-columns:1.7fr 0.8fr 1.9fr;gap:0}
+.score-cell{padding:12px 20px;border-right:1px solid #ffffff10;display:flex;flex-direction:column;justify-content:center}
+.score-cell:last-child{border-right:none}
+.sc-head{font-size:9px;color:rgba(255,255,255,.42);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.sc-head .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dcol .dlbl{font-size:8.5px;letter-spacing:1px;text-transform:uppercase;font-weight:800;margin-bottom:3px}
+.dcol.week .dlbl{color:var(--gold)}
+.dcol.mundial .dlbl{color:var(--cel)}
+.dcol .dval{font-size:24px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+.dcol .dsub{font-size:9.5px;color:rgba(255,255,255,.45);margin-top:3px}
+.dcol .prog-track{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:7px;overflow:hidden}
+.dcol .prog-fill{height:100%;border-radius:2px;transition:width .5s}
+.dcol.week .prog-fill{background:var(--gold)}
+.dcol.mundial .prog-fill{background:var(--cel)}
+.wkcell{align-items:stretch}
+.sc-wk-inner{display:flex;align-items:center;justify-content:center;gap:12px}
+.sc-wk-big{font-size:22px;font-weight:900;color:#fff;line-height:1}
+.sc-wk-date{font-size:12px;color:rgba(255,255,255,.55);white-space:nowrap}
+.sc-wk-badge{font-size:9px;background:var(--gold);color:#fff;padding:3px 10px;border-radius:20px;font-weight:800;letter-spacing:.5px;white-space:nowrap}
+/* líderes en 2 columnas lado a lado -> llenan todo el ancho, sin hueco */
+.lead-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.lead{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px}
+.lead .lmed{font-size:24px;flex-shrink:0}
+.lead .linfo{min-width:0}
+.lead .llbl{font-size:8.5px;letter-spacing:.5px;text-transform:uppercase;font-weight:800;margin-bottom:2px}
+.lead.week .llbl{color:var(--gold)}
+.lead.mundial .llbl{color:var(--cel)}
+.lead .lname{font-size:16px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
+.lead .lg{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+.prog-fill.warn{background:var(--gold)}
+.prog-fill.danger{background:var(--red)}
+
+/* ---- BANNER ESPECIAL ---- */
+.spec-banner{max-width:1300px;margin:12px auto 0;padding:0 18px;display:none}
+.spec-banner.show{display:block}
+.spec-inner{background:var(--gold2);border:2px solid var(--gold);border-radius:var(--r);
+  padding:10px 16px;display:flex;align-items:center;gap:10px}
+.spec-inner p{font-size:13px;color:var(--gold3);font-weight:700}
+
+/* ---- MAIN WRAP ---- */
+.main{max-width:1300px;margin:16px auto 32px;padding:0 18px}
+
+/* ---- TABS ---- */
+.tabs-nav{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:0;overflow-x:auto}
+.tab-abbr{display:none}
+.tbtn{padding:10px 18px;font-size:13px;font-weight:700;background:none;border:none;cursor:pointer;
+  color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;
+  font-family:inherit;white-space:nowrap;border-radius:var(--rs) var(--rs) 0 0}
+.tbtn:hover{color:var(--brown);background:var(--brown3)}
+.tbtn.active{color:var(--fg2);border-bottom-color:var(--fg);background:var(--fg3)}
+.tab-panel{display:none;padding-top:18px}
+.tab-panel.active{display:block}
+
+/* ---- RANKING ---- */
+.rk-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.rk-header h2{font-size:15px;font-weight:800;color:var(--fg2);display:flex;align-items:center;gap:6px}
+.filter-row{display:flex;gap:5px;flex-wrap:wrap}
+.fbtn{border:1.5px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;
+  background:#fff;cursor:pointer;color:var(--muted);transition:all .15s;font-family:inherit}
+.fbtn:hover{border-color:var(--fg);color:var(--fg2)}
+.fbtn.active{background:var(--fg);border-color:var(--fg);color:#fff}
+
+/* ---- WEEK WINNER BANNER ---- */
+.winner-banner{background:linear-gradient(135deg,var(--gold2),#fff);border:2px solid var(--gold);
+  border-radius:var(--r);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.winner-banner .wlabel{font-size:10px;font-weight:800;color:var(--gold3);text-transform:uppercase;letter-spacing:1px}
+.winner-banner .wname{font-size:16px;font-weight:900;color:var(--brown)}
+.winner-banner .wgoles{font-size:13px;color:var(--gold3);font-weight:600}
+.winner-banner .wpremio{margin-left:auto;background:var(--gold);color:#fff;border-radius:var(--rs);
+  padding:6px 12px;font-size:12px;font-weight:800}
+
+/* ---- SELLER CARD ---- */
+.sc{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);
+  margin-bottom:7px;overflow:hidden;cursor:pointer;transition:box-shadow .15s}
+.sc:hover{box-shadow:0 4px 16px #00000012}
+.sc.p1{border-color:var(--gold);background:linear-gradient(135deg,var(--gold2),#fff)}
+.sc.p2{border-color:var(--silver)}
+.sc.p3{border-color:var(--bronze);background:var(--bronze2)}
+.sc-row{display:grid;grid-template-columns:50px 1fr auto 86px 30px;align-items:center;gap:10px;padding:10px 13px}
+.pbadge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.pbadge.pn{background:var(--bg);font-size:12px;font-weight:800;color:var(--muted)}
+.sname{font-weight:700;font-size:14px}
+.szone{font-size:10px;color:var(--muted);margin-top:1px}
+
+.pills{display:flex;gap:4px;flex-wrap:wrap}
+.pill{font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px;color:#fff;white-space:nowrap}
+.gtotal{text-align:right}
+.gnum{font-size:21px;font-weight:900;color:var(--fg2);line-height:1}
+.glabel{font-size:9px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.chev{font-size:16px;color:var(--muted);transition:transform .2s}
+.sc.open .chev{transform:rotate(180deg)}
+.detail{display:none;padding:0 13px 13px;border-top:1px solid var(--border)}
+.sc.open .detail{display:block}
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.dprod{background:var(--bg);border-radius:var(--rs);padding:10px 12px;border:1px solid var(--border)}
+.dprod .dn{font-size:12px;font-weight:700;margin-bottom:5px}
+.dprod .ds{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
+.dprod .dt{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.dprod .df{height:100%;border-radius:3px}
+.dprod .dg{font-size:16px;font-weight:800;margin-top:4px}
+.wkrow{margin-top:12px}
+.wkrow h4{font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
+.wkbars{display:flex;gap:4px;align-items:flex-end;height:62px}
+.wkbar-w{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;justify-content:flex-end;height:100%}
+.wkval{font-size:10px;font-weight:800;color:var(--fg2);line-height:1;margin-bottom:1px;min-height:11px}
+.wkbar{width:100%;border-radius:2px 2px 0 0;min-height:2px}
+.wklbl{font-size:8px;color:var(--muted);white-space:nowrap}
+.wklbl.sp{color:var(--gold3);font-weight:800}
+
+/* ---- COMO SE JUEGA ---- */
+.rsec{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);overflow:hidden;margin-bottom:14px}
+.rh{padding:13px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.ricon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.rh h3{font-size:14px;font-weight:800;color:var(--fg2)}
+.rb{padding:13px 16px}
+.rb p{font-size:13px;line-height:1.6;margin-bottom:8px}
+.rb p:last-child{margin-bottom:0}
+.cond-box{background:var(--red2);border:2px solid var(--red);border-radius:var(--rs);padding:12px 14px}
+.cond-box .ct{font-size:12px;font-weight:800;color:var(--red);margin-bottom:5px}
+.cond-box p{font-size:13px;color:#7B1010;line-height:1.5}
+.ex-box{background:var(--fg3);border:1.5px solid var(--fg);border-radius:var(--rs);padding:12px 14px;margin-top:10px}
+.ex-box .et{font-size:10px;font-weight:800;color:var(--fg2);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+.exrow{display:flex;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap;margin-bottom:5px}
+.exrow .en{font-size:17px;font-weight:900;color:var(--fg2)}
+.exrow .er{font-size:17px;font-weight:900;color:var(--red2);color:#1B5E20}
+.spec-box{background:var(--gold2);border:2px solid var(--gold);border-radius:var(--rs);padding:12px 14px;margin-top:10px}
+.spec-box .st{font-size:12px;font-weight:800;color:var(--gold3);margin-bottom:5px}
+.spec-box p{font-size:13px;color:var(--gold3);line-height:1.5}
+.rlist{list-style:none;padding:0}
+.rlist li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5;align-items:flex-start}
+.rlist li:last-child{border-bottom:none}
+.rnum{width:21px;height:21px;border-radius:50%;background:var(--fg);color:#fff;font-size:10px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.ptbl{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
+.ptbl th{text-align:left;padding:6px 10px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+.ptbl td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.ptbl tr:last-child td{border-bottom:none}
+.ptbl tr:nth-child(even) td{background:var(--bg)}
+.pdot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+
+/* ---- PREMIOS ---- */
+.prize-hero{background:linear-gradient(160deg,var(--fg2) 0%,var(--fg) 60%,#2E7D32 100%);border-radius:var(--r);
+  padding:24px 20px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden}
+.prize-hero::before{content:"⚽";position:absolute;font-size:120px;opacity:.06;right:-20px;bottom:-20px;line-height:1}
+.prize-hero .ph-label{font-size:11px;color:rgba(255,255,255,.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.prize-hero .ph-total{font-size:42px;font-weight:900;color:var(--gold)}
+.prize-hero .ph-note{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px}
+
+.weekly-prize{background:var(--card);border-radius:var(--r);border:2px solid var(--gold);padding:16px;margin-bottom:14px}
+.weekly-prize h3{font-size:13px;font-weight:800;color:var(--gold3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.wp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.wp-card{background:var(--gold2);border-radius:var(--rs);padding:12px;text-align:center}
+.wp-card .wpc-lbl{font-size:10px;color:var(--gold3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px}
+.wp-card .wpc-val{font-size:22px;font-weight:900;color:var(--gold3)}
+.wp-card .wpc-sub{font-size:11px;color:var(--gold3);margin-top:2px}
+
+.condicion-p{border:2px solid var(--red);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.cp-h{background:var(--red);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:8px}
+.cp-h h3{font-size:13px;font-weight:800}
+.cp-body{padding:14px 16px;background:var(--red2)}
+.cp-body p{font-size:13px;color:#7B1010;line-height:1.6}
+.cp-prog{margin-top:12px}
+.cp-prog .cpl{display:flex;justify-content:space-between;font-size:12px;color:#7B1010;margin-bottom:5px;font-weight:700}
+.cp-prog .cpt{height:12px;background:#FFCDD2;border-radius:6px;overflow:hidden}
+.cp-prog .cpf{height:100%;border-radius:6px;transition:width .5s}
+.cp-prog .cpn{font-size:10px;color:#7B1010;margin-top:4px;font-style:italic}
+
+.podium-sec{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);padding:18px;margin-bottom:14px}
+.podium-sec h3{font-size:13px;font-weight:800;color:var(--fg2);text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.podium-grid{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:10px;align-items:end}
+.pc{border-radius:var(--r);padding:14px 10px;text-align:center}
+.pc.gold{background:linear-gradient(160deg,var(--gold2),#FFE082);border:2px solid var(--gold)}
+.pc.silver{background:linear-gradient(160deg,#F5F5F5,#E0E0E0);border:2px solid var(--silver)}
+.pc.bronze{background:linear-gradient(160deg,var(--bronze2),#FFCC80);border:2px solid var(--bronze)}
+.pc-medal{font-size:34px;margin-bottom:4px}
+.pc-pos{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.pc-amt{font-size:26px;font-weight:900;color:var(--brown);line-height:1}
+.pc-amt.gt{color:var(--gold3)}
+.pc-amt.bt{color:var(--bronze)}
+.pc-pct{font-size:10px;color:var(--muted);margin-top:3px}
+.pc-who{margin-top:8px;border-top:1px dashed var(--border);padding-top:8px;min-height:36px}
+.pc-who .wn{font-size:13px;font-weight:800;color:var(--brown)}
+.pc-who .wg{font-size:10px;color:var(--muted)}
+.acum-note{background:var(--cel3);border:1.5px solid var(--cel);border-radius:var(--rs);padding:12px 14px;margin-top:12px}
+.acum-note p{font-size:13px;color:var(--cel2);font-weight:600;text-align:center}
+
+/* ---- BONUS TRACK ---- */
+.bt-hero{background:linear-gradient(135deg,var(--score) 0%,#1A237E 100%);border-radius:var(--r);
+  padding:20px;margin-bottom:16px;position:relative;overflow:hidden;text-align:center}
+.bt-hero::before{content:"⚡";position:absolute;font-size:100px;opacity:.08;right:10px;top:-10px;line-height:1}
+.bt-badge{display:inline-block;background:var(--gold);color:#fff;font-size:10px;font-weight:800;
+  letter-spacing:1.5px;padding:4px 12px;border-radius:12px;margin-bottom:10px;text-transform:uppercase}
+.bt-hero h2{font-size:24px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px}
+.bt-hero p{font-size:13px;color:rgba(255,255,255,.6);line-height:1.5}
+.bt-active{background:var(--gold2);border:2px solid var(--gold);border-radius:var(--rs);
+  padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.bt-active p{font-size:13px;color:var(--gold3);font-weight:700}
+.bt-cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:16px}
+.btcat{background:var(--card);border-radius:10px;border:1.5px solid var(--gold);padding:11px 13px;display:flex;flex-direction:column;gap:7px}
+.btcat-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.btcat-name{font-size:13px;font-weight:800;color:var(--brown);line-height:1.15}
+.btcat-g{font-size:18px;font-weight:900;color:var(--gold3);white-space:nowrap;display:flex;align-items:baseline;gap:2px}
+.btcat-g small{font-size:9px;font-weight:700;color:var(--muted)}
+.btcat-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btcat-sem{font-size:10.5px;font-weight:800;color:var(--fg2);background:var(--fg3);border-radius:20px;padding:3px 9px;white-space:nowrap}
+.btcat-desc{font-size:11px;color:var(--muted);line-height:1.3}
+.bt-how{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);padding:14px 16px}
+.bt-how h3{font-size:13px;font-weight:800;color:var(--fg2);margin-bottom:10px}
+.bt-how p{font-size:13px;color:var(--muted);line-height:1.6}
+
+@media(max-width:720px){
+  .sc-row{grid-template-columns:42px 1fr auto 70px 24px;gap:7px;padding:8px 10px}
+  .gnum{font-size:17px}.dgrid{grid-template-columns:1fr 1fr}
+  .hdr-mid h1{font-size:16px}.wbtn{padding:4px 7px;font-size:11px}
+  .podium-grid{grid-template-columns:1fr}
+  .bt-cats{grid-template-columns:1fr}
+  .wp-grid{grid-template-columns:1fr}
+  .tbtn{padding:8px 12px;font-size:12px}
+}
+/* ---- BONUS CARD (7ma subtarjeta) ---- */
+.dprod.btcard{background:linear-gradient(135deg,var(--gold2),#fff);border:1.5px solid var(--gold)}
+.bt-lines{margin:6px 0}
+.bt-line{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--brown);padding:3px 0;border-bottom:1px dotted rgba(200,150,12,.3)}
+.bt-line:last-child{border-bottom:none}
+.bt-line .bt-g{font-weight:800;color:var(--gold3)}
+.bt-empty{font-size:10.5px;color:var(--muted);font-style:italic;margin:6px 0}
+/* ---- SEGUIMIENTO heatmap ---- */
+.seg-controls{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.seg-grp{display:flex;flex-direction:column;gap:6px}
+.seg-grp .sgl{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.seg-btns{display:flex;gap:5px;flex-wrap:wrap}
+.hlegend{display:flex;gap:14px;align-items:center;margin-left:auto;font-size:11px;color:var(--muted)}
+.hleg-item{display:flex;align-items:center;gap:5px}
+.hleg-sw{width:14px;height:14px;border-radius:3px}
+.heat-wrap{overflow-x:auto;border:1.5px solid var(--border);border-radius:var(--r);background:var(--card)}
+table.heat{border-collapse:collapse;width:100%;min-width:760px}
+table.heat th,table.heat td{text-align:center}
+table.heat thead th{background:var(--fg2);color:#fff;font-size:11px;font-weight:700;padding:11px 6px;position:sticky;top:0;letter-spacing:.3px}
+table.heat thead th.rowhead{text-align:left;padding-left:14px;min-width:210px}
+.hrow-total td{padding:14px 6px;font-weight:900;border-bottom:2px solid var(--fg)}
+.hrow-total td.tname{text-align:left;padding-left:14px;background:var(--score);color:var(--gold);font-size:13px;letter-spacing:.5px}
+.hrow-zone{background:var(--fg3);cursor:pointer}
+.hrow-zone td{padding:14px 6px;font-weight:800;color:var(--fg2);border-bottom:1px solid var(--border)}
+.hrow-zone td.zname{text-align:left;padding-left:14px;font-size:13px}
+.hrow-zone .zchev{font-size:10px;color:var(--fg);margin-right:7px;display:inline-block;transition:transform .2s}
+.hrow-zone.col .zchev{transform:rotate(-90deg)}
+.hrow-seller td{border-bottom:1px solid var(--border)}
+.hrow-seller td.sname-c{text-align:left;padding:13px 6px 13px 32px;font-size:12.5px;font-weight:600;color:var(--text)}
+.hcell{padding:14px 6px;font-weight:800;color:#fff !important;position:relative;font-size:13px;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.hcell.z{font-weight:900}
+.hcell .rvo{visibility:hidden;opacity:0;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--score);color:#fff;font-size:10px;font-weight:600;padding:5px 9px;border-radius:6px;white-space:nowrap;z-index:20;margin-bottom:5px;transition:opacity .15s;pointer-events:none;box-shadow:0 3px 10px #0005}
+.hcell .rvo::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--score)}
+.hcell:hover .rvo{visibility:visible;opacity:1}
+.hrow-seller{display:none}
+.hrow-seller.show{display:table-row}
+.seg-tip{font-size:11.5px;color:var(--muted);margin-top:10px;font-style:italic}
+/* ---- SEGUIMIENTO cards mobile ---- */
+.heat-mobile{display:none}
+.hcard{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.hcard-total{border-color:var(--fg);border-width:2px}
+.hc-head{padding:12px 14px;font-weight:800;font-size:14px;color:var(--fg2);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hcard-total .hc-head{background:var(--score);color:var(--gold)}
+.hc-head.zonehead{cursor:pointer;background:var(--fg3)}
+.hc-head.zonehead::after{content:"▾";font-size:12px;color:var(--fg);margin-left:auto;transition:transform .2s}
+.hcard.open .hc-head.zonehead::after{transform:rotate(180deg)}
+.hc-rows{padding:8px 14px 12px}
+.hc-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.hc-row:last-child{border-bottom:none}
+.hc-mk{font-size:12.5px;font-weight:600;color:var(--text)}
+.hc-tot-row .hc-mk{font-weight:800}
+.hc-pct{font-size:12px;font-weight:800;color:#fff !important;padding:3px 9px;border-radius:20px;min-width:48px;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.hc-rvo{font-size:11px;color:var(--muted);min-width:76px;text-align:right}
+.hc-sellers{display:none;margin-top:4px;padding-top:6px;border-top:2px dashed var(--border)}
+.hcard.open .hc-sellers{display:block}
+.hc-seller .hc-mk{font-size:11.5px;color:var(--muted);font-weight:500}
+.hc-vermas{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:9px;background:var(--fg3);border-radius:8px;cursor:pointer;font-size:12px;font-weight:800;color:var(--fg2)}
+.hc-vermas .vm-chv{transition:transform .2s}
+.hcard.open .hc-vermas .vm-chv{transform:rotate(180deg)}
+.hcard.open .hc-vermas .vm-txt::before{content:"Ocultar "}
+.hcard.open .hc-vermas .vm-txt{font-size:0}
+.hcard.open .hc-vermas .vm-txt::before{font-size:12px}
+
+/* ============ MOBILE-FIRST (<=760px) ============ */
+@media(max-width:760px){
+  .hdr-inner{padding:8px 12px;gap:6px}
+  .hdr-mid h1{font-size:15px;letter-spacing:1px}
+  .hdr-mid p{font-size:8px}
+  .btn-actualizar{display:none}
+  .week-sel{width:100%;justify-content:flex-start;overflow-x:auto;padding-bottom:2px}
+  .week-sel>span{display:none}
+  .wbtn{padding:5px 9px;font-size:11px;flex-shrink:0}
+
+  /* barra superior compacta */
+  .score-inner{grid-template-columns:1fr;padding:10px 12px;gap:8px}
+  .score-cell{border:none;background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px}
+  .score-cell:last-child{border:none}
+  .sc-head{margin-bottom:9px;font-size:9.5px}
+
+  /* progreso: 2 stat cards internas */
+  .dual{gap:10px}
+  .dcol{background:rgba(255,255,255,.04);border-radius:10px;padding:10px}
+  .dcol .dval{font-size:23px}
+  .dcol .dsub{font-size:10px}
+
+  /* SEMANA ACTIVA: ya es tira horizontal en el base, solo ajusto tamaños */
+  .sc-wk-big{font-size:20px}
+  .sc-wk-date{font-size:11px}
+
+  /* líderes apilados compactos */
+  .lead-row{grid-template-columns:1fr;gap:8px}
+  .lead{padding:10px 12px;gap:9px}
+  .lead .lmed{font-size:20px}
+  .lead .lname{font-size:15px}
+  .lead .lg{font-size:10px}
+
+  /* pestañas en 2 filas, todas visibles + abreviaturas */
+  .tabs-nav{flex-wrap:wrap;border-bottom:none;gap:6px;overflow:visible}
+  .tbtn{flex:1 1 30%;min-width:0;padding:9px 6px;font-size:11.5px;border:1.5px solid var(--border);border-radius:8px;text-align:center;margin-bottom:0}
+  .tbtn.active{border-color:var(--fg);background:var(--fg3);border-bottom-width:1.5px}
+  .tab-full{display:none}
+  .tab-abbr{display:inline}
+
+  /* ranking compacto */
+  .pills{display:none}
+  .sc-row{grid-template-columns:38px 1fr auto 22px;gap:8px;padding:10px 12px}
+  .gnum{font-size:19px}
+  .dgrid{grid-template-columns:1fr 1fr}
+
+  /* heatmap: cards */
+  .heat-desktop{display:none}
+  .heat-mobile{display:block}
+  .seg-controls{gap:12px}
+  .hlegend{margin-left:0;width:100%;justify-content:flex-start}
+  .rk-header h2{font-size:14px}
+  .filter-row{width:100%;overflow-x:auto;padding-bottom:2px}
+  .fbtn{flex-shrink:0}
+}
+/* ===== Desafío Ferrero (categorías) ===== */
+.dz-aviso{background:var(--red2);border:1.5px solid var(--red);color:#7B1010;border-radius:var(--r);padding:12px 14px;margin-bottom:14px;font-size:13px;font-weight:600}
+.dz-intro{margin:4px 0 16px}
+.dz-intro h2{font-size:26px;font-weight:900;color:var(--fg2);letter-spacing:-.3px;line-height:1.15}
+.dz-intro p{font-size:14px;color:var(--muted);margin-top:4px;max-width:70ch}
+.dz-reglas{background:var(--card);border:1.5px solid var(--border);border-left:5px solid var(--gold);border-radius:var(--r);padding:14px 18px;margin-bottom:22px}
+.dz-reglas h3{font-size:15px;font-weight:800;color:var(--fg2);margin-bottom:6px}
+.dz-reglas ol{padding-left:20px;font-size:13.5px;line-height:1.65;max-width:80ch}
+.dz-reglas li::marker{color:var(--gold3);font-weight:800}
+.dz-h3{font-size:17px;font-weight:800;color:var(--fg2);margin:6px 0 4px}
+.dz-sub{font-size:12.5px;color:var(--muted);margin-bottom:10px}
+section+section{margin-top:22px}
+.dz-podio{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.dz-puesto{background:linear-gradient(160deg,var(--gold2),#fff);border:2px solid var(--gold);border-radius:var(--r);padding:14px;text-align:center}
+.dz-puesto.vacante{background:var(--card);border:2px dashed var(--border)}
+.dz-medalla{font-size:30px;line-height:1}
+.dz-premio{font-size:12.5px;font-weight:700;color:var(--gold3);margin-top:4px}
+.dz-ganador{font-size:17px;font-weight:900;color:var(--brown);margin-top:8px}
+.dz-dato{font-size:11.5px;color:var(--muted);margin-top:3px}
+.dz-tarjeta{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px}
+.dz-tarjeta.compite{border-color:var(--fg)}
+.dz-cabecera{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;width:100%;cursor:pointer}
+.dz-cabecera:focus-visible{outline:2px solid var(--fg);outline-offset:4px;border-radius:6px}
+.dz-pos{width:30px;height:30px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);flex-shrink:0}
+.dz-pos.medalla{background:none;font-size:22px}
+.dz-pos.fuera{color:var(--border)}
+.dz-nombre{font-size:15px;font-weight:800;color:var(--text);flex:1;min-width:0}
+.dz-cuenta{text-align:right;font-size:13px;color:var(--muted);line-height:1.1;white-space:nowrap}
+.dz-cuenta strong{font-size:22px;font-weight:900;color:var(--fg2)}
+.dz-cuenta small{display:block;font-size:10.5px}
+.dz-casilleros{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:5px;margin-top:10px}
+.dz-casillero{border-radius:7px;padding:6px 4px;text-align:center;border:1.5px solid transparent;line-height:1.2}
+.dz-casillero .dz-cn{display:block;font-size:10.5px;font-weight:600;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dz-casillero .dz-cp{display:block;font-size:13px;font-weight:800}
+.dz-casillero.ok{background:#2E7D32;color:#fff}
+.dz-casillero.cerca{background:#FFF4D1;color:#7A5500;border-color:#F9A825}
+.dz-casillero.lejos{background:#FDECEC;color:#8E1B1B;border-color:#F3B4B4}
+.dz-casillero.sinobj{background:var(--bg);color:var(--muted)}
+.dz-total{font-size:12px;color:var(--muted);margin-top:8px}
+.dz-total strong{color:var(--text)}
+.dz-detalle{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+.dz-tarjeta.abierta .dz-detalle{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 18px}
+.dz-fila-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+.dz-fila-cat{font-weight:700;color:var(--text)}
+.dz-barra{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:4px 0}
+.dz-relleno{height:100%;border-radius:3px}
+.dz-relleno.ok{background:#2E7D32}.dz-relleno.cerca{background:#F9A825}.dz-relleno.lejos{background:#C62828}
+.dz-fila-pie{font-size:11.5px;color:var(--muted)}
+@media(max-width:760px){
+  .dz-podio{grid-template-columns:1fr}
+  .dz-intro h2{font-size:21px}
+  .dz-casilleros{grid-template-columns:repeat(3,1fr)}
+}
+
+/* ===== Reglas replegables, condición de pago y vista empresa ===== */
+details.dz-reglas{padding:0}
+details.dz-reglas>summary{cursor:pointer;list-style:none;padding:13px 18px;font-size:15px;font-weight:800;color:var(--fg2);display:flex;align-items:center;gap:8px}
+details.dz-reglas>summary::-webkit-details-marker{display:none}
+details.dz-reglas>summary::after{content:"▾";margin-left:auto;color:var(--muted);transition:transform .2s}
+details.dz-reglas[open]>summary::after{transform:rotate(180deg)}
+details.dz-reglas>summary:focus-visible{outline:2px solid var(--fg);outline-offset:-2px;border-radius:6px}
+details.dz-reglas ol{padding:0 18px 14px 38px}
+.tabs-nav{margin-bottom:4px}
+.dz-condicion{border-radius:var(--r);padding:11px 14px;font-size:13px;line-height:1.5;margin-bottom:16px}
+.dz-condicion.pendiente{background:var(--gold2);border:1.5px solid var(--gold);color:var(--gold3)}
+.dz-condicion.ok{background:var(--fg3);border:1.5px solid var(--fg);color:var(--fg2)}
+.dz-empresa{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:900px){.dz-empresa{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.dz-empresa{grid-template-columns:1fr}}
+.dz-ecat{background:var(--card);border:1.5px solid var(--border);border-top:4px solid #C62828;border-radius:var(--r);padding:12px 14px}
+.dz-ecat.cerca{border-top-color:#F9A825}.dz-ecat.ok{border-top-color:#2E7D32}.dz-ecat.sinobj{border-top-color:var(--border)}
+.dz-ecat-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dz-ecat-n{font-size:14px;font-weight:800;color:var(--text)}
+.dz-ecat-p{font-size:20px;font-weight:900;color:var(--fg2);white-space:nowrap}
+.dz-ecat.lejos .dz-ecat-p{color:#C62828}.dz-ecat.cerca .dz-ecat-p{color:#7A5500}
+.dz-zcount{font-size:11px;font-weight:600;color:var(--muted);margin-left:6px}
+.hrow-zone:focus-visible{outline:2px solid var(--fg);outline-offset:-2px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ===== Tema Paladini ===== */
+:root{--fg:#C1121F;--fg2:#780000;--fg3:#FDE8E8;--cel:#F0C75E;--brown:#780000;--brown3:#FDE8E8}
+.flag{background:linear-gradient(90deg,#C1121F 0%,#780000 50%,#C1121F 100%)}
+header{background:linear-gradient(135deg,#E63329 0%,#C1121F 100%)}
+.logo-img{height:52px;filter:none;background:#fff;border-radius:8px;padding:6px 12px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.hdr-mid p{color:#F0C75E}
+.dz-clientes{grid-column:1/-1;margin-top:4px;padding-top:10px;border-top:1px dashed var(--border)}
+.dz-clientes-t{font-size:12.5px;font-weight:800;color:var(--fg2);margin-bottom:6px}
+.dz-chip{display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:2px 9px;margin:2px 4px 2px 0;font-size:11.5px;color:var(--text)}
+.dz-ver{color:var(--fg);font-weight:700;cursor:pointer}
+.dz-mult{display:inline-block;background:#F0C75E;color:#5A3D00;border-radius:4px;padding:0 4px;font-size:10px;font-weight:800;margin-left:2px;line-height:1.5}
+.dz-casillero .dz-cp{white-space:nowrap}
+.dz-casillero.sinobj .dz-cp{font-size:11px;font-weight:600}
+.dz-cuenta strong{font-size:21px}
+.dz-ecat.sinobj .dz-ecat-p{font-size:13px;font-weight:700;color:var(--muted)}
+
+</style>
+</head>
+<body>
+<div class="flag"></div>
+<header>
+<div class="hdr-inner">
+<img alt="Paladini" class="logo-img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFsAAABHCAYAAABoIjt5AAAOkUlEQVR4AeybS2xVxxnHBwdMeARDWcRdIENDE1Vd2F5kA2kMTVQgSgqEVuqqBqpm0RfQRaWqUn2tSq3URXEatYtWDaarSm0KaqLykFpMEuiChe1FFCUNwRGVaqS2cYkDwSa4/9/c+x3PPfd17vW5D1Os+e7Mmfnmm5n/fI85D7e5Rfg3Nze3X7RxsU19UYEtgLeJRgTyMdEVlTOitSovirQowBagG0XDQvScqG9i+oYynwb0O6G2jPKWTy0NtkBcKwLIK0KyH5D3Xxhzm/74F0/Dl6+q2nXoZ0B8gL5f5ZZNLQu2wAO4CSE3MDUz6zLjb7neV151x7MAO4A/IOB7XznvRib/LTbXpZ9j6jcm2qZyy6W2VpsRQInGNC/8cgfaiyYPjr/tAF31eWnsP9fd9rMXPbEBauwWnZOMEVFLBdGWARtgRCcBStR98uqkdxVobzGQxZOX0G42BTeT4+8TA0F0WHJbIog2HWyAEJlf3g1oaOrec5e8qxBgVSXcDKBn5HZyoPdLAP686SeXpoItkA8DhGgAF4BWAjSAq67mBMiDcjv4eNyQBPkgqhzQiQUqNj41BWyBzHmZ4HdUwHRkpIVoI1qZJgRsIG4I2bkNBHSCKKA3PIg2FGyBzHl5RIByXu4aevNd75cHpYWqq1sCdCwGIqBqIE4uFkR7dN2QlDrYxWYtkDkvD6mN83KfBb8jl94oesIQX10S2s1REXfFBmgQguio5teQIFp3sLUQ88uHWCzaVWvwEzipJNwV/jwj9yU3hswoiHJRL6ob2AJ5j8j7ZWlRB9oE0ABer8VUIxeQB+W+8OdhEGXOoj3VyErKmzrYmmiPCL98Qgvqykh7WBDalHRSjeTTHF0siOLPT7AGUar+PDWwNTH8Mg+LRgVWX6OCn8ZKJcn6/F0o1pcLoqn781TAFtDclOAy+psV/FJBXEJwc7Egmpo/XxDYAtn88oAm2YFWNDv4Ca9UEm4vCKKczwe0Xs7nNfvzmsDWoNyUeL8s8+tqteCXCtoSgj8fzA+ioT+v+iFXVWALZG5K8MvnNJG+TB2CX88n1rhtnesj2rOh02W6H6lIhz/zqaiP9V/bvkyQLTxprfEgij/nIVdVz1vakkxFIBP88Ms8+uw3kAe160n6w7Nx9UoPxv6HNnjghrf2uJEdW9zYM31u7qvPRDT6dJ8794UtEZ3Y/qgb6H64Ih199LNRH+v//ld2RnKnVGY8yDbPNoX5JSFZcTyI8qaI5+d7kvSvCLaA3i9BgDyg82gHxzhAZrdVX5AA1bTxpIBicYB55dknPBjHBDLg9Qv0vgfXu+51awpk1KOiQ1rOeBDjQ7YpzG9i35N+84e0aWYlpeah+KQXGecd7lMbkNi1lARbINt5+ZiEdxH8OI9KeN4c0A40BWDRHkA1bdwtF8Di8jpUe9Eg/q5VKxxzPSR3ZFbCJmB5WCEWiSKF04kFUVwLWs4dc8gWlYuCLaDR5lEB28fpAqAFuO+ETwVc01i0Ay0BWLTHM91FP1geVohFokhYgIFPTMDCsXQsXvcWnFqOCj/eEhW8sCgAW4zDEnDssB4SIYBzM26BAdBcfCrgogV3EaaJl4IFGPjEBDQftwPwR+YxQ8sLAM8DG6B199QPyOev/csZwLgFBrgbNTcxyiUY0XzcDloP8Cgm7lbEu1COx1HPCGwBjevox02wY2jwPYAjnBIVDHjww+2oU7dw5dGyis55sFWBf4kqfcu9n7QQOCR8/Q2QB1tSARrnrqJzM6dOu5vHjhfQ7VFOgJ6l4Gf2tdfz+LkuYFIFMkw246iqbLozOZknl77FOsxNTxfwwct4tBXrQ92t378U9WMs6uAP65FBvRHXyDYK+1kdufEr5x7FtQl1tDo6lM+cPuM+/MlP3UcCO04fHPquu/6155wJlxCfGHz6Bz/M63PjhV/6tvCHRSDD5N46fTZsLlq+fvC5PLn0/fjv7xTwMh5tcWK8qae+6AFl/LDjrT+85G688ItI/p3Ja74ZoMN68PANuZ/bY+NRH8azfvBxbZRjJ+sH5zaVtokirb7zz0ldlk4sFGBDjmKg3ZFGQiHfx+9cDi8rlmdfv+DiANHp9vg4WR7Fx8pr1AUAAHwob+6DabVUTshGCStxhrKL8O4B7EirizC4+z692VPYBuAAYXWlXEbIY7zV5DOvXYjYl6xeHZVvnToTlYsV4F3a2+PIw3bmjdaGdUnLN188npS1FF8PYHvnXYpj5be+4db85lfuged/lsfCxKkgD3e0fddOqj3NjhZqoG9I+IN7MtZlj221oouPGTXkCvdtfsjPd+2f/+RWfuebudps9pF8dDjfbG3l36TaXUaSB7unDEPUhKZEF0Hhlny8XWIF7Y9tsUuHxteyMAQAKAukDK04yDN8SllKajXLv7TP3X9gvu/c9LSr1p1lR3Rugdq9Ec2O/LUJLZYDXLF6goXVL+3udvFNCduNL0kegtnW2emgULursZplPdxfzI8aWsx8beUSm5/Ed5eQ1AXYJdqy1UTl6we/7uJBse2Tnf5UggZmOZ1r/9xW7yfRcKsL/a7VJclnFByNb2kOrGXyw1ZXavOtPcyZa3hdbbn9qXnXuBDtrgg2JgeFE0TL2nfucKH20W5aHWpgLVqEBoWbuKw3q5kGOmPhnpJaTaUTFvLK0XKtlTXDw9xmdfSjXC0BNi9qE/cD0NU//pHnj5vy+49/3kEcszyDfphcCJyqKqY4iJxfkcsZP+w8oxup8LpUOQ5OaHml+sTrw5hRiwJJ3hRgv6dCyUQ0f+DnRx209tTLPsoT7dGspKYct4CSg+UaZoIjX66qaBbflGJMHPXCzec4iMIU4y1XhyXXskmBzHHALn0PLs77Nm92mC+0ZNUq1WRTkoVmOXX7H/hfqyNHQ9BYIwMl6SZiMVgOskJibiaTmBO2te/a4cJ1hG2Vyiu/nX+MrMQfa58A7LzHgDGGkpdx7cO1rHv1r84o1B5AwRJKCgsa4lbAud1kkmNpAXtB3Ajb4mU0c8VBHm7GW5Jdo3DhupL1irhG2pYsWcK/VlTlt+keal8x08TVwGcUB9Hqwxww4ptowdH4sDQrk1vciB/vaAuJTcMVltNq1hH2KVZeEZzZrd2Cp12TsxbygEbQbK6f5wdi5xAIoa3sJvUhoaX3f3mfgwda8+KvC0xzue4kaTNiIUzKruM5Y3GKAVxrow5fGY7NfKydfKnuFmnnxgV+6oywAgBeq1iz6vvfK5hjuFbWYAoS1iOLeTMGxPjIpR6iX1vngzS55bt2OOpoZ1xfmf0ZkVJ7N+JU4BGr126EMXGIxWd5838BjnYjGyzkYuLWTo4s+CgXI9rpD7jWbnXUh2Ttllsb/FZHzt0j6ymlzbTBBzFfkxPW08a8rY0cudRDYT+bO+2xMb0ym2Yj4wA/kF70kt2jZAgU5QowRKtx1dk3NXBLuwmUB9778KbbfvZv/t8veOkbdILtHpVBwL8cP3fJLfnty+745X/AOaWfSIlDzcadDHetWjHEy0u+k+C7CF7+8lVnZvwtp5fB6nsvGQJTM7Nu+PJVx8c663532vHZx39nZx0vfge6Hwbo7VJi757pkwc2FWo8ovyAmN3Es0+4TPcjHuTB8bf9V0CAj3AG+X/Uer6fyUjxtp256ABYb9GlxVcdnzLwLQ3f0ejFrwGddw9TALaA9hquvLejfdmIB33fkw5NV53/R1A0nkEAHgL8oTffdUwEnruFUCZcg4GLe9h+9qIblOKdv+b/X96DzCcfeIPctzS4414pbR7QYFIUbBpgFm1Xea9cywSv5tm5bZ3rVTWfmBDgH7n0hnz9Re+vcDtsQEYawAa0uvvBHTBPrJU5m9aiSLiGwQBcWzmajNVj/XzyoXrcxX4wE1FWVX4qCbaxqeNJ0SZdZ7RzU5gJ3/XFv3tTe5QAlw1gkmgC4KMV5CzENsKsgYWyaZGAlAvIN8pIASDmAeEKIOaJtQ7mgGUDSk0DK8/5ZSfrx2VkwEhU9t1ZRbBtQAkaVBnQh3dv6HSYDV98ssOqT5TYBMzPNsKsgYWiRWyIEUDUSnFZyDcCTIh5QOVAjS8KqwZkrLxr1Qqah/SzKYeNiuVTYrARI6FTIo4yvboe4YtPzAhz0nWqCSBqpbStBCvGhWLVCn6sE78MyEeEB5pNXUWqCmyTpgHGRN6fy4wm4kHU+BZ7jtXGgh9Bj+McVNQvl1tzTWCbQAEe+XOZ1RTmhQZgbsazGHNAxlqx2lzwQ3sJfpwy0OqalrUgsG1EgW7+fEhB1P+HQaUgan1bLS8W/DRHXEbZ4Ceeiikp2BUFCXD8OTdEBNGRWoNoxYHqxIA1xoIf/6iFJg+ytjSGTQ1sm4wmNiHCn0MT9QyiNuZC8hLBD5APaB1V++Vyc0kdbBtME+VpF1p+WEF0qtWCKH45FvwAdq/mTfAjENpSUsvrBrbNUJPnWS6gDymIumYHUUAuEvwOa574Zf8o1Oaedl53sJmwFpLnz5sVRAl+nDCwMlkbU+O7aUBGIbiuKzUEbFuBQM/z5xZEMWc0zvjSzgl+/JcXVpUDGQ0G5NSCX5I5NxRsm5BAN3/Oq+4pzrJoHOadJuj8fxDnfu78cGEanzMyPhnfjI9WVeNSU8C25Ql0zq748wwah3lz/MLcjaeWnBMG1sI/YeGyJANguSkBaABXVeNTU8FmuQIcf243RSfRQMwd0DF/eJISVoF1jD39uMNa1I87v0RP5MRb99R0sG2FAh1/vlfXnM/HeOCD+eMG0FTVl01YA64I68BKxMxNiffLKrdEahmwDQ2Bjj/nqaL357gBHufiFtBc47Mc7Y8FP9wEIHNTgmYba9PzpoFdaeUCPfLn8OIW0FzcBKADMlqP9uN6xMONCD4ZwkerqrVSy4INTAI8z5/jHnAT/ActIKP14kN7CX7cYqPVqmrN1NJgG2QCPfTnBigg200JVmDsLZsvCrANPYGOPyeA4s/R5IbelNg8as3/BwAA///A9kcZAAAABklEQVQDAGlHUoDgrPRUAAAAAElFTkSuQmCC"/>
+<div class="hdr-mid">
+<h1>DESAFÍO PALADINI</h1>
+<p id="hdrPeriodo">Cedisur y Paladini</p>
+</div>
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0">
+  <span id="last-updated" style="font-size:10px;color:rgba(255,255,255,.6);white-space:nowrap"></span>
+  <button class="btn-actualizar" onclick="fetchSheets()" title="Actualizar datos" style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">🔄 Actualizar</button>
+</div>
+</div>
+</header>
+
+<div class="main">
+<div id="avisoConfig" class="dz-aviso" hidden></div>
+
+<section class="dz-intro">
+  <h2 id="titulo">Desafío Paladini</h2>
+  <p id="bajada">Cada vendedor tiene un objetivo propio en kilos por categoría y en clientes con compra.</p>
+</section>
+
+<details class="dz-reglas">
+  <summary>Cómo se gana</summary>
+  <ol id="reglas"></ol>
+</details>
+
+<nav class="tabs-nav" role="tablist">
+  <button class="tbtn active" role="tab" aria-selected="true" onclick="verTab('ranking',this)">🏆 Ranking</button>
+  <button class="tbtn" role="tab" aria-selected="false" onclick="verTab('empresa',this)">🏢 Cedisur y zonas</button>
+</nav>
+
+<div class="tab-panel active" id="tab-ranking">
+<div class="dz-condicion" id="condicionPremio" hidden></div>
+<section aria-labelledby="hPodio">
+  <h3 class="dz-h3" id="hPodio">Premios</h3>
+  <div class="dz-podio" id="podio"></div>
+</section>
+<section aria-labelledby="hCompiten">
+  <h3 class="dz-h3" id="hCompiten">Compiten por el premio</h3>
+  <p class="dz-sub" id="subCompiten"></p>
+  <div id="listaCompiten"></div>
+</section>
+<section aria-labelledby="hNoCompiten">
+  <h3 class="dz-h3" id="hNoCompiten">Todavía no acceden al premio</h3>
+  <p class="dz-sub" id="subNoCompiten"></p>
+  <div id="listaNoCompiten"></div>
+</section>
+</div>
+
+<div class="tab-panel" id="tab-empresa">
+<section aria-labelledby="hEmpresa">
+  <h3 class="dz-h3" id="hEmpresa">Cedisur</h3>
+  <p class="dz-sub" id="subEmpresa"></p>
+  <div class="dz-empresa" id="empresaCats"></div>
+</section>
+<section aria-labelledby="hZonas">
+  <h3 class="dz-h3" id="hZonas">Zonas</h3>
+  <p class="dz-sub">% de cumplimiento del objetivo. Tocá una zona para ver a sus vendedores.</p>
+  <div class="heat-wrap heat-desktop"><table class="heat" id="tablaZonas"></table></div>
+  <div class="heat-mobile" id="cardsZonas"></div>
+</section>
+</div>
+</div>
+
+<script>
+// ── Google Sheets "Dataset Paladini" (CSV publicado). Pegá la URL de cada pestaña ──
+// Archivo → Compartir → Publicar en la web → elegir la pestaña → CSV → copiar el enlace.
+const URLS = {
+  CONFIG:     "https://docs.google.com/spreadsheets/d/e/2PACX-1vRmFeBCtqZ-uHA-t3lEHG2FOBEopNKooQLZaQwTRgqLk-oMSmbyYZxQiTV7v4uQAdUYgkun92633KM8/pub?gid=1467769265&single=true&output=csv",
+  CATEGORIAS: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRmFeBCtqZ-uHA-t3lEHG2FOBEopNKooQLZaQwTRgqLk-oMSmbyYZxQiTV7v4uQAdUYgkun92633KM8/pub?gid=497517975&single=true&output=csv",
+  OBJETIVOS:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRmFeBCtqZ-uHA-t3lEHG2FOBEopNKooQLZaQwTRgqLk-oMSmbyYZxQiTV7v4uQAdUYgkun92633KM8/pub?gid=1021129201&single=true&output=csv",
+  VENTAS:     "https://docs.google.com/spreadsheets/d/e/2PACX-1vRmFeBCtqZ-uHA-t3lEHG2FOBEopNKooQLZaQwTRgqLk-oMSmbyYZxQiTV7v4uQAdUYgkun92633KM8/pub?gid=1744842024&single=true&output=csv",
+  CLIENTES:   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRmFeBCtqZ-uHA-t3lEHG2FOBEopNKooQLZaQwTRgqLk-oMSmbyYZxQiTV7v4uQAdUYgkun92633KM8/pub?gid=1628422106&single=true&output=csv",
+};
+
+let CFG = {}, CATS = [], OBJ = [], REAL = {}, CLIENTES = {}, ABIERTA = null, ZONAS_ABIERTAS = {};
+
+// Zona por vendedor si PAL_OBJETIVOS no trae columna ZONA (la columna del Sheets tiene prioridad)
+const ZONA_DEFECTO = {
+  "CHIESA LEONARDO":"ATLANTICA","MADRID GUILLERMO":"ATLANTICA","VELAZQUEZ LUIS":"ATLANTICA",
+  "ALDERETE GUILLERMO":"CORDILLERA NORTE","LEZANA HUGO":"CORDILLERA NORTE","ULLOA HORACIO":"CORDILLERA NORTE",
+  "JENSEN JULIAN":"CORDILLERA SUR","CASTILLO ALBERTO":"NEUQUEN","DARIO MACAYA":"NEUQUEN","ARENAS SAMUEL":"NEUQUEN",
+  "LOZANO JONATAN":"NEUQUEN","MARTINEZ JOSE":"NEUQUEN","BERTRAN DAVID":"RIO NEGRO","ESCALES MIGUEL":"RIO NEGRO",
+  "FIGUEROA PABLO":"RIO NEGRO","FRAGNUL ALEJANDRO":"RIO NEGRO","ZANGARI PABLO":"RIO NEGRO",
+};
+const ZONA_NOMBRE = {"ATLANTICA":"Atlántica","CORDILLERA NORTE":"Cordillera Norte","CORDILLERA SUR":"Cordillera Sur",
+  "NEUQUEN":"Neuquén","RIO NEGRO":"Río Negro","ACTIVACION COMERCIAL":"Activación Comercial"};
+const MEDALLAS = ["🥇","🥈","🥉"];
+const PREP = new Set(["de","del","la","las","los","y"]);
+const sinTilde = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().trim();
+// Compara nombres de categoría sin importar tildes, mayúsculas, espacios ni tipo de apóstrofe
+const clave = s => sinTilde(s).replace(/[’´‘`]/g,"'").replace(/\s+/g," ");
+const nombreLindo = s => String(s).toLowerCase().split(/\s+/).map((w,i)=> (i>0 && PREP.has(w)) ? w : w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
+const zonaLinda = z => ZONA_NOMBRE[sinTilde(z)] || nombreLindo(z);
+const fmtPct = p => Math.max(0, Math.floor(p*100 + 1e-9)) + "%";                         // trunca: 99,96% se muestra 99%
+const fmtSobre = x => (x>0 ? "+" : "") + (x*100).toFixed(1).replace(".",",") + "%";
+const fmtNum = n => Math.round(n).toLocaleString("es-AR");
+const fmtVal = (n, unidad) => fmtNum(n) + (unidad==="kg" ? " kg" : "");
+const fmtMult = m => String(m).replace(".",",");
+const heat = p => p>=1 ? "ok" : (p>=0.8 ? "cerca" : "lejos");
+const heatBg = p => p==null ? "#9E9E9E" : (p>=1 ? "#2E7D32" : (p>=0.8 ? "#F9A825" : "#C62828"));
+const alcanceCond = c => (c.todasKg && c.items.length>1) ? `en cada una de las ${c.items.length} categorías de kilos` : `de ${listaY(c.items.map(x=>x.nombre.toLowerCase()))}`;
+const listaY = arr => arr.length<2 ? arr.join("") : arr.slice(0,-1).join(", ")+" y "+arr[arr.length-1];
+
+// ── CSV ─────────────────────────────────────────────────────────────────────
+function csvRow(row){ const res=[];let cur='';let inQ=false;
+  for(let i=0;i<row.length;i++){ const c=row[i];
+    if(c==='"'){ if(inQ && row[i+1]==='"'){cur+='"';i++;} else inQ=!inQ; }
+    else if(c===','&&!inQ){res.push(cur);cur='';} else cur+=c; }
+  res.push(cur); return res; }
+const filasCsv = t => t.replace(/\r/g,"").trim().split("\n").filter(r=>r.trim()).map(csvRow);
+function numCol(v){
+  let s=(v==null?'':String(v)).trim(); if(!s) return 0;
+  s=s.replace(/[^0-9.,-]/g,'');           // saca $, %, "x" y texto ("POR DEFINIR" → vacío)
+  if(!s || s==='-') return 0;
+  const hasDot=s.indexOf('.')>=0, hasComma=s.indexOf(',')>=0;
+  if(hasDot&&hasComma){ s = s.lastIndexOf(',')>s.lastIndexOf('.') ? s.replace(/\./g,'').replace(',','.') : s.replace(/,/g,''); }
+  else if(hasComma){ const p=s.split(','); s = (p.length===2 && p[1].length<=2) ? s.replace(',','.') : s.replace(/,/g,''); }
+  else if(hasDot){ const p=s.split('.'); if(p.length>2 || (p.length===2 && p[1].length===3)) s=s.replace(/\./g,''); }
+  const n=parseFloat(s); return isNaN(n)?0:n;
+}
+const indice = (h, nombre) => h.findIndex(x=> sinTilde(x)===nombre);
+
+// ── Carga ───────────────────────────────────────────────────────────────────
+async function fetchSheets(){
+  const aviso=document.getElementById("avisoConfig"), btn=document.querySelector('.btn-actualizar');
+  const faltan = Object.entries(URLS).filter(([,u])=>!/^https:\/\//.test(u)).map(([k])=>"PAL_"+k);
+  if(faltan.length){ aviso.hidden=false; aviso.textContent="Falta configurar la URL de: "+faltan.join(", ")+". Editá la constante URLS al principio del script."; return; }
+  if(btn){btn.disabled=true;btn.textContent='Cargando...';}
+  try{
+    const rs = await Promise.all(Object.values(URLS).map(u=>fetch(u)));
+    if(rs.some(r=>!r.ok)) throw new Error("No se pudo leer alguna pestaña del Sheets (¿está publicada?).");
+    const [tC,tCat,tO,tV,tCl] = await Promise.all(rs.map(r=>r.text()));
+
+    CFG={}; filasCsv(tC).slice(1).forEach(r=>{ const k=(r[0]||"").trim().toUpperCase(); if(k) CFG[k]=(r[1]||"").trim(); });
+
+    // Categorías: nombre, abreviatura, unidad, multiplicador y si es obligatoria para acceder al premio
+    const fc=filasCsv(tCat), hc=fc[0], ix=n=>indice(hc,n);
+    CATS = fc.slice(1).filter(r=>(r[ix("CATEGORIA")]||"").trim()).map(r=>{
+      const nombre=r[ix("CATEGORIA")].trim(), mRaw=(r[ix("MULTIPLICADOR")]||"").trim();
+      return { nombre, clave:clave(nombre), corto:(r[ix("CORTO")]||"").trim()||nombre,
+        unidad: /^CLIENTE/.test(clave(r[ix("UNIDAD")]||"")) ? "clientes" : "kg",
+        mult: mRaw==="" ? 1 : numCol(mRaw),
+        oblig: /^(SI|S|1|X|TRUE|VERDADERO)$/.test(clave(r[ix("OBLIGATORIA")]||"")) };
+    });
+
+    const fo=filasCsv(tO), h=fo[0], iZ=indice(h,"ZONA");
+    const colDe = c => h.findIndex(x=>clave(x)===c.clave);
+    OBJ = fo.slice(1).filter(r=>(r[0]||"").trim() && sinTilde(r[0])!=="TOTAL").map(r=>{
+      const vend=sinTilde(r[0]), obj={};
+      CATS.forEach(c=>{ const i=colDe(c); obj[c.clave] = i>=0 ? numCol(r[i]) : 0; });
+      return {vend, zona: sinTilde((iZ>=0 && r[iZ]) || ZONA_DEFECTO[vend] || "SIN ZONA"), obj};
+    });
+
+    REAL={};
+    filasCsv(tV).slice(1).forEach(r=>{ const v=sinTilde(r[0]), c=clave(r[1]); if(!v||!c) return;
+      if(!REAL[v]) REAL[v]={}; REAL[v][c]=(REAL[v][c]||0)+numCol(r[2]); });
+
+    CLIENTES={};
+    const minSkus = numCol(CFG.CCC_MIN_SKUS) || 2;
+    const fcl=filasCsv(tCl), hcl=fcl[0], iN=indice(hcl,"NOMBRE_CLIENTE"), iK=indice(hcl,"CODIGO_CLIENTE"), iS=indice(hcl,"SKUS_DISTINTOS");
+    fcl.slice(1).forEach(r=>{ const v=sinTilde(r[0]); if(!v || numCol(r[iS])<minSkus) return;
+      if(!CLIENTES[v]) CLIENTES[v]=[]; CLIENTES[v].push((r[iN]||"").trim() || (r[iK]||"").trim()); });
+    Object.keys(CLIENTES).forEach(v=>CLIENTES[v].sort((a,b)=>a.localeCompare(b,'es')));
+
+    aviso.hidden=true;
+    document.getElementById('last-updated').textContent='Actualizado: '+new Date().toLocaleString('es-AR');
+    render();
+  }catch(e){ console.error(e); aviso.hidden=false; aviso.textContent=e.message; }
+  finally{ if(btn){btn.disabled=false;btn.textContent='🔄 Actualizar';} }
+}
+
+// ── Cálculo ─────────────────────────────────────────────────────────────────
+function calcular(){
+  // % del objetivo que hay que alcanzar en cada categoría obligatoria (0 = alcanza con haber vendido algo)
+  const minObl = (CFG.OBLIGATORIAS_PCT===undefined || CFG.OBLIGATORIAS_PCT==="") ? 1 : numCol(CFG.OBLIGATORIAS_PCT)/100;
+  const condTokens = String(CFG.CONDICION_EMPRESA_VARIABLE||"").split(/[,;]/).map(clave).filter(Boolean);
+  const condPct = (numCol(CFG.CONDICION_EMPRESA_PCT)||100)/100;
+  const suma = (arr, f) => arr.reduce((a,x)=>a+f(x),0);
+
+  const filas = OBJ.map(o=>{
+    const real = REAL[o.vend]||{};
+    const vars = CATS.map(c=>{
+      const obj=o.obj[c.clave]||0, val=real[c.clave]||0, pct = obj>0 ? val/obj : null;
+      const sobre = pct===null ? null : Math.max(0, pct-1);       // lo que pasás del objetivo (nunca resta)
+      return {...c, obj, real:val, pct, sobre, pond: sobre===null ? null : sobre*c.mult};
+    });
+    const def = vars.filter(x=>x.pct!==null);
+    const score = def.length ? suma(def, x=>x.pond)/def.length : 0;    // promedio del sobrecumplimiento de las variables
+    const faltanOblig = vars.filter(x=> x.oblig && !(x.real>0 && (x.obj<=0 || x.pct>=minObl)));
+    const kgs = vars.filter(x=>x.unidad==="kg");
+    const kgObj = suma(kgs,x=>x.obj), kgReal = suma(kgs,x=>x.real);
+    return {vend:o.vend, zona:o.zona, vars, score, nDef:def.length, faltanOblig, compite: faltanOblig.length===0,
+            kgObj, kgReal, kgPct: kgObj>0 ? kgReal/kgObj : 0};
+  });
+  // Primero quienes acceden al premio; después mayor sobrecumplimiento; desempate: % de cumplimiento en kilos totales
+  filas.sort((a,b)=> (b.compite-a.compite) || b.score-a.score || b.kgPct-a.kgPct || a.vend.localeCompare(b.vend));
+
+  // Cedisur y zonas: suman objetivos y reales de sus vendedores. El multiplicador NO se aplica (solo afecta el sobrecumplimiento del vendedor)
+  const agregar = lista => {
+    const vars = CATS.map((c,i)=>{ const con=lista.filter(f=>f.vars[i].obj>0);
+      const obj=suma(con,f=>f.vars[i].obj), real=suma(con,f=>f.vars[i].real);
+      return {...c, obj, real, pct: obj>0 ? real/obj : null}; });
+    const kgObj=suma(lista,f=>f.kgObj), kgReal=suma(lista,f=>f.kgReal);
+    return {vars, vendedores:lista, total:{nombre:"Kilos totales", corto:"Kilos", unidad:"kg", obj:kgObj, real:kgReal, pct: kgObj>0 ? kgReal/kgObj : null}};
+  };
+  const empresa = agregar(filas);
+  const zonas = [...new Set(filas.map(f=>f.zona))].map(z=>({zona:z, ...agregar(filas.filter(f=>f.zona===z))}))
+    .sort((a,b)=> (b.total.pct||0)-(a.total.pct||0) || a.zona.localeCompare(b.zona));
+  // Condición para pagar premios: CATEGORIAS_KG (cada categoría de kilos), KILOS (total) o nombres de categorías
+  let cond = null;
+  if(condTokens.length){
+    const items=[]; let todasKg=false, error=false;
+    condTokens.forEach(t=>{
+      if(/^(CATEGORIAS_KG|CATEGORIAS KG|TODAS_KG|TODAS)$/.test(t)){ todasKg=true; empresa.vars.filter(x=>x.unidad==="kg").forEach(x=>items.push(x)); }
+      else if(/^KILOS( TOTALES| TOTAL)?$|^KILOS_TOTALES$/.test(t)) items.push(empresa.total);
+      else { const x=empresa.vars.find(v=>v.clave===t); if(x) items.push(x); else error=true; }
+    });
+    const exigibles=[...new Set(items)].filter(x=>x.pct!==null);      // sin objetivo cargado no se puede exigir
+    cond = {items:exigibles, todasKg, error: error || !exigibles.length,
+            ok: exigibles.length>0 && exigibles.every(x=>x.pct>=condPct), faltan: exigibles.filter(x=>x.pct<condPct)};
+  }
+  return {filas, minObl, empresa, zonas, condPct, cond};
+}
+
+// ── Render ──────────────────────────────────────────────────────────────────
+function render(){
+  const R = calcular(), {filas, minObl, empresa, zonas, condPct, cond} = R;
+  const obligatorias = CATS.filter(c=>c.oblig), conMult = CATS.filter(c=>c.mult!==1);
+  const kgNombres = CATS.filter(c=>c.unidad==="kg").map(c=>c.nombre), cccCat = CATS.find(c=>c.unidad==="clientes");
+  const nOblig = listaY(obligatorias.map(c=>c.nombre)), pctC = Math.round(condPct*100);
+  const minSkus = numCol(CFG.CCC_MIN_SKUS) || 2;
+  const ini=CFG.FECHA_INICIO||"", fin=CFG.FECHA_FIN||"";
+  document.title = CFG.TITULO || "Desafío Paladini";
+  document.getElementById("titulo").textContent = CFG.TITULO || "Desafío Paladini";
+  document.getElementById("hdrPeriodo").textContent = ini&&fin ? `Del ${ini} al ${fin}` : "Cedisur y Paladini";
+  document.getElementById("bajada").textContent = obligatorias.length
+    ? `Gana quien más supere su objetivo. Para acceder al premio hay que ${minObl>0?"alcanzar el objetivo en":"vender"} ${nOblig}.`
+    : "Gana quien más supere su objetivo.";
+
+  const premios=[CFG.PREMIO_1,CFG.PREMIO_2,CFG.PREMIO_3].map(p=>p||"A definir");
+  document.getElementById("reglas").innerHTML = [
+    `Cada vendedor tiene un objetivo propio en kilos (${listaY(kgNombres.map(n=>n))})${cccCat?` y en ${cccCat.nombre.toLowerCase()}`:""}.`,
+    `No se suman puntos: se mide el <strong>sobrecumplimiento</strong>, es decir cuánto superás tu objetivo en cada variable. Si no lo alcanzás, esa variable cuenta 0 (no resta).`,
+    `Tu sobrecumplimiento total es el <strong>promedio</strong> del sobrecumplimiento de todas las variables.`,
+    conMult.length ? `Hay variables con <strong>multiplicador</strong>: ${listaY(conMult.map(c=>`${c.nombre} (x${fmtMult(c.mult)})`))}. El multiplicador solo afecta el % de sobrecumplimiento, no tu % de cumplimiento ni el de la zona o Cedisur.` : null,
+    obligatorias.length ? `Para acceder al premio hay que ${minObl>0 ? `alcanzar el <strong>${Math.round(minObl*100)}% del objetivo</strong> en` : `<strong>vender</strong>`} ${nOblig} (marcadas con ★).` : null,
+    `Queda primero quien tenga el <strong>mayor sobrecumplimiento</strong>. Si hay empate, gana el mayor % de cumplimiento en kilos totales.`,
+    `Premios para los 3 primeros: ${premios.map((p,i)=>`${i+1}° ${p}`).join(", ")}.`,
+    cond && !cond.error ? `Los premios se pagan <strong>solo si Cedisur alcanza el ${pctC}% del objetivo ${alcanceCond(cond)}</strong>. Podés seguirlo en la pestaña "Cedisur y zonas".` : null,
+    cccCat ? `Un cliente cuenta como "con compra" cuando compró <strong>al menos ${minSkus} SKUs distintos</strong> de Paladini en el período (venta neta positiva).` : null,
+  ].filter(Boolean).map(t=>`<li>${t}</li>`).join("");
+
+  const ce=document.getElementById("condicionPremio");
+  if(!cond){ ce.hidden=true; }
+  else if(cond.error){ ce.hidden=false; ce.className="dz-condicion pendiente"; ce.innerHTML="<strong>Condición de empresa mal configurada.</strong> Revisá CONDICION_EMPRESA_VARIABLE en PAL_CONFIG."; }
+  else if(cond.ok){ ce.hidden=false; ce.className="dz-condicion ok";
+    ce.innerHTML=`<strong>Premios habilitados.</strong> Cedisur alcanzó el ${pctC}% del objetivo ${alcanceCond(cond)}.`; }
+  else { ce.hidden=false; ce.className="dz-condicion pendiente";
+    ce.innerHTML=`<strong>Premios sujetos a que Cedisur alcance el ${pctC}% del objetivo ${alcanceCond(cond)}.</strong> `+
+      `Hoy lleva ${cond.items.length-cond.faltan.length} de ${cond.items.length}. Faltan: ${cond.faltan.map(x=>`${x.nombre} (${fmtPct(x.pct)})`).join(", ")}.`; }
+
+  const compiten=filas.filter(f=>f.compite), noCompiten=filas.filter(f=>!f.compite);
+  const verbo = minObl>0 ? "alcanzaron el objetivo en" : "vendieron";
+  document.getElementById("podio").innerHTML=[0,1,2].map(i=>{ const f=compiten[i];
+    return `<div class="dz-puesto ${f?'':'vacante'}"><div class="dz-medalla" aria-hidden="true">${MEDALLAS[i]}</div>
+      <div class="dz-premio">${i+1}° puesto: ${premios[i]}</div>
+      ${f ? `<div class="dz-ganador">${nombreLindo(f.vend)}</div><div class="dz-dato">${fmtSobre(f.score)} de sobrecumplimiento</div>`
+          : `<div class="dz-dato">Vacante: nadie accede todavía al premio</div>`}</div>`; }).join("");
+  document.getElementById("subCompiten").textContent = compiten.length
+    ? `${compiten.length} vendedor${compiten.length>1?'es':''} que ${verbo} ${nOblig}. Ordenados por sobrecumplimiento.`
+    : (minObl>0 ? `Nadie alcanzó todavía el objetivo en ${nOblig}.` : `Nadie vendió todavía ${nOblig}.`);
+  document.getElementById("subNoCompiten").textContent = `Les falta ${verbo.replace("alcanzaron","alcanzar").replace("vendieron","vender")} ${nOblig}. Ordenados por sobrecumplimiento.`;
+  document.getElementById("hNoCompiten").parentElement.hidden = !noCompiten.length || !obligatorias.length;
+  document.getElementById("listaCompiten").innerHTML = compiten.map((f,i)=>tarjeta(f,i+1,R)).join("");
+  document.getElementById("listaNoCompiten").innerHTML = noCompiten.map(f=>tarjeta(f,null,R)).join("");
+  if(ABIERTA){ const el=document.getElementById(ABIERTA); if(el) el.classList.add("abierta"); }
+  renderEmpresa(R);
+}
+
+function tarjeta(f, pos, R){
+  const id="t_"+f.vend.replace(/[^A-Z]/g,"");
+  const insignia = pos && pos<=3 ? `<span class="dz-pos medalla" aria-label="Puesto ${pos}">${MEDALLAS[pos-1]}</span>`
+                 : pos ? `<span class="dz-pos">${pos}</span>` : `<span class="dz-pos fuera" aria-hidden="true">·</span>`;
+  const casilleros = f.vars.map(x=>{ const est = x.pct==null ? "sinobj" : heat(x.pct);
+    const txt = x.pct==null ? "s/obj" : fmtPct(x.pct);
+    return `<div class="dz-casillero ${est}" title="${x.nombre}${x.pct==null?'':`: ${fmtVal(x.real,x.unidad)} de ${fmtVal(x.obj,x.unidad)}`}">
+      <span class="dz-cn">${x.oblig?"★ ":""}${x.corto}${x.mult!==1?` <b class="dz-mult">x${fmtMult(x.mult)}</b>`:""}</span><span class="dz-cp">${est==="ok"?"✓ ":""}${txt}</span></div>`; }).join("");
+  const detalle = f.vars.map(x=>{ const p=Math.max(0, x.pct||0), falta=x.obj-x.real;
+    const pie = x.pct==null ? "No cuenta: sin objetivo cargado"
+      : (x.sobre>0 ? `${fmtPct(p)} · sobrecumplimiento ${fmtSobre(x.sobre)}${x.mult!==1 ? ` × ${fmtMult(x.mult)} = ${fmtSobre(x.pond)}` : ""}`
+                   : `${fmtPct(p)}, faltan ${fmtVal(falta,x.unidad)}`);
+    return `<div class="dz-fila"><div class="dz-fila-top"><span class="dz-fila-cat">${x.oblig?"★ ":""}${x.nombre}${x.mult!==1?` <b class="dz-mult">x${fmtMult(x.mult)}</b>`:""}</span>
+        <span>${x.pct==null ? "sin objetivo" : `${fmtVal(x.real,x.unidad)} / ${fmtVal(x.obj,x.unidad)}`}</span></div>
+      <div class="dz-barra"><div class="dz-relleno ${heat(p)}" style="width:${Math.min(p,1)*100}%"></div></div>
+      <div class="dz-fila-pie">${pie}</div></div>`; }).join("");
+  const cl = CLIENTES[f.vend]||[], cccCat = CATS.find(c=>c.unidad==="clientes");
+  const bloqueClientes = cccCat ? `<div class="dz-clientes"><div class="dz-clientes-t">${cccCat.nombre} (${cl.length})</div>
+    ${cl.length ? cl.map(n=>`<span class="dz-chip">${n}</span>`).join("") : `<span class="dz-fila-pie">Todavía sin clientes con compra.</span>`}</div>` : "";
+  const faltan = f.faltanOblig.length ? ` · para acceder al premio le falta: ${f.faltanOblig.map(x=>x.nombre).join(", ")}` : "";
+  return `<article class="dz-tarjeta ${f.compite?'compite':''}" id="${id}">
+    <button class="dz-cabecera" onclick="toggle('${id}')" aria-expanded="false" aria-controls="${id}_d">
+      ${insignia}<span class="dz-nombre">${nombreLindo(f.vend)}</span>
+      <span class="dz-cuenta"><strong>${fmtSobre(f.score)}</strong><small>sobrecumplimiento</small></span>
+    </button>
+    <div class="dz-casilleros">${casilleros}</div>
+    <div class="dz-total">Kilos totales ${fmtNum(f.kgReal)} de ${fmtNum(f.kgObj)} kg, <strong>${fmtPct(f.kgPct)}</strong>${faltan} · <span class="dz-ver" onclick="toggle('${id}')">ver detalle y clientes</span></div>
+    <div class="dz-detalle" id="${id}_d">${detalle}${bloqueClientes}</div>
+  </article>`;
+}
+
+function toggle(id){
+  const el=document.getElementById(id); if(!el) return;
+  const abrir=!el.classList.contains("abierta");
+  if(ABIERTA && ABIERTA!==id){ const p=document.getElementById(ABIERTA); if(p){p.classList.remove("abierta"); p.querySelector(".dz-cabecera").setAttribute("aria-expanded","false");} }
+  el.classList.toggle("abierta",abrir); el.querySelector(".dz-cabecera").setAttribute("aria-expanded",String(abrir));
+  ABIERTA = abrir ? id : null;
+}
+function verTab(nombre, btn){
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tabs-nav .tbtn").forEach(b=>{b.classList.remove("active"); b.setAttribute("aria-selected","false");});
+  document.getElementById("tab-"+nombre).classList.add("active"); btn.classList.add("active"); btn.setAttribute("aria-selected","true");
+}
+
+// ── Pestaña Cedisur y zonas ─────────────────────────────────────────────────
+function celda(x, extra){
+  const txt = x.pct==null ? "s/obj" : fmtPct(x.pct);
+  const tip = x.pct==null ? "Sin objetivo" : `Real ${fmtVal(x.real,x.unidad)} / Obj ${fmtVal(x.obj,x.unidad)}`;
+  return `<td class="hcell${extra||""}" style="background:${heatBg(x.pct)}">${txt}<span class="rvo">${tip}</span></td>`;
+}
+const totalDe = f => ({unidad:"kg", obj:f.kgObj, real:f.kgReal, pct: f.kgObj>0 ? f.kgReal/f.kgObj : null});
+function renderEmpresa(R){
+  const {empresa, zonas} = R;
+  const todas = [empresa.total, ...empresa.vars];
+  document.getElementById("subEmpresa").textContent =
+    `Kilos totales: ${fmtNum(empresa.total.real)} de ${fmtNum(empresa.total.obj)} kg (${empresa.total.pct==null?"s/obj":fmtPct(empresa.total.pct)}).`;
+  document.getElementById("empresaCats").innerHTML = todas.map(x=>{
+    const p=Math.max(0, x.pct||0), est=x.pct==null?"sinobj":heat(p), falta=x.obj-x.real;
+    return `<div class="dz-ecat ${est}"><div class="dz-ecat-top"><span class="dz-ecat-n">${x.nombre}</span>
+      <span class="dz-ecat-p">${x.pct==null?"s/obj":(est==="ok"?"✓ ":"")+fmtPct(p)}</span></div>
+      <div class="dz-barra"><div class="dz-relleno ${heat(p)}" style="width:${Math.min(p,1)*100}%"></div></div>
+      <div class="dz-fila-pie">${x.pct==null ? "Sin objetivo cargado" : `${fmtVal(x.real,x.unidad)} de ${fmtVal(x.obj,x.unidad)}${falta>0?`, faltan ${fmtVal(falta,x.unidad)}`:", lograda"}`}</div></div>`;
+  }).join("");
+
+  const cab=`<thead><tr><th class="rowhead">Zona / Vendedor</th>${CATS.map(c=>`<th title="${c.nombre}">${c.corto}</th>`).join("")}<th>Kilos</th></tr></thead>`;
+  let cuerpo=`<tr class="hrow-total"><td class="tname">Total Cedisur</td>${empresa.vars.map(x=>celda(x," z")).join("")}${celda(empresa.total," z")}</tr>`;
+  zonas.forEach(z=>{ const ab=!!ZONAS_ABIERTAS[z.zona];
+    cuerpo+=`<tr class="hrow-zone ${ab?'':'col'}" onclick="toggleZonaTabla('${z.zona}')" tabindex="0" onkeydown="if(event.key==='Enter')toggleZonaTabla('${z.zona}')">
+      <td class="zname"><span class="zchev">&#9660;</span>${zonaLinda(z.zona)}</td>${z.vars.map(x=>celda(x," z")).join("")}${celda(z.total," z")}</tr>`;
+    z.vendedores.forEach(f=>{ cuerpo+=`<tr class="hrow-seller ${ab?'show':''}"><td class="sname-c">${nombreLindo(f.vend)}</td>${f.vars.map(x=>celda(x)).join("")}${celda(totalDe(f))}</tr>`; });
+  });
+  document.getElementById("tablaZonas").innerHTML = cab+`<tbody>${cuerpo}</tbody>`;
+
+  const fila=(nombre,x,cls)=>`<div class="hc-row ${cls||""}"><span class="hc-mk">${nombre}</span>
+    <span class="hc-pct" style="background:${heatBg(x.pct)}">${x.pct==null?"s/obj":fmtPct(x.pct)}</span>
+    <span class="hc-rvo">${x.pct==null?"sin objetivo":`${fmtNum(x.real)} / ${fmtNum(x.obj)}`}</span></div>`;
+  let cards=`<div class="hcard hcard-total"><div class="hc-head">Total Cedisur</div><div class="hc-rows">${fila("Kilos",empresa.total)}${empresa.vars.map(x=>fila(x.corto,x)).join("")}</div></div>`;
+  zonas.forEach(z=>{
+    cards+=`<div class="hcard"><div class="hc-head zonehead" onclick="this.closest('.hcard').classList.toggle('open')">
+      <span>${zonaLinda(z.zona)}</span><span class="hc-pct" style="background:${heatBg(z.total.pct)}">${z.total.pct==null?"s/obj":fmtPct(z.total.pct)}</span></div>
+      <div class="hc-rows">${fila("Kilos",z.total)}${z.vars.map(x=>fila(x.corto,x)).join("")}
+      <div class="hc-vermas" onclick="this.closest('.hcard').classList.toggle('open')"><span class="vm-txt">Ver ${z.vendedores.length} vendedor${z.vendedores.length>1?'es':''}</span><span class="vm-chv">&#9662;</span></div>
+      <div class="hc-sellers">${z.vendedores.map(f=>fila(nombreLindo(f.vend), totalDe(f), "hc-seller")).join("")}</div></div></div>`; });
+  document.getElementById("cardsZonas").innerHTML = cards;
+}
+function toggleZonaTabla(z){ ZONAS_ABIERTAS[z]=!ZONAS_ABIERTAS[z]; render(); }
+
+fetchSheets();
+</script>
+</body>
+</html>

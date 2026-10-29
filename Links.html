@@ -119,7 +119,10 @@ body {
    FUENTE DE DATOS — Google Sheets publicado como CSV
    ------------------------------------------------------------
    Columnas de la planilla (fila 1):
-      nombre , descripcion , vigencia , url , orden , ancho , tema , icono , icono_url
+      nombre , descripcion , vigencia , url , orden , ancho , tema , icono , icono_url , activo
+
+   - activo:     opcional. Si dice "no" (o 0 / false / inactivo) la tarjeta se oculta.
+                 Vacio o "si" = se muestra.
 
    - ancho:      1 (mitad de pantalla) o 2 (ancho completo)
    - tema:       vino | rojo | azul | violeta | verde | gris | blanco | naranja | dorado | frigor
@@ -252,6 +255,9 @@ function render(items) {
   cont.innerHTML = "";
   items.forEach(it => {
     if (!it.nombre) return;
+    /* Columna opcional "activo": si dice no / 0 / false / inactivo, la tarjeta no se muestra */
+    const act = String(it.activo || "").trim().toLowerCase();
+    if (["no", "n", "0", "false", "inactivo", "inactiva"].includes(act)) return;
     const esAncho = String(it.ancho).trim() === "2";
     const tema = resolverTema(it.tema);
     const key = String(it.icono||"").trim().toLowerCase();

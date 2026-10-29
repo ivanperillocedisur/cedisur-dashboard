@@ -122,7 +122,7 @@ body {
       nombre , descripcion , vigencia , url , orden , ancho , tema , icono , icono_url
 
    - ancho:      1 (mitad de pantalla) o 2 (ancho completo)
-   - tema:       vino | rojo | azul | violeta | verde | gris | blanco | naranja | dorado
+   - tema:       vino | rojo | azul | violeta | verde | gris | blanco | naranja | dorado | frigor
    - icono:      estrella | pulso | rayo | lapiz  (si vacio, usa "estrella")
    - icono_url:  opcional, link a logo de marca. Si se completa, pisa al icono.
                  Acepta el link normal de "Compartir" de Google Drive
@@ -138,6 +138,7 @@ const DEMO = [
   { nombre: "Manual de Marca", descripcion: "Lineamientos visuales y plantillas institucionales.", vigencia: "Referencia", url: "#", orden: 5, ancho: 1, tema: "blanco", icono: "lapiz" },
   { nombre: "Conexión McCain", descripcion: "Objetivos del mes: kg, clientes y fotos POP.", vigencia: "Agosto 26", url: "#", orden: 6, ancho: 1, tema: "naranja", icono: "estrella" },
   { nombre: "Mundial Ferrero Rocher", descripcion: "Ranking de ventas por vendedor y marca.", vigencia: "Concurso vigente", url: "#", orden: 7, ancho: 1, tema: "dorado", icono: "estrella" },
+  { nombre: "Frigor", descripcion: "Seguimiento de objetivos de la marca.", vigencia: "Temporada 26-27", url: "#", orden: 8, ancho: 1, tema: "frigor", icono: "rayo" },
 ];
 
 const TEMAS = {
@@ -187,6 +188,20 @@ const TEMAS = {
     flecha_fondo: "rgba(58,36,0,.18)",
     flecha_color: "#3A2400",
     sombra: "0 4px 14px rgba(80,55,0,.25)",
+    borde: "none"
+  },
+  frigor: {
+    fondo: "linear-gradient(135deg, #0A7BA8 0%, #1596C8 100%)",
+    texto_titulo: "#FFFFFF",
+    texto_desc: "rgba(255,255,255,.90)",
+    chip_fondo: "#ED1C24",
+    chip_texto: "#FFFFFF",
+    circulo: "rgba(255,255,255,.15)",
+    icono_fondo: "#FFFFFF",
+    icono_color: "#0A7BA8",
+    flecha_fondo: "#ED1C24",
+    flecha_color: "#FFFFFF",
+    sombra: "0 4px 14px rgba(0,60,90,.28)",
     borde: "none"
   }
 };

@@ -584,6 +584,7 @@ const sinTilde = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,
 const zonaLinda = z => ZONA_NOMBRE[sinTilde(z)] || nombreLindo(z);
 
 const CORTOS = {"kinder bueno + white":"K. Bueno","kinder choco + maxi":"K. Choco","kinder huevo":"K. Huevo","nutella":"Nutella","pralinas":"Pralinas","tic tac":"Tic Tac"};
+const listaY = arr => arr.length<2 ? arr.join("") : arr.slice(0,-1).join(", ")+" y "+arr[arr.length-1];
 const norm = s => String(s||"").toLowerCase().replace(/\s+/g," ").trim();
 const corto = c => CORTOS[norm(c)] || c;
 const fmtKg = n => Math.round(n).toLocaleString("es-AR");
@@ -682,18 +683,27 @@ async function fetchSheets(){
 // ── Cálculo del ranking ─────────────────────────────────────────────────────
 function calcular(){
   const umbral = (numCol(CFG.UMBRAL_CATEGORIA_PCT)||100)/100;
-  const minCat = numCol(CFG.MIN_CATEGORIAS)||4;
+  // Categorías obligatorias para competir (FNOV_CONFIG → CATEGORIAS_OBLIGATORIAS, nombres separados por coma)
+  const escritas = String(CFG.CATEGORIAS_OBLIGATORIAS||"").split(/[,;]/).map(s=>s.trim()).filter(Boolean);
+  const tokens = escritas.map(norm);
+  const oblig = CATEGORIAS.filter(c=>tokens.includes(norm(c)));
+  const noEncontradas = escritas.filter(t=>!CATEGORIAS.some(c=>norm(c)===norm(t)));
+  // Mínimo de categorías logradas en total: si no está cargado, 4 sin obligatorias y 0 con obligatorias
+  const minRaw = String(CFG.MIN_CATEGORIAS===undefined ? "" : CFG.MIN_CATEGORIAS).trim();
+  const minCat = minRaw==="" ? (oblig.length ? 0 : 4) : numCol(minRaw);
   const filas = OBJ.map(o=>{
     const real = VENTA[o.vend] || {};
     const cats = CATEGORIAS.map(c=>{
       const obj=o.obj[c]||0, kg=real[norm(c)]||0;
-      return {c, obj, kg, pct: obj>0 ? kg/obj : null};
+      return {c, obj, kg, pct: obj>0 ? kg/obj : null, oblig: oblig.includes(c)};
     });
     const conObj = cats.filter(x=>x.obj>0);
     const logradas = conObj.filter(x=>x.pct>=umbral).length;
     const realTotal = cats.reduce((a,x)=>a+x.kg,0);
+    // Una categoría obligatoria sin objetivo cargado no se puede exigir
+    const faltanOblig = cats.filter(x=>x.oblig && x.pct!==null && x.pct<umbral);
     return {vend:o.vend, zona:o.zona, cats, logradas, nCats:conObj.length, realTotal, objTotal:o.total,
-            pctTotal: o.total>0 ? realTotal/o.total : 0, compite: logradas>=minCat};
+            pctTotal: o.total>0 ? realTotal/o.total : 0, faltanOblig, compite: faltanOblig.length===0 && logradas>=minCat};
   });
   // Agregado (empresa o zona): suma objetivos y reales de sus vendedores
   const umbralEmp = (numCol(CFG.CONDICION_EMPRESA_PCT)||100)/100;
@@ -710,19 +720,25 @@ function calcular(){
   const empresa = agregar(filas);
   const zonas = [...new Set(filas.map(f=>f.zona))].map(z=>({zona:z, ...agregar(filas.filter(f=>f.zona===z))}))
     .sort((a,b)=> b.pctTotal-a.pctTotal || a.zona.localeCompare(b.zona));
-  // Orden: más categorías logradas; desempate por % sobre el objetivo total en kg
-  filas.sort((a,b)=> b.logradas-a.logradas || b.pctTotal-a.pctTotal || a.vend.localeCompare(b.vend));
-  return {filas, umbral, minCat, empresa, zonas, umbralEmp};
+  // Orden: primero quienes compiten; después menos obligatorias pendientes; más categorías logradas; desempate por % sobre el objetivo total en kg
+  filas.sort((a,b)=> (b.compite-a.compite) || (a.faltanOblig.length-b.faltanOblig.length) || b.logradas-a.logradas || b.pctTotal-a.pctTotal || a.vend.localeCompare(b.vend));
+  return {filas, umbral, minCat, oblig, noEncontradas, empresa, zonas, umbralEmp};
 }
 
 // ── Render ──────────────────────────────────────────────────────────────────
 function render(){
-  const {filas, umbral, minCat, empresa, zonas, umbralEmp} = calcular();
+  const {filas, umbral, minCat, oblig, noEncontradas, empresa, zonas, umbralEmp} = calcular();
   const premiosActivos = empresa.nCats>0 && empresa.logradas===empresa.nCats;
   const pctE = Math.round(umbralEmp*100);
   const pctU = Math.round(umbral*100);
   const n = CATEGORIAS.length;
   const ini = CFG.FECHA_INICIO||"", fin = CFG.FECHA_FIN||"";
+  const nOblig = listaY(oblig);            // "A, B, C y D"
+  const reqTxt = oblig.length ? `llegar al ${pctU}% en ${nOblig}` : `lograr al menos ${minCat} categorías`;
+  if(noEncontradas.length){               // nombre mal escrito en CATEGORIAS_OBLIGATORIAS
+    const av=document.getElementById("avisoConfig"); av.hidden=false;
+    av.textContent = `CATEGORIAS_OBLIGATORIAS: no encuentro ${noEncontradas.length>1?"las categorías":"la categoría"} «${noEncontradas.join("», «")}». El nombre tiene que ser igual al encabezado de la columna en FNOV_OBJETIVOS.`;
+  }
 
   document.title = CFG.TITULO || "Desafío Ferrero";
   document.getElementById("titulo").textContent = CFG.TITULO || "Desafío Ferrero";
@@ -733,8 +749,10 @@ function render(){
   const premios = [CFG.PREMIO_1, CFG.PREMIO_2, CFG.PREMIO_3].map(p=>p||"A definir");
   document.getElementById("reglas").innerHTML = [
     `Una categoría está lograda cuando llegás al <strong>${pctU}%</strong> de tu objetivo en kilos.`,
-    `Compiten por el premio quienes logren <strong>al menos ${minCat} de las ${n} categorías</strong>.`,
-    `Queda primero quien tenga <strong>más categorías logradas</strong>, sin importar por cuánto las superó.`,
+    oblig.length
+      ? `Para competir por el premio hay que <strong>llegar al ${pctU}% en ${nOblig}</strong> (marcadas con ★)${minCat>oblig.length ? ` y lograr en total <strong>al menos ${minCat} de las ${n} categorías</strong>` : ""}.`
+      : `Compiten por el premio quienes logren <strong>al menos ${minCat} de las ${n} categorías</strong>.`,
+    `${oblig.length ? "Entre quienes compiten, queda" : "Queda"} primero quien tenga <strong>más categorías logradas</strong> (de las ${n}), sin importar por cuánto las superó.`,
     `Si hay empate, gana quien tenga el <strong>mayor % de cumplimiento sobre su objetivo total en kilos</strong>.`,
     `Premios para los 3 primeros: ${premios.map((p,i)=>`${i+1}° ${p}`).join(", ")}.`,
     `Los premios se pagan <strong>solo si Cedisur alcanza el ${pctE}% del objetivo en kilos en cada una de las ${n} categorías</strong>. Podés seguirlo en la pestaña "Cedisur y zonas".`,
@@ -758,15 +776,16 @@ function render(){
       <div class="dz-premio">${i+1}° puesto: ${premios[i]}</div>
       ${f ? `<div class="dz-ganador">${nombreLindo(f.vend)}</div>
              <div class="dz-dato">${f.logradas} de ${f.nCats} categorías, ${fmtPct(f.pctTotal)} del total</div>`
-          : `<div class="dz-dato">Vacante: nadie logró ${minCat} categorías todavía</div>`}
+          : `<div class="dz-dato">Vacante: nadie cumple todavía para competir</div>`}
     </div>`;
   }).join("");
 
   document.getElementById("subCompiten").textContent = compiten.length
-    ? `${compiten.length} vendedor${compiten.length>1?'es':''} con ${minCat} o más categorías logradas.`
-    : `Nadie llegó todavía a ${minCat} categorías logradas.`;
+    ? (oblig.length ? `${compiten.length} vendedor${compiten.length>1?'es':''} que llegaron al ${pctU}% en ${nOblig}. Ordenados por categorías logradas.`
+                    : `${compiten.length} vendedor${compiten.length>1?'es':''} con ${minCat} o más categorías logradas.`)
+    : (oblig.length ? `Nadie llegó todavía al ${pctU}% en ${nOblig}.` : `Nadie llegó todavía a ${minCat} categorías logradas.`);
   document.getElementById("subNoCompiten").textContent =
-    `Necesitan lograr al menos ${minCat} categorías. Ordenados por cercanía.`;
+    `Necesitan ${oblig.length ? `llegar al ${pctU}% en ${nOblig}${minCat>oblig.length?` y lograr al menos ${minCat} categorías en total`:""}` : `lograr al menos ${minCat} categorías`}. Ordenados por cercanía.`;
   document.getElementById("hNoCompiten").parentElement.hidden = !noCompiten.length;
 
   document.getElementById("listaCompiten").innerHTML = compiten.map((f,i)=>tarjeta(f, i+1, minCat)).join("");
@@ -782,13 +801,13 @@ function tarjeta(f, pos, minCat){
     const est = x.pct==null ? "sinobj" : heat(x.pct);
     const txt = x.pct==null ? "s/obj" : fmtPct(x.pct);
     return `<div class="dz-casillero ${est}" title="${x.c}: ${fmtKg(x.kg)} de ${fmtKg(x.obj)} kg">
-      <span class="dz-cn">${corto(x.c)}</span><span class="dz-cp">${est==="ok"?"✓ ":""}${txt}</span></div>`;
+      <span class="dz-cn">${x.oblig?"★ ":""}${corto(x.c)}</span><span class="dz-cp">${est==="ok"?"✓ ":""}${txt}</span></div>`;
   }).join("");
   const detalle = f.cats.map(x=>{
     const p = x.pct||0, ancho = Math.min(p,1)*100;
     const falta = x.obj - x.kg;
     return `<div class="dz-fila">
-      <div class="dz-fila-top"><span class="dz-fila-cat">${x.c}</span>
+      <div class="dz-fila-top"><span class="dz-fila-cat">${x.oblig?"★ ":""}${x.c}</span>
         <span>${fmtKg(x.kg)} / ${fmtKg(x.obj)} kg</span></div>
       <div class="dz-barra"><div class="dz-relleno ${heat(p)}" style="width:${ancho}%"></div></div>
       <div class="dz-fila-pie">${x.obj<=0 ? "Sin objetivo en esta categoría"
@@ -804,7 +823,8 @@ function tarjeta(f, pos, minCat){
     </button>
     <div class="dz-casilleros">${casilleros}</div>
     <div class="dz-total">Total ${fmtKg(f.realTotal)} de ${fmtKg(f.objTotal)} kg, <strong>${fmtPct(f.pctTotal)}</strong>
-      ${faltanCats ? ` · le falta${faltanCats>1?'n':''} ${faltanCats} categoría${faltanCats>1?'s':''} para competir` : ''}</div>
+      ${f.faltanOblig.length ? ` · para competir le falta: ${f.faltanOblig.map(x=>x.c).join(", ")}`
+        : (faltanCats ? ` · le falta${faltanCats>1?'n':''} ${faltanCats} categoría${faltanCats>1?'s':''} para competir` : '')}</div>
     <div class="dz-detalle" id="${id}_d">${detalle}</div>
   </article>`;
 }

@@ -1195,6 +1195,7 @@ function actualizarBadgeSolicitudes() {
 
 function tipoLabelPanel(tipo) {
   const t = norm(tipo);
+  if (t.indexOf('AGREGAR') !== -1) return '➕ Agregar al ruteo';
   if (t.indexOf('ORDEN') !== -1) return '📋 Cambio de orden';
   if (t.indexOf('DIA') !== -1 || t.indexOf('DÍA') !== -1) return '📅 Cambio de día';
   return '🗑️ Eliminar del ruteo';

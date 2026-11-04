@@ -212,6 +212,7 @@
   .modal-status { font-size: 13px; font-weight: 600; text-align: center; padding: 0.6rem; border-radius: 8px; margin-top: 0.75rem; }
   .modal-status.err { background: #FDEAEA; color: #A02020; }
 
+  .aviso-aplica { font-size: 12px; color: var(--text2); background: var(--bg); border-radius: 8px; padding: 0.5rem 0.65rem; margin-top: 0.25rem; line-height: 1.4; }
   .btn-cambio { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #C4B5FD; background: #F5F0FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
   .btn-cambio:active { background: #EDE9FE; }
   .btn-cambio svg { width: 15px; height: 15px; }
@@ -283,7 +284,7 @@
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Solicitar cambio</div>
+    <div class="modal-title">Cambiar el ruteo</div>
     <div class="modal-cliente" id="modal-cliente-nombre"></div>
     <div class="tipo-grid">
       <button class="tipo-btn" data-tipo="orden" onclick="selectTipo(this)">
@@ -316,9 +317,10 @@
       <label>Motivo (opcional)</label>
       <textarea id="input-motivo" placeholder="Ej: El cliente cerró el local..."></textarea>
     </div>
+    <div class="aviso-aplica">El cambio se aplica enseguida y queda registrado para tu supervisor.</div>
     <div class="modal-actions">
       <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn-enviar" id="btn-enviar" disabled onclick="enviarSolicitud()">Enviar solicitud</button>
+      <button class="btn-enviar" id="btn-enviar" disabled onclick="enviarSolicitud()">Aplicar cambio</button>
     </div>
   </div>
 </div>
@@ -327,7 +329,7 @@
 <div class="modal-overlay" id="agregar-modal-overlay">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Pedir agregar al ruteo</div>
+    <div class="modal-title">Agregar al ruteo</div>
     <div class="modal-cliente" id="agregar-modal-cliente"></div>
     <div class="modal-field">
       <label>Día de visita</label>
@@ -357,9 +359,10 @@
         <option value="Ecommerce">Ecommerce</option>
       </select>
     </div>
+    <div class="aviso-aplica">El cliente se suma enseguida a tu ruteo y queda registrado para tu supervisor.</div>
     <div class="modal-actions">
       <button class="btn-cancelar" onclick="cerrarModalAgregar()">Cancelar</button>
-      <button class="btn-enviar" id="agregar-btn-enviar" disabled onclick="enviarPedidoAgregar()">Enviar pedido</button>
+      <button class="btn-enviar" id="agregar-btn-enviar" disabled onclick="enviarPedidoAgregar()">Agregar</button>
     </div>
   </div>
 </div>
@@ -372,7 +375,7 @@
         <path d="M5 14l6 6L23 7"/>
       </svg>
     </div>
-    <div class="confirm-title" id="confirm-title">¡Solicitud enviada!</div>
+    <div class="confirm-title" id="confirm-title">¡Cambio enviado!</div>
     <div class="confirm-detail" id="confirm-detail"></div>
     <button class="btn-confirm-close" onclick="cerrarConfirm()">Aceptar</button>
   </div>
@@ -433,6 +436,40 @@ function esPresencial(row) {
   return canalClass(row['Canal actual (Presencial / Autogestión)']) === 'presencial';
 }
 function porOrden(a, b) { return (parseInt(a['ORDEN']) || 0) - (parseInt(b['ORDEN']) || 0); }
+
+// ── CAMBIOS DE RUTEO: envío y cola si no hay señal ───────────────────────────
+function colaKey(v) { return 'cola_cambios_' + v; }
+function leerCola(v) { try { return JSON.parse(localStorage.getItem(colaKey(v)) || '[]'); } catch (e) { return []; } }
+function escribirCola(v, arr) { try { localStorage.setItem(colaKey(v), JSON.stringify(arr)); } catch (e) {} }
+function encolarCambio(payload) {
+  const cola = leerCola(payload.vendedor);
+  cola.push(payload);
+  escribirCola(payload.vendedor, cola);
+}
+// Envía un cambio al sistema, que lo aplica en el momento. Si no hay conexión queda guardado y se reenvía solo.
+function enviarCambioAlSistema(payload) {
+  if (navigator.onLine === false) { encolarCambio(payload); return Promise.resolve(false); }
+  return fetch(APPS_SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+  }).then(function() { return true; }).catch(function() { encolarCambio(payload); return false; });
+}
+function vaciarColaCambios() {
+  const v = selectedVendedor;
+  if (!v) return;
+  const cola = leerCola(v);
+  if (!cola.length || navigator.onLine === false) return;
+  escribirCola(v, []);
+  cola.forEach(function(p, i) { setTimeout(function() { enviarCambioAlSistema(p); }, 1000 + i * 2000); });
+}
+function mostrarPopupCambio(titulo, nombre, tipoStr, detalle, nota) {
+  document.getElementById('confirm-title').textContent = titulo;
+  document.getElementById('confirm-detail').innerHTML =
+    '<strong>' + nombre + '</strong><br>' + tipoLabel(tipoStr) + '<br>' +
+    '<span style="color:#3D8A56">' + detalle + '</span><br><span style="color:#2D6B40">' + nota + '</span>';
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+const NOTA_APLICADO = 'Se aplica automáticamente. Puede tardar unos minutos en verse en tu lista.';
+const NOTA_SIN_SENAL = 'No hay conexión: quedó guardado y se envía solo cuando haya señal.';
 
 // ── UBICACIONES GUARDADAS EN EL CELULAR ──────────────────────────────────────
 // Cada ubicación capturada queda guardada acá hasta que la planilla la refleje.
@@ -637,6 +674,8 @@ function enviarSolicitud() {
 
   const tipo = tipoSeleccionado === 'orden' ? 'Cambio de orden' : tipoSeleccionado === 'dia' ? 'Cambio de día' : 'Eliminar del ruteo';
 
+  if (tipoSeleccionado === 'eliminar' && !confirm('Se va a sacar este cliente del ruteo ahora mismo. ¿Confirmás?')) return;
+
   const payload = {
     vendedor:  selectedVendedor,
     codigo:    codigo,
@@ -659,21 +698,12 @@ function enviarSolicitud() {
   if (searchQuery) renderSearchResults();
   else render();
 
-  // 4. Mostrar pop-up DESPUÉS del render
-  document.getElementById('confirm-title').textContent = '¡Solicitud enviada!';
-  document.getElementById('confirm-detail').innerHTML =
-    '<strong>' + nombreCliente + '</strong><br>' +
-    tipoLabel(tipoStr) + '<br>' +
-    '<span style="color:#3D8A56">' + detalle + '</span>';
-  document.getElementById('confirm-overlay').classList.add('open');
-
-  // 5. Enviar a Google Sheets
-  fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }).catch(function(err) { console.warn('Error al enviar solicitud:', err); });
+  // 4. Avisar y mandar el cambio al sistema, que lo aplica en el momento
+  const sinConexion = navigator.onLine === false;
+  mostrarPopupCambio(sinConexion ? 'Cambio guardado sin conexión' : '¡Cambio enviado!', nombreCliente, tipoStr, detalle, sinConexion ? NOTA_SIN_SENAL : NOTA_APLICADO);
+  enviarCambioAlSistema(payload).then(function(ok) {
+    if (!ok && !sinConexion) mostrarPopupCambio('Cambio guardado sin conexión', nombreCliente, tipoStr, detalle, NOTA_SIN_SENAL);
+  });
 }
 function cerrarConfirm() {
   document.getElementById('confirm-overlay').classList.remove('open');
@@ -775,8 +805,8 @@ function buildCard(c, isSearch) {
   }
   const btnCambio = document.createElement('button');
   btnCambio.className = 'btn-cambio';
-  btnCambio.title = 'Pedir un cambio en el ruteo';
-  btnCambio.setAttribute('aria-label', 'Pedir un cambio en el ruteo');
+  btnCambio.title = 'Cambiar el ruteo';
+  btnCambio.setAttribute('aria-label', 'Cambiar el ruteo');
   btnCambio.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg>';
   btnCambio.addEventListener('click', function(e) { e.stopPropagation(); abrirModal(codigo); });
   actions.appendChild(btnCambio);
@@ -788,7 +818,7 @@ function buildCard(c, isSearch) {
   const chip = document.createElement('div');
   chip.className = 'sol-chip' + (sol ? ' visible' : '');
   if (sol) {
-    chip.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="5" r="4"/><path d="M5 3v2.5l1.5 1"/></svg>' + tipoLabel(sol.tipo);
+    chip.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="5" r="4"/><path d="M5 3v2.5l1.5 1"/></svg>' + tipoLabel(sol.tipo) + ' · enviado';
   }
 
   const info = document.createElement('div');
@@ -846,7 +876,7 @@ function buildCard(c, isSearch) {
 
   const btnSol = document.createElement('button');
   btnSol.className = 'btn-solicitar';
-  btnSol.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v5l3 3"/><circle cx="8" cy="8" r="6.5"/></svg> Solicitar cambio en el ruteo';
+  btnSol.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v5l3 3"/><circle cx="8" cy="8" r="6.5"/></svg> Cambiar día, orden o baja';
   btnSol.addEventListener('click', function() { abrirModal(codigo); });
   detail.appendChild(btnSol);
   detail.appendChild(btnGeo);
@@ -997,6 +1027,7 @@ function sincronizarGeoPendientes() {
 
 window.addEventListener('online', function() {
   setTimeout(sincronizarGeoPendientes, 2000);
+  setTimeout(vaciarColaCambios, 3000);
 });
 
 // ── MAPA DEL RECORRIDO ─────────────────────────────────────────────────────────
@@ -1190,7 +1221,7 @@ function renderSinRutear() {
   const lista = clientesSinRutearDelVendedor();
   const intro = document.createElement('div');
   intro.className = 'sr-intro';
-  intro.textContent = 'Clientes asignados a vos que no están en tu ruteo. Pedí agregarlos eligiendo el día y el lugar en el recorrido: tu supervisor lo aprueba.';
+  intro.textContent = 'Clientes asignados a vos que no están en tu ruteo. Agregalos eligiendo el día y el lugar en el recorrido: se suman enseguida y tu supervisor ve el cambio.';
   content.appendChild(intro);
   if (!lista.length) {
     content.insertAdjacentHTML('beforeend', '<div class="empty"><div class="empty-text">No tenés clientes sin rutear.</div></div>');
@@ -1210,12 +1241,12 @@ function renderSinRutear() {
     if (pedido && pedido.tipo === 'agregar') {
       const ok = document.createElement('div');
       ok.className = 'sr-enviado';
-      ok.textContent = 'Pedido enviado. Lo aprueba tu supervisor.';
+      ok.textContent = 'Agregado. Va a aparecer en tu ruteo en unos minutos.';
       card.appendChild(ok);
     } else {
       const btn = document.createElement('button');
       btn.className = 'btn-agregar';
-      btn.textContent = 'Pedir agregar al ruteo';
+      btn.textContent = 'Agregar al ruteo';
       btn.addEventListener('click', function() { abrirModalAgregar(cli); });
       card.appendChild(btn);
     }
@@ -1279,13 +1310,11 @@ function enviarPedidoAgregar() {
   saveSolicitud(cli.codigo, { tipo: 'agregar', detalle: detalle });
   cerrarModalAgregar();
   refrescar();
-  document.getElementById('confirm-title').textContent = '¡Pedido enviado!';
-  document.getElementById('confirm-detail').innerHTML =
-    '<strong>' + cli.nombre + '</strong><br>' + tipoLabel('agregar') + '<br><span style="color:#3D8A56">' + detalle + '</span>';
-  document.getElementById('confirm-overlay').classList.add('open');
-  fetch(APPS_SCRIPT_URL, {
-    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-  }).catch(function(err) { console.warn('Error al enviar el pedido:', err); });
+  const sinConexion = navigator.onLine === false;
+  mostrarPopupCambio(sinConexion ? 'Cambio guardado sin conexión' : '¡Cliente agregado!', cli.nombre, 'agregar', detalle, sinConexion ? NOTA_SIN_SENAL : NOTA_APLICADO);
+  enviarCambioAlSistema(payload).then(function(ok) {
+    if (!ok && !sinConexion) mostrarPopupCambio('Cambio guardado sin conexión', cli.nombre, 'agregar', detalle, NOTA_SIN_SENAL);
+  });
 }
 
 // ── LISTA ──────────────────────────────────────────────────────────────────────
@@ -1371,7 +1400,7 @@ function renderList(clients, vendRows) {
   content.appendChild(filterBar);
   const hint = document.createElement('div');
   hint.className = 'hint-cambio';
-  hint.innerHTML = 'Para pedir un cambio de día, de orden o una baja, tocá ' + '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg>' + ' en el cliente.';
+  hint.innerHTML = 'Para cambiar el día, el orden o dar de baja un cliente, tocá ' + '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg>' + ' en el cliente.';
   content.appendChild(hint);
 
   const visibles = soloSinUbicacion
@@ -1440,7 +1469,7 @@ function init(csvText) {
     soloPresencialSinUbic = false;
     vistaSinRutear = false;
     invalidarGeoCache();
-    if (selectedVendedor) conciliarGeoLocal();
+    if (selectedVendedor) { conciliarGeoLocal(); vaciarColaCambios(); }
     render();
   };
 

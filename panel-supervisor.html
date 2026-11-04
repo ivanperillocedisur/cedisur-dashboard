@@ -64,21 +64,6 @@
   .view-tab.active { background: #fff; color: var(--accent); }
   .view-tab .badge-count { position: absolute; top: -7px; right: 1px; background: var(--sup); color: #fff; font-size: 9px; font-weight: 700; line-height: 14px; min-width: 14px; text-align: center; border-radius: 10px; padding: 0 4px; }
 
-  /* SOLICITUDES */
-  .sol-filter { padding: 0.75rem 1.25rem 0; }
-  .sol-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 8px; }
-  .sol-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
-  .sol-cliente { font-size: 14px; font-weight: 700; color: var(--text); }
-  .sol-vendedor { font-size: 11px; color: var(--text3); margin-top: 2px; }
-  .sol-tipo-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; background: #F5F0FF; color: #7C3AED; border: 1px solid #C4B5FD; padding: 3px 9px; border-radius: 20px; flex-shrink: 0; white-space: nowrap; }
-  .sol-detalle { font-size: 13px; color: var(--text2); margin-bottom: 0.75rem; line-height: 1.4; }
-  .sol-meta { font-size: 11px; color: var(--text3); margin-bottom: 0.75rem; }
-  .sol-actions { display: flex; gap: 8px; }
-  .btn-sol-aplicar { flex: 1; padding: 0.65rem; border-radius: 8px; border: none; background: var(--btn-check-color, #2D8A52); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
-  .btn-sol-rechazar { flex: 1; padding: 0.65rem; border-radius: 8px; border: 1.5px solid var(--border); background: transparent; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
-  .sol-status { font-size: 12px; font-weight: 700; text-align: center; padding: 0.6rem; border-radius: 8px; }
-  .sol-status.ok { background: #E6F7ED; color: #1F7A42; }
-  .sol-status.err { background: #FDEAEA; color: #A02020; }
 
   /* HEADER */
   .header { background: var(--accent); padding: 0.65rem 1rem 0.6rem; position: sticky; top: 0; z-index: 100; }
@@ -242,6 +227,23 @@
   .btn-cli-accion.danger { background: #C0392B; }
   .btn-cli-accion.info { background: #7C3AED; }
 
+  /* CAMBIOS DE LOS VENDEDORES (registro) */
+  .filtros-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .cambios-barra { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem 0; font-size: 12px; color: var(--text3); }
+  .cambios-list { padding: 0.5rem 1.25rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 8px; }
+  .cambio-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem 0.9rem; }
+  .cambio-card.error { border-color: #E89090; background: #FFF8F8; }
+  .cambio-card.pendiente { border-color: #FED7AA; background: #FFFBF5; }
+  .cambio-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .cambio-cliente { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .cambio-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .cambio-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; background: #F5F0FF; color: #7C3AED; border: 1px solid #C4B5FD; padding: 3px 9px; border-radius: 20px; flex-shrink: 0; white-space: nowrap; }
+  .cambio-resumen { font-size: 13px; color: var(--text); margin: 8px 0 4px; line-height: 1.4; }
+  .cambio-meta { font-size: 11px; color: var(--text3); }
+  .cambio-estado { font-size: 12px; font-weight: 600; margin-top: 6px; }
+  .cambio-estado.err { color: #A02020; }
+  .cambio-estado.pend { color: #B45309; }
+
   /* PESTAÑA EQUIPO */
   .eq-resumen { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem 1rem; margin: 0.75rem 1.25rem 0; }
   .eq-resumen-num { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--text); line-height: 1.1; }
@@ -299,7 +301,7 @@
   </div>
   <div class="view-tabs">
     <button class="view-tab active" id="tab-ruteo" onclick="cambiarVista('ruteo')">Ruteo</button>
-    <button class="view-tab" id="tab-solicitudes" onclick="cambiarVista('solicitudes')">Solicitudes<span class="badge-count" id="sol-badge" style="display:none">0</span></button>
+    <button class="view-tab" id="tab-cambios" onclick="cambiarVista('cambios')">Cambios<span class="badge-count" id="cambios-badge" style="display:none">0</span></button>
     <button class="view-tab" id="tab-clientes" onclick="cambiarVista('clientes')">Clientes<span class="badge-count" id="cli-badge" style="display:none">0</span></button>
     <button class="view-tab" id="tab-equipo" onclick="cambiarVista('equipo')">Equipo</button>
   </div>
@@ -312,8 +314,21 @@
     <div class="day-filter-panel" id="day-filter-panel"></div>
     <button class="btn-ver-mapa" onclick="abrirMapa()">🗺️ Ver mapa de clientes</button>
   </div>
-  <div id="sol-controls" style="display:none">
-    <select id="sol-vendedor-filter"></select>
+  <div id="cambios-controls" style="display:none">
+    <select id="cambios-vendedor-filter"></select>
+    <div class="filtros-2col">
+      <select id="cambios-dia-filter">
+        <option value="">Todos los días</option>
+        <option value="LUNES">Lunes</option><option value="MARTES">Martes</option><option value="MIERCOLES">Miércoles</option>
+        <option value="JUEVES">Jueves</option><option value="VIERNES">Viernes</option>
+      </select>
+      <select id="cambios-periodo-filter">
+        <option value="1">Hoy</option>
+        <option value="7">Últimos 7 días</option>
+        <option value="30">Últimos 30 días</option>
+        <option value="todo">Todo</option>
+      </select>
+    </div>
   </div>
   <div id="cli-controls" style="display:none">
     <select id="cli-subvista">
@@ -503,9 +518,10 @@ let selectedVendedor = '';
 let pinActual = '';
 let zonaSeleccionada = '';
 let viewMode = 'ruteo';
-let solicitudes = [];
-let solVendedorFiltro = '';
-let solProcesadas = {};
+let registroCambios = [];      // cambios que hicieron los vendedores (hoja SOLICITUD DE MODIFICACIONES)
+let cambiosVendedorFiltro = '';
+let cambiosDiaFiltro = '';
+let cambiosPeriodo = '7';
 let cliVendedorFiltro = '';
 let cliLocalidadFiltro = '';
 let cliBusqueda = '';
@@ -624,9 +640,6 @@ function todayDayName() {
 }
 function normTokens(s) {
   return norm(s).split(' ').filter(Boolean).sort().join(' ');
-}
-function solicitudKey(s) {
-  return [s['COD. CLIENTE'], normTokens(s['VENDEDOR']), (s['DETALLE']||'').trim()].join('|');
 }
 let _fechaFacturaIndex = null;
 function getFechaFactura(codigo) {
@@ -793,7 +806,9 @@ function logout() {
   selectedVendedor = '';
   zonaSeleccionada = '';
   viewMode = 'ruteo';
-  solVendedorFiltro = '';
+  cambiosVendedorFiltro = '';
+  cambiosDiaFiltro = '';
+  cambiosPeriodo = '7';
   cliBusqueda = '';
   const buscadorCli = document.getElementById('cli-search');
   if (buscadorCli) buscadorCli.value = '';
@@ -841,8 +856,8 @@ function iniciarSesion() {
     sel.value = selectedVendedor;
   }
 
-  renderSolFiltro();
-  actualizarBadgeSolicitudes();
+  renderCambiosFiltros();
+  actualizarBadgeCambios();
   actualizarBadgeClientes();
 
   document.getElementById('pin-screen').classList.add('hidden');
@@ -856,23 +871,23 @@ function iniciarSesion() {
 function cambiarVista(v) {
   viewMode = v;
   document.getElementById('tab-ruteo').classList.toggle('active', v === 'ruteo');
-  document.getElementById('tab-solicitudes').classList.toggle('active', v === 'solicitudes');
+  document.getElementById('tab-cambios').classList.toggle('active', v === 'cambios');
   document.getElementById('tab-clientes').classList.toggle('active', v === 'clientes');
   document.getElementById('tab-equipo').classList.toggle('active', v === 'equipo');
   document.getElementById('ruteo-controls').style.display = v === 'ruteo' ? 'block' : 'none';
-  document.getElementById('sol-controls').style.display = v === 'solicitudes' ? 'block' : 'none';
+  document.getElementById('cambios-controls').style.display = v === 'cambios' ? 'block' : 'none';
   document.getElementById('cli-controls').style.display = v === 'clientes' ? 'block' : 'none';
   const bar = document.getElementById('bulk-bar'); if (bar) bar.remove();
   if (v !== 'ruteo') { modoSeleccion = false; seleccionados = {}; }
   if (v === 'ruteo') render();
-  else if (v === 'solicitudes') { renderSolicitudesView(); renderConfirmBar(); }
+  else if (v === 'cambios') { renderCambiosView(); renderConfirmBar(); }
   else if (v === 'clientes') { renderClientesView(); renderConfirmBar(); }
   else { renderEquipoView(); renderConfirmBar(); }
 }
 
 function refrescarVistaActual() {
   if (viewMode === 'ruteo') render();
-  else if (viewMode === 'solicitudes') renderSolicitudesView();
+  else if (viewMode === 'cambios') renderCambiosView();
   else if (viewMode === 'clientes') renderClientesView();
   else renderEquipoView();
   renderConfirmBar();
@@ -1167,138 +1182,153 @@ function confirmarAlta() {
   setTimeout(function() { cerrarModalAlta(); renderClientesView(); }, 900);
 }
 
-function solicitudesDeLaZona() {
-  return solicitudes.filter(function(s) {
-    if (norm(s['ESTADO']) !== 'PENDIENTE') return false;
-    if (solProcesadas[solicitudKey(s)]) return false; // ya procesada en esta sesión
-    return vendedoresZona.some(function(v) { return normTokens(v) === normTokens(s['VENDEDOR']); });
+// ── CAMBIOS DE LOS VENDEDORES (registro de solo lectura) ─────────────────────────
+// Los cambios de los vendedores se aplican solos en BASE RUTEO. Acá el supervisor ve qué cambió, por vendedor y día.
+function fechaDeRegistro(s) {
+  const f = String(s['FECHA'] || '').trim();
+  let d = null, m;
+  if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(f))) d = new Date(+m[3], +m[2] - 1, +m[1]);
+  else if ((m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(f))) d = new Date(+m[1], +m[2] - 1, +m[3]);
+  if (!d) return null;
+  const h = /^(\d{1,2}):(\d{2})/.exec(String(s['HORA'] || '').trim());
+  if (h) d.setHours(+h[1], +h[2]);
+  return d;
+}
+
+function cambiosDeLaZona() {
+  const zona = norm(supActual['Zona']);
+  return registroCambios.map(function(s, i) { return { s: s, i: i, fecha: fechaDeRegistro(s) }; })
+    .filter(function(x) {
+      const z = norm(x.s['ZONA']);
+      if (z) return z === zona; // el registro nuevo trae la zona; no depende de cómo esté escrito el nombre
+      return vendedoresZona.some(function(v) { return normTokens(v) === normTokens(x.s['VENDEDOR']); });
+    })
+    .sort(function(a, b) {
+      return ((b.fecha ? b.fecha.getTime() : 0) - (a.fecha ? a.fecha.getTime() : 0)) || (b.i - a.i);
+    });
+}
+
+function cambiosFiltrados() {
+  let limite = null;
+  if (cambiosPeriodo !== 'todo') {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (parseInt(cambiosPeriodo) - 1));
+    limite = d.getTime();
+  }
+  return cambiosDeLaZona().filter(function(x) {
+    const s = x.s;
+    if (cambiosVendedorFiltro && normTokens(s['VENDEDOR']) !== normTokens(cambiosVendedorFiltro)) return false;
+    if (cambiosDiaFiltro && norm(s['DÍA ACTUAL']) !== cambiosDiaFiltro && norm(s['DÍA NUEVO']) !== cambiosDiaFiltro) return false;
+    if (limite !== null && (!x.fecha || x.fecha.getTime() < limite)) return false;
+    return true;
   });
 }
 
-function renderSolFiltro() {
-  const sel = document.getElementById('sol-vendedor-filter');
-  sel.innerHTML = '<option value="">Todos los vendedores</option>';
-  vendedoresZona.forEach(function(v) {
+function renderCambiosFiltros() {
+  const selV = document.getElementById('cambios-vendedor-filter');
+  const vistos = {};
+  const nombres = [];
+  cambiosDeLaZona().forEach(function(x) {
+    const k = normTokens(x.s['VENDEDOR']);
+    if (k && !vistos[k]) { vistos[k] = true; nombres.push(x.s['VENDEDOR']); }
+  });
+  nombres.sort();
+  selV.innerHTML = '<option value="">Todos los vendedores</option>';
+  nombres.forEach(function(n) {
     const opt = document.createElement('option');
-    opt.value = v; opt.textContent = v;
-    sel.appendChild(opt);
+    opt.value = n; opt.textContent = n;
+    selV.appendChild(opt);
   });
-  sel.onchange = function() { solVendedorFiltro = sel.value; renderSolicitudesView(); };
+  if (nombres.indexOf(cambiosVendedorFiltro) !== -1) selV.value = cambiosVendedorFiltro; else cambiosVendedorFiltro = '';
+  selV.onchange = function() { cambiosVendedorFiltro = selV.value; renderCambiosView(); };
+
+  const selD = document.getElementById('cambios-dia-filter');
+  selD.value = cambiosDiaFiltro;
+  selD.onchange = function() { cambiosDiaFiltro = selD.value; renderCambiosView(); };
+  const selP = document.getElementById('cambios-periodo-filter');
+  selP.value = cambiosPeriodo;
+  selP.onchange = function() { cambiosPeriodo = selP.value; renderCambiosView(); };
 }
 
-function actualizarBadgeSolicitudes() {
-  const badge = document.getElementById('sol-badge');
-  const n = solicitudesDeLaZona().length;
+function actualizarBadgeCambios() {
+  const badge = document.getElementById('cambios-badge');
+  const desde = Date.now() - 24 * 3600 * 1000;
+  const n = cambiosDeLaZona().filter(function(x) { return x.fecha && x.fecha.getTime() >= desde; }).length;
   if (n > 0) { badge.style.display = 'inline-block'; badge.textContent = n; }
   else { badge.style.display = 'none'; }
 }
 
 function tipoLabelPanel(tipo) {
   const t = norm(tipo);
-  if (t.indexOf('AGREGAR') !== -1) return '➕ Agregar al ruteo';
-  if (t.indexOf('ORDEN') !== -1) return '📋 Cambio de orden';
-  if (t.indexOf('DIA') !== -1 || t.indexOf('DÍA') !== -1) return '📅 Cambio de día';
-  return '🗑️ Eliminar del ruteo';
+  if (t.indexOf('AGREGAR') !== -1) return '➕ Agregó cliente';
+  if (t.indexOf('ORDEN') !== -1) return '📋 Cambió el orden';
+  if (t.indexOf('DIA') !== -1) return '📅 Cambió de día';
+  return '🗑️ Dio de baja';
 }
 
-function renderSolicitudesView() {
-  const content = document.getElementById('app-content');
-  let lista = solicitudesDeLaZona();
-  if (solVendedorFiltro) {
-    lista = lista.filter(function(s) { return normTokens(s['VENDEDOR']) === normTokens(solVendedorFiltro); });
-  }
-  actualizarBadgeSolicitudes();
+function formatoFechaHora(x) {
+  if (!x.fecha) return (x.s['FECHA'] || '') + ' ' + (x.s['HORA'] || '');
+  const p = function(n) { return String(n).padStart(2, '0'); };
+  return p(x.fecha.getDate()) + '/' + p(x.fecha.getMonth() + 1) + '/' + x.fecha.getFullYear() + ' ' + p(x.fecha.getHours()) + ':' + p(x.fecha.getMinutes());
+}
 
+function buildCambioCard(x) {
+  const s = x.s;
+  const estado = norm(s['ESTADO']);
+  const card = document.createElement('div');
+  card.className = 'cambio-card' + (estado === 'ERROR' ? ' error' : estado === 'PENDIENTE' ? ' pendiente' : '');
+  let extra = '';
+  const resultado = String(s['RESULTADO'] || '').replace(/^❌\s*ERROR:\s*/, '');
+  if (estado === 'ERROR') extra = '<div class="cambio-estado err">No se pudo aplicar: ' + (resultado || 'error desconocido') + '</div>';
+  else if (estado === 'PENDIENTE') extra = '<div class="cambio-estado pend">Todavía no se aplicó. Se aplica desde el menú del Sheet (Aplicar solicitudes pendientes).</div>';
+  else if (estado === 'RECHAZADA') extra = '<div class="cambio-estado err">Rechazado' + (resultado ? ': ' + resultado.replace(/^🚫\s*RECHAZADA:?\s*/, '') : '') + '</div>';
+  card.innerHTML =
+    '<div class="cambio-top">' +
+      '<div><div class="cambio-cliente">' + (s['CLIENTE'] || s['COD. CLIENTE']) + '</div>' +
+      '<div class="cambio-sub">' + (s['VENDEDOR'] || '') + (s['LOCALIDAD'] ? ' · ' + s['LOCALIDAD'] : '') + '</div></div>' +
+      '<div class="cambio-tag">' + tipoLabelPanel(s['TIPO DE CAMBIO']) + '</div>' +
+    '</div>' +
+    '<div class="cambio-resumen">' + (s['RESUMEN'] || s['DETALLE'] || '') + '</div>' +
+    '<div class="cambio-meta">' + formatoFechaHora(x) + '</div>' + extra;
+  return card;
+}
+
+function renderCambiosView() {
+  const content = document.getElementById('app-content');
   content.innerHTML = '';
+  actualizarBadgeCambios();
+  const lista = cambiosFiltrados();
+  const MAX = 200;
+
+  const barra = document.createElement('div');
+  barra.className = 'cambios-barra';
+  const cuenta = document.createElement('span');
+  cuenta.textContent = lista.length + ' cambio' + (lista.length !== 1 ? 's' : '') + (lista.length > MAX ? ' (se muestran los ' + MAX + ' más recientes)' : '');
+  barra.appendChild(cuenta);
+  barra.appendChild(crearBoton('Actualizar', 'btn-link', recargarRegistro));
+  content.appendChild(barra);
+
   if (!lista.length) {
-    content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay solicitudes pendientes' + (solVendedorFiltro ? ' de ' + solVendedorFiltro : ' en tu zona') + '.</div></div>';
+    content.insertAdjacentHTML('beforeend', '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay cambios de tus vendedores con estos filtros.</div></div>');
     return;
   }
-
   const list = document.createElement('div');
-  list.className = 'list';
-  list.style.padding = '0.75rem 1.25rem';
-
-  lista.forEach(function(s) {
-    const key = solicitudKey(s);
-    const card = document.createElement('div');
-    card.className = 'sol-card';
-    card.id = 'sol-' + key.replace(/[^a-zA-Z0-9]/g, '');
-
-    card.innerHTML =
-      '<div class="sol-top">' +
-        '<div><div class="sol-cliente">' + (s['CLIENTE']||'') + '</div>' +
-        '<div class="sol-vendedor">' + (s['VENDEDOR']||'') + ' · ' + (s['LOCALIDAD']||'') + '</div></div>' +
-        '<div class="sol-tipo-tag">' + tipoLabelPanel(s['TIPO DE CAMBIO']) + '</div>' +
-      '</div>' +
-      '<div class="sol-detalle">' + (s['DETALLE']||'') + '</div>' +
-      '<div class="sol-meta">Día actual: ' + (s['DÍA ACTUAL']||'—') + ' · ' + (s['FECHA']||'') + ' ' + (s['HORA']||'') + '</div>' +
-      '<div class="sol-actions" id="acciones-' + card.id + '">' +
-        '<button class="btn-sol-aplicar">Aplicar</button>' +
-        '<button class="btn-sol-rechazar">Rechazar</button>' +
-      '</div>';
-
-    card.querySelector('.btn-sol-aplicar').addEventListener('click', function() { aplicarSolicitud(s, card); });
-    card.querySelector('.btn-sol-rechazar').addEventListener('click', function() { rechazarSolicitudUI(s, card); });
-
-    list.appendChild(card);
-  });
-
+  list.className = 'cambios-list';
+  lista.slice(0, MAX).forEach(function(x) { list.appendChild(buildCambioCard(x)); });
   content.appendChild(list);
 }
 
-function mostrarResultadoSolicitud(card, ok, mensaje) {
-  const acciones = card.querySelector('.sol-actions');
-  const status = document.createElement('div');
-  status.className = 'sol-status ' + (ok ? 'ok' : 'err');
-  status.textContent = mensaje;
-  acciones.replaceWith(status);
-}
-
-function aplicarSolicitud(s, card) {
-  const btn = card.querySelector('.btn-sol-aplicar');
-  btn.disabled = true;
-  btn.textContent = 'Aplicando...';
-
-  const payload = {
-    accion: 'ejecutarSolicitud',
-    codigo: s['COD. CLIENTE'], vendedor: s['VENDEDOR'], detalle: s['DETALLE'],
-    zonaSupervisor: supActual['Zona']
-  };
-
-  fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-    .then(function() {
-      solProcesadas[solicitudKey(s)] = 'aplicada';
-      mostrarResultadoSolicitud(card, true, '✅ Solicitud aplicada');
-      actualizarBadgeSolicitudes();
-    })
-    .catch(function() {
-      // no-cors no permite leer error real; asumimos que puede haber fallado
-      mostrarResultadoSolicitud(card, false, '❌ Error al aplicar. Reintentá.');
-    });
-}
-
-function rechazarSolicitudUI(s, card) {
-  const motivo = prompt('Motivo del rechazo (opcional):', '') || '';
-  const btn = card.querySelector('.btn-sol-rechazar');
-  btn.disabled = true;
-  btn.textContent = 'Rechazando...';
-
-  const payload = {
-    accion: 'rechazarSolicitud',
-    codigo: s['COD. CLIENTE'], vendedor: s['VENDEDOR'], detalle: s['DETALLE'],
-    zonaSupervisor: supActual['Zona'], motivo: motivo
-  };
-
-  fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-    .then(function() {
-      solProcesadas[solicitudKey(s)] = 'rechazada';
-      mostrarResultadoSolicitud(card, true, '🚫 Solicitud rechazada' + (motivo ? ': ' + motivo : ''));
-      actualizarBadgeSolicitudes();
-    })
-    .catch(function() {
-      mostrarResultadoSolicitud(card, false, '❌ Error al rechazar. Reintentá.');
-    });
+async function recargarRegistro() {
+  try {
+    const res = await fetch(URL_SOLICITUDES + '&_=' + Date.now());
+    if (!res.ok) throw new Error('error');
+    registroCambios = parseCSV(await res.text()).filter(function(s) { return s['COD. CLIENTE']; });
+    renderCambiosFiltros();
+    renderCambiosView();
+  } catch (e) {
+    alert('No se pudo actualizar. Probá de nuevo en un momento.');
+  }
 }
 
 // ── MODAL ACCIÓN EN LOTE (supervisor) ───────────────────────────────────────────
@@ -1950,7 +1980,7 @@ async function cargarDatos() {
       return ZONAS_VALIDAS.indexOf(norm(c['Nombre Territorio'])) !== -1;
     });
     baseRuteo = parseCSV(rut).filter(function(r) { return r['NOMBRE COMERCIAL']; });
-    solicitudes = parseCSV(sol).filter(function(s) { return s['COD. CLIENTE']; });
+    registroCambios = parseCSV(sol).filter(function(s) { return s['COD. CLIENTE']; });
 
     if (restaurarSesionStorage() && supActual) {
       iniciarSesion();

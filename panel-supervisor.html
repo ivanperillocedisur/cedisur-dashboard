@@ -1261,6 +1261,8 @@ function actualizarBadgeCambios() {
 
 function tipoLabelPanel(tipo) {
   const t = norm(tipo);
+  if (t.indexOf('RAZON SOCIAL') !== -1) return '🔄 Cambio de razón social';
+  if (t.indexOf('BAJA AUTOMATICA') !== -1) return '🗑️ Baja automática';
   if (t.indexOf('AGREGAR') !== -1) return '➕ Agregó cliente';
   if (t.indexOf('ORDEN') !== -1) return '📋 Cambió el orden';
   if (t.indexOf('DIA') !== -1) return '📅 Cambió de día';

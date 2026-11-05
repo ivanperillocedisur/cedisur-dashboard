@@ -40,9 +40,8 @@
   /* HEADER */
   .header { background: var(--accent); padding: 1.25rem 1.25rem 1rem; position: sticky; top: 0; z-index: 100; }
   .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-  .app-name { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: rgba(255,255,255,0.55); text-transform: uppercase; }
   .header-right { display: flex; align-items: center; gap: 8px; }
-  .today-badge { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.12); padding: 3px 10px; border-radius: 20px; }
+  .today-badge { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); margin-top: 1px; }
   .btn-search { background: none; border: none; cursor: pointer; padding: 4px; color: rgba(255,255,255,0.75); display: flex; align-items: center; -webkit-tap-highlight-color: transparent; }
   .btn-search svg { width: 18px; height: 18px; }
 
@@ -212,9 +211,16 @@
   .modal-status { font-size: 13px; font-weight: 600; text-align: center; padding: 0.6rem; border-radius: 8px; margin-top: 0.75rem; }
   .modal-status.err { background: #FDEAEA; color: #A02020; }
 
-  .vend-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 0.4rem; }
-  .vend-nombre { color: #fff; font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .vend-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+  .cuenta { position: relative; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+  .cuenta-btn { display: flex; align-items: center; gap: 6px; max-width: 100%; background: none; border: none; padding: 0; color: #fff; font-family: 'DM Sans', sans-serif; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .cuenta-btn svg { width: 11px; height: 8px; flex-shrink: 0; opacity: 0.8; }
+  .vend-nombre { color: #fff; font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100vw - 168px); }
+  .cuenta-menu { display: none; position: absolute; top: 100%; left: 0; margin-top: 6px; min-width: 180px; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); overflow: hidden; z-index: 150; }
+  .cuenta-menu.open { display: block; }
+  @media (max-width: 340px) { .btn-mapa-txt { display: none; } .vend-nombre { max-width: calc(100vw - 140px); } }
+  .cuenta-menu button { display: block; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--border); padding: 0.85rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; }
+  .cuenta-menu button:last-child { border-bottom: none; color: #C0392B; }
+  .cuenta-menu button:active { background: var(--bg); }
   .lg-screen { display: none; position: fixed; inset: 0; background: var(--accent); z-index: 700; flex-direction: column; align-items: center; padding: 2rem 1.25rem; overflow-y: auto; }
   .lg-screen.open { display: flex; }
   .lg-logo { font-size: 12px; font-weight: 700; letter-spacing: 0.15em; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-top: 1rem; }
@@ -224,6 +230,7 @@
   .lg-sub { font-size: 15px; color: rgba(255,255,255,0.8); margin-bottom: 1rem; text-align: center; }
   .lg-buscar { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 16px; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.12); color: #fff; outline: none; -webkit-appearance: none; }
   .lg-buscar::placeholder { color: rgba(255,255,255,0.55); }
+  .lg-buscar::-webkit-search-cancel-button { filter: invert(1) brightness(2); opacity: 0.8; cursor: pointer; }
   .lg-lista { width: 100%; margin-top: 0.75rem; display: flex; flex-direction: column; gap: 6px; }
   .lg-item { text-align: left; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; color: #fff; background: rgba(255,255,255,0.12); border: none; border-radius: 10px; padding: 0.8rem 0.9rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .lg-item:active { background: rgba(255,255,255,0.28); }
@@ -242,8 +249,8 @@
   .btn-cambio { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #C4B5FD; background: #F5F0FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
   .btn-cambio:active { background: #EDE9FE; }
   .btn-cambio svg { width: 15px; height: 15px; }
-  .hint-cambio { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px; color: var(--text3); padding: 0 1.25rem 0.4rem; text-align: center; }
-  .hint-cambio svg { width: 12px; height: 12px; color: #7C3AED; flex-shrink: 0; }
+  .hint-cambio { display: block; font-size: 11px; color: var(--text3); padding: 0 1.25rem 0.4rem; text-align: center; line-height: 1.5; }
+  .hint-cambio svg { width: 12px; height: 12px; color: #7C3AED; display: inline-block; vertical-align: -2px; margin: 0 1px; }
   .day-tab.sin-rutear { border-color: #FED7AA; color: #FED7AA; }
   .day-tab.sin-rutear.active { background: #FFF7ED; color: #C2410C; border-color: transparent; }
   .aviso-sin-rutear { margin: 0.75rem 1.25rem 0; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 12px; padding: 0.6rem 0.9rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #C2410C; }
@@ -274,24 +281,26 @@
 
 <div class="header">
   <div class="header-top">
-    <span class="app-name">Ruteo de visitas</span>
+    <div class="cuenta">
+      <button class="cuenta-btn" id="cuenta-btn" onclick="toggleMenuCuenta(event)" aria-haspopup="true" title="Mi cuenta">
+        <span class="vend-nombre" id="vend-nombre">—</span>
+        <svg viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1.5l5 5 5-5"/></svg>
+      </button>
+      <span class="today-badge" id="today-label">—</span>
+      <div class="cuenta-menu" id="cuenta-menu">
+        <button onclick="menuCuenta('clave')">Cambiar mi clave</button>
+        <button onclick="menuCuenta('salir')">Salir</button>
+      </div>
+    </div>
     <div class="header-right">
       <button class="btn-mapa" onclick="abrirMapa()" title="Ver mi recorrido en el mapa">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 6v10l4-2 6 2 4-2V4l-4 2-6-2z"/><path d="M7 4v10M13 6v10"/></svg>Mapa
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 6v10l4-2 6 2 4-2V4l-4 2-6-2z"/><path d="M7 4v10M13 6v10"/></svg><span class="btn-mapa-txt">Mapa</span>
       </button>
       <button class="btn-search" onclick="toggleSearch()" title="Buscar cliente">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/>
         </svg>
       </button>
-      <span class="today-badge" id="today-label">—</span>
-    </div>
-  </div>
-  <div class="vend-bar">
-    <span class="vend-nombre" id="vend-nombre">—</span>
-    <div class="vend-acciones">
-      <button class="btn-mapa" onclick="abrirModalClave(false)">Mi clave</button>
-      <button class="btn-mapa" onclick="salir()">Salir</button>
     </div>
   </div>
   <select id="vendedor-select" style="display:none">
@@ -437,7 +446,7 @@
   <div class="lg-mensaje" id="login-mensaje"></div>
   <div id="login-paso-nombre" class="lg-paso">
     <div class="lg-sub">Buscá tu nombre</div>
-    <input class="lg-buscar" id="login-buscar" type="search" placeholder="Escribí tu nombre o apellido" autocomplete="off" oninput="filtrarLogin()">
+    <input class="lg-buscar" id="login-buscar" type="search" placeholder="Escribí tu nombre o apellido" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" oninput="filtrarLogin()" onkeydown="teclaLogin(event)">
     <div class="lg-lista" id="login-lista"></div>
   </div>
   <div id="login-paso-clave" class="lg-paso" style="display:none">
@@ -551,24 +560,56 @@ function mostrarLogin(mensaje) {
   document.getElementById('login-buscar').value = '';
   loginElegido = ''; loginClave = '';
   filtrarLogin();
+  setTimeout(function() {
+    const i = document.getElementById('login-buscar');
+    if (i && document.getElementById('login-screen').classList.contains('open') && document.getElementById('login-paso-nombre').style.display !== 'none') i.focus();
+  }, 80);
 }
 
-function filtrarLogin() {
+const LOGIN_MAX_SUGERENCIAS = 5;
+
+// Coincidencias con lo que se escribió (null si todavía no escribió nada: no se muestra la lista completa)
+function sugerenciasLogin() {
   const q = normTxt(document.getElementById('login-buscar').value).split(' ').filter(Boolean);
-  const lista = document.getElementById('login-lista');
-  lista.innerHTML = '';
+  if (!q.length) return null;
+  const empieza = function(v) {
+    const palabras = normTxt(v).split(' ');
+    return q.every(function(t) { return palabras.some(function(w) { return w.indexOf(t) === 0; }); });
+  };
   const hallados = vendedoresLista.filter(function(v) {
     const n = normTxt(v);
     return q.every(function(t) { return n.indexOf(t) !== -1; });
   });
+  // primero las que empiezan con lo escrito (si escribe "ar", ARENAS antes que ZANGARI); dentro de cada grupo, alfabético
+  return hallados.filter(empieza).concat(hallados.filter(function(v) { return !empieza(v); }));
+}
+
+function filtrarLogin() {
+  const lista = document.getElementById('login-lista');
+  lista.innerHTML = '';
+  const hallados = sugerenciasLogin();
+  if (hallados === null) { lista.innerHTML = '<div class="lg-vacio">Empezá a escribir y te sugerimos tu nombre.</div>'; return; }
   if (!hallados.length) { lista.innerHTML = '<div class="lg-vacio">No encontramos ese nombre. Probá con tu apellido.</div>'; return; }
-  hallados.slice(0, 40).forEach(function(v) {
+  hallados.slice(0, LOGIN_MAX_SUGERENCIAS).forEach(function(v) {
     const b = document.createElement('button');
     b.className = 'lg-item';
     b.textContent = v;
     b.addEventListener('click', function() { elegirLogin(v); });
     lista.appendChild(b);
   });
+  if (hallados.length > LOGIN_MAX_SUGERENCIAS) {
+    const mas = document.createElement('div');
+    mas.className = 'lg-vacio';
+    mas.textContent = 'Hay ' + (hallados.length - LOGIN_MAX_SUGERENCIAS) + ' más. Seguí escribiendo para acotar.';
+    lista.appendChild(mas);
+  }
+}
+
+// Enter elige al vendedor cuando queda una sola sugerencia
+function teclaLogin(e) {
+  if (e.key !== 'Enter') return;
+  const h = sugerenciasLogin();
+  if (h && h.length === 1) elegirLogin(h[0]);
 }
 
 function elegirLogin(nombre) {
@@ -647,7 +688,12 @@ function entrarComo(nombreServidor) {
   if (sel.onchange) sel.onchange();
 }
 
+function toggleMenuCuenta(e) { e.stopPropagation(); document.getElementById('cuenta-menu').classList.toggle('open'); }
+function cerrarMenuCuenta() { document.getElementById('cuenta-menu').classList.remove('open'); }
+function menuCuenta(accion) { cerrarMenuCuenta(); if (accion === 'clave') abrirModalClave(false); else salir(); }
+
 function salir() {
+  cerrarMenuCuenta();
   borrarSesion();
   claveRecienIngresada = '';
   selectedVendedor = '';
@@ -1858,6 +1904,7 @@ loadData();
 document.getElementById('modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModal();
 });
+document.addEventListener('click', cerrarMenuCuenta);
 document.getElementById('clave-modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModalClave();
 });

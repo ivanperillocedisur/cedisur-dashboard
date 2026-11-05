@@ -212,6 +212,32 @@
   .modal-status { font-size: 13px; font-weight: 600; text-align: center; padding: 0.6rem; border-radius: 8px; margin-top: 0.75rem; }
   .modal-status.err { background: #FDEAEA; color: #A02020; }
 
+  .vend-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 0.4rem; }
+  .vend-nombre { color: #fff; font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vend-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+  .lg-screen { display: none; position: fixed; inset: 0; background: var(--accent); z-index: 700; flex-direction: column; align-items: center; padding: 2rem 1.25rem; overflow-y: auto; }
+  .lg-screen.open { display: flex; }
+  .lg-logo { font-size: 12px; font-weight: 700; letter-spacing: 0.15em; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-top: 1rem; }
+  .lg-title { font-size: 22px; font-weight: 700; color: #fff; margin: 0.25rem 0 1rem; text-align: center; }
+  .lg-mensaje { min-height: 18px; font-size: 13px; font-weight: 600; color: #FDE68A; text-align: center; margin-bottom: 0.75rem; max-width: 320px; }
+  .lg-paso { width: 100%; max-width: 340px; display: flex; flex-direction: column; align-items: center; }
+  .lg-sub { font-size: 15px; color: rgba(255,255,255,0.8); margin-bottom: 1rem; text-align: center; }
+  .lg-buscar { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 16px; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.12); color: #fff; outline: none; -webkit-appearance: none; }
+  .lg-buscar::placeholder { color: rgba(255,255,255,0.55); }
+  .lg-lista { width: 100%; margin-top: 0.75rem; display: flex; flex-direction: column; gap: 6px; }
+  .lg-item { text-align: left; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; color: #fff; background: rgba(255,255,255,0.12); border: none; border-radius: 10px; padding: 0.8rem 0.9rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .lg-item:active { background: rgba(255,255,255,0.28); }
+  .lg-vacio { color: rgba(255,255,255,0.7); font-size: 13px; text-align: center; padding: 0.5rem; }
+  .lg-dots { display: flex; gap: 12px; margin-bottom: 1.25rem; }
+  .lg-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); transition: all 0.15s; }
+  .lg-dot.filled { background: #fff; border-color: #fff; }
+  .lg-error { color: #FCA5A5; font-size: 13px; font-weight: 600; min-height: 20px; margin-bottom: 1rem; text-align: center; }
+  .lg-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: 100%; max-width: 280px; }
+  .lg-key { aspect-ratio: 1.4; border: none; background: rgba(255,255,255,0.12); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 24px; font-weight: 500; border-radius: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .lg-key:active { background: rgba(255,255,255,0.28); }
+  .lg-key.vacia { background: transparent; cursor: default; }
+  .lg-volver { margin-top: 1.5rem; background: none; border: none; color: rgba(255,255,255,0.75); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer; }
+  #clave-error .modal-status { display: block; }
   .aviso-aplica { font-size: 12px; color: var(--text2); background: var(--bg); border-radius: 8px; padding: 0.5rem 0.65rem; margin-top: 0.25rem; line-height: 1.4; }
   .btn-cambio { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #C4B5FD; background: #F5F0FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
   .btn-cambio:active { background: #EDE9FE; }
@@ -261,7 +287,14 @@
       <span class="today-badge" id="today-label">—</span>
     </div>
   </div>
-  <select id="vendedor-select">
+  <div class="vend-bar">
+    <span class="vend-nombre" id="vend-nombre">—</span>
+    <div class="vend-acciones">
+      <button class="btn-mapa" onclick="abrirModalClave(false)">Mi clave</button>
+      <button class="btn-mapa" onclick="salir()">Salir</button>
+    </div>
+  </div>
+  <select id="vendedor-select" style="display:none">
     <option value="">— Seleccioná tu nombre —</option>
   </select>
   <div class="search-overlay" id="search-overlay">
@@ -397,6 +430,42 @@
   </div>
 </div>
 
+<!-- INGRESO DE VENDEDORES -->
+<div class="lg-screen" id="login-screen">
+  <div class="lg-logo">Cedisur</div>
+  <div class="lg-title">Ruteo de visitas</div>
+  <div class="lg-mensaje" id="login-mensaje"></div>
+  <div id="login-paso-nombre" class="lg-paso">
+    <div class="lg-sub">Buscá tu nombre</div>
+    <input class="lg-buscar" id="login-buscar" type="search" placeholder="Escribí tu nombre o apellido" autocomplete="off" oninput="filtrarLogin()">
+    <div class="lg-lista" id="login-lista"></div>
+  </div>
+  <div id="login-paso-clave" class="lg-paso" style="display:none">
+    <div class="lg-sub" id="login-hola"></div>
+    <div class="lg-dots" id="login-dots"></div>
+    <div class="lg-error" id="login-error"></div>
+    <div class="lg-pad" id="login-pad"></div>
+    <button class="lg-volver" onclick="volverANombre()">No soy yo</button>
+  </div>
+</div>
+
+<!-- MODAL CAMBIAR CLAVE -->
+<div class="modal-overlay" id="clave-modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Cambiar mi clave</div>
+    <div class="aviso-aplica" id="clave-aviso" style="display:none">Estás usando la clave inicial. Elegí una clave propia de 4 números.</div>
+    <div class="modal-field"><label>Clave actual</label><input id="clave-actual" type="password" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+    <div class="modal-field"><label>Clave nueva (4 números)</label><input id="clave-nueva" type="password" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+    <div class="modal-field"><label>Repetir la clave nueva</label><input id="clave-repetir" type="password" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+    <div id="clave-error"></div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" id="clave-cancelar" onclick="cerrarModalClave()">Cancelar</button>
+      <button class="btn-geo-confirmar" id="clave-guardar" onclick="guardarClave()">Guardar clave</button>
+    </div>
+  </div>
+</div>
+
 <!-- MAPA DEL RECORRIDO -->
 <div class="map-overlay" id="map-overlay">
   <div class="map-header">
@@ -437,25 +506,265 @@ function esPresencial(row) {
 }
 function porOrden(a, b) { return (parseInt(a['ORDEN']) || 0) - (parseInt(b['ORDEN']) || 0); }
 
+// ── INGRESO CON NOMBRE Y CLAVE ───────────────────────────────────────────────
+// La clave se verifica en el servidor (hoja VENDEDORES, que no está publicada). El servidor entrega un pase de sesión
+// que vale 12 horas; los cambios y las ubicaciones se aceptan solo con un pase válido.
+let sesion = null;                 // { vendedor, token, exp, verificadoEn }
+let vendedoresLista = [];
+let loginElegido = '';
+let loginClave = '';
+let loginOcupado = false;
+let claveRecienIngresada = '';     // solo en memoria: evita volver a pedirla al cambiarla justo después de entrar
+let motivoCola = '';               // por qué un cambio no se envió ('red' o 'sesion')
+const SESION_KEY = 'sesion_vendedor';
+const VERIFICAR_CADA_MS = 10 * 60 * 1000;
+
+function leerSesionGuardada() {
+  try { const s = JSON.parse(localStorage.getItem(SESION_KEY) || 'null'); return s && s.exp > Date.now() ? s : null; } catch (e) { return null; }
+}
+function guardarSesion(s) { sesion = s; try { localStorage.setItem(SESION_KEY, JSON.stringify(s)); } catch (e) {} }
+function borrarSesion() { sesion = null; try { localStorage.removeItem(SESION_KEY); } catch (e) {} }
+function sesionVigente() { return !!(sesion && sesion.exp > Date.now()); }
+
+// Llama al Apps Script con parámetros en la dirección. Responde con JSONP para poder leer la respuesta desde el navegador.
+let jsonpSeq = 0;
+function llamarSistema(params, timeoutMs) {
+  return new Promise(function(resolve, reject) {
+    const nombre = '__cb' + (++jsonpSeq) + '_' + Date.now();
+    const q = Object.keys(params).map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
+    const script = document.createElement('script');
+    let terminado = false;
+    const timer = setTimeout(function() { if (!terminado) { limpiar(); reject(new Error('timeout')); } }, timeoutMs || 15000);
+    function limpiar() { terminado = true; clearTimeout(timer); delete window[nombre]; if (script.parentNode) script.parentNode.removeChild(script); }
+    window[nombre] = function(data) { if (!terminado) { limpiar(); resolve(data); } };
+    script.onerror = function() { if (!terminado) { limpiar(); reject(new Error('red')); } };
+    script.src = APPS_SCRIPT_URL + '?' + q + '&cb=' + nombre;
+    document.head.appendChild(script);
+  });
+}
+
+function mostrarLogin(mensaje) {
+  document.getElementById('login-screen').classList.add('open');
+  document.getElementById('login-mensaje').textContent = mensaje || '';
+  document.getElementById('login-paso-nombre').style.display = 'flex';
+  document.getElementById('login-paso-clave').style.display = 'none';
+  document.getElementById('login-buscar').value = '';
+  loginElegido = ''; loginClave = '';
+  filtrarLogin();
+}
+
+function filtrarLogin() {
+  const q = normTxt(document.getElementById('login-buscar').value).split(' ').filter(Boolean);
+  const lista = document.getElementById('login-lista');
+  lista.innerHTML = '';
+  const hallados = vendedoresLista.filter(function(v) {
+    const n = normTxt(v);
+    return q.every(function(t) { return n.indexOf(t) !== -1; });
+  });
+  if (!hallados.length) { lista.innerHTML = '<div class="lg-vacio">No encontramos ese nombre. Probá con tu apellido.</div>'; return; }
+  hallados.slice(0, 40).forEach(function(v) {
+    const b = document.createElement('button');
+    b.className = 'lg-item';
+    b.textContent = v;
+    b.addEventListener('click', function() { elegirLogin(v); });
+    lista.appendChild(b);
+  });
+}
+
+function elegirLogin(nombre) {
+  loginElegido = nombre; loginClave = '';
+  document.getElementById('login-mensaje').textContent = '';
+  document.getElementById('login-paso-nombre').style.display = 'none';
+  document.getElementById('login-paso-clave').style.display = 'flex';
+  document.getElementById('login-hola').textContent = 'Hola ' + nombre + '. Ingresá tu clave.';
+  document.getElementById('login-error').textContent = '';
+  renderPadLogin();
+  renderDotsLogin();
+}
+function volverANombre() { mostrarLogin(''); }
+
+function renderDotsLogin() {
+  const d = document.getElementById('login-dots');
+  d.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const s = document.createElement('div');
+    s.className = 'lg-dot' + (i < loginClave.length ? ' filled' : '');
+    d.appendChild(s);
+  }
+}
+function renderPadLogin() {
+  const pad = document.getElementById('login-pad');
+  pad.innerHTML = '';
+  ['1','2','3','4','5','6','7','8','9','','0','<'].forEach(function(k) {
+    const b = document.createElement('button');
+    b.className = 'lg-key' + (k === '' ? ' vacia' : '');
+    b.textContent = k === '<' ? '⌫' : k;
+    if (k !== '') b.addEventListener('click', function() { pulsarClaveLogin(k); });
+    pad.appendChild(b);
+  });
+}
+function pulsarClaveLogin(k) {
+  if (loginOcupado) return;
+  if (k === '<') loginClave = loginClave.slice(0, -1);
+  else if (loginClave.length < 4) loginClave += k;
+  document.getElementById('login-error').textContent = '';
+  renderDotsLogin();
+  if (loginClave.length === 4) intentarLogin();
+}
+
+function intentarLogin() {
+  const err = document.getElementById('login-error');
+  const nombre = loginElegido, pin = loginClave;
+  loginOcupado = true;
+  err.textContent = 'Verificando...';
+  llamarSistema({ accion: 'login', vendedor: nombre, pin: pin }).then(function(res) {
+    if (res && res.ok) {
+      claveRecienIngresada = pin;
+      guardarSesion({ vendedor: res.vendedor, token: res.token, exp: res.exp, verificadoEn: Date.now() });
+      entrarComo(res.vendedor);
+      if (res.debeCambiar) abrirModalClave(true);
+      return;
+    }
+    loginClave = ''; renderDotsLogin();
+    const e = (res && res.error) || '';
+    if (e === 'clave') err.textContent = 'Clave incorrecta. Te quedan ' + res.restantes + ' intento' + (res.restantes !== 1 ? 's' : '') + '.';
+    else if (e === 'bloqueado') err.textContent = 'Demasiados intentos. Probá de nuevo en ' + res.minutos + ' minuto' + (res.minutos !== 1 ? 's' : '') + ', o pedile a tu supervisor que la restablezca.';
+    else if (e === 'ocupado') err.textContent = 'El sistema está ocupado. Probá de nuevo en unos segundos.';
+    else err.textContent = 'No se pudo verificar. Probá de nuevo.';
+  }).catch(function() {
+    loginClave = ''; renderDotsLogin();
+    err.textContent = 'No se pudo verificar la clave. Revisá tu conexión y probá de nuevo.';
+  }).then(function() { loginOcupado = false; });
+}
+
+function entrarComo(nombreServidor) {
+  const nombre = vendedoresLista.find(function(v) { return mismoVendedor(v, nombreServidor); }) || nombreServidor;
+  document.getElementById('login-screen').classList.remove('open');
+  const sel = document.getElementById('vendedor-select');
+  sel.value = nombre;
+  if (sel.value !== nombre) { const o = document.createElement('option'); o.value = nombre; o.textContent = nombre; sel.appendChild(o); sel.value = nombre; }
+  document.getElementById('vend-nombre').textContent = nombre;
+  if (sel.onchange) sel.onchange();
+}
+
+function salir() {
+  borrarSesion();
+  claveRecienIngresada = '';
+  selectedVendedor = '';
+  document.getElementById('vendedor-select').value = '';
+  document.getElementById('vend-nombre').textContent = '—';
+  if (searchQuery) clearSearch();
+  cerrarModalClave();
+  render();
+  mostrarLogin('');
+}
+
+// Al abrir la app: si había una sesión vigente se entra directo; si no, se pide nombre y clave.
+function iniciarAcceso() {
+  const guardada = leerSesionGuardada();
+  if (!guardada || !vendedoresLista.some(function(v) { return mismoVendedor(v, guardada.vendedor); })) { mostrarLogin(''); return; }
+  sesion = guardada;
+  if (navigator.onLine === false) { entrarComo(guardada.vendedor); return; }
+  llamarSistema({ accion: 'verificar', vendedor: guardada.vendedor, token: guardada.token }, 10000).then(function(res) {
+    if (res && res.ok) { sesion.verificadoEn = Date.now(); guardarSesion(sesion); entrarComo(guardada.vendedor); }
+    else { borrarSesion(); mostrarLogin('Tu sesión venció. Ingresá de nuevo.'); }
+  }).catch(function() {
+    entrarComo(guardada.vendedor); // si no se puede verificar, se entra igual: los datos son de lectura y el servidor controla cada cambio
+  });
+}
+
+// Antes de enviar un cambio, se confirma que la sesión siga valiendo (por ejemplo, que no hayan restablecido la clave)
+function asegurarSesion() {
+  if (!sesionVigente()) return Promise.resolve(false);
+  if (navigator.onLine === false || Date.now() - (sesion.verificadoEn || 0) < VERIFICAR_CADA_MS) return Promise.resolve(true);
+  return llamarSistema({ accion: 'verificar', vendedor: sesion.vendedor, token: sesion.token }, 8000).then(function(res) {
+    if (res && res.ok) { sesion.verificadoEn = Date.now(); guardarSesion(sesion); return true; }
+    return false;
+  }).catch(function() { return true; });
+}
+
+function cerrarSesionPorVencimiento() {
+  cerrarConfirm();
+  cerrarModal();
+  borrarSesion();
+  mostrarLogin('Tu sesión venció. Ingresá de nuevo: el cambio que hiciste se envía solo.');
+}
+
+// ── CAMBIAR LA CLAVE ──
+function abrirModalClave(esInicial) {
+  if (!sesionVigente()) return;
+  ['clave-actual', 'clave-nueva', 'clave-repetir'].forEach(function(id) { document.getElementById(id).value = ''; });
+  if (claveRecienIngresada) document.getElementById('clave-actual').value = claveRecienIngresada;
+  document.getElementById('clave-aviso').style.display = esInicial ? 'block' : 'none';
+  document.getElementById('clave-cancelar').textContent = esInicial ? 'Más tarde' : 'Cancelar';
+  document.getElementById('clave-error').innerHTML = '';
+  const g = document.getElementById('clave-guardar'); g.disabled = false; g.textContent = 'Guardar clave';
+  document.getElementById('clave-modal-overlay').classList.add('open');
+}
+function cerrarModalClave() { document.getElementById('clave-modal-overlay').classList.remove('open'); }
+function errorClave(msg) { document.getElementById('clave-error').innerHTML = '<div class="modal-status err">' + msg + '</div>'; }
+
+function guardarClave() {
+  const actual = document.getElementById('clave-actual').value.trim();
+  const nueva = document.getElementById('clave-nueva').value.trim();
+  const rep = document.getElementById('clave-repetir').value.trim();
+  if (!/^\d{4}$/.test(actual)) { errorClave('Ingresá tu clave actual (4 números).'); return; }
+  if (!/^\d{4}$/.test(nueva)) { errorClave('La clave nueva tiene que ser de 4 números.'); return; }
+  if (nueva === '1234') { errorClave('Elegí una clave distinta de la inicial.'); return; }
+  if (nueva !== rep) { errorClave('Las dos claves nuevas no coinciden.'); return; }
+  const g = document.getElementById('clave-guardar');
+  g.disabled = true; g.textContent = 'Guardando...';
+  document.getElementById('clave-error').innerHTML = '';
+  llamarSistema({ accion: 'cambiarClave', vendedor: sesion.vendedor, pin: actual, nueva: nueva }).then(function(res) {
+    if (res && res.ok) {
+      claveRecienIngresada = '';
+      guardarSesion({ vendedor: res.vendedor, token: res.token, exp: res.exp, verificadoEn: Date.now() });
+      cerrarModalClave();
+      document.getElementById('confirm-title').textContent = 'Clave cambiada';
+      document.getElementById('confirm-detail').innerHTML = 'Desde ahora ingresás con tu clave nueva.';
+      document.getElementById('confirm-overlay').classList.add('open');
+      return;
+    }
+    const e = (res && res.error) || '';
+    if (e === 'clave') errorClave('La clave actual no es correcta. Te quedan ' + res.restantes + ' intento' + (res.restantes !== 1 ? 's' : '') + '.');
+    else if (e === 'bloqueado') errorClave('Demasiados intentos. Probá de nuevo en ' + res.minutos + ' minutos.');
+    else if (e === 'formato') errorClave('La clave nueva tiene que ser de 4 números.');
+    else if (e === 'inicial') errorClave('Elegí una clave distinta de la inicial.');
+    else if (e === 'igual') errorClave('La clave nueva es igual a la actual.');
+    else errorClave('No se pudo cambiar la clave. Probá de nuevo.');
+    g.disabled = false; g.textContent = 'Guardar clave';
+  }).catch(function() {
+    errorClave('No se pudo cambiar la clave. Revisá tu conexión y probá de nuevo.');
+    g.disabled = false; g.textContent = 'Guardar clave';
+  });
+}
+
 // ── CAMBIOS DE RUTEO: envío y cola si no hay señal ───────────────────────────
 function colaKey(v) { return 'cola_cambios_' + v; }
 function leerCola(v) { try { return JSON.parse(localStorage.getItem(colaKey(v)) || '[]'); } catch (e) { return []; } }
 function escribirCola(v, arr) { try { localStorage.setItem(colaKey(v), JSON.stringify(arr)); } catch (e) {} }
 function encolarCambio(payload) {
+  const copia = Object.assign({}, payload);
+  delete copia.token; // el pase se pone de nuevo al enviar
   const cola = leerCola(payload.vendedor);
-  cola.push(payload);
+  cola.push(copia);
   escribirCola(payload.vendedor, cola);
 }
-// Envía un cambio al sistema, que lo aplica en el momento. Si no hay conexión queda guardado y se reenvía solo.
+// Envía un cambio al sistema, que lo aplica en el momento. Si no hay conexión o la sesión venció, queda guardado y se reenvía solo.
 function enviarCambioAlSistema(payload) {
-  if (navigator.onLine === false) { encolarCambio(payload); return Promise.resolve(false); }
-  return fetch(APPS_SCRIPT_URL, {
-    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-  }).then(function() { return true; }).catch(function() { encolarCambio(payload); return false; });
+  motivoCola = '';
+  return asegurarSesion().then(function(valida) {
+    if (!valida) { encolarCambio(payload); motivoCola = 'sesion'; cerrarSesionPorVencimiento(); return false; }
+    if (navigator.onLine === false) { encolarCambio(payload); motivoCola = 'red'; return false; }
+    payload.token = sesion.token;
+    return fetch(APPS_SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    }).then(function() { return true; }).catch(function() { encolarCambio(payload); motivoCola = 'red'; return false; });
+  });
 }
 function vaciarColaCambios() {
   const v = selectedVendedor;
-  if (!v) return;
+  if (!v || !sesionVigente() || !mismoVendedor(sesion.vendedor, v)) return;
   const cola = leerCola(v);
   if (!cola.length || navigator.onLine === false) return;
   escribirCola(v, []);
@@ -702,7 +1011,7 @@ function enviarSolicitud() {
   const sinConexion = navigator.onLine === false;
   mostrarPopupCambio(sinConexion ? 'Cambio guardado sin conexión' : '¡Cambio enviado!', nombreCliente, tipoStr, detalle, sinConexion ? NOTA_SIN_SENAL : NOTA_APLICADO);
   enviarCambioAlSistema(payload).then(function(ok) {
-    if (!ok && !sinConexion) mostrarPopupCambio('Cambio guardado sin conexión', nombreCliente, tipoStr, detalle, NOTA_SIN_SENAL);
+    if (!ok && !sinConexion && motivoCola === 'red') mostrarPopupCambio('Cambio guardado sin conexión', nombreCliente, tipoStr, detalle, NOTA_SIN_SENAL);
   });
 }
 function cerrarConfirm() {
@@ -950,11 +1259,12 @@ function confirmarGeo() {
 }
 
 function enviarGeoAlSistema(codigo, nombre, vendedor, lat, lon) {
+  if (!sesionVigente() || !mismoVendedor(sesion.vendedor, vendedor)) return Promise.resolve(false); // queda pendiente y se reenvía al volver a ingresar
   return fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ accion: 'geolocalizar', codigo: codigo, cliente: nombre, vendedor: vendedor, lat: lat, lon: lon })
+    body: JSON.stringify({ accion: 'geolocalizar', codigo: codigo, cliente: nombre, vendedor: vendedor, lat: lat, lon: lon, token: sesion.token })
   }).then(function() { return true; }).catch(function() { return false; });
 }
 
@@ -1313,7 +1623,7 @@ function enviarPedidoAgregar() {
   const sinConexion = navigator.onLine === false;
   mostrarPopupCambio(sinConexion ? 'Cambio guardado sin conexión' : '¡Cliente agregado!', cli.nombre, 'agregar', detalle, sinConexion ? NOTA_SIN_SENAL : NOTA_APLICADO);
   enviarCambioAlSistema(payload).then(function(ok) {
-    if (!ok && !sinConexion) mostrarPopupCambio('Cambio guardado sin conexión', cli.nombre, 'agregar', detalle, NOTA_SIN_SENAL);
+    if (!ok && !sinConexion && motivoCola === 'red') mostrarPopupCambio('Cambio guardado sin conexión', cli.nombre, 'agregar', detalle, NOTA_SIN_SENAL);
   });
 }
 
@@ -1420,7 +1730,7 @@ function render() {
   invalidarGeoCache();
   if (!selectedVendedor) {
     document.getElementById('app-content').innerHTML =
-      '<div class="empty"><div class="empty-icon">👋</div><div class="empty-text">Seleccioná tu nombre para ver tu ruteo</div></div>';
+      '<div class="empty"><div class="empty-icon">👋</div><div class="empty-text">Ingresá con tu nombre y tu clave para ver tu ruteo</div></div>';
     document.getElementById('days-strip').innerHTML = '';
     return;
   }
@@ -1447,9 +1757,31 @@ function render() {
   renderList(clients, vendRows);
 }
 
+// Una misma persona puede figurar escrita de dos formas en la planilla ("Guillermo Alderete" y "ALDERETE GUILLERMO")
+// hasta que se estandarice: se unifica a la forma que más se repite, para que la lista de ingreso y su ruteo sean uno solo.
+function mismoVendedor(a, b) { return normTokensTxt(a) === normTokensTxt(b); }
+function unificarNombresDeVendedores() {
+  const cuenta = {};
+  allData.forEach(function(r) {
+    const v = r['VENDEDOR'];
+    if (!v) return;
+    const k = normTokensTxt(v);
+    if (!cuenta[k]) cuenta[k] = {};
+    cuenta[k][v] = (cuenta[k][v] || 0) + 1;
+  });
+  const dominante = {};
+  Object.keys(cuenta).forEach(function(k) {
+    let mejor = '', max = 0;
+    Object.keys(cuenta[k]).sort().forEach(function(v) { if (cuenta[k][v] > max) { max = cuenta[k][v]; mejor = v; } });
+    dominante[k] = mejor;
+  });
+  allData.forEach(function(r) { if (r['VENDEDOR']) r['VENDEDOR'] = dominante[normTokensTxt(r['VENDEDOR'])]; });
+}
+
 function init(csvText) {
   limpiarDatosAnteriores();
   allData = parseCSV(csvText);
+  unificarNombresDeVendedores();
   const seen = {};
   const vendedores = [];
   allData.forEach(function(r) {
@@ -1476,7 +1808,9 @@ function init(csvText) {
   const d = new Date();
   document.getElementById('today-label').textContent =
     d.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
+  vendedoresLista = vendedores;
   render();
+  iniciarAcceso();
 }
 
 async function cargarUbicacionesSAP() {
@@ -1523,6 +1857,9 @@ loadData();
 
 document.getElementById('modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModal();
+});
+document.getElementById('clave-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModalClave();
 });
 document.getElementById('agregar-modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModalAgregar();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel de Supervisor</title>
+<title>Panel Supervisor de Ruteos</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -59,10 +59,10 @@
   .zona-btn svg { width: 16px; height: 16px; opacity: 0.6; }
 
   /* TAB SWITCHER */
-  .view-tabs { display: flex; gap: 4px; margin-top: 0.5rem; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 3px; }
-  .view-tab { flex: 1; text-align: center; position: relative; padding: 5px 2px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; color: rgba(255,255,255,0.6); background: transparent; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-  .view-tab.active { background: #fff; color: var(--accent); }
-  .view-tab .badge-count { position: absolute; top: -7px; right: 1px; background: var(--sup); color: #fff; font-size: 9px; font-weight: 700; line-height: 14px; min-width: 14px; text-align: center; border-radius: 10px; padding: 0 4px; }
+  .view-tabs { display: flex; gap: 8px; margin-top: 0.75rem; }
+  .view-tab { flex: 1; text-align: center; position: relative; padding: 7px 2px; border-radius: 8px; font-size: 11px; font-weight: 600; white-space: nowrap; color: rgba(255,255,255,0.85); background: transparent; border: 1.5px solid rgba(255,255,255,0.4); cursor: pointer; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .view-tab.active { background: #fff; color: var(--accent); border-color: #fff; }
+  .view-tab .badge-count { position: absolute; top: -8px; right: -4px; background: var(--sup); color: #fff; font-size: 9px; font-weight: 700; line-height: 14px; min-width: 14px; text-align: center; border-radius: 10px; padding: 0 4px; }
 
 
   /* HEADER */
@@ -227,8 +227,20 @@
   .btn-cli-accion.danger { background: #C0392B; }
   .btn-cli-accion.info { background: #7C3AED; }
 
+  .cli-acciones { display: flex; gap: 6px; margin-top: auto; }
+  .cli-acciones .btn-cli-accion { margin-top: 0; }
+  .cli-acciones .btn-cli-accion:first-child { flex: 2; }
+  .cli-acciones .btn-cli-accion:last-child { flex: 1; }
+  .btn-cli-accion.danger-suave { background: #FEF2F2; color: #B91C1C; border: 1.5px solid #FCA5A5; }
+  .cli-estado { font-size: 11px; font-weight: 700; text-align: center; padding: 6px; border-radius: 7px; margin-top: auto; }
+  .cli-estado.pendiente { background: #FFF7ED; color: #C2410C; }
+  .cli-estado.hecho { background: #E6F7ED; color: #1F7A42; }
+  .btn-inact-sup { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #B91C1C; background: #FEF2F2; border: 1.5px solid #FCA5A5; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .inact-chip { margin-top: 6px; font-size: 12px; font-weight: 700; text-align: center; padding: 8px; border-radius: 8px; background: #FFF7ED; color: #C2410C; }
+
   /* CAMBIOS DE LOS VENDEDORES (registro) */
   .filtros-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .cambios-botones { display: flex; gap: 16px; flex-shrink: 0; }
   .cambios-barra { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem 0; font-size: 12px; color: var(--text3); }
   .cambios-list { padding: 0.5rem 1.25rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 8px; }
   .cambio-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem 0.9rem; }
@@ -271,7 +283,7 @@
 <!-- PANTALLA DE SELECCIÓN DE ZONA -->
 <div class="zona-screen" id="zona-screen">
   <div class="pin-logo">Cedisur</div>
-  <div class="pin-title">Panel de Supervisor</div>
+  <div class="pin-title">Panel Supervisor de Ruteos</div>
   <div class="pin-sub">Seleccioná tu zona</div>
   <div class="zona-list" id="zona-list"></div>
 </div>
@@ -279,7 +291,7 @@
 <!-- PANTALLA DE PIN -->
 <div class="pin-screen hidden" id="pin-screen">
   <div class="pin-logo">Cedisur</div>
-  <div class="pin-title">Panel de Supervisor</div>
+  <div class="pin-title">Panel Supervisor de Ruteos</div>
   <div class="pin-sub" id="pin-sub">Ingresá tu PIN de acceso</div>
   <div class="pin-dots" id="pin-dots"></div>
   <div class="pin-error" id="pin-error"></div>
@@ -289,7 +301,7 @@
 <!-- HEADER (oculto hasta login) -->
 <div class="header" id="header" style="display:none">
   <div class="header-top">
-    <span class="app-name">Ruteo · <span class="sup-badge">Supervisor</span></span>
+    <span class="app-name">Panel Supervisor de Ruteos</span>
     <button class="btn-logout" onclick="logout()">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2H3v12h3M10 11l3-3-3-3M13 8H6"/></svg>
       Salir
@@ -333,8 +345,7 @@
   <div id="cli-controls" style="display:none">
     <select id="cli-subvista">
       <option value="sinRutear">📋 Clientes sin rutear</option>
-      <option value="baja">🚫 Clientes a dar de baja</option>
-      <option value="razonSocial">🔄 Cambios de razón social</option>
+      <option value="inactivar">🚫 Solicitudes de inactivación</option>
     </select>
     <input type="search" id="cli-search" class="cli-search" placeholder="Buscar por nombre o código" autocomplete="off">
     <select id="cli-vendedor-filter"></select>
@@ -343,6 +354,37 @@
 </div>
 
 <div id="app-content"></div>
+
+<!-- MODAL INACTIVAR CLIENTE (supervisor) -->
+<div class="modal-overlay" id="inactivar-modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Pedir inactivación</div>
+    <div class="modal-cliente" id="inact-modal-cliente"></div>
+    <div class="modal-field" style="margin-top:0">
+      <div class="cli-detalle">Queda anotado en la hoja INACTIVAR para que lo gestionen: <strong>no se da de baja en el momento</strong>.</div>
+    </div>
+    <div class="modal-field">
+      <label>Motivo</label>
+      <select id="inact-motivo" onchange="validarInactivar()">
+        <option value="">— Seleccioná —</option>
+        <option>Cerró definitivamente</option>
+        <option>No compra o no baja pedidos</option>
+        <option>Duplicado o cambió de razón social</option>
+        <option>Otro</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Comentario (opcional)</label>
+      <textarea id="inact-comentario" placeholder="Ej: cerró en octubre..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="cerrarModalInactivar()">Cancelar</button>
+      <button class="btn-confirmar" id="inact-btn" disabled onclick="enviarInactivar()">Informar</button>
+    </div>
+    <div id="inact-status"></div>
+  </div>
+</div>
 
 <!-- MODAL EDICIÓN DE CLIENTE (supervisor) -->
 <div class="modal-overlay" id="edit-modal-overlay">
@@ -545,6 +587,7 @@ function guardarSesionStorage() {
       zonaSeleccionada: zonaSeleccionada,
       selectedVendedor: selectedVendedor,
       diasFiltro: diasFiltro,
+      supPin: supPin,
       estadoVirtualPorVendedor: estadoVirtualPorVendedor
     }));
   } catch (e) {}
@@ -558,6 +601,7 @@ function restaurarSesionStorage() {
     if (!s.supActual) return false;
     supActual = s.supActual;
     zonaSeleccionada = s.zonaSeleccionada || '';
+    supPin = s.supPin || '';
     selectedVendedor = s.selectedVendedor || '';
     diasFiltro = s.diasFiltro || DAYS_ORDER.slice(0, 5);
     estadoVirtualPorVendedor = s.estadoVirtualPorVendedor || {};
@@ -795,6 +839,7 @@ function pinConfirmar() {
     return;
   }
   supActual = sup;
+  supPin = pinActual;
   guardarSesionStorage();
   iniciarSesion();
 }
@@ -803,6 +848,10 @@ function logout() {
   if (hayCambiosPendientes() && !confirm('Tenés cambios sin guardar que se perderán. ¿Salir igual?')) return;
   supActual = null;
   pinActual = '';
+  supPin = '';
+  solicitudesInactivar = [];
+  inactivarEstado = 'sin cargar';
+  inactivarVerTodas = false;
   selectedVendedor = '';
   zonaSeleccionada = '';
   viewMode = 'ruteo';
@@ -859,6 +908,7 @@ function iniciarSesion() {
   renderCambiosFiltros();
   actualizarBadgeCambios();
   actualizarBadgeClientes();
+  cargarSolicitudesInactivar();
 
   document.getElementById('pin-screen').classList.add('hidden');
   document.getElementById('zona-screen').classList.add('hidden');
@@ -911,12 +961,6 @@ function codigoYaPendienteEnAlgunVendedor(codigo) {
   });
 }
 
-function codigoYaEliminadoEnAlgunVendedor(codigo) {
-  return Object.keys(estadoVirtualPorVendedor).some(function(key) {
-    return !!estadoVirtualPorVendedor[key].eliminados[codigo];
-  });
-}
-
 function clientesSinRutear() {
   const ruteados = codigosRuteadosZona();
   return baseClientes.filter(function(c) {
@@ -926,57 +970,22 @@ function clientesSinRutear() {
   });
 }
 
-function clientesParaDarDeBaja() {
-  const activos = {};
-  baseClientes.forEach(function(c) { activos[c['Código SN']] = true; });
-  const ruteados = codigosRuteadosZona();
-  return Object.keys(ruteados).map(function(codigo) { return ruteados[codigo]; })
-    .filter(function(r) {
-      return !activos[r['CODIGO CLIENTE']] && !codigoYaEliminadoEnAlgunVendedor(r['CODIGO CLIENTE']);
-    });
-}
-
-function cambiosRazonSocial() {
-  const ruteados = codigosRuteadosZona();
-  const resultado = [];
-  baseClientes.forEach(function(c) {
-    if (norm(c['Nombre Territorio']) !== norm(supActual['Zona'])) return;
-    const comentarios = c['Comentarios'] || '';
-    const match = comentarios.match(/Cambio RS de\s*(C\d+)/i);
-    if (!match) return;
-    const codigoViejo = match[1];
-    const filaVieja = ruteados[codigoViejo];
-    if (filaVieja && !codigoYaEliminadoEnAlgunVendedor(codigoViejo) && !codigoYaPendienteEnAlgunVendedor(c['Código SN'])) {
-      resultado.push({ clienteNuevo: c, filaVieja: filaVieja, codigoViejo: codigoViejo });
-    }
-  });
-  return resultado;
-}
-
 function actualizarBadgeClientes() {
   const badge = document.getElementById('cli-badge');
-  const n = clientesSinRutear().length + clientesParaDarDeBaja().length + cambiosRazonSocial().length;
+  const n = clientesSinRutear().length;
   if (n > 0) { badge.style.display = 'inline-block'; badge.textContent = n; }
   else { badge.style.display = 'none'; }
 }
 
 function vendedorDeItem(sub, item) {
-  if (sub === 'sinRutear') return item['Vendedor'] || '';
-  if (sub === 'baja') return item['VENDEDOR'] || '';
-  return item.filaVieja['VENDEDOR'] || '';
+  return sub === 'inactivar' ? (item.vendedor || '') : (item['Vendedor'] || '');
 }
 function textoBusquedaDeItem(sub, item) {
-  let partes;
-  if (sub === 'sinRutear') partes = [item['Nombre SN'], item['Código SN']];
-  else if (sub === 'baja') partes = [item['NOMBRE COMERCIAL'], item['CODIGO CLIENTE']];
-  else partes = [item.clienteNuevo['Nombre SN'], item.clienteNuevo['Código SN'], item.codigoViejo, item.filaVieja['NOMBRE COMERCIAL']];
+  const partes = sub === 'inactivar' ? [item.cliente, item.codigo] : [item['Nombre SN'], item['Código SN']];
   return norm(partes.join(' '));
 }
-
 function localidadDeItem(sub, item) {
-  if (sub === 'sinRutear') return item['Localidad'] || '';
-  if (sub === 'baja') return item['LOCALIDAD'] || '';
-  return item.filaVieja['LOCALIDAD'] || '';
+  return sub === 'inactivar' ? (item.localidad || '') : (item['Localidad'] || '');
 }
 
 function poblarFiltrosClientes(sub, itemsSinFiltrar) {
@@ -1025,16 +1034,18 @@ function poblarFiltrosClientes(sub, itemsSinFiltrar) {
 
 function renderClientesView() {
   const sel = document.getElementById('cli-subvista');
-  sel.onchange = renderClientesView;
+  sel.onchange = function() { if (sel.value === 'inactivar' && inactivarEstado !== 'ok') cargarSolicitudesInactivar(); renderClientesView(); };
   const sub = sel.value;
   const content = document.getElementById('app-content');
   content.innerHTML = '';
   actualizarBadgeClientes();
 
   let itemsCrudos;
-  if (sub === 'sinRutear') itemsCrudos = clientesSinRutear();
-  else if (sub === 'baja') itemsCrudos = clientesParaDarDeBaja();
-  else itemsCrudos = cambiosRazonSocial();
+  if (sub === 'inactivar') {
+    itemsCrudos = solicitudesInactivar.filter(function(x) { return inactivarVerTodas || norm(x.estado) === 'PENDIENTE'; });
+  } else {
+    itemsCrudos = clientesSinRutear();
+  }
 
   poblarFiltrosClientes(sub, itemsCrudos);
 
@@ -1060,6 +1071,7 @@ function renderClientesView() {
       content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay clientes activos sin rutear que coincidan con el filtro.</div></div>';
       return;
     }
+    const pendientes = pendientesInactivar();
     items.forEach(function(c) {
       const card = document.createElement('div');
       card.className = 'cli-card';
@@ -1067,68 +1079,154 @@ function renderClientesView() {
         '<div class="cli-nombre">' + (c['Nombre SN'] || '') + '</div>' +
         '<div class="cli-sub">' + (c['Localidad'] || '') + ' · ' + c['Código SN'] + ' · Vendedor: ' + (c['Vendedor'] || '—') + '</div>' +
         '<div class="cli-detalle">' + (c['Dirección entrega'] || '—') + '<br>Última factura: ' + (c['Fecha Última Factura'] || 'Sin compras registradas') + '</div>';
-      const btn = document.createElement('button');
-      btn.className = 'btn-cli-accion';
-      btn.textContent = '📋 Rutear cliente';
-      btn.addEventListener('click', function() { abrirModalAlta(c); });
-      card.appendChild(btn);
-      list.appendChild(card);
-    });
-
-  } else if (sub === 'baja') {
-    if (!items.length) {
-      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay clientes para dar de baja que coincidan con el filtro.</div></div>';
-      return;
-    }
-    items.forEach(function(r) {
-      const card = document.createElement('div');
-      card.className = 'cli-card';
-      card.innerHTML =
-        '<div class="cli-nombre">' + (r['NOMBRE COMERCIAL'] || '') + '</div>' +
-        '<div class="cli-sub">' + (r['LOCALIDAD'] || '') + ' · ' + r['CODIGO CLIENTE'] + ' · ' + (r['VENDEDOR'] || '') + '</div>' +
-        '<div class="cli-detalle">Este código ya no figura como cliente activo. Día actual: ' + (r['DIA CARGA DE PEDIDO'] || '—') + '</div>';
-      const btn = document.createElement('button');
-      btn.className = 'btn-cli-accion danger';
-      btn.textContent = '🚫 Dar de baja del ruteo';
-      btn.addEventListener('click', function() {
-        eliminarClienteVirtual(r['VENDEDOR'], r['CODIGO CLIENTE'], norm(r['DIA CARGA DE PEDIDO']));
-        renderClientesView();
-      });
-      card.appendChild(btn);
+      if (pendientes[codigoNorm(c['Código SN'])]) {
+        const chip = document.createElement('div');
+        chip.className = 'cli-estado pendiente';
+        chip.textContent = 'Inactivación solicitada';
+        card.appendChild(chip);
+      } else {
+        const acciones = document.createElement('div');
+        acciones.className = 'cli-acciones';
+        const btn = document.createElement('button');
+        btn.className = 'btn-cli-accion';
+        btn.textContent = '📋 Rutear cliente';
+        btn.addEventListener('click', function() { abrirModalAlta(c); });
+        const btnIn = document.createElement('button');
+        btnIn.className = 'btn-cli-accion danger-suave';
+        btnIn.textContent = 'Inactivar';
+        btnIn.addEventListener('click', function() { abrirModalInactivar(c['Código SN'], c['Nombre SN'], c['Localidad']); });
+        acciones.appendChild(btn);
+        acciones.appendChild(btnIn);
+        card.appendChild(acciones);
+      }
       list.appendChild(card);
     });
 
   } else {
-    if (!items.length) {
-      content.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay cambios de razón social que coincidan con el filtro.</div></div>';
+    // Solicitudes de inactivación de la zona (las que pidieron los vendedores y las que pidió el supervisor)
+    const barra = document.createElement('div');
+    barra.className = 'cambios-barra';
+    const cuenta = document.createElement('span');
+    cuenta.textContent = items.length + ' solicitud' + (items.length !== 1 ? 'es' : '') + (inactivarVerTodas ? '' : ' pendiente' + (items.length !== 1 ? 's' : ''));
+    barra.appendChild(cuenta);
+    const botones = document.createElement('span');
+    botones.className = 'cambios-botones';
+    botones.appendChild(crearBoton(inactivarVerTodas ? 'Solo pendientes' : 'Incluir inactivadas', 'btn-link', function() { inactivarVerTodas = !inactivarVerTodas; renderClientesView(); }));
+    botones.appendChild(crearBoton('Actualizar', 'btn-link', function() { cargarSolicitudesInactivar(); }));
+    barra.appendChild(botones);
+    content.appendChild(barra);
+
+    if (inactivarEstado === 'cargando' && !solicitudesInactivar.length) {
+      content.insertAdjacentHTML('beforeend', '<div class="empty"><div class="empty-text">Cargando solicitudes...</div></div>');
       return;
     }
-    items.forEach(function(it) {
+    if (inactivarEstado === 'error' && !solicitudesInactivar.length) {
+      content.insertAdjacentHTML('beforeend', '<div class="empty"><div class="empty-text">No se pudieron cargar las solicitudes. Tocá "Actualizar" para reintentar.</div></div>');
+      return;
+    }
+    if (!items.length) {
+      content.insertAdjacentHTML('beforeend', '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay solicitudes de inactivación' + (inactivarVerTodas ? '' : ' pendientes') + ' que coincidan con el filtro.</div></div>');
+      return;
+    }
+    items.forEach(function(x) {
       const card = document.createElement('div');
       card.className = 'cli-card';
+      const hecho = norm(x.estado) !== 'PENDIENTE';
       card.innerHTML =
-        '<div class="cli-nombre">' + it.codigoViejo + ' → ' + it.clienteNuevo['Código SN'] + '</div>' +
-        '<div class="cli-sub">' + (it.filaVieja['NOMBRE COMERCIAL'] || '') + ' · ' + (it.filaVieja['VENDEDOR'] || '') + '</div>' +
-        '<div class="cli-detalle">Nuevo nombre: ' + (it.clienteNuevo['Nombre SN'] || '') + '<br>Mantiene día (' + it.filaVieja['DIA CARGA DE PEDIDO'] + ') y orden actual.<br>Última factura: ' + (it.clienteNuevo['Fecha Última Factura'] || 'Sin compras registradas') + '</div>';
-      const btn = document.createElement('button');
-      btn.className = 'btn-cli-accion info';
-      btn.textContent = '🔄 Aplicar reemplazo';
-      btn.addEventListener('click', function() {
-        const clienteNuevo = {
-          codigo: it.clienteNuevo['Código SN'],
-          nombre: it.clienteNuevo['Nombre SN'],
-          localidad: it.clienteNuevo['Localidad'],
-          direccion: it.clienteNuevo['Dirección entrega']
-        };
-        reemplazarPorCambioRS(it.filaVieja['VENDEDOR'], it.codigoViejo, clienteNuevo, norm(it.filaVieja['DIA CARGA DE PEDIDO']));
-        renderClientesView();
-      });
-      card.appendChild(btn);
+        '<div class="cli-nombre">' + (x.cliente || x.codigo) + '</div>' +
+        '<div class="cli-sub">' + (x.localidad || '') + ' · ' + x.codigo + ' · Vendedor: ' + (x.vendedor || '—') + '</div>' +
+        '<div class="cli-detalle">' + (x.direccion || '—') + '<br>Última factura: ' + (x.factura || 'Sin compras registradas') +
+        '<br>Motivo: ' + (x.motivo || '—') + '<br>Pedido por ' + (norm(x.solicito) === 'SUPERVISOR' ? 'el supervisor' : 'el vendedor') + ' el ' + (x.fecha || '') + ' ' + (x.hora || '') + '</div>' +
+        '<div class="cli-estado ' + (hecho ? 'hecho' : 'pendiente') + '">' + (hecho ? (x.estado || 'Inactivado') : 'Pendiente de inactivar') + '</div>';
       list.appendChild(card);
     });
   }
 
   content.appendChild(list);
+}
+
+// ── INACTIVAR CLIENTES ─────────────────────────────────────────────────────────
+// Las solicitudes se anotan en la hoja INACTIVAR. El panel las lee y las escribe a través del Apps Script,
+// que valida la zona y el PIN del supervisor en el servidor (hoja SUPERVISORES).
+let supPin = '';
+let solicitudesInactivar = [];
+let inactivarEstado = 'sin cargar'; // 'sin cargar' | 'cargando' | 'ok' | 'error'
+let inactivarVerTodas = false;
+let jsonpSeq = 0;
+
+function codigoNorm(c) { return String(c === undefined || c === null ? '' : c).trim().toUpperCase(); }
+
+function llamarSistema(params, timeoutMs) {
+  return new Promise(function(resolve, reject) {
+    const nombre = '__cb' + (++jsonpSeq) + '_' + Date.now();
+    const q = Object.keys(params).map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
+    const script = document.createElement('script');
+    let terminado = false;
+    const timer = setTimeout(function() { if (!terminado) { limpiar(); reject(new Error('timeout')); } }, timeoutMs || 15000);
+    function limpiar() { terminado = true; clearTimeout(timer); delete window[nombre]; if (script.parentNode) script.parentNode.removeChild(script); }
+    window[nombre] = function(data) { if (!terminado) { limpiar(); resolve(data); } };
+    script.onerror = function() { if (!terminado) { limpiar(); reject(new Error('red')); } };
+    script.src = APPS_SCRIPT_URL + '?' + q + '&cb=' + nombre;
+    document.head.appendChild(script);
+  });
+}
+
+function pendientesInactivar() {
+  const set = {};
+  solicitudesInactivar.forEach(function(x) { if (norm(x.estado) === 'PENDIENTE') set[codigoNorm(x.codigo)] = true; });
+  return set;
+}
+
+function cargarSolicitudesInactivar() {
+  if (!supActual || !supPin) return Promise.resolve();
+  inactivarEstado = 'cargando';
+  if (viewMode === 'clientes') renderClientesView();
+  return llamarSistema({ accion: 'inactivarLista', zona: supActual['Zona'], pin: supPin }, 20000).then(function(res) {
+    if (res && res.ok) { solicitudesInactivar = res.filas || []; inactivarEstado = 'ok'; }
+    else inactivarEstado = 'error';
+  }).catch(function() { inactivarEstado = 'error'; }).then(function() {
+    if (viewMode === 'clientes') renderClientesView();
+  });
+}
+
+let inactivarCliente = null;
+function abrirModalInactivar(codigo, nombre, localidad) {
+  inactivarCliente = { codigo: codigo, nombre: nombre, localidad: localidad };
+  document.getElementById('inact-modal-cliente').textContent = (nombre || codigo) + (localidad ? ' · ' + localidad : '');
+  document.getElementById('inact-motivo').value = '';
+  document.getElementById('inact-comentario').value = '';
+  document.getElementById('inact-status').innerHTML = '';
+  const b = document.getElementById('inact-btn'); b.disabled = true; b.textContent = 'Informar';
+  document.getElementById('inactivar-modal-overlay').classList.add('open');
+}
+function cerrarModalInactivar() {
+  document.getElementById('inactivar-modal-overlay').classList.remove('open');
+  inactivarCliente = null;
+}
+function validarInactivar() { document.getElementById('inact-btn').disabled = !document.getElementById('inact-motivo').value; }
+
+function enviarInactivar() {
+  if (!inactivarCliente) return;
+  const cli = inactivarCliente;
+  const comentario = document.getElementById('inact-comentario').value.trim();
+  const motivo = document.getElementById('inact-motivo').value + (comentario ? ' - ' + comentario : '');
+  const b = document.getElementById('inact-btn'); b.disabled = true; b.textContent = 'Enviando...';
+  const st = document.getElementById('inact-status');
+  const falla = function(msg) { st.innerHTML = '<div class="modal-status err">' + msg + '</div>'; b.disabled = false; b.textContent = 'Reintentar'; };
+  llamarSistema({ accion: 'inactivarSupervisor', zona: supActual['Zona'], pin: supPin, codigo: cli.codigo, motivo: motivo }, 25000).then(function(res) {
+    if (res && res.ok) {
+      st.innerHTML = '<div class="modal-status ok">✅ ' + (res.duplicado ? 'Ya estaba informado.' : 'Informado. Quedó anotado en la hoja INACTIVAR.') + '</div>';
+      b.textContent = 'Listo';
+      cargarSolicitudesInactivar().then(function() { setTimeout(function() { cerrarModalInactivar(); refrescarVistaActual(); }, 700); });
+      return;
+    }
+    const e = res && res.error;
+    if (e === 'zona') falla('Ese cliente no es de tu zona.');
+    else if (e === 'cliente') falla('Ese cliente ya no figura en BASE CLIENTES.');
+    else if (e === 'sesion') falla('Tu sesión no es válida. Salí y volvé a ingresar con tu PIN.');
+    else if (e === 'ocupado') falla('El sistema está ocupado. Probá de nuevo en unos segundos.');
+    else falla('No se pudo informar. Probá de nuevo.');
+  }).catch(function() { falla('No se pudo enviar. Revisá tu conexión y probá de nuevo.'); });
 }
 
 // ── MODAL RUTEAR CLIENTE NUEVO ───────────────────────────────────────────────────
@@ -1599,20 +1697,6 @@ function agregarClienteVirtual(vendedor, cliente, dia, refCodigo, posicion) {
   markDirty();
 }
 
-function reemplazarPorCambioRS(vendedor, codigoViejo, clienteNuevo, dia) {
-  const rows = ruteoDelVendedor(vendedor);
-  const ev = getEstadoVirtual(vendedor);
-  materializarDia(vendedor, dia, rows);
-  const idx = ev.ordenVirtual[dia].indexOf(codigoViejo);
-  if (idx !== -1) ev.ordenVirtual[dia].splice(idx, 1);
-  ev.eliminados[codigoViejo] = true;
-  ev.pendientes[codigoViejo] = true;
-  const insertIdx = idx === -1 ? ev.ordenVirtual[dia].length : idx;
-  ev.ordenVirtual[dia].splice(insertIdx, 0, clienteNuevo.codigo);
-  ev.altas[clienteNuevo.codigo] = clienteNuevo;
-  ev.pendientes[clienteNuevo.codigo] = true;
-  markDirty();
-}
 
 // ── SELECCIÓN MÚLTIPLE ───────────────────────────────────────────────────────────
 function claveSel(dia, codigo) { return dia + '|' + codigo; }
@@ -1852,6 +1936,22 @@ function buildClientCardSupervisor(row, dia, ordenVisual) {
     abrirModalEdit(codigo, dia, row['NOMBRE COMERCIAL']);
   });
   detail.appendChild(btnEditar);
+
+  if (pendientesInactivar()[codigoNorm(codigo)]) {
+    const chipI = document.createElement('div');
+    chipI.className = 'inact-chip';
+    chipI.textContent = 'Inactivación solicitada';
+    detail.appendChild(chipI);
+  } else {
+    const btnInact = document.createElement('button');
+    btnInact.className = 'btn-inact-sup';
+    btnInact.textContent = 'Pedir inactivación';
+    btnInact.addEventListener('click', function(e) {
+      e.stopPropagation();
+      abrirModalInactivar(codigo, row['NOMBRE COMERCIAL'], row['LOCALIDAD']);
+    });
+    detail.appendChild(btnInact);
+  }
 
   main.addEventListener('click', function() {
     if (modoSeleccion) {
@@ -2386,6 +2486,9 @@ cargarDatos();
 
 window.addEventListener('resize', function() { actualizarStickyOffsets(); });
 
+document.getElementById('inactivar-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModalInactivar();
+});
 document.getElementById('edit-modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModalEdit();
 });

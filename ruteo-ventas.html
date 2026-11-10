@@ -245,6 +245,10 @@
   .lg-key.vacia { background: transparent; cursor: default; }
   .lg-volver { margin-top: 1.5rem; background: none; border: none; color: rgba(255,255,255,0.75); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer; }
   #clave-error .modal-status { display: block; }
+  .sr-acciones { display: flex; gap: 8px; }
+  .sr-acciones .btn-agregar { width: auto; flex: 2; }
+  .btn-inactivar { flex: 1; padding: 0.55rem; border-radius: 8px; border: 1.5px solid #FCA5A5; background: #FEF2F2; color: #B91C1C; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer; }
+  .sr-enviado.inactivar { color: #B91C1C; background: #FEF2F2; }
   .aviso-aplica { font-size: 12px; color: var(--text2); background: var(--bg); border-radius: 8px; padding: 0.5rem 0.65rem; margin-top: 0.25rem; line-height: 1.4; }
   .btn-cambio { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #C4B5FD; background: #F5F0FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
   .btn-cambio:active { background: #EDE9FE; }
@@ -322,38 +326,47 @@
   <div class="loader">Cargando planilla...</div>
 </div>
 
-<!-- MODAL SOLICITUD -->
+<!-- MODAL EDITAR CLIENTE (igual al del panel de supervisores) -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Cambiar el ruteo</div>
+    <div class="modal-title">Editar cliente</div>
     <div class="modal-cliente" id="modal-cliente-nombre"></div>
     <div class="tipo-grid">
-      <button class="tipo-btn" data-tipo="orden" onclick="selectTipo(this)">
-        <span class="tipo-icon">📋</span>CAMBIAR<br>ORDEN
-      </button>
-      <button class="tipo-btn" data-tipo="dia" onclick="selectTipo(this)">
-        <span class="tipo-icon">📅</span>CAMBIAR<br>DÍA
-      </button>
-      <button class="tipo-btn" data-tipo="eliminar" onclick="selectTipo(this)">
-        <span class="tipo-icon">🗑️</span>ELIMINAR<br>DEL RUTEO
-      </button>
+      <button class="tipo-btn" data-tipo="posicion" onclick="selectTipo(this)"><span class="tipo-icon">📋</span>MOVER<br>POSICIÓN</button>
+      <button class="tipo-btn" data-tipo="canal" onclick="selectTipo(this)"><span class="tipo-icon">🔀</span>CAMBIAR<br>CANAL</button>
+      <button class="tipo-btn" data-tipo="eliminar" onclick="selectTipo(this)"><span class="tipo-icon">🗑️</span>ELIMINAR<br>DEL RUTEO</button>
     </div>
-    <div id="campo-orden" class="modal-field" style="display:none">
-      <label>Nuevo número de orden</label>
-      <input type="number" id="input-orden" min="1" placeholder="Ej: 5" oninput="validarEnvio()">
+    <div id="campo-posicion" style="display:none">
+      <div class="modal-field">
+        <label>Día de destino</label>
+        <select id="input-dia" onchange="onModalDiaChange()">
+          <option value="">— Seleccioná —</option>
+          <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
+          <option>JUEVES</option><option>VIERNES</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Ubicar</label>
+        <select id="input-posicion" onchange="validarEnvio()">
+          <option value="final">Al final del día</option>
+          <option value="antes">Antes de...</option>
+          <option value="despues">Después de...</option>
+        </select>
+      </div>
+      <div class="modal-field" id="campo-referencia" style="display:none">
+        <label>Cliente de referencia</label>
+        <select id="input-referencia" onchange="validarEnvio()"><option value="">— Seleccioná —</option></select>
+      </div>
     </div>
-    <div id="campo-dia" class="modal-field" style="display:none">
-      <label>Nuevo día de visita</label>
-      <select id="input-dia" onchange="validarEnvio()">
+    <div id="campo-canal" class="modal-field" style="display:none">
+      <label>Nuevo canal</label>
+      <select id="input-canal" onchange="validarEnvio()">
         <option value="">— Seleccioná —</option>
-        <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
-        <option>JUEVES</option><option>VIERNES</option>
+        <option value="Presencial">Presencial</option>
+        <option value="Telefónico">Telefónico</option>
+        <option value="Ecommerce">Ecommerce</option>
       </select>
-    </div>
-    <div id="campo-dia-orden" class="modal-field" style="display:none">
-      <label>Nuevo orden en ese día</label>
-      <input type="number" id="input-dia-orden" min="1" placeholder="Ej: 3" oninput="validarEnvio()">
     </div>
     <div id="campo-eliminar" class="modal-field" style="display:none">
       <label>Motivo (opcional)</label>
@@ -363,6 +376,34 @@
     <div class="modal-actions">
       <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
       <button class="btn-enviar" id="btn-enviar" disabled onclick="enviarSolicitud()">Aplicar cambio</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INACTIVAR CLIENTE -->
+<div class="modal-overlay" id="inactivar-modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Inactivar cliente</div>
+    <div class="modal-cliente" id="inactivar-modal-cliente"></div>
+    <div class="geo-aviso">Informá que este cliente hay que inactivarlo. Queda anotado en la hoja INACTIVAR para que lo gestionen: <strong>no se da de baja en el momento</strong>.</div>
+    <div class="modal-field">
+      <label>Motivo</label>
+      <select id="inactivar-motivo" onchange="validarInactivar()">
+        <option value="">— Seleccioná —</option>
+        <option>Cerró definitivamente</option>
+        <option>No compra o no baja pedidos</option>
+        <option>Duplicado o cambió de razón social</option>
+        <option>Otro</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Comentario (opcional)</label>
+      <textarea id="inactivar-comentario" placeholder="Ej: cerró en octubre..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="cerrarModalInactivar()">Cancelar</button>
+      <button class="btn-enviar" id="inactivar-btn" disabled onclick="enviarInactivar()">Informar</button>
     </div>
   </div>
 </div>
@@ -510,8 +551,21 @@ const COLOR_POR_DIA = { LUNES: '#1d3a8f', MARTES: '#0F766E', MIERCOLES: '#C2410C
 const PIN_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg>';
 
 function todayStr() { return new Date().toISOString().slice(0,10); }
+// Canal del cliente. Si el vendedor lo acaba de cambiar, vale el nuevo hasta que la planilla se actualice.
+function canalDe(row) {
+  const sol = getSolicitudes()[row['CODIGO CLIENTE']];
+  if (sol && sol.tipo === 'canal') {
+    const m = /Canal:\s*([^|]+)/i.exec(sol.detalle || '');
+    if (m) return m[1].trim();
+  }
+  return row['Canal actual (Presencial / Autogestión)'];
+}
+function nombreCanal(txt) {
+  const k = canalClass(txt);
+  return k === 'telefonico' ? 'Telefónico' : k === 'ecom' ? 'Ecommerce' : 'Presencial';
+}
 function esPresencial(row) {
-  return canalClass(row['Canal actual (Presencial / Autogestión)']) === 'presencial';
+  return canalClass(canalDe(row)) === 'presencial';
 }
 function porOrden(a, b) { return (parseInt(a['ORDEN']) || 0) - (parseInt(b['ORDEN']) || 0); }
 
@@ -937,6 +991,9 @@ function canalClass(canal) {
   return 'presencial';
 }
 function tipoLabel(tipo) {
+  if (tipo === 'posicion') return '📋 Mover posición';
+  if (tipo === 'canal') return '🔀 Cambio de canal';
+  if (tipo === 'inactivar') return '🚫 Inactivar cliente';
   if (tipo === 'agregar') return '➕ Agregar al ruteo';
   if (tipo === 'orden') return '📋 Cambio de orden';
   if (tipo === 'dia') return '📅 Cambio de día';
@@ -971,15 +1028,24 @@ function abrirModal(codigo) {
   modalData = row;
   tipoSeleccionado = null;
   document.getElementById('modal-cliente-nombre').textContent = row['NOMBRE COMERCIAL'] + ' · ' + row['LOCALIDAD'];
-  document.querySelectorAll('.tipo-btn').forEach(function(b) { b.classList.remove('selected'); });
-  document.getElementById('campo-orden').style.display = 'none';
-  document.getElementById('campo-dia').style.display = 'none';
+  document.querySelectorAll('#modal-overlay .tipo-btn').forEach(function(b) { b.classList.remove('selected'); });
+  document.getElementById('campo-posicion').style.display = 'none';
+  document.getElementById('campo-canal').style.display = 'none';
   document.getElementById('campo-eliminar').style.display = 'none';
-  document.getElementById('input-orden').value = '';
+  document.getElementById('campo-referencia').style.display = 'none';
   document.getElementById('input-dia').value = '';
+  document.getElementById('input-posicion').value = 'final';
+  document.getElementById('input-referencia').innerHTML = '<option value="">— Seleccioná —</option>';
   document.getElementById('input-motivo').value = '';
-  document.getElementById('input-dia-orden').value = '';
-  document.getElementById('campo-dia-orden').style.display = 'none';
+  // Canal: el actual figura marcado y no se puede elegir
+  const actual = nombreCanal(canalDe(row));
+  const selCanal = document.getElementById('input-canal');
+  selCanal.value = '';
+  [].forEach.call(selCanal.options, function(o) {
+    if (!o.value) return;
+    o.disabled = (o.value === actual);
+    o.textContent = o.value + (o.value === actual ? ' (actual)' : '');
+  });
   document.getElementById('btn-enviar').disabled = true;
   document.getElementById('modal-overlay').classList.add('open');
 }
@@ -989,20 +1055,43 @@ function cerrarModal() {
   tipoSeleccionado = null;
 }
 function selectTipo(btn) {
-  document.querySelectorAll('.tipo-btn').forEach(function(b) { b.classList.remove('selected'); });
+  document.querySelectorAll('#modal-overlay .tipo-btn').forEach(function(b) { b.classList.remove('selected'); });
   btn.classList.add('selected');
   tipoSeleccionado = btn.dataset.tipo;
-  document.getElementById('campo-orden').style.display = tipoSeleccionado === 'orden' ? 'block' : 'none';
-  document.getElementById('campo-dia').style.display = tipoSeleccionado === 'dia' ? 'block' : 'none';
-  document.getElementById('campo-dia-orden').style.display = tipoSeleccionado === 'dia' ? 'block' : 'none';
+  document.getElementById('campo-posicion').style.display = tipoSeleccionado === 'posicion' ? 'block' : 'none';
+  document.getElementById('campo-canal').style.display = tipoSeleccionado === 'canal' ? 'block' : 'none';
   document.getElementById('campo-eliminar').style.display = tipoSeleccionado === 'eliminar' ? 'block' : 'none';
+  validarEnvio();
+}
+// Clientes del día elegido (menos el que se está editando), en su orden, para elegir "antes de" / "después de"
+function poblarReferencia(sel, dia, codigoExcluir) {
+  sel.innerHTML = '<option value="">— Seleccioná —</option>';
+  allData.filter(function(r) {
+    return r['VENDEDOR'] === selectedVendedor && r['DIA CARGA DE PEDIDO'].toUpperCase() === dia && r['CODIGO CLIENTE'] !== codigoExcluir;
+  }).sort(porOrden).forEach(function(r) {
+    const opt = document.createElement('option');
+    opt.value = r['CODIGO CLIENTE'];
+    opt.textContent = r['ORDEN'] + '. ' + r['NOMBRE COMERCIAL'];
+    sel.appendChild(opt);
+  });
+}
+function onModalDiaChange() {
+  const dia = document.getElementById('input-dia').value;
+  if (dia && modalData) poblarReferencia(document.getElementById('input-referencia'), dia, modalData['CODIGO CLIENTE']);
   validarEnvio();
 }
 function validarEnvio() {
   let ok = false;
-  if (tipoSeleccionado === 'orden') ok = parseInt(document.getElementById('input-orden').value) > 0;
-  else if (tipoSeleccionado === 'dia') ok = document.getElementById('input-dia').value !== '' && parseInt(document.getElementById('input-dia-orden').value) > 0;
-  else if (tipoSeleccionado === 'eliminar') ok = true;
+  if (tipoSeleccionado === 'posicion') {
+    const dia = document.getElementById('input-dia').value;
+    const pos = document.getElementById('input-posicion').value;
+    document.getElementById('campo-referencia').style.display = pos !== 'final' ? 'block' : 'none';
+    ok = !!dia && (pos === 'final' || document.getElementById('input-referencia').value !== '');
+  } else if (tipoSeleccionado === 'canal') {
+    ok = document.getElementById('input-canal').value !== '';
+  } else if (tipoSeleccionado === 'eliminar') {
+    ok = true;
+  }
   document.getElementById('btn-enviar').disabled = !ok;
 }
 function solKey() { return 'sol_' + selectedVendedor + '_' + todayStr(); }
@@ -1019,17 +1108,27 @@ function saveSolicitud(codigo, data) {
 function enviarSolicitud() {
   if (!modalData) return;
   const codigo = modalData['CODIGO CLIENTE'];
-  let detalle = '';
-  if (tipoSeleccionado === 'orden') detalle = 'Nuevo orden solicitado: ' + document.getElementById('input-orden').value;
-  else if (tipoSeleccionado === 'dia') detalle = 'Nuevo día solicitado: ' + document.getElementById('input-dia').value + ' | Nuevo orden: ' + document.getElementById('input-dia-orden').value;
-  else {
+  let detalle = '', tipo = '';
+  if (tipoSeleccionado === 'posicion') {
+    const dia = document.getElementById('input-dia').value;
+    const pos = document.getElementById('input-posicion').value;
+    let ubicar = 'al final';
+    if (pos !== 'final') {
+      const ref = document.getElementById('input-referencia');
+      const refNombre = ref.options[ref.selectedIndex].textContent.replace(/^\d+\.\s*/, '').replace(/\|/g, '/');
+      ubicar = (pos === 'antes' ? 'antes de ' : 'después de ') + ref.value + ' (' + refNombre + ')';
+    }
+    detalle = 'Día: ' + dia + ' | Ubicar: ' + ubicar;
+    tipo = 'Mover posición';
+  } else if (tipoSeleccionado === 'canal') {
+    detalle = 'Canal: ' + document.getElementById('input-canal').value;
+    tipo = 'Cambio de canal';
+  } else {
     const motivo = document.getElementById('input-motivo').value.trim();
     detalle = motivo ? 'Motivo: ' + motivo : 'Sin motivo especificado';
+    tipo = 'Eliminar del ruteo';
+    if (!confirm('Se va a sacar este cliente del ruteo ahora mismo. ¿Confirmás?')) return;
   }
-
-  const tipo = tipoSeleccionado === 'orden' ? 'Cambio de orden' : tipoSeleccionado === 'dia' ? 'Cambio de día' : 'Eliminar del ruteo';
-
-  if (tipoSeleccionado === 'eliminar' && !confirm('Se va a sacar este cliente del ruteo ahora mismo. ¿Confirmás?')) return;
 
   const payload = {
     vendedor:  selectedVendedor,
@@ -1041,7 +1140,7 @@ function enviarSolicitud() {
     detalle:   detalle
   };
 
-  // 1. Guardar en localStorage para que el chip persista
+  // 1. Guardar en localStorage para que el chip persista (y el canal nuevo se vea enseguida)
   saveSolicitud(codigo, { tipo: tipoSeleccionado, detalle: detalle });
 
   // 2. Preparar texto del pop-up ANTES de cerrar el modal
@@ -1058,6 +1157,42 @@ function enviarSolicitud() {
   mostrarPopupCambio(sinConexion ? 'Cambio guardado sin conexión' : '¡Cambio enviado!', nombreCliente, tipoStr, detalle, sinConexion ? NOTA_SIN_SENAL : NOTA_APLICADO);
   enviarCambioAlSistema(payload).then(function(ok) {
     if (!ok && !sinConexion && motivoCola === 'red') mostrarPopupCambio('Cambio guardado sin conexión', nombreCliente, tipoStr, detalle, NOTA_SIN_SENAL);
+  });
+}
+
+// ── INACTIVAR UN CLIENTE (desde "Sin rutear"): se anota en la hoja INACTIVAR, no se da de baja en el momento ──
+let clienteInactivar = null;
+const NOTA_INACTIVAR = 'Quedó anotado en la hoja INACTIVAR. No se da de baja en el momento.';
+function inactKey() { return 'inactivar_' + selectedVendedor; }
+function getInformadosInactivar() { try { return JSON.parse(localStorage.getItem(inactKey()) || '{}'); } catch (e) { return {}; } }
+function abrirModalInactivar(cli) {
+  clienteInactivar = cli;
+  document.getElementById('inactivar-modal-cliente').textContent = cli.nombre + ' · ' + cli.localidad;
+  document.getElementById('inactivar-motivo').value = '';
+  document.getElementById('inactivar-comentario').value = '';
+  document.getElementById('inactivar-btn').disabled = true;
+  document.getElementById('inactivar-modal-overlay').classList.add('open');
+}
+function cerrarModalInactivar() {
+  document.getElementById('inactivar-modal-overlay').classList.remove('open');
+  clienteInactivar = null;
+}
+function validarInactivar() { document.getElementById('inactivar-btn').disabled = !document.getElementById('inactivar-motivo').value; }
+function enviarInactivar() {
+  if (!clienteInactivar) return;
+  const cli = clienteInactivar;
+  const comentario = document.getElementById('inactivar-comentario').value.trim();
+  const motivo = document.getElementById('inactivar-motivo').value + (comentario ? ' - ' + comentario : '');
+  const payload = { accion: 'inactivar', vendedor: selectedVendedor, codigo: cli.codigo, cliente: cli.nombre, motivo: motivo };
+  const mapa = getInformadosInactivar();
+  mapa[cli.codigo] = { ts: Date.now(), motivo: motivo };
+  try { localStorage.setItem(inactKey(), JSON.stringify(mapa)); } catch (e) {}
+  cerrarModalInactivar();
+  refrescar();
+  const sinConexion = navigator.onLine === false;
+  mostrarPopupCambio(sinConexion ? 'Guardado sin conexión' : 'Cliente informado', cli.nombre, 'inactivar', motivo, sinConexion ? NOTA_SIN_SENAL : NOTA_INACTIVAR);
+  enviarCambioAlSistema(payload).then(function(ok) {
+    if (!ok && !sinConexion && motivoCola === 'red') mostrarPopupCambio('Guardado sin conexión', cli.nombre, 'inactivar', motivo, NOTA_SIN_SENAL);
   });
 }
 function cerrarConfirm() {
@@ -1135,7 +1270,7 @@ function renderSearchResults() {
 function buildCard(c, isSearch) {
   const codigo = c['CODIGO CLIENTE'];
   const nombre = c['NOMBRE COMERCIAL'];
-  const cc = canalClass(c['Canal actual (Presencial / Autogestión)']);
+  const cc = canalClass(canalDe(c));
   const dia = (c['DIA CARGA DE PEDIDO'] || '');
   const diaLabel = dia.charAt(0) + dia.slice(1).toLowerCase();
   const sol = getSolicitudes()[codigo];
@@ -1215,6 +1350,7 @@ function buildCard(c, isSearch) {
     '<div class="detail-row"><div class="detail-label">Localidad</div><div class="detail-value">' + c['LOCALIDAD'] + '</div></div>' +
     (isSearch ? '<div class="detail-row"><div class="detail-label">Día</div><div class="detail-value">' + diaLabel + '</div></div>' : '') +
     '<div class="detail-row"><div class="detail-label">Código cliente</div><div class="detail-value">' + codigo + '</div></div>' +
+    '<div class="detail-row"><div class="detail-label">Canal</div><div class="detail-value">' + nombreCanal(canalDe(c)) + '</div></div>' +
     '<div class="detail-row"><div class="detail-label">Ubicación</div><div class="detail-value">' + textoOrigenUbicacion(coords) + '</div></div>';
   detail.appendChild(dataCol);
 
@@ -1392,6 +1528,7 @@ let capasPorDia = {};
 let puntosPorDia = {};
 let sinUbicPorDia = {};
 let diasActivosMapa = {};
+let aproxPorDia = {};
 
 function abrirMapa() {
   if (!selectedVendedor) { alert('Seleccioná primero tu nombre.'); return; }
@@ -1404,6 +1541,82 @@ function cerrarMapa() {
   document.getElementById('map-overlay').classList.remove('open');
 }
 
+// ── Ubicación aproximada por dirección ─────────────────────────────────────────
+// Si un cliente no tiene ubicación, el mapa busca su DIRECCIÓN + LOCALIDAD (el servidor consulta a Google y guarda el resultado
+// en la hoja GEOCODIFICACION). Es aproximado: se dibuja con un círculo punteado y NUNCA reemplaza a una ubicación tomada en el local.
+let geoAprox = {};        // código -> { lat, lon, clave }  (clave = dirección + localidad con la que se buscó)
+let geoSinRes = {};       // código -> clave                 (la búsqueda no encontró nada utilizable)
+let geoBuscando = false;
+let geoMensajeMapa = '';
+
+function cargarCacheGeoAprox() {
+  try { geoAprox = JSON.parse(localStorage.getItem('geoaprox_v1') || '{}'); geoSinRes = JSON.parse(localStorage.getItem('geosin_v1') || '{}'); }
+  catch (e) { geoAprox = {}; geoSinRes = {}; }
+}
+function guardarCacheGeoAprox() {
+  try { localStorage.setItem('geoaprox_v1', JSON.stringify(geoAprox)); localStorage.setItem('geosin_v1', JSON.stringify(geoSinRes)); } catch (e) {}
+}
+function claveDireccion(row) { return normTxt(row['DIRECCION']) + '|' + normTxt(row['LOCALIDAD']); }
+
+// Ubicación para dibujar: la exacta si existe; si no, la aproximada por dirección (si la dirección no cambió desde que se buscó)
+function coordsMapa(row) {
+  const co = coordsDe(row);
+  if (co) return { lat: co.lat, lon: co.lon, aprox: false };
+  const a = geoAprox[row['CODIGO CLIENTE']];
+  if (a && a.clave === claveDireccion(row)) return { lat: a.lat, lon: a.lon, aprox: true };
+  return null;
+}
+
+function filasMapaDelDia(dia) {
+  return allData.filter(function(r) { return r['VENDEDOR'] === selectedVendedor && r['DIA CARGA DE PEDIDO'].toUpperCase() === dia; })
+    .sort(porOrden)
+    .filter(function(r) { return esPresencial(r); }); // solo los clientes presenciales se visitan en persona
+}
+
+function construirCapaDia(dia) {
+  const filas = filasMapaDelDia(dia);
+  const color = COLOR_POR_DIA[dia] || '#666';
+  const layer = L.layerGroup();
+  const pts = [];
+  let sin = 0, aprox = 0;
+  filas.forEach(function(row, idx) {
+    const co = coordsMapa(row);
+    if (!co) { sin++; return; }
+    if (co.aprox) aprox++;
+    const orden = idx + 1; // el número cuenta a todos los presenciales, tengan o no ubicación, para respetar el orden de visita
+    const estilo = co.aprox ? 'background:#fff;color:' + color + ';border:2px dashed ' + color + ';box-shadow:none' : 'background:' + color;
+    const icon = L.divIcon({
+      className: '',
+      html: '<div class="map-num-marker" style="' + estilo + '">' + orden + '</div>',
+      iconSize: [24, 24], iconAnchor: [12, 12]
+    });
+    L.marker([co.lat, co.lon], { icon: icon }).bindPopup(
+      '<strong>' + orden + '. ' + (row['NOMBRE COMERCIAL'] || '') + '</strong><br>' + (row['DIRECCION'] || '') +
+      (co.aprox ? '<br><em>Ubicación aproximada, tomada de la dirección.</em>' : '') +
+      '<br><a href="https://maps.google.com/?q=' + co.lat + ',' + co.lon + '" target="_blank">Abrir en Maps</a>'
+    ).addTo(layer);
+    pts.push([co.lat, co.lon]);
+  });
+  if (pts.length > 1) {
+    const linea = L.polyline(pts, { color: color, weight: 2.5, opacity: 0.6, dashArray: '6,6' });
+    layer.addLayer(linea);
+    if (typeof L.polylineDecorator === 'function') {
+      layer.addLayer(L.polylineDecorator(linea, {
+        patterns: [{ offset: '5%', repeat: '12%',
+          symbol: L.Symbol.arrowHead({ pixelSize: 9, polygon: false, pathOptions: { color: color, weight: 2.5, opacity: 0.9 } }) }]
+      }));
+    }
+  }
+  return { layer: layer, pts: pts, sin: sin, aprox: aprox };
+}
+
+function ponerCapaDia(dia) {
+  if (capasPorDia[dia]) leafletMap.removeLayer(capasPorDia[dia]);
+  const r = construirCapaDia(dia);
+  capasPorDia[dia] = r.layer; puntosPorDia[dia] = r.pts; sinUbicPorDia[dia] = r.sin; aproxPorDia[dia] = r.aprox;
+  if (diasActivosMapa[dia]) r.layer.addTo(leafletMap);
+}
+
 function dibujarMapa() {
   if (!leafletMap) {
     leafletMap = L.map('leaflet-map');
@@ -1411,8 +1624,10 @@ function dibujarMapa() {
   }
   leafletMap.invalidateSize();
   Object.keys(capasPorDia).forEach(function(d) { leafletMap.removeLayer(capasPorDia[d]); });
-  capasPorDia = {}; puntosPorDia = {}; sinUbicPorDia = {}; diasActivosMapa = {};
+  capasPorDia = {}; puntosPorDia = {}; sinUbicPorDia = {}; aproxPorDia = {}; diasActivosMapa = {};
   invalidarGeoCache();
+  cargarCacheGeoAprox();
+  geoMensajeMapa = '';
 
   const vendRows = allData.filter(function(r) { return r['VENDEDOR'] === selectedVendedor; });
   const dias = [];
@@ -1424,51 +1639,62 @@ function dibujarMapa() {
   const diaInicial = dias.indexOf(selectedDay) !== -1 ? selectedDay : dias[0];
 
   dias.forEach(function(dia) {
-    // Solo los clientes presenciales se visitan en persona: son los únicos del recorrido
-    const filas = vendRows.filter(function(r) { return r['DIA CARGA DE PEDIDO'].toUpperCase() === dia; }).sort(porOrden)
-      .filter(function(r) { return esPresencial(r); });
-    const color = COLOR_POR_DIA[dia] || '#666';
-    const layer = L.layerGroup();
-    const pts = [];
-    let sin = 0;
-
-    filas.forEach(function(row, idx) {
-      const co = coordsDe(row);
-      if (!co) { sin++; return; }
-      const orden = idx + 1; // el número cuenta a todos los presenciales, tengan o no ubicación, para respetar el orden de visita
-      const icon = L.divIcon({
-        className: '',
-        html: '<div class="map-num-marker" style="background:' + color + '">' + orden + '</div>',
-        iconSize: [24, 24], iconAnchor: [12, 12]
-      });
-      L.marker([co.lat, co.lon], { icon: icon }).bindPopup(
-        '<strong>' + orden + '. ' + (row['NOMBRE COMERCIAL'] || '') + '</strong><br>' + (row['DIRECCION'] || '') +
-        '<br><a href="https://maps.google.com/?q=' + co.lat + ',' + co.lon + '" target="_blank">Abrir en Maps</a>'
-      ).addTo(layer);
-      pts.push([co.lat, co.lon]);
-    });
-
-    if (pts.length > 1) {
-      const linea = L.polyline(pts, { color: color, weight: 2.5, opacity: 0.6, dashArray: '6,6' });
-      layer.addLayer(linea);
-      if (typeof L.polylineDecorator === 'function') {
-        layer.addLayer(L.polylineDecorator(linea, {
-          patterns: [{ offset: '5%', repeat: '12%',
-            symbol: L.Symbol.arrowHead({ pixelSize: 9, polygon: false, pathOptions: { color: color, weight: 2.5, opacity: 0.9 } }) }]
-        }));
-      }
-    }
-
-    capasPorDia[dia] = layer;
-    puntosPorDia[dia] = pts;
-    sinUbicPorDia[dia] = sin;
     diasActivosMapa[dia] = (dia === diaInicial);
-    if (diasActivosMapa[dia]) layer.addTo(leafletMap);
+    ponerCapaDia(dia);
   });
 
   renderLeyendaMapa(dias);
   actualizarNotaMapa();
   ajustarVistaMapa();
+  geocodificarDiasActivos();
+}
+
+// Busca por dirección a los clientes de los días visibles que no tienen ninguna ubicación
+function geocodificarDiasActivos() {
+  if (geoBuscando || !sesionVigente() || navigator.onLine === false) return;
+  const claves = {};
+  Object.keys(diasActivosMapa).forEach(function(dia) {
+    if (!diasActivosMapa[dia]) return;
+    filasMapaDelDia(dia).forEach(function(row) {
+      const cod = row['CODIGO CLIENTE'];
+      if (coordsMapa(row) || !row['DIRECCION'] || !row['LOCALIDAD']) return;
+      if (geoSinRes[cod] === claveDireccion(row)) return; // ya se buscó y no hubo resultado
+      claves[cod] = claveDireccion(row);
+    });
+  });
+  const codigos = Object.keys(claves);
+  if (!codigos.length) return;
+
+  geoBuscando = true;
+  geoMensajeMapa = 'Buscando ' + codigos.length + ' cliente' + (codigos.length !== 1 ? 's' : '') + ' por su dirección...';
+  actualizarNotaMapa();
+
+  function tanda(restantes, vueltas) {
+    if (!restantes.length || vueltas > 12 || !document.getElementById('map-overlay').classList.contains('open')) return Promise.resolve('fin');
+    const lote = restantes.slice(0, 6);
+    return llamarSistema({ accion: 'geocodificar', vendedor: sesion.vendedor, token: sesion.token, codigos: lote.join(',') }, 30000).then(function(res) {
+      if (!res || !res.ok) return (res && res.error === 'ocupado') ? 'ocupado' : 'error';
+      Object.keys(res.resultados || {}).forEach(function(cod) {
+        geoAprox[cod] = { lat: res.resultados[cod].lat, lon: res.resultados[cod].lon, clave: claves[cod] };
+        delete geoSinRes[cod];
+      });
+      (res.sinResultado || []).forEach(function(cod) { geoSinRes[cod] = claves[cod]; });
+      guardarCacheGeoAprox();
+      Object.keys(diasActivosMapa).forEach(function(d) { if (diasActivosMapa[d]) ponerCapaDia(d); });
+      actualizarNotaMapa();
+      if (res.cuota) return 'cuota';
+      return tanda(restantes.slice(lote.length).concat(res.pendientes || []), vueltas + 1);
+    });
+  }
+
+  tanda(codigos, 0).catch(function() { return 'error'; }).then(function(estado) {
+    geoBuscando = false;
+    geoMensajeMapa = estado === 'ocupado' ? 'El sistema está ocupado: probá de nuevo en un momento.'
+      : estado === 'cuota' ? 'Hoy se agotó la búsqueda por dirección.'
+      : estado === 'error' ? 'No se pudo buscar por dirección ahora.' : '';
+    actualizarNotaMapa();
+    ajustarVistaMapa();
+  });
 }
 
 function renderLeyendaMapa(dias) {
@@ -1485,28 +1711,28 @@ function renderLeyendaMapa(dias) {
       else leafletMap.removeLayer(capasPorDia[dia]);
       actualizarNotaMapa();
       ajustarVistaMapa();
+      if (diasActivosMapa[dia]) geocodificarDiasActivos();
     });
     legend.appendChild(chip);
   });
 }
 
 function actualizarNotaMapa() {
-  let sin = 0, con = 0;
+  let sin = 0, con = 0, aprox = 0;
   Object.keys(diasActivosMapa).forEach(function(d) {
     if (!diasActivosMapa[d]) return;
     sin += sinUbicPorDia[d] || 0;
+    aprox += aproxPorDia[d] || 0;
     con += (puntosPorDia[d] || []).length;
   });
   const nota = document.getElementById('map-nota');
-  const base = 'Solo se muestran los clientes presenciales.';
-  if (sin > 0) {
-    nota.innerHTML = '<span>' + base + ' ' + sin + ' sin ubicación.</span>' +
-                     '<button class="btn-link" onclick="verFaltantesDesdeMapa()">Ver cuáles</button>';
-  } else if (con === 0) {
-    nota.textContent = 'No hay días seleccionados o ninguno tiene clientes presenciales.';
-  } else {
-    nota.textContent = base;
-  }
+  if (!sin && !aprox && !con && !geoMensajeMapa) { nota.textContent = 'No hay días seleccionados o ninguno tiene clientes presenciales.'; return; }
+  const partes = ['Solo se muestran los clientes presenciales.'];
+  if (aprox > 0) partes.push(aprox + ' ubicado' + (aprox !== 1 ? 's' : '') + ' por su dirección (círculo punteado: es aproximado).');
+  if (sin > 0) partes.push(sin + ' sin ubicación.');
+  if (geoMensajeMapa) partes.push(geoMensajeMapa);
+  nota.innerHTML = '<span>' + partes.join(' ') + '</span>' +
+    ((sin > 0 || aprox > 0) ? '<button class="btn-link" onclick="verFaltantesDesdeMapa()">Ver cuáles</button>' : '');
 }
 
 function ajustarVistaMapa() {
@@ -1517,7 +1743,7 @@ function ajustarVistaMapa() {
 }
 
 function verFaltantesDesdeMapa() {
-  const dia = Object.keys(diasActivosMapa).filter(function(d) { return diasActivosMapa[d] && sinUbicPorDia[d] > 0; })
+  const dia = Object.keys(diasActivosMapa).filter(function(d) { return diasActivosMapa[d] && (sinUbicPorDia[d] > 0 || aproxPorDia[d] > 0); })
     .sort(function(a, b) { return DAYS_ORDER.indexOf(a) - DAYS_ORDER.indexOf(b); })[0];
   cerrarMapa();
   if (dia) selectedDay = dia;
@@ -1584,6 +1810,7 @@ function renderSinRutear() {
     return;
   }
   const enviados = getSolicitudes();
+  const informados = getInformadosInactivar();
   const list = document.createElement('div');
   list.className = 'list';
   lista.forEach(function(cli) {
@@ -1599,12 +1826,25 @@ function renderSinRutear() {
       ok.className = 'sr-enviado';
       ok.textContent = 'Agregado. Va a aparecer en tu ruteo en unos minutos.';
       card.appendChild(ok);
+    } else if (informados[cli.codigo]) {
+      const ok = document.createElement('div');
+      ok.className = 'sr-enviado inactivar';
+      ok.textContent = 'Informado para inactivar. Queda anotado en la hoja INACTIVAR.';
+      card.appendChild(ok);
     } else {
+      const acciones = document.createElement('div');
+      acciones.className = 'sr-acciones';
       const btn = document.createElement('button');
       btn.className = 'btn-agregar';
       btn.textContent = 'Agregar al ruteo';
       btn.addEventListener('click', function() { abrirModalAgregar(cli); });
-      card.appendChild(btn);
+      const btnIn = document.createElement('button');
+      btnIn.className = 'btn-inactivar';
+      btnIn.textContent = 'Inactivar';
+      btnIn.addEventListener('click', function() { abrirModalInactivar(cli); });
+      acciones.appendChild(btn);
+      acciones.appendChild(btnIn);
+      card.appendChild(acciones);
     }
     list.appendChild(card);
   });
@@ -1905,6 +2145,9 @@ document.getElementById('modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModal();
 });
 document.addEventListener('click', cerrarMenuCuenta);
+document.getElementById('inactivar-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModalInactivar();
+});
 document.getElementById('clave-modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModalClave();
 });

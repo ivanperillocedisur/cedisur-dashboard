@@ -260,6 +260,11 @@
   .aviso-sin-rutear { margin: 0.75rem 1.25rem 0; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 12px; padding: 0.6rem 0.9rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #C2410C; }
   .aviso-sin-rutear button { flex-shrink: 0; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700; color: #fff; background: #C2410C; border: none; border-radius: 20px; padding: 5px 12px; cursor: pointer; }
   .sr-intro { font-size: 12px; color: var(--text2); line-height: 1.45; padding: 0.9rem 1.25rem 0.25rem; }
+  .ruta-chip { display: inline-block; align-self: flex-start; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; margin-top: 5px; }
+  .ruta-chip.con { background: #E6F7ED; color: #1F7A42; }
+  .ruta-chip.sin { background: #FFF7ED; color: #C2410C; }
+  .ruta-chip.otro { background: #EEF2FF; color: #3730A3; }
+  .search-nota { font-size: 12px; color: var(--text2); background: #FFF7ED; border-radius: 8px; padding: 0.5rem 0.7rem; margin: 0.25rem 1.25rem 0.5rem; line-height: 1.4; }
   .sr-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem 0.9rem; box-shadow: var(--shadow); }
   .sr-nombre { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.3; }
   .sr-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
@@ -315,7 +320,7 @@
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3-3"/>
       </svg>
-      <input class="search-input" id="search-input" type="text" placeholder="Buscar cliente..." oninput="onSearch()">
+      <input class="search-input" id="search-input" type="text" placeholder="Buscar cliente (con o sin ruta)..." oninput="onSearch()">
       <button class="btn-search-clear" onclick="clearSearch()">✕</button>
     </div>
   </div>
@@ -1243,26 +1248,67 @@ function refrescar() {
 function renderSearchResults() {
   if (!selectedVendedor) return;
   invalidarGeoCache();
-  const vendRows = allData.filter(function(r) { return r['VENDEDOR'] === selectedVendedor; });
-  const matches = vendRows.filter(function(r) {
-    const q = searchQuery;
-    return r['NOMBRE COMERCIAL'].toLowerCase().includes(q) ||
-           r['DIRECCION'].toLowerCase().includes(q) ||
-           r['LOCALIDAD'].toLowerCase().includes(q);
+  // Sin importar mayúsculas ni acentos, y con todas las palabras escritas (en nombre, dirección, localidad o código)
+  const palabras = normTxt(searchQuery).split(' ').filter(Boolean);
+  const coincide = function(partes) {
+    const texto = normTxt(partes.join(' '));
+    return palabras.every(function(w) { return texto.indexOf(w) !== -1; });
+  };
+  // 1) Los que están en SU ruteo
+  const enRuta = allData.filter(function(r) {
+    return r['VENDEDOR'] === selectedVendedor && coincide([r['NOMBRE COMERCIAL'], r['DIRECCION'], r['LOCALIDAD'], r['CODIGO CLIENTE']]);
   });
+  // 2) Los asignados a él que no tienen ruta (o la tienen con otro vendedor)
+  const fuera = clientesFueraDeMiRuta().filter(function(x) { return coincide([x.cli.nombre, x.cli.direccion, x.cli.localidad, x.cli.codigo]); });
+  const sinRuta = fuera.filter(function(x) { return x.estado !== 'otro'; });
+  const deOtro = fuera.filter(function(x) { return x.estado === 'otro'; });
+
   const content = document.getElementById('app-content');
   content.innerHTML = '';
-  if (!matches.length) {
-    content.innerHTML = '<div class="empty"><div class="empty-text">Sin resultados para esa búsqueda.</div></div>';
+  const total = enRuta.length + fuera.length;
+
+  const nota = maestroEstado === 'cargando' ? 'Todavía se están cargando tus demás clientes: en unos segundos aparecen los que no tienen ruta.'
+             : maestroEstado === 'error' ? 'No se pudo cargar la lista completa de tus clientes: solo se buscó entre los que están en tu ruteo.' : '';
+  if (!total) {
+    content.innerHTML = '<div class="empty"><div class="empty-text">Sin resultados entre tus clientes.</div></div>';
+    if (nota) content.insertAdjacentHTML('afterbegin', '<div class="search-nota">' + nota + '</div>');
     return;
   }
   const label = document.createElement('div');
   label.className = 'search-results-label';
-  label.textContent = matches.length + ' resultado' + (matches.length !== 1 ? 's' : '');
+  const partes = [];
+  if (enRuta.length) partes.push(enRuta.length + ' con ruta');
+  if (sinRuta.length) partes.push(sinRuta.length + ' sin ruta');
+  if (deOtro.length) partes.push(deOtro.length + ' en ruta de otro vendedor');
+  label.textContent = total + ' resultado' + (total !== 1 ? 's' : '') + ' · ' + partes.join(' · ');
   content.appendChild(label);
+  if (nota) content.insertAdjacentHTML('beforeend', '<div class="search-nota">' + nota + '</div>');
+
   const list = document.createElement('div');
   list.className = 'list';
-  matches.forEach(function(c) { list.appendChild(buildCard(c, true)); });
+  enRuta.forEach(function(c) { list.appendChild(buildCard(c, true)); });
+  const enviados = getSolicitudes();
+  const informados = getInformadosInactivar();
+  sinRuta.forEach(function(x) {
+    if (x.estado === 'sin') { list.appendChild(crearTarjetaSinRutear(x.cli, enviados, informados, true)); return; }
+    const card = document.createElement('div');
+    card.className = 'sr-card';
+    card.innerHTML =
+      '<div class="sr-nombre">' + x.cli.nombre + '</div><div class="ruta-chip sin">Sin ruta todavía</div>' +
+      '<div class="sr-sub">' + x.cli.localidad + ' · ' + x.cli.codigo + '</div>' +
+      '<div class="sr-detalle">' + (x.cli.direccion || 'Sin dirección cargada') + '<br>Reemplaza a un cliente que sí tiene ruta (cambio de razón social). Se actualiza solo en unos minutos.</div>';
+    list.appendChild(card);
+  });
+  deOtro.forEach(function(x) {
+    const dia = (x.fila['DIA CARGA DE PEDIDO'] || '');
+    const card = document.createElement('div');
+    card.className = 'sr-card';
+    card.innerHTML =
+      '<div class="sr-nombre">' + x.cli.nombre + '</div><div class="ruta-chip otro">Con ruta de otro vendedor</div>' +
+      '<div class="sr-sub">' + x.cli.localidad + ' · ' + x.cli.codigo + '</div>' +
+      '<div class="sr-detalle">' + (x.cli.direccion || 'Sin dirección cargada') + '<br>Figura en el ruteo de ' + x.fila['VENDEDOR'] + ' (' + dia.charAt(0) + dia.slice(1).toLowerCase() + '). Si te corresponde a vos, pedile a tu supervisor que lo pase a tu ruta.</div>';
+    list.appendChild(card);
+  });
   content.appendChild(list);
 }
 
@@ -1322,9 +1368,13 @@ function buildCard(c, isSearch) {
     info.appendChild(pend);
   }
   if (isSearch) {
+    const estadoRuta = document.createElement('div');
+    estadoRuta.className = 'ruta-chip con';
+    estadoRuta.textContent = 'Con ruta · ' + diaLabel;
+    info.appendChild(estadoRuta);
     const sub = document.createElement('div');
     sub.className = 'client-subtext';
-    sub.textContent = diaLabel + ' · ' + c['LOCALIDAD'];
+    sub.textContent = c['LOCALIDAD'] + ' · ' + codigo;
     info.appendChild(sub);
   }
 
@@ -1817,42 +1867,74 @@ function renderSinRutear() {
   const informados = getInformadosInactivar();
   const list = document.createElement('div');
   list.className = 'list';
-  lista.forEach(function(cli) {
-    const card = document.createElement('div');
-    card.className = 'sr-card';
-    card.innerHTML =
-      '<div class="sr-nombre">' + cli.nombre + (sapIndex[cli.codigo] ? ' 📍' : '') + '</div>' +
-      '<div class="sr-sub">' + cli.localidad + ' · ' + cli.codigo + '</div>' +
-      '<div class="sr-detalle">' + (cli.direccion || 'Sin dirección cargada') + '<br>Última factura: ' + (cli.factura || 'sin compras registradas') + '</div>';
-    const pedido = enviados[cli.codigo];
-    if (pedido && pedido.tipo === 'agregar') {
-      const ok = document.createElement('div');
-      ok.className = 'sr-enviado';
-      ok.textContent = 'Agregado. Va a aparecer en tu ruteo en unos minutos.';
-      card.appendChild(ok);
-    } else if (informados[cli.codigo]) {
-      const ok = document.createElement('div');
-      ok.className = 'sr-enviado inactivar';
-      ok.textContent = 'Informado para inactivar. Queda anotado en la hoja INACTIVAR.';
-      card.appendChild(ok);
-    } else {
-      const acciones = document.createElement('div');
-      acciones.className = 'sr-acciones';
-      const btn = document.createElement('button');
-      btn.className = 'btn-agregar';
-      btn.textContent = 'Agregar al ruteo';
-      btn.addEventListener('click', function() { abrirModalAgregar(cli); });
-      const btnIn = document.createElement('button');
-      btnIn.className = 'btn-inactivar';
-      btnIn.textContent = 'Inactivar';
-      btnIn.addEventListener('click', function() { abrirModalInactivar(cli); });
-      acciones.appendChild(btn);
-      acciones.appendChild(btnIn);
-      card.appendChild(acciones);
-    }
-    list.appendChild(card);
-  });
+  lista.forEach(function(cli) { list.appendChild(crearTarjetaSinRutear(cli, enviados, informados, false)); });
   content.appendChild(list);
+}
+
+// Tarjeta de un cliente asignado al vendedor que no está en su ruteo. conEstado: agrega la etiqueta "Sin ruta" (para la lupa).
+function crearTarjetaSinRutear(cli, enviados, informados, conEstado) {
+  const card = document.createElement('div');
+  card.className = 'sr-card';
+  card.innerHTML =
+    '<div class="sr-nombre">' + cli.nombre + (sapIndex[cli.codigo] ? ' 📍' : '') + '</div>' +
+    (conEstado ? '<div class="ruta-chip sin">Sin ruta</div>' : '') +
+    '<div class="sr-sub">' + cli.localidad + ' · ' + cli.codigo + '</div>' +
+    '<div class="sr-detalle">' + (cli.direccion || 'Sin dirección cargada') + '<br>Última factura: ' + (cli.factura || 'sin compras registradas') + '</div>';
+  const pedido = enviados[cli.codigo];
+  if (pedido && pedido.tipo === 'agregar') {
+    const ok = document.createElement('div');
+    ok.className = 'sr-enviado';
+    ok.textContent = 'Agregado. Va a aparecer en tu ruteo en unos minutos.';
+    card.appendChild(ok);
+  } else if (informados[cli.codigo]) {
+    const ok = document.createElement('div');
+    ok.className = 'sr-enviado inactivar';
+    ok.textContent = 'Informado para inactivar. Queda anotado en la hoja INACTIVAR.';
+    card.appendChild(ok);
+  } else {
+    const acciones = document.createElement('div');
+    acciones.className = 'sr-acciones';
+    const btn = document.createElement('button');
+    btn.className = 'btn-agregar';
+    btn.textContent = 'Agregar al ruteo';
+    btn.addEventListener('click', function() { abrirModalAgregar(cli); });
+    const btnIn = document.createElement('button');
+    btnIn.className = 'btn-inactivar';
+    btnIn.textContent = 'Inactivar';
+    btnIn.addEventListener('click', function() { abrirModalInactivar(cli); });
+    acciones.appendChild(btn);
+    acciones.appendChild(btnIn);
+    card.appendChild(acciones);
+  }
+  return card;
+}
+
+// Clientes asignados al vendedor (BASE CLIENTES) que NO están en su ruteo, con el motivo:
+//  'sin'     no tienen ruta en ningún lado
+//  'proceso' reemplazan a un código que sí tiene ruta (cambio de razón social): se actualiza solo
+//  'otro'    figuran en el ruteo de otro vendedor
+function clientesFueraDeMiRuta() {
+  if (!selectedVendedor || maestroEstado !== 'ok') return [];
+  const nombreMaestro = vendedorEnMaestro(selectedVendedor);
+  if (!nombreMaestro) return [];
+  const mio = normTokensTxt(nombreMaestro);
+  const filaDe = {};
+  allData.forEach(function(r) { filaDe[r['CODIGO CLIENTE']] = r; });
+  const salida = [];
+  clientesMaestro.forEach(function(cli) {
+    if (normTokensTxt(cli.vendedor) !== mio) return;
+    if (ZONAS_VALIDAS.indexOf(cli.territorio) === -1) return;
+    const fila = filaDe[cli.codigo];
+    if (fila) {
+      if (fila['VENDEDOR'] === selectedVendedor) return; // está en su ruta: ya lo trae la búsqueda normal
+      salida.push({ cli: cli, estado: 'otro', fila: fila });
+    } else if (cli.codigoViejo && filaDe[cli.codigoViejo]) {
+      salida.push({ cli: cli, estado: 'proceso' });
+    } else {
+      salida.push({ cli: cli, estado: 'sin' });
+    }
+  });
+  return salida.sort(function(a, b) { return a.cli.nombre.localeCompare(b.cli.nombre); });
 }
 
 let clienteAgregar = null;

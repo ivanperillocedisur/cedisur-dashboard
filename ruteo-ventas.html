@@ -1759,19 +1759,23 @@ function normTxt(s) {
 }
 function normTokensTxt(s) { return normTxt(s).split(' ').filter(Boolean).sort().join(' '); }
 
-// Nombre del vendedor tal como figura en BASE CLIENTES. Se deduce de los clientes que ya tiene en el ruteo,
-// porque la grafía puede diferir entre las dos hojas (por ejemplo "Jonathan Lozano" y "LOZANO JONATAN").
+// Nombre del vendedor tal como figura en BASE CLIENTES.
+// Como los nombres de BASE RUTEO se estandarizan con los de BASE CLIENTES, primero se busca por el nombre mismo
+// (sin importar mayúsculas, acentos ni el orden de las palabras). Solo si ningún nombre coincide (por ejemplo, ortografías
+// distintas que todavía no se estandarizaron, como "Jonathan" y "JONATAN") se deduce por los clientes que ya tiene ruteados.
+// Deducir primero por los clientes es frágil: si varios de sus clientes figuran hoy con otro vendedor en SAP, ganaba ese otro nombre.
 function vendedorEnMaestro(vendedor) {
+  const objetivo = normTokensTxt(vendedor);
+  const porNombre = clientesMaestro.find(function(c) { return c.vendedor && normTokensTxt(c.vendedor) === objetivo; });
+  if (porNombre) return porNombre.vendedor;
+
   const misCodigos = {};
   allData.forEach(function(r) { if (r['VENDEDOR'] === vendedor) misCodigos[r['CODIGO CLIENTE']] = true; });
   const votos = {};
   clientesMaestro.forEach(function(c) { if (misCodigos[c.codigo] && c.vendedor) votos[c.vendedor] = (votos[c.vendedor] || 0) + 1; });
   let mejor = '', max = 0;
   Object.keys(votos).forEach(function(v) { if (votos[v] > max) { max = votos[v]; mejor = v; } });
-  if (mejor) return mejor;
-  const objetivo = normTokensTxt(vendedor);
-  const porNombre = clientesMaestro.find(function(c) { return normTokensTxt(c.vendedor) === objetivo; });
-  return porNombre ? porNombre.vendedor : '';
+  return mejor;
 }
 
 function clientesSinRutearDelVendedor() {
@@ -1781,7 +1785,7 @@ function clientesSinRutearDelVendedor() {
   const ruteados = {};
   allData.forEach(function(r) { ruteados[r['CODIGO CLIENTE']] = true; });
   return clientesMaestro.filter(function(c) {
-    if (c.vendedor !== nombreMaestro) return false;
+    if (normTokensTxt(c.vendedor) !== normTokensTxt(nombreMaestro)) return false; // mismo vendedor aunque cambien mayúsculas, acentos u orden
     if (ZONAS_VALIDAS.indexOf(c.territorio) === -1) return false;
     if (ruteados[c.codigo]) return false;
     if (c.codigoViejo && ruteados[c.codigoViejo]) return false; // cambio de razón social: lo resuelve el supervisor

@@ -1127,7 +1127,7 @@ function renderClientesView() {
       return;
     }
     if (inactivarEstado === 'error' && !solicitudesInactivar.length) {
-      content.insertAdjacentHTML('beforeend', '<div class="empty"><div class="empty-text">No se pudieron cargar las solicitudes. Tocá "Actualizar" para reintentar.</div></div>');
+      content.insertAdjacentHTML('beforeend', '<div class="empty"><div class="empty-text">' + (inactivarServidorViejo ? 'El servidor todavía no tiene esta función: falta publicar la última versión del Apps Script.' : 'No se pudieron cargar las solicitudes. Tocá "Actualizar" para reintentar.') + '</div></div>');
       return;
     }
     if (!items.length) {
@@ -1158,6 +1158,7 @@ let supPin = '';
 let solicitudesInactivar = [];
 let inactivarEstado = 'sin cargar'; // 'sin cargar' | 'cargando' | 'ok' | 'error'
 let inactivarVerTodas = false;
+let inactivarServidorViejo = false;
 let jsonpSeq = 0;
 
 function codigoNorm(c) { return String(c === undefined || c === null ? '' : c).trim().toUpperCase(); }
@@ -1177,6 +1178,15 @@ function llamarSistema(params, timeoutMs) {
   });
 }
 
+// Detalle del error para mostrar en pantalla cuando el servidor responde algo que el panel no sabe explicar
+function motivoTecnico(res) {
+  if (!res) return '';
+  const partes = [];
+  if (res.error) partes.push('código: ' + res.error);
+  if (res.mensaje) partes.push(res.mensaje);
+  return partes.length ? ' (' + partes.join(' · ') + ')' : '';
+}
+
 function pendientesInactivar() {
   const set = {};
   solicitudesInactivar.forEach(function(x) { if (norm(x.estado) === 'PENDIENTE') set[codigoNorm(x.codigo)] = true; });
@@ -1188,6 +1198,7 @@ function cargarSolicitudesInactivar() {
   inactivarEstado = 'cargando';
   if (viewMode === 'clientes') renderClientesView();
   return llamarSistema({ accion: 'inactivarLista', zona: supActual['Zona'], pin: supPin }, 20000).then(function(res) {
+    inactivarServidorViejo = !!(res && res.error === 'accion');
     if (res && res.ok) { solicitudesInactivar = res.filas || []; inactivarEstado = 'ok'; }
     else inactivarEstado = 'error';
   }).catch(function() { inactivarEstado = 'error'; }).then(function() {
@@ -1231,7 +1242,8 @@ function enviarInactivar() {
     else if (e === 'cliente') falla('Ese cliente ya no figura en BASE CLIENTES.');
     else if (e === 'sesion') falla('Tu sesión no es válida. Salí y volvé a ingresar con tu PIN.');
     else if (e === 'ocupado') falla('El sistema está ocupado. Probá de nuevo en unos segundos.');
-    else falla('No se pudo informar. Probá de nuevo.');
+    else if (e === 'accion') falla('El servidor todavía no tiene esta función: falta publicar la última versión del Apps Script.');
+    else falla('No se pudo informar' + motivoTecnico(res) + '. Probá de nuevo.');
   }).catch(function() { falla('No se pudo enviar. Revisá tu conexión y probá de nuevo.'); });
 }
 
@@ -1305,7 +1317,8 @@ function confirmarAlta() {
     else if (e === 'dia') falla('Elegí un día de lunes a viernes.');
     else if (e === 'sesion') falla('Tu sesión no es válida. Salí y volvé a ingresar con tu PIN.');
     else if (e === 'ocupado') falla('El sistema está ocupado. Probá de nuevo en unos segundos.');
-    else falla('No se pudo agregar. Probá de nuevo.');
+    else if (e === 'accion') falla('El servidor todavía no tiene esta función: falta publicar la última versión del Apps Script.');
+    else falla('No se pudo agregar' + motivoTecnico(res) + '. Probá de nuevo.');
   }).catch(function() {
     falla('No se pudo confirmar la respuesta. Si ya lo intentaste, puede que ya esté agregado: recargá la página y fijate antes de reintentar.');
   });

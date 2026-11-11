@@ -227,6 +227,7 @@
   .btn-cli-accion.danger { background: #C0392B; }
   .btn-cli-accion.info { background: #7C3AED; }
 
+  .aviso-aplica { font-size: 12px; color: var(--text2); background: var(--bg); border-radius: 8px; padding: 0.5rem 0.65rem; margin-bottom: 0.75rem; line-height: 1.4; }
   .cli-acciones { display: flex; gap: 6px; margin-top: auto; }
   .cli-acciones .btn-cli-accion { margin-top: 0; }
   .cli-acciones .btn-cli-accion:first-child { flex: 2; }
@@ -494,6 +495,7 @@
     <div class="modal-handle"></div>
     <div class="modal-title">Rutear cliente</div>
     <div class="modal-cliente" id="alta-modal-cliente"></div>
+    <div class="aviso-aplica">Se agrega al ruteo enseguida, sin pasos de confirmación, y queda registrado.</div>
     <div class="modal-field">
       <label>Día de visita</label>
       <select id="alta-input-dia" onchange="onAltaDiaChange()">
@@ -588,6 +590,7 @@ function guardarSesionStorage() {
       selectedVendedor: selectedVendedor,
       diasFiltro: diasFiltro,
       supPin: supPin,
+      altasAplicadas: altasAplicadas,
       estadoVirtualPorVendedor: estadoVirtualPorVendedor
     }));
   } catch (e) {}
@@ -602,6 +605,7 @@ function restaurarSesionStorage() {
     supActual = s.supActual;
     zonaSeleccionada = s.zonaSeleccionada || '';
     supPin = s.supPin || '';
+    altasAplicadas = s.altasAplicadas || [];
     selectedVendedor = s.selectedVendedor || '';
     diasFiltro = s.diasFiltro || DAYS_ORDER.slice(0, 5);
     estadoVirtualPorVendedor = s.estadoVirtualPorVendedor || {};
@@ -849,6 +853,7 @@ function logout() {
   supActual = null;
   pinActual = '';
   supPin = '';
+  altasAplicadas = [];
   solicitudesInactivar = [];
   inactivarEstado = 'sin cargar';
   inactivarVerTodas = false;
@@ -966,6 +971,7 @@ function clientesSinRutear() {
   return baseClientes.filter(function(c) {
     return norm(c['Nombre Territorio']) === norm(supActual['Zona']) &&
            !ruteados[c['Código SN']] &&
+           !altaYaAplicada(c['Código SN']) &&
            !codigoYaPendienteEnAlgunVendedor(c['Código SN']);
   });
 }
@@ -1264,20 +1270,81 @@ function validarAlta() {
 }
 function confirmarAlta() {
   if (!altaClienteActual) return;
+  const cli = altaClienteActual;
   const dia = document.getElementById('alta-input-dia').value;
   const posicion = document.getElementById('alta-input-posicion').value;
-  const refCodigo = posicion !== 'final' ? document.getElementById('alta-input-referencia').value : null;
+  let ubicar = 'al final';
+  if (posicion !== 'final') {
+    const ref = document.getElementById('alta-input-referencia');
+    const refNombre = ref.options[ref.selectedIndex].textContent.replace(/\|/g, '/');
+    ubicar = (posicion === 'antes' ? 'antes de ' : 'después de ') + ref.value + ' (' + refNombre + ')';
+  }
+  const btn = document.getElementById('alta-btn-confirmar');
+  const st = document.getElementById('alta-modal-status');
+  btn.disabled = true; btn.textContent = 'Agregando...'; st.innerHTML = '';
+  const falla = function(msg) { st.innerHTML = '<div class="modal-status err">' + msg + '</div>'; btn.disabled = false; btn.textContent = 'Reintentar'; };
 
-  const cliente = {
-    codigo: altaClienteActual['Código SN'],
-    nombre: altaClienteActual['Nombre SN'],
-    localidad: altaClienteActual['Localidad'],
-    direccion: altaClienteActual['Dirección entrega']
-  };
-  agregarClienteVirtual(altaClienteActual['Vendedor'], cliente, dia, refCodigo, posicion);
+  // Se aplica en el momento: el servidor valida la zona y el PIN, agrega el cliente, lo ubica y lo deja registrado
+  llamarSistema({ accion: 'agregarSupervisor', zona: supActual['Zona'], pin: supPin, codigo: cli['Código SN'], dia: dia, ubicar: ubicar }, 60000).then(function(res) {
+    if (res && res.ok) {
+      const a = { vendedor: res.vendedor, codigo: cli['Código SN'], nombre: cli['Nombre SN'], localidad: cli['Localidad'],
+                  direccion: cli['Dirección entrega'], dia: res.dia, posicion: res.posicion, ts: Date.now() };
+      inyectarAltaLocal(a);
+      altasAplicadas.push(a);
+      guardarSesionStorage();
+      st.innerHTML = '<div class="modal-status ok">✅ Agregado al ruteo de ' + res.vendedor + ': ' + res.dia.charAt(0) + res.dia.slice(1).toLowerCase() + ', posición ' + res.posicion + '.</div>';
+      btn.textContent = 'Listo';
+      setTimeout(function() { cerrarModalAlta(); renderClientesView(); }, 1000);
+      return;
+    }
+    const e = res && res.error;
+    if (e === 'yaruteado') falla('Ese cliente ya figura en el ruteo. Recargá la página para verlo.');
+    else if (e === 'zona') falla('Ese cliente no es de tu zona.');
+    else if (e === 'cliente') falla('Ese cliente ya no figura en BASE CLIENTES.');
+    else if (e === 'sinvendedor') falla('Ese cliente no tiene vendedor asignado en BASE CLIENTES. Asignáselo primero.');
+    else if (e === 'dia') falla('Elegí un día de lunes a viernes.');
+    else if (e === 'sesion') falla('Tu sesión no es válida. Salí y volvé a ingresar con tu PIN.');
+    else if (e === 'ocupado') falla('El sistema está ocupado. Probá de nuevo en unos segundos.');
+    else falla('No se pudo agregar. Probá de nuevo.');
+  }).catch(function() {
+    falla('No se pudo confirmar la respuesta. Si ya lo intentaste, puede que ya esté agregado: recargá la página y fijate antes de reintentar.');
+  });
+}
 
-  document.getElementById('alta-modal-status').innerHTML = '<div class="modal-status ok">✅ Agregado a la cola. Confirmá los cambios para guardar en el Sheet.</div>';
-  setTimeout(function() { cerrarModalAlta(); renderClientesView(); }, 900);
+// ── ALTAS APLICADAS AL INSTANTE ─────────────────────────────────────────────────
+// Al rutear un cliente, el cambio se aplica en el momento en el Sheet. La planilla publicada tarda unos minutos en reflejarlo,
+// así que mientras tanto el panel lo suma a su copia de BASE RUTEO: se ve en el ruteo y deja de figurar como "sin rutear".
+let altasAplicadas = [];   // { vendedor, codigo, nombre, localidad, direccion, dia, posicion, ts }
+function altaYaAplicada(codigo) {
+  const k = codigoNorm(codigo);
+  return altasAplicadas.some(function(a) { return codigoNorm(a.codigo) === k; });
+}
+function inyectarAltaLocal(a) {
+  const dia = norm(a.dia);
+  const filasDia = baseRuteo.filter(function(r) {
+    return normTokens(r['VENDEDOR']) === normTokens(a.vendedor) && norm(r['DIA CARGA DE PEDIDO']) === dia;
+  }).sort(function(x, y) { return (parseInt(x['ORDEN']) || 0) - (parseInt(y['ORDEN']) || 0); });
+  const nueva = { 'CODIGO CLIENTE': a.codigo, 'NOMBRE COMERCIAL': a.nombre, 'LOCALIDAD': a.localidad, 'DIRECCION': a.direccion,
+                  'VENDEDOR': a.vendedor, 'ZONA': supActual ? supActual['Zona'] : '', 'ORDEN': '', 'DIA CARGA DE PEDIDO': dia,
+                  'Latitud': '', 'Longitud': '', 'Canal actual (Presencial / Autogestión)': 'Presencial' };
+  const idx = Math.max(0, Math.min((a.posicion || filasDia.length + 1) - 1, filasDia.length));
+  filasDia.splice(idx, 0, nueva);
+  filasDia.forEach(function(r, i) { r['ORDEN'] = String(i + 1); });
+  baseRuteo.push(nueva);
+  // si ya había un orden armado a mano (cambios sin guardar) para ese día, el cliente nuevo también va ahí
+  const ev = estadoVirtualPorVendedor[normTokens(a.vendedor)];
+  if (ev && ev.ordenVirtual && ev.ordenVirtual[dia] && ev.ordenVirtual[dia].indexOf(a.codigo) === -1) ev.ordenVirtual[dia].splice(idx, 0, a.codigo);
+}
+// Al recargar la página: si la planilla publicada todavía no trae el cliente, se vuelve a sumar; si ya lo trae, se descarta
+function reaplicarAltasLocales() {
+  const vigentes = [];
+  altasAplicadas.forEach(function(a) {
+    const yaEnPlanilla = baseRuteo.some(function(r) { return codigoNorm(r['CODIGO CLIENTE']) === codigoNorm(a.codigo); });
+    if (yaEnPlanilla || Date.now() - a.ts > 3 * 3600000) return;
+    inyectarAltaLocal(a);
+    vigentes.push(a);
+  });
+  altasAplicadas = vigentes;
 }
 
 // ── CAMBIOS DE LOS VENDEDORES (registro de solo lectura) ─────────────────────────
@@ -2087,6 +2154,7 @@ async function cargarDatos() {
     registroCambios = parseCSV(sol).filter(function(s) { return s['COD. CLIENTE']; });
 
     if (restaurarSesionStorage() && supActual) {
+      reaplicarAltasLocales();
       iniciarSesion();
     } else {
       renderZonas();

@@ -228,6 +228,7 @@
   .btn-cli-accion.info { background: #7C3AED; }
 
   .aviso-aplica { font-size: 12px; color: var(--text2); background: var(--bg); border-radius: 8px; padding: 0.5rem 0.65rem; margin-bottom: 0.75rem; line-height: 1.4; }
+  .aviso-datos { background: #B91C1C; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.4; padding: 0.7rem 1rem; text-align: center; }
   .cli-acciones { display: flex; gap: 6px; margin-top: auto; }
   .cli-acciones .btn-cli-accion { margin-top: 0; }
   .cli-acciones .btn-cli-accion:first-child { flex: 2; }
@@ -596,6 +597,19 @@ function guardarSesionStorage() {
   } catch (e) {}
 }
 
+// Cambios sin guardar que hayan quedado sin código de cliente (cuando la planilla tenía el encabezado mal) se descartan
+function limpiarEstadoVirtual(estado) {
+  const malo = function(k) { return k === undefined || k === null || k === '' || k === 'undefined' || k === 'null'; };
+  Object.keys(estado).forEach(function(v) {
+    const ev = estado[v] || {};
+    if (ev.ordenVirtual) Object.keys(ev.ordenVirtual).forEach(function(d) { ev.ordenVirtual[d] = (ev.ordenVirtual[d] || []).filter(function(k) { return !malo(k); }); });
+    ['eliminados', 'pendientes', 'altas', 'canalVirtual', 'diaVirtual'].forEach(function(campo) {
+      if (ev[campo] && typeof ev[campo] === 'object') Object.keys(ev[campo]).forEach(function(k) { if (malo(k)) delete ev[campo][k]; });
+    });
+  });
+  return estado;
+}
+
 function restaurarSesionStorage() {
   try {
     const raw = sessionStorage.getItem(SS_KEY());
@@ -608,7 +622,7 @@ function restaurarSesionStorage() {
     altasAplicadas = s.altasAplicadas || [];
     selectedVendedor = s.selectedVendedor || '';
     diasFiltro = s.diasFiltro || DAYS_ORDER.slice(0, 5);
-    estadoVirtualPorVendedor = s.estadoVirtualPorVendedor || {};
+    estadoVirtualPorVendedor = limpiarEstadoVirtual(s.estadoVirtualPorVendedor || {});
     return true;
   } catch (e) { return false; }
 }
@@ -653,9 +667,21 @@ function norm(s) {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-function parseCSV(text) {
+// Columnas que el panel espera de cada planilla. Si alguien edita un encabezado y le cambia espacios, mayúsculas o acentos
+// (por ejemplo "CODIGOCLIENTE" en vez de "CODIGO CLIENTE"), la columna se sigue reconociendo.
+const COLS_RUTEO = ['CODIGO CLIENTE', 'NOMBRE COMERCIAL', 'LOCALIDAD', 'DIRECCION', 'VENDEDOR', 'ZONA', 'ORDEN', 'DIA CARGA DE PEDIDO', 'Latitud', 'Longitud', 'Canal actual (Presencial / Autogestión)'];
+const COLS_CLIENTES = ['Código SN', 'Nombre SN', 'Localidad', 'Dirección entrega', 'Vendedor', 'Nombre Territorio', 'Comentarios', 'Fecha Última Factura', 'Latitud', 'Longitud'];
+function claveColumna(h) { return String(h || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function nombreColumna(h, columnas) {
+  if (!columnas || columnas.indexOf(h) !== -1) return h;
+  const k = claveColumna(h);
+  for (var i = 0; i < columnas.length; i++) { if (claveColumna(columnas[i]) === k) return columnas[i]; }
+  return h;
+}
+
+function parseCSV(text, columnas) {
   const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(function(h) { return h.trim().replace(/"/g,''); });
+  const headers = lines[0].split(',').map(function(h) { return nombreColumna(h.trim().replace(/"/g,''), columnas); });
   return lines.slice(1).map(function(line) {
     const vals = [];
     let cur = '', inQ = false;
@@ -2105,7 +2131,25 @@ function descartarCambios() {
   refrescarVistaActual();
 }
 
+// Si BASE RUTEO no trae la columna del código de cliente, el panel no puede identificar a los clientes:
+// se avisa en pantalla y no se confirman cambios (se enviarían sin código).
+let faltaColumnaCodigo = false;
+function verificarColumnaCodigo() {
+  faltaColumnaCodigo = baseRuteo.length > 0 && !baseRuteo.some(function(r) { return r['CODIGO CLIENTE']; });
+  let aviso = document.getElementById('aviso-datos');
+  if (faltaColumnaCodigo && !aviso) {
+    aviso = document.createElement('div');
+    aviso.id = 'aviso-datos';
+    aviso.className = 'aviso-datos';
+    aviso.textContent = 'La hoja BASE RUTEO no tiene la columna "CODIGO CLIENTE" (alguien cambió el encabezado). Hasta que se corrija, la información del ruteo no es confiable y no se pueden confirmar cambios.';
+    document.body.insertBefore(aviso, document.body.firstChild);
+  } else if (!faltaColumnaCodigo && aviso) {
+    aviso.parentNode.removeChild(aviso);
+  }
+}
+
 function confirmarCambiosGlobal() {
+  if (faltaColumnaCodigo) { alert('No se pueden confirmar cambios: la hoja BASE RUTEO no tiene la columna "CODIGO CLIENTE". Corregí el encabezado y recargá.'); return; }
   const bar = document.getElementById('confirm-bar');
   const btn = bar.querySelector('#btn-confirm');
   btn.disabled = true;
@@ -2160,10 +2204,11 @@ async function cargarDatos() {
       fetch(URL_SOLICITUDES).then(function(r) { return r.text(); })
     ]);
     supervisores = parseCSV(sup);
-    baseClientes = parseCSV(cli).filter(function(c) {
+    baseClientes = parseCSV(cli, COLS_CLIENTES).filter(function(c) {
       return ZONAS_VALIDAS.indexOf(norm(c['Nombre Territorio'])) !== -1;
     });
-    baseRuteo = parseCSV(rut).filter(function(r) { return r['NOMBRE COMERCIAL']; });
+    baseRuteo = parseCSV(rut, COLS_RUTEO).filter(function(r) { return r['NOMBRE COMERCIAL']; });
+    verificarColumnaCodigo();
     registroCambios = parseCSV(sol).filter(function(s) { return s['COD. CLIENTE']; });
 
     if (restaurarSesionStorage() && supActual) {

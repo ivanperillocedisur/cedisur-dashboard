@@ -264,6 +264,7 @@
   .ruta-chip.con { background: #E6F7ED; color: #1F7A42; }
   .ruta-chip.sin { background: #FFF7ED; color: #C2410C; }
   .ruta-chip.otro { background: #EEF2FF; color: #3730A3; }
+  .aviso-datos { background: #B91C1C; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.4; padding: 0.7rem 1rem; text-align: center; }
   .search-nota { font-size: 12px; color: var(--text2); background: #FFF7ED; border-radius: 8px; padding: 0.5rem 0.7rem; margin: 0.25rem 1.25rem 0.5rem; line-height: 1.4; }
   .sr-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem 0.9rem; box-shadow: var(--shadow); }
   .sr-nombre { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.3; }
@@ -963,9 +964,21 @@ function limpiarDatosAnteriores() {
 }
 
 
-function parseCSV(text, sinFiltro) {
+// Columnas que la app espera de cada planilla. Si alguien edita un encabezado y le cambia espacios, mayúsculas o acentos
+// (por ejemplo "CODIGOCLIENTE" en vez de "CODIGO CLIENTE"), la columna se sigue reconociendo.
+const COLS_RUTEO = ['CODIGO CLIENTE', 'NOMBRE COMERCIAL', 'LOCALIDAD', 'DIRECCION', 'VENDEDOR', 'ZONA', 'ORDEN', 'DIA CARGA DE PEDIDO', 'Latitud', 'Longitud', 'Canal actual (Presencial / Autogestión)'];
+const COLS_CLIENTES = ['Código SN', 'Nombre SN', 'Localidad', 'Dirección entrega', 'Vendedor', 'Nombre Territorio', 'Comentarios', 'Fecha Última Factura', 'Latitud', 'Longitud'];
+function claveColumna(h) { return String(h || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function nombreColumna(h, columnas) {
+  if (!columnas || columnas.indexOf(h) !== -1) return h;
+  const k = claveColumna(h);
+  for (var i = 0; i < columnas.length; i++) { if (claveColumna(columnas[i]) === k) return columnas[i]; }
+  return h;
+}
+
+function parseCSV(text, sinFiltro, columnas) {
   const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(function(h) { return h.trim().replace(/"/g,''); });
+  const headers = lines[0].split(',').map(function(h) { return nombreColumna(h.trim().replace(/"/g,''), columnas); });
   return lines.slice(1).map(function(line) {
     const vals = [];
     let cur = '', inQ = false;
@@ -1026,8 +1039,10 @@ function onSearch() {
 }
 
 // ── MODAL ──────────────────────────────────────────────────────────────────────
-function abrirModal(codigo) {
-  const row = allData.find(function(r) { return r['CODIGO CLIENTE'] === codigo && r['VENDEDOR'] === selectedVendedor; })
+function abrirModal(codigo, dia) {
+  // Un cliente puede estar en dos días (lunes y jueves): se abre la fila del día que se tocó
+  const row = (dia && allData.find(function(r) { return r['CODIGO CLIENTE'] === codigo && r['VENDEDOR'] === selectedVendedor && String(r['DIA CARGA DE PEDIDO']).toUpperCase() === String(dia).toUpperCase(); }))
+           || allData.find(function(r) { return r['CODIGO CLIENTE'] === codigo && r['VENDEDOR'] === selectedVendedor; })
            || allData.find(function(r) { return r['CODIGO CLIENTE'] === codigo; });
   if (!row) return;
   modalData = row;
@@ -1113,6 +1128,7 @@ function saveSolicitud(codigo, data) {
 function enviarSolicitud() {
   if (!modalData) return;
   const codigo = modalData['CODIGO CLIENTE'];
+  if (!codigo) { alert('No se puede enviar: este cliente no tiene código en la planilla de ruteo. Avisale a Inteligencia Comercial.'); return; }
   let detalle = '', tipo = '';
   if (tipoSeleccionado === 'posicion') {
     const dia = document.getElementById('input-dia').value;
@@ -1120,6 +1136,7 @@ function enviarSolicitud() {
     let ubicar = 'al final';
     if (pos !== 'final') {
       const ref = document.getElementById('input-referencia');
+      if (!ref.value || ref.value === 'undefined') { alert('No se puede ubicar respecto de ese cliente porque no tiene código en la planilla. Elegí "Al final del día" o avisale a Inteligencia Comercial.'); return; }
       const refNombre = ref.options[ref.selectedIndex].textContent.replace(/^\d+\.\s*/, '').replace(/\|/g, '/');
       ubicar = (pos === 'antes' ? 'antes de ' : 'después de ') + ref.value + ' (' + refNombre + ')';
     }
@@ -1344,7 +1361,7 @@ function buildCard(c, isSearch) {
   btnCambio.title = 'Cambiar el ruteo';
   btnCambio.setAttribute('aria-label', 'Cambiar el ruteo');
   btnCambio.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-8 8-4 1 1-4z"/></svg>';
-  btnCambio.addEventListener('click', function(e) { e.stopPropagation(); abrirModal(codigo); });
+  btnCambio.addEventListener('click', function(e) { e.stopPropagation(); abrirModal(codigo, dia); });
   actions.appendChild(btnCambio);
 
   const name = document.createElement('div');
@@ -1418,7 +1435,7 @@ function buildCard(c, isSearch) {
   const btnSol = document.createElement('button');
   btnSol.className = 'btn-solicitar';
   btnSol.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v5l3 3"/><circle cx="8" cy="8" r="6.5"/></svg> Cambiar día, orden o baja';
-  btnSol.addEventListener('click', function() { abrirModal(codigo); });
+  btnSol.addEventListener('click', function() { abrirModal(codigo, dia); });
   detail.appendChild(btnSol);
   detail.appendChild(btnGeo);
   mapsLink.style.marginTop = '8px';
@@ -1981,6 +1998,7 @@ function enviarPedidoAgregar() {
   const refSel = document.getElementById('agregar-ref');
   let ubicar = 'al final';
   if (pos !== 'final') {
+    if (!refSel.value || refSel.value === 'undefined') { alert('No se puede ubicar respecto de ese cliente porque no tiene código en la planilla. Elegí "Al final del día" o avisale a Inteligencia Comercial.'); return; }
     const refNombre = refSel.options[refSel.selectedIndex].textContent.replace(/^\d+\.\s*/, '').replace(/\|/g, '/');
     ubicar = (pos === 'antes' ? 'antes de ' : 'después de ') + refSel.value + ' (' + refNombre + ')';
   }
@@ -2150,9 +2168,49 @@ function unificarNombresDeVendedores() {
   allData.forEach(function(r) { if (r['VENDEDOR']) r['VENDEDOR'] = dominante[normTokensTxt(r['VENDEDOR'])]; });
 }
 
+// Si BASE RUTEO no trae la columna del código de cliente, ningún cambio puede llegar bien al sistema:
+// se avisa en pantalla y no se envía nada (antes se mandaban cambios sin código y quedaban con error).
+let faltaColumnaCodigo = false;
+function verificarColumnaCodigo() {
+  faltaColumnaCodigo = allData.length > 0 && !allData.some(function(r) { return r['CODIGO CLIENTE']; });
+  let aviso = document.getElementById('aviso-datos');
+  if (faltaColumnaCodigo && !aviso) {
+    aviso = document.createElement('div');
+    aviso.id = 'aviso-datos';
+    aviso.className = 'aviso-datos';
+    aviso.textContent = 'La planilla de ruteo no tiene la columna "CODIGO CLIENTE" (alguien cambió el encabezado). Hasta que se corrija no se pueden enviar cambios. Avisale a Inteligencia Comercial.';
+    document.body.insertBefore(aviso, document.body.firstChild);
+  } else if (!faltaColumnaCodigo && aviso) {
+    aviso.parentNode.removeChild(aviso);
+  }
+}
+// Borra marcas guardadas en el celular que quedaron sin código de cliente (cuando la planilla tenía el encabezado mal):
+// por ejemplo, el "Cambio de canal · enviado" que aparecía en todas las tarjetas, o cambios en espera que fallarían igual.
+function limpiarRegistrosLocalesInvalidos() {
+  const invalido = function(k) { return k === '' || k === 'undefined' || k === 'null'; };
+  try {
+    for (var i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (key.indexOf('cola_cambios_') === 0) {
+        const cola = JSON.parse(localStorage.getItem(key) || '[]');
+        const sana = cola.filter(function(x) { return x && x.codigo && !invalido(String(x.codigo)); });
+        if (sana.length !== cola.length) localStorage.setItem(key, JSON.stringify(sana));
+      } else if (key.indexOf('sol_') === 0 || key.indexOf('inactivar_') === 0) {
+        const mapa = JSON.parse(localStorage.getItem(key) || '{}');
+        var cambio = false;
+        Object.keys(mapa).forEach(function(k) { if (invalido(k)) { delete mapa[k]; cambio = true; } });
+        if (cambio) localStorage.setItem(key, JSON.stringify(mapa));
+      }
+    }
+  } catch (e) { /* si algo no se puede leer, se deja como está */ }
+}
+
 function init(csvText) {
   limpiarDatosAnteriores();
-  allData = parseCSV(csvText);
+  allData = parseCSV(csvText, false, COLS_RUTEO);
+  verificarColumnaCodigo();
+  limpiarRegistrosLocalesInvalidos();
   unificarNombresDeVendedores();
   const seen = {};
   const vendedores = [];
@@ -2191,7 +2249,7 @@ async function cargarUbicacionesSAP() {
     if (!res.ok) return;
     const idx = {};
     const maestro = [];
-    parseCSV(await res.text(), true).forEach(function(r) {
+    parseCSV(await res.text(), true, COLS_CLIENTES).forEach(function(r) {
       const lat = numCoord(r['Latitud']);
       const lon = numCoord(r['Longitud']);
       if (coordValida(lat, lon)) idx[r['Código SN']] = { lat: lat, lon: lon };

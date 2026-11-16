@@ -227,6 +227,12 @@
   .btn-cli-accion.danger { background: #C0392B; }
   .btn-cli-accion.info { background: #7C3AED; }
 
+  .dias-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .dia-chip { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text2); cursor: pointer; }
+  .dia-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .dia-chip:disabled { opacity: 0.4; cursor: default; }
+  .hint { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text3); }
+  .btn-otrodia { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); background: #fff; border: 1.5px solid var(--accent); padding: 9px 12px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
   .aviso-aplica { font-size: 12px; color: var(--text2); background: var(--bg); border-radius: 8px; padding: 0.5rem 0.65rem; margin-bottom: 0.75rem; line-height: 1.4; }
   .aviso-datos { background: #B91C1C; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.4; padding: 0.7rem 1rem; text-align: center; }
   .cli-acciones { display: flex; gap: 6px; margin-top: auto; }
@@ -498,32 +504,64 @@
     <div class="modal-cliente" id="alta-modal-cliente"></div>
     <div class="aviso-aplica">Se agrega al ruteo enseguida, sin pasos de confirmación, y queda registrado.</div>
     <div class="modal-field">
-      <label>Día de visita</label>
-      <select id="alta-input-dia" onchange="onAltaDiaChange()">
-        <option value="">— Seleccioná —</option>
-        <option>LUNES</option><option>MARTES</option><option>MIERCOLES</option>
-        <option>JUEVES</option><option>VIERNES</option>
-      </select>
+      <label>Días de visita <span class="hint">(podés elegir más de uno)</span></label>
+      <div class="dias-chips" id="alta-dias">
+        <button type="button" class="dia-chip" data-dia="LUNES" onclick="toggleDiaAlta(this)">Lunes</button>
+        <button type="button" class="dia-chip" data-dia="MARTES" onclick="toggleDiaAlta(this)">Martes</button>
+        <button type="button" class="dia-chip" data-dia="MIERCOLES" onclick="toggleDiaAlta(this)">Miércoles</button>
+        <button type="button" class="dia-chip" data-dia="JUEVES" onclick="toggleDiaAlta(this)">Jueves</button>
+        <button type="button" class="dia-chip" data-dia="VIERNES" onclick="toggleDiaAlta(this)">Viernes</button>
+      </div>
     </div>
-    <div class="modal-field">
-      <label>Ubicar</label>
-      <select id="alta-input-posicion" onchange="validarAlta()">
-        <option value="final">Al final del día</option>
-        <option value="antes">Antes de...</option>
-        <option value="despues">Después de...</option>
-      </select>
+    <div id="alta-lugar">
+      <div class="modal-field">
+        <label>Ubicar</label>
+        <select id="alta-input-posicion" onchange="validarAlta()">
+          <option value="final">Al final del día</option>
+          <option value="antes">Antes de...</option>
+          <option value="despues">Después de...</option>
+        </select>
+      </div>
+      <div class="modal-field" id="alta-campo-referencia" style="display:none">
+        <label>Cliente de referencia</label>
+        <select id="alta-input-referencia" onchange="validarAlta()">
+          <option value="">— Seleccioná —</option>
+        </select>
+      </div>
     </div>
-    <div class="modal-field" id="alta-campo-referencia" style="display:none">
-      <label>Cliente de referencia</label>
-      <select id="alta-input-referencia" onchange="validarAlta()">
-        <option value="">— Seleccioná —</option>
-      </select>
-    </div>
+    <div class="aviso-aplica" id="alta-nota-multi" style="display:none">Con más de un día, el cliente se agrega al final de cada día. Después podés cambiar su lugar desde "Editar cliente".</div>
     <div class="modal-actions">
       <button class="btn-cancelar" onclick="cerrarModalAlta()">Cancelar</button>
       <button class="btn-confirmar" id="alta-btn-confirmar" disabled onclick="confirmarAlta()">Agregar al ruteo</button>
     </div>
     <div id="alta-modal-status"></div>
+  </div>
+</div>
+
+<!-- MODAL AGREGAR OTRO DÍA (supervisor) -->
+<div class="modal-overlay" id="otrodia-modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Agregar otro día</div>
+    <div class="modal-cliente" id="otrodia-modal-cliente"></div>
+    <div class="aviso-aplica">El cliente sigue en los días que ya tiene y se suma a los que elijas, al final de cada día. Se aplica enseguida y queda registrado.</div>
+    <div class="modal-field">
+      <label>Días a agregar <span class="hint">(podés elegir más de uno)</span></label>
+      <div class="dias-chips" id="otrodia-dias"></div>
+    </div>
+    <div class="modal-field">
+      <label>Canal en esos días</label>
+      <select id="otrodia-canal">
+        <option value="Presencial">Presencial</option>
+        <option value="Telefónico">Telefónico</option>
+        <option value="Ecommerce">Ecommerce</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="cerrarModalOtroDia()">Cancelar</button>
+      <button class="btn-confirmar" id="otrodia-btn-confirmar" disabled onclick="confirmarOtroDia()">Agregar</button>
+    </div>
+    <div id="otrodia-modal-status"></div>
   </div>
 </div>
 
@@ -1280,7 +1318,9 @@ function abrirModalAlta(clienteBaseClientes) {
   altaClienteActual = clienteBaseClientes;
   document.getElementById('alta-modal-cliente').textContent =
     (clienteBaseClientes['Nombre SN'] || '') + ' · ' + (clienteBaseClientes['Vendedor'] || '');
-  document.getElementById('alta-input-dia').value = '';
+  [].forEach.call(document.querySelectorAll('#alta-dias .dia-chip'), function(b) { b.classList.remove('on'); });
+  document.getElementById('alta-lugar').style.display = 'block';
+  document.getElementById('alta-nota-multi').style.display = 'none';
   document.getElementById('alta-input-posicion').value = 'final';
   document.getElementById('alta-campo-referencia').style.display = 'none';
   document.getElementById('alta-btn-confirmar').disabled = true;
@@ -1292,25 +1332,37 @@ function cerrarModalAlta() {
   document.getElementById('alta-modal-overlay').classList.remove('open');
   altaClienteActual = null;
 }
+function diasAltaSeleccionados() {
+  return [].filter.call(document.querySelectorAll('#alta-dias .dia-chip'), function(b) { return b.classList.contains('on'); })
+           .map(function(b) { return b.dataset.dia; });
+}
+function toggleDiaAlta(btn) {
+  btn.classList.toggle('on');
+  onAltaDiaChange();
+}
 function onAltaDiaChange() {
-  const dia = document.getElementById('alta-input-dia').value;
-  if (dia && altaClienteActual) {
-    poblarReferencia(document.getElementById('alta-input-referencia'), dia, null, altaClienteActual['Vendedor']);
-  }
+  const dias = diasAltaSeleccionados();
+  document.getElementById('alta-lugar').style.display = dias.length > 1 ? 'none' : 'block';
+  document.getElementById('alta-nota-multi').style.display = dias.length > 1 ? 'block' : 'none';
+  const sel = document.getElementById('alta-input-referencia');
+  sel.innerHTML = '<option value="">— Seleccioná —</option>';
+  if (dias.length === 1 && altaClienteActual) poblarReferencia(sel, dias[0], null, altaClienteActual['Vendedor']);
   validarAlta();
 }
 function validarAlta() {
-  const dia = document.getElementById('alta-input-dia').value;
+  const dias = diasAltaSeleccionados();
   const pos = document.getElementById('alta-input-posicion').value;
-  document.getElementById('alta-campo-referencia').style.display = (pos !== 'final') ? 'block' : 'none';
-  const ok = !!dia && (pos === 'final' || document.getElementById('alta-input-referencia').value !== '');
+  document.getElementById('alta-campo-referencia').style.display = (dias.length === 1 && pos !== 'final') ? 'block' : 'none';
+  const ok = dias.length > 0 && (dias.length > 1 || pos === 'final' || document.getElementById('alta-input-referencia').value !== '');
   document.getElementById('alta-btn-confirmar').disabled = !ok;
 }
+
 function confirmarAlta() {
   if (!altaClienteActual) return;
   const cli = altaClienteActual;
-  const dia = document.getElementById('alta-input-dia').value;
-  const posicion = document.getElementById('alta-input-posicion').value;
+  const diasAlta = diasAltaSeleccionados();
+  if (!diasAlta.length) return;
+  const posicion = diasAlta.length > 1 ? 'final' : document.getElementById('alta-input-posicion').value;
   let ubicar = 'al final';
   if (posicion !== 'final') {
     const ref = document.getElementById('alta-input-referencia');
@@ -1323,14 +1375,19 @@ function confirmarAlta() {
   const falla = function(msg) { st.innerHTML = '<div class="modal-status err">' + msg + '</div>'; btn.disabled = false; btn.textContent = 'Reintentar'; };
 
   // Se aplica en el momento: el servidor valida la zona y el PIN, agrega el cliente, lo ubica y lo deja registrado
-  llamarSistema({ accion: 'agregarSupervisor', zona: supActual['Zona'], pin: supPin, codigo: cli['Código SN'], dia: dia, ubicar: ubicar }, 60000).then(function(res) {
+  llamarSistema({ accion: 'agregarSupervisor', zona: supActual['Zona'], pin: supPin, codigo: cli['Código SN'], dia: diasAlta.join(','), ubicar: ubicar }, 60000).then(function(res) {
     if (res && res.ok) {
-      const a = { vendedor: res.vendedor, codigo: cli['Código SN'], nombre: cli['Nombre SN'], localidad: cli['Localidad'],
-                  direccion: cli['Dirección entrega'], dia: res.dia, posicion: res.posicion, ts: Date.now() };
-      inyectarAltaLocal(a);
-      altasAplicadas.push(a);
+      const lugares = (res.dias && res.dias.length) ? res.dias : [{ dia: res.dia, posicion: res.posicion }];
+      lugares.forEach(function(l) {
+        const a = { vendedor: res.vendedor, codigo: cli['Código SN'], nombre: cli['Nombre SN'], localidad: cli['Localidad'],
+                    direccion: cli['Dirección entrega'], dia: l.dia, posicion: l.posicion, canal: 'Presencial', ts: Date.now() };
+        inyectarAltaLocal(a);
+        altasAplicadas.push(a);
+      });
       guardarSesionStorage();
-      st.innerHTML = '<div class="modal-status ok">✅ Agregado al ruteo de ' + res.vendedor + ': ' + res.dia.charAt(0) + res.dia.slice(1).toLowerCase() + ', posición ' + res.posicion + '.</div>';
+      const cual = function(d) { return d === 'MIERCOLES' ? 'Miércoles' : d.charAt(0) + d.slice(1).toLowerCase(); };
+      st.innerHTML = '<div class="modal-status ok">✅ Agregado al ruteo de ' + res.vendedor + ': ' +
+        (lugares.length === 1 ? cual(lugares[0].dia) + ', posición ' + lugares[0].posicion : lugares.map(function(l) { return cual(l.dia) + ' (posición ' + l.posicion + ')'; }).join(', ')) + '.</div>';
       btn.textContent = 'Listo';
       setTimeout(function() { cerrarModalAlta(); renderClientesView(); }, 1000);
       return;
@@ -1341,6 +1398,79 @@ function confirmarAlta() {
     else if (e === 'cliente') falla('Ese cliente ya no figura en BASE CLIENTES.');
     else if (e === 'sinvendedor') falla('Ese cliente no tiene vendedor asignado en BASE CLIENTES. Asignáselo primero.');
     else if (e === 'dia') falla('Elegí un día de lunes a viernes.');
+    else if (e === 'sesion') falla('Tu sesión no es válida. Salí y volvé a ingresar con tu PIN.');
+    else if (e === 'ocupado') falla('El sistema está ocupado. Probá de nuevo en unos segundos.');
+    else if (e === 'accion') falla('El servidor todavía no tiene esta función: falta publicar la última versión del Apps Script.');
+    else falla('No se pudo agregar' + motivoTecnico(res) + '. Probá de nuevo.');
+  }).catch(function() {
+    falla('No se pudo confirmar la respuesta. Si ya lo intentaste, puede que ya esté agregado: recargá la página y fijate antes de reintentar.');
+  });
+}
+
+// ── AGREGAR OTRO DÍA A UN CLIENTE QUE YA ESTÁ EN EL RUTEO ─────────────────────────
+let otroDiaFila = null;   // fila de BASE RUTEO desde la que se abrió
+const NOMBRE_DIA = { LUNES: 'Lunes', MARTES: 'Martes', MIERCOLES: 'Miércoles', JUEVES: 'Jueves', VIERNES: 'Viernes' };
+function abrirModalOtroDia(row) {
+  otroDiaFila = row;
+  document.getElementById('otrodia-modal-cliente').textContent = row['NOMBRE COMERCIAL'] + ' · ' + row['VENDEDOR'];
+  const filasV = ruteoDelVendedor(row['VENDEDOR']);
+  const cont = document.getElementById('otrodia-dias');
+  cont.innerHTML = '';
+  ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'].forEach(function(d) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'dia-chip';
+    b.dataset.dia = d;
+    b.textContent = NOMBRE_DIA[d];
+    if (listaOrdenDia(row['VENDEDOR'], d, filasV).indexOf(row['CODIGO CLIENTE']) !== -1) { b.disabled = true; b.textContent += ' (ya está)'; }
+    b.addEventListener('click', function() { b.classList.toggle('on'); validarOtroDia(); });
+    cont.appendChild(b);
+  });
+  document.getElementById('otrodia-canal').value = nombreCanalPanel(row['Canal actual (Presencial / Autogestión)']);
+  const btn = document.getElementById('otrodia-btn-confirmar'); btn.disabled = true; btn.textContent = 'Agregar';
+  document.getElementById('otrodia-modal-status').innerHTML = '';
+  document.getElementById('otrodia-modal-overlay').classList.add('open');
+}
+function nombreCanalPanel(txt) {
+  const t = norm(txt || '');
+  return t.indexOf('TELEF') === 0 ? 'Telefónico' : (t.indexOf('ECOM') === 0 || t.indexOf('AUTOGEST') === 0) ? 'Ecommerce' : 'Presencial';
+}
+function cerrarModalOtroDia() {
+  document.getElementById('otrodia-modal-overlay').classList.remove('open');
+  otroDiaFila = null;
+}
+function validarOtroDia() {
+  document.getElementById('otrodia-btn-confirmar').disabled = document.querySelectorAll('#otrodia-dias .dia-chip.on').length === 0;
+}
+function confirmarOtroDia() {
+  if (!otroDiaFila) return;
+  const row = otroDiaFila;
+  const dias = [].map.call(document.querySelectorAll('#otrodia-dias .dia-chip.on'), function(b) { return b.dataset.dia; });
+  if (!dias.length) return;
+  const canal = document.getElementById('otrodia-canal').value;
+  const btn = document.getElementById('otrodia-btn-confirmar');
+  const st = document.getElementById('otrodia-modal-status');
+  btn.disabled = true; btn.textContent = 'Agregando...'; st.innerHTML = '';
+  const falla = function(msg) { st.innerHTML = '<div class="modal-status err">' + msg + '</div>'; btn.disabled = false; btn.textContent = 'Reintentar'; };
+  llamarSistema({ accion: 'agregarSupervisor', zona: supActual['Zona'], pin: supPin, codigo: row['CODIGO CLIENTE'], dia: dias.join(','), vendedor: row['VENDEDOR'], canal: canal }, 60000).then(function(res) {
+    if (res && res.ok) {
+      (res.dias || []).forEach(function(l) {
+        const a = { vendedor: res.vendedor, codigo: row['CODIGO CLIENTE'], nombre: row['NOMBRE COMERCIAL'], localidad: row['LOCALIDAD'], direccion: row['DIRECCION'],
+                    dia: l.dia, posicion: l.posicion, canal: canal, lat: row['Latitud'], lon: row['Longitud'], ts: Date.now() };
+        inyectarAltaLocal(a);
+        altasAplicadas.push(a);
+      });
+      guardarSesionStorage();
+      st.innerHTML = '<div class="modal-status ok">✅ Agregado: ' + (res.dias || []).map(function(l) { return NOMBRE_DIA[l.dia] + ' (posición ' + l.posicion + ')'; }).join(', ') + '.</div>';
+      btn.textContent = 'Listo';
+      setTimeout(function() { cerrarModalOtroDia(); refrescarVistaActual(); }, 1000);
+      return;
+    }
+    const e = res && res.error;
+    if (e === 'yatiene') falla('El cliente ya está en todos esos días.');
+    else if (e === 'otrovendedor' || e === 'yaruteado') falla('Ese cliente no figura en el ruteo de ese vendedor. Recargá la página.');
+    else if (e === 'zona') falla('Ese cliente no es de tu zona.');
+    else if (e === 'cliente') falla('Ese cliente ya no figura en BASE CLIENTES.');
     else if (e === 'sesion') falla('Tu sesión no es válida. Salí y volvé a ingresar con tu PIN.');
     else if (e === 'ocupado') falla('El sistema está ocupado. Probá de nuevo en unos segundos.');
     else if (e === 'accion') falla('El servidor todavía no tiene esta función: falta publicar la última versión del Apps Script.');
@@ -1365,7 +1495,7 @@ function inyectarAltaLocal(a) {
   }).sort(function(x, y) { return (parseInt(x['ORDEN']) || 0) - (parseInt(y['ORDEN']) || 0); });
   const nueva = { 'CODIGO CLIENTE': a.codigo, 'NOMBRE COMERCIAL': a.nombre, 'LOCALIDAD': a.localidad, 'DIRECCION': a.direccion,
                   'VENDEDOR': a.vendedor, 'ZONA': supActual ? supActual['Zona'] : '', 'ORDEN': '', 'DIA CARGA DE PEDIDO': dia,
-                  'Latitud': '', 'Longitud': '', 'Canal actual (Presencial / Autogestión)': 'Presencial' };
+                  'Latitud': a.lat || '', 'Longitud': a.lon || '', 'Canal actual (Presencial / Autogestión)': a.canal || 'Presencial' };
   const idx = Math.max(0, Math.min((a.posicion || filasDia.length + 1) - 1, filasDia.length));
   filasDia.splice(idx, 0, nueva);
   filasDia.forEach(function(r, i) { r['ORDEN'] = String(i + 1); });
@@ -1378,7 +1508,9 @@ function inyectarAltaLocal(a) {
 function reaplicarAltasLocales() {
   const vigentes = [];
   altasAplicadas.forEach(function(a) {
-    const yaEnPlanilla = baseRuteo.some(function(r) { return codigoNorm(r['CODIGO CLIENTE']) === codigoNorm(a.codigo); });
+    const yaEnPlanilla = baseRuteo.some(function(r) {
+      return codigoNorm(r['CODIGO CLIENTE']) === codigoNorm(a.codigo) && norm(r['DIA CARGA DE PEDIDO']) === norm(a.dia) && normTokens(r['VENDEDOR']) === normTokens(a.vendedor);
+    });
     if (yaEnPlanilla || Date.now() - a.ts > 3 * 3600000) return;
     inyectarAltaLocal(a);
     vigentes.push(a);
@@ -1601,6 +1733,7 @@ function validarBulk() {
   }
   document.getElementById('bulk-btn-confirmar').disabled = !ok;
 }
+let lotesOmitidos = 0;
 function confirmarLote() {
   const btn = document.getElementById('bulk-btn-confirmar');
   btn.disabled = true;
@@ -1627,16 +1760,21 @@ function confirmarLote() {
     const posicion = document.getElementById('bulk-input-posicion').value;
     let refActual = posicion !== 'final' ? document.getElementById('bulk-input-referencia').value : null;
     let posActual = posicion;
+    var omitidos = 0;
     items.forEach(function(it) {
+      // si el cliente ya está en el día de destino (está en varios días), no se lo mueve ahí: quedaría repetido
+      if (it.dia !== nuevoDia && listaOrdenDia(selectedVendedor, nuevoDia, rowsVendedor).indexOf(it.codigo) !== -1) { omitidos++; return; }
       moverClienteVirtual(selectedVendedor, it.codigo, it.dia, nuevoDia, refActual, posActual);
       refActual = it.codigo;
       posActual = 'despues';
     });
+    lotesOmitidos = omitidos;
   }
 
   seleccionados = {};
   modoSeleccion = false;
-  document.getElementById('bulk-modal-status').innerHTML = '<div class="modal-status ok">✅ Cambios agregados a la cola. Confirmá al final para guardar en el Sheet.</div>';
+  document.getElementById('bulk-modal-status').innerHTML = '<div class="modal-status ok">✅ Cambios agregados a la cola. Confirmá al final para guardar en el Sheet.' + (lotesOmitidos ? ' ' + lotesOmitidos + ' cliente' + (lotesOmitidos !== 1 ? 's' : '') + ' no se movió porque ya estaba en ese día.' : '') + '</div>';
+  lotesOmitidos = 0;
   btn.textContent = 'Aplicado';
   setTimeout(function() { cerrarModalLote(); render(); }, 1000);
 }
@@ -1650,6 +1788,17 @@ function abrirModalEdit(codigo, dia, nombre) {
   document.getElementById('edit-campo-posicion').style.display = 'none';
   document.getElementById('edit-campo-canal').style.display = 'none';
   document.getElementById('edit-input-dia').value = '';
+  {
+    // días en que el cliente ya está (contando lo que está sin guardar): no se puede mover ahí
+    const filasV = ruteoDelVendedor(selectedVendedor);
+    [].forEach.call(document.getElementById('edit-input-dia').options, function(o) {
+      if (o.getAttribute('value') === '') return;
+      const d = String(o.getAttribute('value') || o.textContent.replace(/ \(ya está\)$/, '')).toUpperCase();
+      o.value = d;
+      o.disabled = d !== dia && listaOrdenDia(selectedVendedor, d, filasV).indexOf(codigo) !== -1;
+      o.textContent = d + (o.disabled ? ' (ya está)' : '');
+    });
+  }
   document.getElementById('edit-input-posicion').value = 'final';
   document.getElementById('edit-campo-referencia').style.display = 'none';
   document.getElementById('edit-input-canal').value = '';
@@ -1716,15 +1865,22 @@ function ruteoDelVendedor(vendedor) {
 
 function obtenerDiaEfectiva(vendedor, codigo, diaOriginal) {
   const ev = getEstadoVirtual(vendedor);
-  return ev.diaVirtual[codigo] || diaOriginal;
+  // un cliente que está en varios días guarda el movimiento de cada fila por separado ("CODIGO@DIA")
+  return ev.diaVirtual[codigo + '@' + diaOriginal] || ev.diaVirtual[codigo] || diaOriginal;
+}
+
+// ¿Está quitado este cliente de ESTE día? ev.eliminados[codigo] vale true (todos los días) o la lista de días quitados.
+function eliminadoEnDia(ev, codigo, dia) {
+  const v = ev.eliminados[codigo];
+  return v === true || (Array.isArray(v) && v.indexOf(dia) !== -1);
 }
 
 function listaOrdenDia(vendedor, dia, rows) {
   const ev = getEstadoVirtual(vendedor);
-  if (ev.ordenVirtual[dia]) return ev.ordenVirtual[dia].filter(function(c) { return !ev.eliminados[c]; });
+  if (ev.ordenVirtual[dia]) return ev.ordenVirtual[dia].filter(function(c) { return !eliminadoEnDia(ev, c, dia); });
   const arr = rows.filter(function(r) {
     const codigo = r['CODIGO CLIENTE'];
-    if (ev.eliminados[codigo]) return false;
+    if (eliminadoEnDia(ev, codigo, dia)) return false;
     const diaOriginal = norm(r['DIA CARGA DE PEDIDO']);
     return obtenerDiaEfectiva(vendedor, codigo, diaOriginal) === dia;
   });
@@ -1747,10 +1903,19 @@ function moverClienteVirtual(vendedor, codigo, diaOrigen, diaDestino, refCodigo,
   const idxOrig = ev.ordenVirtual[diaOrigen].indexOf(codigo);
   if (idxOrig !== -1) ev.ordenVirtual[diaOrigen].splice(idxOrig, 1);
 
-  const row = rows.find(function(r) { return r['CODIGO CLIENTE'] === codigo; });
+  // Si el cliente está en varios días, se mueve la fila del día de origen (no "la primera que aparezca")
+  const filasCliente = rows.filter(function(r) { return r['CODIGO CLIENTE'] === codigo; });
+  const multi = filasCliente.length > 1;
+  var diaRealOrigen = diaOrigen;
+  if (multi) {
+    const k = Object.keys(ev.diaVirtual).find(function(k) { return k.indexOf(codigo + '@') === 0 && ev.diaVirtual[k] === diaOrigen; });
+    if (k) diaRealOrigen = k.slice(codigo.length + 1);
+  }
+  const row = multi ? (filasCliente.find(function(r) { return norm(r['DIA CARGA DE PEDIDO']) === diaRealOrigen; }) || filasCliente[0]) : filasCliente[0];
   const diaOriginalReal = row ? norm(row['DIA CARGA DE PEDIDO']) : diaOrigen;
-  if (diaDestino !== diaOriginalReal) ev.diaVirtual[codigo] = diaDestino;
-  else delete ev.diaVirtual[codigo];
+  const claveDia = multi ? codigo + '@' + diaOriginalReal : codigo;
+  if (diaDestino !== diaOriginalReal) ev.diaVirtual[claveDia] = diaDestino;
+  else delete ev.diaVirtual[claveDia];
 
   let idx = ev.ordenVirtual[diaDestino].length;
   if (refCodigo) {
@@ -1775,11 +1940,20 @@ function eliminarClienteVirtual(vendedor, codigo, dia) {
   materializarDia(vendedor, dia, rows);
   const idx = ev.ordenVirtual[dia].indexOf(codigo);
   if (idx !== -1) ev.ordenVirtual[dia].splice(idx, 1);
-  ev.eliminados[codigo] = true;
-  ev.pendientes[codigo] = true;
-  delete ev.diaVirtual[codigo];
-  delete ev.canalVirtual[codigo];
-  delete ev.altas[codigo];
+  if (rows.filter(function(r) { return r['CODIGO CLIENTE'] === codigo; }).length > 1) {
+    // cliente en varios días: se quita solo de este día y sigue en los otros
+    const previo = ev.eliminados[codigo];
+    const dias = Array.isArray(previo) ? previo.slice() : [];
+    if (dias.indexOf(dia) === -1) dias.push(dia);
+    ev.eliminados[codigo] = previo === true ? true : dias;
+    ev.pendientes[codigo] = true;
+  } else {
+    ev.eliminados[codigo] = true;
+    ev.pendientes[codigo] = true;
+    delete ev.diaVirtual[codigo];
+    delete ev.canalVirtual[codigo];
+    delete ev.altas[codigo];
+  }
   markDirty();
 }
 
@@ -2043,6 +2217,12 @@ function buildClientCardSupervisor(row, dia, ordenVisual) {
   });
   detail.appendChild(btnEditar);
 
+  const btnOtroDia = document.createElement('button');
+  btnOtroDia.className = 'btn-otrodia';
+  btnOtroDia.textContent = 'Agregar otro día';
+  btnOtroDia.addEventListener('click', function(e) { e.stopPropagation(); abrirModalOtroDia(row); });
+  detail.appendChild(btnOtroDia);
+
   if (pendientesInactivar()[codigoNorm(codigo)]) {
     const chipI = document.createElement('div');
     chipI.className = 'inact-chip';
@@ -2168,6 +2348,8 @@ function confirmarCambiosGlobal() {
                           baseClientes.find(function(c) { return normTokens(c['Vendedor']) === key; });
     const vendedorReal = filaVendedor ? (filaVendedor['VENDEDOR'] || filaVendedor['Vendedor']) : selectedVendedor;
 
+    const eliminarDias = {};
+    Object.keys(ev.eliminados).forEach(function(cod) { if (Array.isArray(ev.eliminados[cod])) eliminarDias[cod] = ev.eliminados[cod]; });
     const payload = {
       accion: 'aplicarPlanRuteo',
       vendedor: vendedorReal,
@@ -2175,6 +2357,7 @@ function confirmarCambiosGlobal() {
       dias: ev.ordenVirtual,
       canal: ev.canalVirtual,
       eliminar: Object.keys(ev.eliminados),
+      eliminarDias: eliminarDias,
       altas: ev.altas
     };
     return fetch(APPS_SCRIPT_URL, {
@@ -2622,6 +2805,9 @@ document.getElementById('bulk-modal-overlay').addEventListener('click', function
   if (e.target === this) cerrarModalLote();
 });
 
+document.getElementById('otrodia-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModalOtroDia();
+});
 document.getElementById('alta-modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModalAlta();
 });

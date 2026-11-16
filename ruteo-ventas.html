@@ -144,7 +144,12 @@
   .modal-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
   .modal-cliente { font-size: 12px; color: var(--text3); margin-bottom: 1.25rem; font-weight: 500; }
 
-  .tipo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+  .tipo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+  .dias-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .dia-chip { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text2); cursor: pointer; }
+  .dia-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .dia-chip:disabled { opacity: 0.4; cursor: default; }
+  .hint { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text3); }
   .tipo-btn { padding: 0.75rem 0.4rem; border-radius: 10px; border: 2px solid var(--border); background: var(--bg); font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text2); cursor: pointer; text-align: center; transition: all 0.15s; line-height: 1.4; }
   .tipo-btn .tipo-icon { display: block; font-size: 18px; margin-bottom: 4px; }
   .tipo-btn.selected { border-color: #7C3AED; background: #F5F0FF; color: #7C3AED; }
@@ -341,6 +346,7 @@
     <div class="tipo-grid">
       <button class="tipo-btn" data-tipo="posicion" onclick="selectTipo(this)"><span class="tipo-icon">📋</span>MOVER<br>POSICIÓN</button>
       <button class="tipo-btn" data-tipo="canal" onclick="selectTipo(this)"><span class="tipo-icon">🔀</span>CAMBIAR<br>CANAL</button>
+      <button class="tipo-btn" data-tipo="otrodia" onclick="selectTipo(this)"><span class="tipo-icon">📅</span>AGREGAR<br>OTRO DÍA</button>
       <button class="tipo-btn" data-tipo="eliminar" onclick="selectTipo(this)"><span class="tipo-icon">🗑️</span>ELIMINAR<br>DEL RUTEO</button>
     </div>
     <div id="campo-posicion" style="display:none">
@@ -373,6 +379,21 @@
         <option value="Telefónico">Telefónico</option>
         <option value="Ecommerce">Ecommerce</option>
       </select>
+    </div>
+    <div id="campo-otrodia" style="display:none">
+      <div class="modal-field">
+        <label>Días a agregar <span class="hint">(podés elegir más de uno)</span></label>
+        <div class="dias-chips" id="otrodia-dias"></div>
+      </div>
+      <div class="modal-field">
+        <label>Canal en esos días</label>
+        <select id="otrodia-canal">
+          <option value="Presencial">Presencial</option>
+          <option value="Telefónico">Telefónico</option>
+          <option value="Ecommerce">Ecommerce</option>
+        </select>
+      </div>
+      <div class="geo-aviso">Se agrega al final de cada día elegido. El cliente sigue en los días que ya tiene.</div>
     </div>
     <div id="campo-eliminar" class="modal-field" style="display:none">
       <label>Motivo (opcional)</label>
@@ -421,25 +442,30 @@
     <div class="modal-title">Agregar al ruteo</div>
     <div class="modal-cliente" id="agregar-modal-cliente"></div>
     <div class="modal-field">
-      <label>Día de visita</label>
-      <select id="agregar-dia" onchange="onAgregarDiaChange()">
-        <option value="">Seleccioná un día</option>
-        <option value="LUNES">Lunes</option><option value="MARTES">Martes</option><option value="MIERCOLES">Miércoles</option>
-        <option value="JUEVES">Jueves</option><option value="VIERNES">Viernes</option>
-      </select>
+      <label>Días de visita <span class="hint">(podés elegir más de uno)</span></label>
+      <div class="dias-chips" id="agregar-dias">
+        <button type="button" class="dia-chip" data-dia="LUNES" onclick="toggleDiaAgregar(this)">Lunes</button>
+        <button type="button" class="dia-chip" data-dia="MARTES" onclick="toggleDiaAgregar(this)">Martes</button>
+        <button type="button" class="dia-chip" data-dia="MIERCOLES" onclick="toggleDiaAgregar(this)">Miércoles</button>
+        <button type="button" class="dia-chip" data-dia="JUEVES" onclick="toggleDiaAgregar(this)">Jueves</button>
+        <button type="button" class="dia-chip" data-dia="VIERNES" onclick="toggleDiaAgregar(this)">Viernes</button>
+      </div>
     </div>
-    <div class="modal-field">
-      <label>Lugar en el recorrido</label>
-      <select id="agregar-posicion" onchange="validarAgregar()">
-        <option value="final">Al final del día</option>
-        <option value="antes">Antes de un cliente</option>
-        <option value="despues">Después de un cliente</option>
-      </select>
+    <div id="agregar-lugar">
+      <div class="modal-field">
+        <label>Lugar en el recorrido</label>
+        <select id="agregar-posicion" onchange="validarAgregar()">
+          <option value="final">Al final del día</option>
+          <option value="antes">Antes de un cliente</option>
+          <option value="despues">Después de un cliente</option>
+        </select>
+      </div>
+      <div class="modal-field" id="agregar-campo-ref" style="display:none">
+        <label>Cliente de referencia</label>
+        <select id="agregar-ref" onchange="validarAgregar()"><option value="">Seleccioná un cliente</option></select>
+      </div>
     </div>
-    <div class="modal-field" id="agregar-campo-ref" style="display:none">
-      <label>Cliente de referencia</label>
-      <select id="agregar-ref" onchange="validarAgregar()"><option value="">Seleccioná un cliente</option></select>
-    </div>
+    <div class="geo-aviso" id="agregar-nota-multi" style="display:none">Con más de un día, el cliente se agrega al final de cada día. Después podés cambiar su lugar con el lápiz.</div>
     <div class="modal-field">
       <label>Canal</label>
       <select id="agregar-canal">
@@ -1013,6 +1039,7 @@ function tipoLabel(tipo) {
   if (tipo === 'canal') return '🔀 Cambio de canal';
   if (tipo === 'inactivar') return '🚫 Inactivar cliente';
   if (tipo === 'agregar') return '➕ Agregar al ruteo';
+  if (tipo === 'otrodia') return '📅 Agregar otro día';
   if (tipo === 'orden') return '📋 Cambio de orden';
   if (tipo === 'dia') return '📅 Cambio de día';
   return '🗑️ Eliminar del ruteo';
@@ -1052,8 +1079,33 @@ function abrirModal(codigo, dia) {
   document.getElementById('campo-posicion').style.display = 'none';
   document.getElementById('campo-canal').style.display = 'none';
   document.getElementById('campo-eliminar').style.display = 'none';
+  document.getElementById('campo-otrodia').style.display = 'none';
   document.getElementById('campo-referencia').style.display = 'none';
   document.getElementById('input-dia').value = '';
+  // Días en que el cliente YA está (de este vendedor): no se puede mover ahí ni agregarlo de nuevo
+  const diaDeLaFila = String(row['DIA CARGA DE PEDIDO']).toUpperCase();
+  const diasDelCliente = allData.filter(function(r) { return r['CODIGO CLIENTE'] === codigo && r['VENDEDOR'] === selectedVendedor; })
+                                .map(function(r) { return String(r['DIA CARGA DE PEDIDO']).toUpperCase(); });
+  [].forEach.call(document.getElementById('input-dia').options, function(o) {
+    if (o.getAttribute('value') === '') return;               // "— Seleccioná —"
+    const d = String(o.getAttribute('value') || o.textContent.replace(/ \(ya está\)$/, '')).toUpperCase();
+    o.value = d;                                              // el valor enviado no cambia aunque cambie el texto
+    o.disabled = d !== diaDeLaFila && diasDelCliente.indexOf(d) !== -1;
+    o.textContent = d + (o.disabled ? ' (ya está)' : '');
+  });
+  const chips = document.getElementById('otrodia-dias');
+  chips.innerHTML = '';
+  ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'].forEach(function(d) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'dia-chip';
+    b.dataset.dia = d;
+    b.textContent = d === 'MIERCOLES' ? 'Miércoles' : d.charAt(0) + d.slice(1).toLowerCase();
+    if (diasDelCliente.indexOf(d) !== -1) { b.disabled = true; b.textContent += ' (ya está)'; }
+    b.addEventListener('click', function() { b.classList.toggle('on'); validarEnvio(); });
+    chips.appendChild(b);
+  });
+  document.getElementById('otrodia-canal').value = nombreCanal(canalDe(row));
   document.getElementById('input-posicion').value = 'final';
   document.getElementById('input-referencia').innerHTML = '<option value="">— Seleccioná —</option>';
   document.getElementById('input-motivo').value = '';
@@ -1081,6 +1133,7 @@ function selectTipo(btn) {
   document.getElementById('campo-posicion').style.display = tipoSeleccionado === 'posicion' ? 'block' : 'none';
   document.getElementById('campo-canal').style.display = tipoSeleccionado === 'canal' ? 'block' : 'none';
   document.getElementById('campo-eliminar').style.display = tipoSeleccionado === 'eliminar' ? 'block' : 'none';
+  document.getElementById('campo-otrodia').style.display = tipoSeleccionado === 'otrodia' ? 'block' : 'none';
   validarEnvio();
 }
 // Clientes del día elegido (menos el que se está editando), en su orden, para elegir "antes de" / "después de"
@@ -1109,6 +1162,8 @@ function validarEnvio() {
     ok = !!dia && (pos === 'final' || document.getElementById('input-referencia').value !== '');
   } else if (tipoSeleccionado === 'canal') {
     ok = document.getElementById('input-canal').value !== '';
+  } else if (tipoSeleccionado === 'otrodia') {
+    ok = document.querySelectorAll('#otrodia-dias .dia-chip.on').length > 0;
   } else if (tipoSeleccionado === 'eliminar') {
     ok = true;
   }
@@ -1145,6 +1200,11 @@ function enviarSolicitud() {
   } else if (tipoSeleccionado === 'canal') {
     detalle = 'Canal: ' + document.getElementById('input-canal').value;
     tipo = 'Cambio de canal';
+  } else if (tipoSeleccionado === 'otrodia') {
+    const dias = [].map.call(document.querySelectorAll('#otrodia-dias .dia-chip.on'), function(b) { return b.dataset.dia; });
+    if (!dias.length) return;
+    detalle = 'Día: ' + dias.join(', ') + ' | Canal: ' + document.getElementById('otrodia-canal').value;
+    tipo = 'Agregar día';
   } else {
     const motivo = document.getElementById('input-motivo').value.trim();
     detalle = motivo ? 'Motivo: ' + motivo : 'Sin motivo especificado';
@@ -1958,7 +2018,9 @@ let clienteAgregar = null;
 function abrirModalAgregar(cli) {
   clienteAgregar = cli;
   document.getElementById('agregar-modal-cliente').textContent = cli.nombre + ' · ' + cli.localidad;
-  document.getElementById('agregar-dia').value = '';
+  [].forEach.call(document.querySelectorAll('#agregar-dias .dia-chip'), function(b) { b.classList.remove('on'); });
+  document.getElementById('agregar-lugar').style.display = 'block';
+  document.getElementById('agregar-nota-multi').style.display = 'none';
   document.getElementById('agregar-posicion').value = 'final';
   document.getElementById('agregar-campo-ref').style.display = 'none';
   document.getElementById('agregar-canal').value = 'Presencial';
@@ -1969,31 +2031,47 @@ function cerrarModalAgregar() {
   document.getElementById('agregar-modal-overlay').classList.remove('open');
   clienteAgregar = null;
 }
+function diasAgregarSeleccionados() {
+  return [].filter.call(document.querySelectorAll('#agregar-dias .dia-chip'), function(b) { return b.classList.contains('on'); })
+           .map(function(b) { return b.dataset.dia; });
+}
+function toggleDiaAgregar(btn) {
+  btn.classList.toggle('on');
+  onAgregarDiaChange();
+}
 function onAgregarDiaChange() {
-  const dia = document.getElementById('agregar-dia').value;
+  const dias = diasAgregarSeleccionados();
+  const unico = dias.length === 1;
+  // El lugar en el recorrido se elige solo con un día; con varios, va al final de cada uno
+  document.getElementById('agregar-lugar').style.display = dias.length > 1 ? 'none' : 'block';
+  document.getElementById('agregar-nota-multi').style.display = dias.length > 1 ? 'block' : 'none';
   const sel = document.getElementById('agregar-ref');
   sel.innerHTML = '<option value="">Seleccioná un cliente</option>';
-  allData.filter(function(r) { return r['VENDEDOR'] === selectedVendedor && r['DIA CARGA DE PEDIDO'].toUpperCase() === dia; })
-    .sort(porOrden).forEach(function(r) {
-      const opt = document.createElement('option');
-      opt.value = r['CODIGO CLIENTE'];
-      opt.textContent = r['ORDEN'] + '. ' + r['NOMBRE COMERCIAL'];
-      sel.appendChild(opt);
-    });
+  if (unico) {
+    allData.filter(function(r) { return r['VENDEDOR'] === selectedVendedor && r['DIA CARGA DE PEDIDO'].toUpperCase() === dias[0]; })
+      .sort(porOrden).forEach(function(r) {
+        const opt = document.createElement('option');
+        opt.value = r['CODIGO CLIENTE'];
+        opt.textContent = r['ORDEN'] + '. ' + r['NOMBRE COMERCIAL'];
+        sel.appendChild(opt);
+      });
+  }
   validarAgregar();
 }
 function validarAgregar() {
-  const dia = document.getElementById('agregar-dia').value;
+  const dias = diasAgregarSeleccionados();
   const pos = document.getElementById('agregar-posicion').value;
-  document.getElementById('agregar-campo-ref').style.display = pos === 'final' ? 'none' : 'block';
-  const ok = !!dia && (pos === 'final' || document.getElementById('agregar-ref').value !== '');
+  document.getElementById('agregar-campo-ref').style.display = (dias.length === 1 && pos !== 'final') ? 'block' : 'none';
+  const ok = dias.length > 0 && (dias.length > 1 || pos === 'final' || document.getElementById('agregar-ref').value !== '');
   document.getElementById('agregar-btn-enviar').disabled = !ok;
 }
+
 function enviarPedidoAgregar() {
   if (!clienteAgregar) return;
   const cli = clienteAgregar;
-  const dia = document.getElementById('agregar-dia').value;
-  const pos = document.getElementById('agregar-posicion').value;
+  const dias = diasAgregarSeleccionados();
+  if (!dias.length) return;
+  const pos = dias.length > 1 ? 'final' : document.getElementById('agregar-posicion').value;
   const canal = document.getElementById('agregar-canal').value;
   const refSel = document.getElementById('agregar-ref');
   let ubicar = 'al final';
@@ -2002,7 +2080,7 @@ function enviarPedidoAgregar() {
     const refNombre = refSel.options[refSel.selectedIndex].textContent.replace(/^\d+\.\s*/, '').replace(/\|/g, '/');
     ubicar = (pos === 'antes' ? 'antes de ' : 'después de ') + refSel.value + ' (' + refNombre + ')';
   }
-  const detalle = 'Día: ' + dia + ' | Ubicar: ' + ubicar + ' | Canal: ' + canal;
+  const detalle = 'Día: ' + dias.join(', ') + ' | Ubicar: ' + ubicar + ' | Canal: ' + canal;
   const payload = {
     vendedor: selectedVendedor, codigo: cli.codigo, cliente: cli.nombre, localidad: cli.localidad,
     diaActual: '', tipo: 'Agregar al ruteo', detalle: detalle
